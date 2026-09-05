@@ -14,7 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activities: {
+        Row: {
+          activity: string
+          activity_no: string | null
+          actual_progress: number | null
+          baseline_date: string
+          building: string | null
+          created_at: string
+          discipline: string
+          done_quantity: number | null
+          finish_date: string | null
+          id: number
+          milestone: string | null
+          planned_progress: number | null
+          predecessor: string | null
+          room: string | null
+          source_file: string
+          start_date: string | null
+          subcontractor: string | null
+          successor: string | null
+          total_quantity: number | null
+          unit: string | null
+          work_scope: string | null
+        }
+        Insert: {
+          activity: string
+          activity_no?: string | null
+          actual_progress?: number | null
+          baseline_date?: string
+          building?: string | null
+          created_at?: string
+          discipline: string
+          done_quantity?: number | null
+          finish_date?: string | null
+          id?: number
+          milestone?: string | null
+          planned_progress?: number | null
+          predecessor?: string | null
+          room?: string | null
+          source_file: string
+          start_date?: string | null
+          subcontractor?: string | null
+          successor?: string | null
+          total_quantity?: number | null
+          unit?: string | null
+          work_scope?: string | null
+        }
+        Update: {
+          activity?: string
+          activity_no?: string | null
+          actual_progress?: number | null
+          baseline_date?: string
+          building?: string | null
+          created_at?: string
+          discipline?: string
+          done_quantity?: number | null
+          finish_date?: string | null
+          id?: number
+          milestone?: string | null
+          planned_progress?: number | null
+          predecessor?: string | null
+          room?: string | null
+          source_file?: string
+          start_date?: string | null
+          subcontractor?: string | null
+          successor?: string | null
+          total_quantity?: number | null
+          unit?: string | null
+          work_scope?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
