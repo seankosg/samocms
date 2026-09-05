@@ -46,6 +46,15 @@ const date = (v: unknown): string | null => {
   return m ? `${m[1]}-${m[2]!.padStart(2, "0")}-${m[3]!.padStart(2, "0")}` : null;
 };
 
+const KNOWN = ["Arch", "Elec", "Int", "Mech", "Permit"];
+
+/** 파일명에서 공종 키(Arch/Elec/Int/Mech/Permit)를 추출합니다. */
+export function sourceKeyFromFileName(fileName: string): string {
+  const base = fileName.replace(/\.[^.]+$/, "");
+  const hit = KNOWN.find((k) => new RegExp(`(^|[_\\-\\s])${k}($|[_\\-\\s])`, "i").test(base));
+  return hit ?? base.slice(0, 64);
+}
+
 /** 통합공정표 시트를 파싱해 activities 행으로 변환합니다. */
 export function parseScheduleWorkbook(buffer: ArrayBuffer, fileName: string): ImportRow[] {
   const wb = XLSX.read(buffer, { type: "array" });
