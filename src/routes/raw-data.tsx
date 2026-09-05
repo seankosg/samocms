@@ -1,12 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { ArrowDownAZ, ArrowUpAZ, ChevronLeft, ChevronRight, Download, RotateCcw, Search, SlidersHorizontal } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, ChevronLeft, ChevronRight, Download, Loader2, RotateCcw, Search, SlidersHorizontal, Upload } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRef } from "react";
+import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getActivities } from "@/lib/activities.functions";
+import { getActivities, importActivities } from "@/lib/activities.functions";
+import { parseScheduleWorkbook, sourceKeyFromFileName } from "@/lib/import-schedule";
 import { disciplineName, pct, statusOf } from "@/lib/activity-metrics";
 
 const activitiesQuery = queryOptions({ queryKey: ["activities"], queryFn: () => getActivities(), staleTime: 300_000 });
@@ -32,10 +36,36 @@ function RawData() {
     return (!q||hay.includes(q.toLowerCase()))&&(discipline==="전체"||r.discipline===discipline)&&(status==="전체"||statusOf(r)===status);
   }).sort((a,b)=>{const av=a[sort]??"";const bv=b[sort]??"";return (String(av).localeCompare(String(bv),undefined,{numeric:true}))*(asc?1:-1)}),[rows,q,discipline,status,sort,asc]);
   const pages=Math.max(1,Math.ceil(filtered.length/size)); const current=Math.min(page,pages); const shown=filtered.slice((current-1)*size,current*size);
+  const qc=useQueryClient(); const fileRef=useRef<HTMLInputElement>(null); const [importing,setImporting]=useState(false);
+  const onFiles=async(files:FileList|null)=>{
+    if(!files||!files.length) return;
+    setImporting(true);
+    const done:string[]=[];
+    try{
+      for(const file of Array.from(files)){
+        const parsed=parseScheduleWorkbook(await file.arrayBuffer(),file.name);
+        const sourceFile=sourceKeyFromFileName(file.name);
+        const res=await importActivities({data:{sourceFile,rows:parsed.map(r=>({...r,source_file:sourceFile}))}});
+        done.push(`${res.sourceFile} ${res.inserted}건`);
+      }
+      await qc.invalidateQueries({queryKey:["activities"]});
+      toast.success("업데이트 파일 반영 완료",{description:done.join(" · ")});
+    }catch(err){
+      toast.error("임포트 실패",{description:err instanceof Error?err.message:"파일을 확인해 주세요."});
+    }finally{
+      setImporting(false);
+      if(fileRef.current) fileRef.current.value="";
+    }
+  };
   const reset=()=>{setQ("");setDiscipline("전체");setStatus("전체");setPage(1)};
   const exportXlsx=()=>{const data=filtered.map(r=>({No:r.activity_no,담당부서:r.discipline,Bldg:r.building,Room:r.room,"Work Scope":r.work_scope,Milestone:r.milestone,Subcon:r.subcontractor,Activity:r.activity,Unit:r.unit,Done:r.done_quantity,Total:r.total_quantity,"계획(%)":pct(r.planned_progress),"실적(%)":pct(r.actual_progress),Predecessor:r.predecessor,Successor:r.successor,Start:r.start_date,Finish:r.finish_date}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data),"Raw Data");XLSX.writeFile(wb,"SAMO_Raw_Data.xlsx")};
   return <AppShell>
-    <section className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 text-xs font-bold uppercase text-primary">Integrated Schedule</p><h1 className="text-2xl font-bold">Raw Data</h1><p className="mt-1 text-sm text-muted-foreground">전체 공종의 Activity 원천 데이터</p></div><Button onClick={exportXlsx}><Download/>XLSX 내보내기</Button></section>
+    <section className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 text-xs font-bold uppercase text-primary">Integrated Schedule</p><h1 className="text-2xl font-bold">Raw Data</h1><p className="mt-1 text-sm text-muted-foreground">전체 공종의 Activity 원천 데이터</p></div><div className="flex items-center gap-2">
+      <input ref={fileRef} type="file" accept=".xlsx,.xls" multiple className="hidden" aria-label="업데이트 파일 선택" onChange={e=>onFiles(e.target.files)}/>
+      <Button variant="outline" disabled={importing} onClick={()=>fileRef.current?.click()}>{importing?<Loader2 className="animate-spin"/>:<Upload/>}업데이트 파일 임포트</Button>
+      <Button onClick={exportXlsx}><Download/>XLSX 내보내기</Button>
+    </div></section>
+    <p className="mb-4 text-xs text-muted-foreground">동일 공종(Arch · Elec · Int · Mech · Permit) 파일을 올리면 해당 공종 데이터가 파일 내용으로 교체됩니다.</p>
     <section className="rounded-md border border-border bg-card shadow-sm">
       <div className="flex flex-wrap items-center gap-2 border-b p-4">
         <div className="relative min-w-[260px] flex-1"><Search className="absolute left-3 top-2.5 size-4 text-muted-foreground"/><Input value={q} onChange={e=>{setQ(e.target.value);setPage(1)}} placeholder="Activity, 건물, 협력사 검색" className="pl-9"/></div>
