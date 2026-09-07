@@ -47,7 +47,7 @@ function NetworkPage() {
 
   return (
     <AppShell title="네트워크" desc={`기준일 ${fmtDate(base)} · 선후행 흐름과 체인 추적`}>
-      <NetworkView rows={rows} search={search} onChange={onChange} />
+      <NetworkView rows={rows} search={search} onChange={onChange} base={base} />
     </AppShell>
   );
 }
