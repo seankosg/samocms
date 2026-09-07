@@ -34,7 +34,9 @@ function Dashboard() {
     const bySlot = KPI_SLOTS.map((s) => {
       const list = rows.filter((r) => r.slot === s || r.dept === s);
       const w = list.filter((r) => r.pl != null || r.pc != null);
-      return { slot: s, n: w.length, pl: avgOf(w, "pl"), pc: avgOf(w, "pc"), late: w.filter(isLate).length };
+      const plan = list.filter((r) => r.e && r.e <= base).length;
+      const act = list.filter(isDone).length;
+      return { slot: s, n: w.length, pl: avgOf(w, "pl"), pc: avgOf(w, "pc"), late: w.filter(isLate).length, total: list.length, plan, act, gap: act - plan };
     });
     const byMs = Object.keys(MSDEF).map((k) => {
       const list = rows.filter((r) => r.ms === k);
