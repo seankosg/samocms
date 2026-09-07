@@ -118,13 +118,16 @@ function Block({ title, firstLabel, secondLabel, rows, edit, block, memoValue, s
     <section className="rounded-md border border-border bg-card shadow-sm">
       <p className="border-b border-border px-3 py-2 text-xs font-bold">{title}</p>
       <div className="max-h-[560px] overflow-auto">
-        <table className="w-full min-w-[1200px] border-collapse text-left text-xs">
+        <table className="w-full min-w-[1500px] border-collapse text-left text-xs">
           <thead className="sticky top-0 z-10 bg-secondary text-secondary-foreground">
             <tr>
               <th className="border-b border-r border-border px-3 py-2">{firstLabel}</th>
               {secondLabel && <th className="border-b border-r border-border px-3 py-2">{secondLabel}</th>}
               <th className="border-b border-r border-border px-3 py-2 text-right">Q'ty</th>
-              {TC_STAGES.map((s) => <th key={s} className="border-b border-r border-border px-3 py-2 text-center">{s}<br /><span className="text-[9px] font-normal">완료 / 잔여 / 지연</span></th>)}
+              {TC_STAGES.flatMap((s) => [
+                <th key={`${s}-d`} className="border-b border-r border-border px-3 py-2 text-center">{s}<br /><span className="text-[9px] font-normal">완료</span></th>,
+                <th key={`${s}-r`} className="border-b border-r border-border px-3 py-2 text-center"><span className="text-[9px] font-normal">잔여</span></th>,
+              ])}
               <th className="border-b border-r border-border px-3 py-2 text-center">Pass / Fail</th>
               <th className="border-b border-border px-3 py-2">비고</th>
             </tr>
@@ -135,13 +138,12 @@ function Block({ title, firstLabel, secondLabel, rows, edit, block, memoValue, s
                 <td className="border-r border-border px-3 py-1.5">{r.a ?? ""}</td>
                 {secondLabel && <td className="border-r border-border px-3 py-1.5">{r.b ?? ""}</td>}
                 <td className="border-r border-border px-3 py-1.5 text-right">{r.qty.toLocaleString()}</td>
-                {TC_STAGES.map((s) => {
+                {TC_STAGES.flatMap((s) => {
                   const [d, rem, late] = r.st[s];
-                  return (
-                    <td key={s} className="border-r border-border px-3 py-1.5 text-center whitespace-nowrap">
-                      <span className="text-primary">{d}</span> / <span className="text-muted-foreground">{rem}</span> / <span className={late ? "font-bold text-destructive" : "text-muted-foreground"}>{late}</span>
-                    </td>
-                  );
+                  return [
+                    <td key={`${s}-d`} className="border-r border-border px-3 py-1.5 text-center whitespace-nowrap text-primary">{d}</td>,
+                    <td key={`${s}-r`} className={`border-r border-border px-3 py-1.5 text-center whitespace-nowrap ${late ? "bg-yellow-200/70 font-bold text-destructive" : "text-muted-foreground"}`}>{rem}</td>,
+                  ];
                 })}
                 <td className="border-r border-border px-3 py-1.5 text-center whitespace-nowrap">
                   <span className="text-primary">{r.pass}</span> / <span className={r.fail ? "font-bold text-destructive" : "text-muted-foreground"}>{r.fail}</span>
