@@ -51,8 +51,16 @@ function UploadPage() {
         } else {
           const parsed = parseScheduleWorkbook(buf, file.name);
           const slot = sourceKeyFromFileName(file.name);
-          const res = await importActivities({ data: { sourceFile: slot, rows: parsed.map((r) => ({ ...r, source_file: slot })) } });
-          await recordScheduleBatch({ data: { slot, fileName: file.name, fileDate: meta.date, rev: meta.rev, rowCount: res.inserted } });
+          const res = await importActivities({
+            data: {
+              sourceFile: slot,
+              fileName: file.name,
+              fileDate: meta.date,
+              rev: meta.rev,
+              rows: parsed.map((r) => ({ ...r, source_file: slot })),
+            },
+          });
+
           done.push(`${SLOT_LABEL[slot] ?? slot} ${res.inserted}건`);
         }
       }
