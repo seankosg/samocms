@@ -90,7 +90,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false }: { rows: Row[
   const cur = Math.min(page, pages);
   const shown = filtered.slice((cur - 1) * size, cur * size);
 
-  const reset = () => { setQ(""); setDept("전체"); setBldg("전체"); setMs("전체"); setSub("전체"); setStatus("전체"); setPage(1); };
+  const reset = () => { setQ(""); setDept("전체"); setBldg("전체"); setMs("전체"); setSub("전체"); setStatus("전체"); setColq({}); setPage(1); };
   const exportXlsx = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(filtered.map((r) => ({
