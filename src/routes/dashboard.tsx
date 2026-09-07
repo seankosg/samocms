@@ -298,7 +298,7 @@ function MsRow({ label, n, p, signed }: { label: string; n: number; p: number; s
   );
 }
 
-function Bar({ v, marker, tone = "ok", className = "" }: { v: number; marker?: number; tone?: "ok" | "bad" | "warn"; className?: string }) {
+function Bar({ v, marker, tone = "ok", className = "" }: { v: number; marker?: number | undefined; tone?: "ok" | "bad" | "warn"; className?: string }) {
   const color = tone === "bad" ? "bg-destructive" : tone === "warn" ? "bg-chart-3" : "bg-primary";
   return (
     <div className={`relative h-1.5 overflow-hidden rounded bg-muted ${className}`}>
