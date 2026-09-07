@@ -26,12 +26,26 @@ const PLAN: Record<TcStage, keyof TcItem> = { T0: "t0_p", T1: "t1_p", Report: "r
 const ACT: Record<TcStage, keyof TcItem> = { T0: "t0_a", T1: "t1_a", Report: "rp_a", RFI: "rfi_a", T2: "t2_a", Response: "resp_a" };
 const REM: Partial<Record<TcStage, keyof TcItem>> = { T0: "t0_rem", T1: "t1_rem", Report: "rp_rem", RFI: "rfi_rem" };
 
+type ColKey = "discipline" | "bldg" | "grp" | "item" | "equip" | "supplier" | "status" | "docref";
+const COL_FILTERS: { key: ColKey; label: string }[] = [
+  { key: "discipline", label: "공종" }, { key: "bldg", label: "Bldg." }, { key: "grp", label: "Group" },
+  { key: "item", label: "Item" }, { key: "equip", label: "Equipment" },
+];
+
 function TcList() {
   const { tcItems, base } = useProject();
   const [q, setQ] = useState("");
   const [disc, setDisc] = useState("전체");
   const [bldg, setBldg] = useState("전체");
   const [only, setOnly] = useState("전체");
+  const [colq, setColq] = useState<Partial<Record<ColKey, string>>>({});
+  const setCol = (k: ColKey, v: string) => setColq((o) => ({ ...o, [k]: v }));
+  const ColInput = ({ k }: { k: ColKey }) => (
+    <input
+      aria-label={`${k} 필터`} placeholder="필터" value={colq[k] ?? ""} onChange={(e) => setCol(k, e.target.value)}
+      className="h-6 w-full min-w-[64px] rounded border border-input bg-background px-1 text-[10px] font-normal text-foreground"
+    />
+  );
 
   const bldgs = useMemo(() => [...new Set(tcItems.map((i) => i.bldg ?? "(미지정)"))].sort(), [tcItems]);
   const discs = useMemo(() => [...new Set(tcItems.map((i) => i.discipline))].sort(), [tcItems]);
@@ -45,8 +59,12 @@ function TcList() {
       const hay = [r.bldg, r.grp, r.item, r.equip, r.supplier, r.docref].join(" ").toLowerCase();
       if (!hay.includes(q.toLowerCase())) return false;
     }
+    for (const [k, v] of Object.entries(colq)) {
+      if (!v) continue;
+      if (!String(r[k as ColKey] ?? "").toLowerCase().includes(v.toLowerCase())) return false;
+    }
     return true;
-  }), [tcItems, q, disc, bldg, only, base]);
+  }), [tcItems, q, disc, bldg, only, base, colq]);
 
   const exportXlsx = () => {
     const wb = XLSX.utils.book_new();
@@ -93,6 +111,16 @@ function TcList() {
                 ))}
                 <th className="border-b border-r border-border px-2 py-2 font-bold">Status</th>
                 <th className="border-b border-border px-2 py-2 font-bold">Doc Ref.</th>
+              </tr>
+              <tr>
+                {COL_FILTERS.map((c) => (
+                  <th key={c.key} className="border-b border-r border-border bg-secondary p-1"><ColInput k={c.key} /></th>
+                ))}
+                <th className="border-b border-r border-border bg-secondary p-1" />
+                <th className="border-b border-r border-border bg-secondary p-1"><ColInput k="supplier" /></th>
+                {TC_STAGES.map((s) => <th key={`f-${s}`} className="border-b border-r border-border bg-secondary p-1" />)}
+                <th className="border-b border-r border-border bg-secondary p-1"><ColInput k="status" /></th>
+                <th className="border-b border-border bg-secondary p-1"><ColInput k="docref" /></th>
               </tr>
             </thead>
             <tbody>

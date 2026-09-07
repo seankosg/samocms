@@ -5,10 +5,11 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
   AlertTriangle, BarChart3, CalendarDays, ChevronLeft, Download, HardHat, ListChecks,
-  Network, PanelLeft, Table2, UploadCloud, Wrench, Zap,
+  Network, PanelLeft, Settings, Table2, UploadCloud, Wrench, Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useProject } from "@/lib/use-project";
 import { setBaselineDate } from "@/lib/project.functions";
 import { SLOT_LABEL } from "@/lib/schedule-model";
@@ -76,15 +77,7 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
             </span>
           </Link>
           <div className="ml-auto flex flex-wrap items-center justify-end gap-2 text-xs">
-            <label className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1">
-              <CalendarDays className="size-3.5 text-muted-foreground" />
-              <span className="text-muted-foreground">기준일</span>
-              <Input
-                type="date" value={base} aria-label="기준일"
-                onChange={(e) => e.target.value && saveBase.mutate(e.target.value)}
-                className="h-6 w-[130px] border-0 p-0 text-xs shadow-none focus-visible:ring-0"
-              />
-            </label>
+            <BaseSetting base={base} batches={batches} onApply={(d) => saveBase.mutate(d)} saving={saveBase.isPending} />
             <span className="rounded-md border border-border px-2 py-1.5 text-muted-foreground">
               총 <strong className="text-foreground">{rows.length.toLocaleString()}</strong>행 · Rev{rev}
             </span>
@@ -130,3 +123,62 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
 }
 
 export const slotLabel = (s: string) => SLOT_LABEL[s] ?? s;
+
+type Batch = { id: number; kind: string; slot: string | null; file_name: string | null; file_date: string | null };
+
+function BaseSetting({ base, batches, onApply, saving }: { base: string; batches: Batch[]; onApply: (d: string) => void; saving: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [val, setVal] = useState(base);
+
+  const latest = new Map<string, Batch>();
+  batches.forEach((b) => {
+    const key = `${b.kind}:${b.slot ?? "-"}`;
+    if (!latest.has(key)) latest.set(key, b);
+  });
+  const auto = [...latest.values()].map((b) => b.file_date).filter(Boolean).sort().pop() ?? null;
+
+  return (
+    <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o) setVal(base); }}>
+      <div className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1.5">
+        <PopoverTrigger asChild>
+          <button type="button" aria-label="기준일 설정" title="기준일 설정" className="grid size-5 place-items-center rounded border border-border text-muted-foreground hover:bg-accent hover:text-foreground">
+            <Settings className="size-3" />
+          </button>
+        </PopoverTrigger>
+        <CalendarDays className="size-3.5 text-muted-foreground" />
+        <span className="text-muted-foreground">기준일</span>
+        <strong className="text-foreground">{base.replace(/-/g, ".")}</strong>
+      </div>
+      <PopoverContent align="end" className="w-[320px] p-3 text-xs">
+        <p className="mb-1 text-sm font-bold">기준일 설정</p>
+        <p className="mb-3 rounded bg-muted/60 p-2 text-[11px] leading-relaxed text-muted-foreground">
+          <b className="text-foreground">적용</b> 마일스톤 계획·차이·D-day · T&amp;C 계획 산정 · 통합 엑셀 기준일 · 저장 파일명<br />
+          <b className="text-foreground">참고</b> 「계획 대비 실적」·「지연」의 계획%·실적%는 각 부서가 엑셀에 기입한 원문값이라 기준일을 바꿔도 그대로입니다.
+        </p>
+        <div className="flex items-center gap-2">
+          <Input type="date" aria-label="기준일 입력" value={val} onChange={(e) => setVal(e.target.value)} className="h-8 flex-1 text-xs" />
+          <Button size="sm" disabled={!val || saving} onClick={() => { onApply(val); setOpen(false); }}>적용</Button>
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          파일 기준값 <b className="text-foreground">{auto ? auto.replace(/-/g, ".") : "—"}</b>
+          {auto && auto !== base && (
+            <button className="ml-2 font-semibold text-primary underline" onClick={() => { onApply(auto); setOpen(false); }}>파일 기준으로 되돌리기</button>
+          )}
+        </p>
+        {latest.size > 0 && (
+          <div className="mt-3 border-t border-border pt-2">
+            <p className="mb-1 text-[10px] font-bold uppercase text-muted-foreground">업로드 파일 기준일</p>
+            <ul className="space-y-1">
+              {[...latest.values()].map((b) => (
+                <li key={b.id} className="flex items-center justify-between gap-2">
+                  <span className="truncate text-muted-foreground">{(SLOT_LABEL[b.slot ?? ""] ?? b.slot ?? "-")}{b.kind === "tc" ? " T&C" : ""}</span>
+                  <b>{b.file_date ? b.file_date.replace(/-/g, ".") : "—"}</b>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}

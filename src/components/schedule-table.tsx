@@ -6,13 +6,26 @@ import { Input } from "@/components/ui/input";
 import { fmtDate, isLate, pct1, SLOT_LABEL, statusOfRow, STATUS_LABEL, type Row } from "@/lib/schedule-model";
 
 type SortKey = "no" | "dept" | "bldg" | "act" | "pl" | "pc" | "e";
-const COLS: { key: SortKey | null; label: string }[] = [
-  { key: "no", label: "No." }, { key: "dept", label: "담당부서" }, { key: "bldg", label: "Bldg." },
-  { key: null, label: "Room" }, { key: null, label: "Work Scope" }, { key: null, label: "Milestone" },
-  { key: null, label: "Subcon" }, { key: "act", label: "Activity" }, { key: null, label: "Unit" },
-  { key: null, label: "Done / Total" }, { key: "pl", label: "계획" }, { key: "pc", label: "실적" },
-  { key: null, label: "상태" }, { key: null, label: "Predecessor" }, { key: null, label: "Successor" },
-  { key: null, label: "Start" }, { key: "e", label: "Finish" },
+type TextKey = "no" | "room" | "scope" | "act" | "unit" | "pred" | "succ" | "s" | "e";
+type ColFilter = { kind: "text"; field: TextKey } | { kind: "sel"; field: "dept" | "bldg" | "ms" | "sub" | "status" } | null;
+const COLS: { key: SortKey | null; label: string; f: ColFilter }[] = [
+  { key: "no", label: "No.", f: { kind: "text", field: "no" } },
+  { key: "dept", label: "담당부서", f: { kind: "sel", field: "dept" } },
+  { key: "bldg", label: "Bldg.", f: { kind: "sel", field: "bldg" } },
+  { key: null, label: "Room", f: { kind: "text", field: "room" } },
+  { key: null, label: "Work Scope", f: { kind: "text", field: "scope" } },
+  { key: null, label: "Milestone", f: { kind: "sel", field: "ms" } },
+  { key: null, label: "Subcon", f: { kind: "sel", field: "sub" } },
+  { key: "act", label: "Activity", f: { kind: "text", field: "act" } },
+  { key: null, label: "Unit", f: { kind: "text", field: "unit" } },
+  { key: null, label: "Done / Total", f: null },
+  { key: "pl", label: "계획", f: null },
+  { key: "pc", label: "실적", f: null },
+  { key: null, label: "상태", f: { kind: "sel", field: "status" } },
+  { key: null, label: "Predecessor", f: { kind: "text", field: "pred" } },
+  { key: null, label: "Successor", f: { kind: "text", field: "succ" } },
+  { key: null, label: "Start", f: { kind: "text", field: "s" } },
+  { key: "e", label: "Finish", f: { kind: "text", field: "e" } },
 ];
 
 export function ScheduleTable({ rows, fileName, lockLate = false }: { rows: Row[]; fileName: string; lockLate?: boolean }) {
@@ -26,6 +39,10 @@ export function ScheduleTable({ rows, fileName, lockLate = false }: { rows: Row[
   const [asc, setAsc] = useState(true);
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(50);
+  const [colq, setColq] = useState<Partial<Record<TextKey, string>>>({});
+  const setCol = (k: TextKey, v: string) => { setColq((o) => ({ ...o, [k]: v })); setPage(1); };
+  const selValue = { dept, bldg, ms, sub, status } as const;
+  const selSet = { dept: setDept, bldg: setBldg, ms: setMs, sub: setSub, status: setStatus } as const;
 
   const opts = useMemo(() => ({
     dept: [...new Set(rows.map((r) => r.dept))].sort(),
@@ -55,6 +72,10 @@ export function ScheduleTable({ rows, fileName, lockLate = false }: { rows: Row[
         const hay = [r.no, r.dept, r.bldg, r.room, r.scope, r.ms, r.sub, r.act].join(" ").toLowerCase();
         if (!hay.includes(q.toLowerCase())) return false;
       }
+      for (const [k, v] of Object.entries(colq)) {
+        if (!v) continue;
+        if (!String(r[k as TextKey] ?? "").toLowerCase().includes(v.toLowerCase())) return false;
+      }
       return true;
     });
     return out.sort((a, b) => {
@@ -63,13 +84,13 @@ export function ScheduleTable({ rows, fileName, lockLate = false }: { rows: Row[
       const c = typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv), undefined, { numeric: true });
       return c * (asc ? 1 : -1);
     });
-  }, [rows, q, dept, bldg, ms, sub, status, sort, asc, lockLate]);
+  }, [rows, q, dept, bldg, ms, sub, status, sort, asc, lockLate, colq]);
 
   const pages = Math.max(1, Math.ceil(filtered.length / size));
   const cur = Math.min(page, pages);
   const shown = filtered.slice((cur - 1) * size, cur * size);
 
-  const reset = () => { setQ(""); setDept("전체"); setBldg("전체"); setMs("전체"); setSub("전체"); setStatus("전체"); setPage(1); };
+  const reset = () => { setQ(""); setDept("전체"); setBldg("전체"); setMs("전체"); setSub("전체"); setStatus("전체"); setColq({}); setPage(1); };
   const exportXlsx = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(filtered.map((r) => ({
@@ -126,6 +147,31 @@ export function ScheduleTable({ rows, fileName, lockLate = false }: { rows: Row[
                       {c.label}{sort === c.key && (asc ? <ArrowDownAZ className="size-3" /> : <ArrowUpAZ className="size-3" />)}
                     </button>
                   ) : c.label}
+                </th>
+              ))}
+            </tr>
+            <tr>
+              {COLS.map((c) => (
+                <th key={`f-${c.label}`} className="border-b border-r border-border bg-secondary p-1">
+                  {c.f?.kind === "text" && (
+                    <input
+                      aria-label={`${c.label} 필터`} placeholder="필터"
+                      value={colq[c.f.field] ?? ""} onChange={(e) => setCol((c.f as { field: TextKey }).field, e.target.value)}
+                      className="h-7 w-full min-w-[70px] rounded border border-input bg-background px-1.5 text-[11px] font-normal text-foreground"
+                    />
+                  )}
+                  {c.f?.kind === "sel" && (
+                    <select
+                      aria-label={`${c.label} 필터`} value={selValue[c.f.field]}
+                      onChange={(e) => { selSet[(c.f as { field: keyof typeof selSet }).field](e.target.value); setPage(1); }}
+                      className="h-7 w-full min-w-[80px] rounded border border-input bg-background px-1 text-[11px] font-normal text-foreground"
+                    >
+                      <option value="전체">전체</option>
+                      {(c.f.field === "status" ? ["done", "ongoing", "plan", "delay"] : opts[c.f.field as "dept" | "bldg" | "ms" | "sub"]).map((x) => (
+                        <option key={x} value={x}>{c.f!.field === "status" ? STATUS_LABEL[x] : c.f!.field === "dept" ? SLOT_LABEL[x] ?? x : x}</option>
+                      ))}
+                    </select>
+                  )}
                 </th>
               ))}
             </tr>
