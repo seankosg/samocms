@@ -40,10 +40,13 @@ const rowSchema = z.object({
 
 const importSchema = z.object({
   sourceFile: z.string().min(1).max(64),
+  fileName: z.string().max(200).optional(),
+  fileDate: z.string().nullable().optional(),
+  rev: z.number().nullable().optional(),
   rows: z.array(rowSchema).min(1).max(5000),
 });
 
-/** 특정 공종(source_file)의 데이터를 업로드한 파일 내용으로 교체합니다. */
+/** 특정 공종(source_file)의 데이터를 업로드한 파일 내용으로 교체하고, 이력(스냅샷)을 남깁니다. */
 export const importActivities = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => importSchema.parse(data))
   .handler(async ({ data }) => {
@@ -56,5 +59,57 @@ export const importActivities = createServerFn({ method: "POST" })
     const { error: insError } = await supabaseAdmin.from("activities").insert(rows);
     if (insError) throw new Error(insError.message);
 
-    return { sourceFile: data.sourceFile, inserted: rows.length };
+    // 업로드 배치 기록
+    const batch = await supabaseAdmin
+      .from("import_batches")
+      .insert({
+        kind: "schedule",
+        slot: data.sourceFile,
+        file_name: data.fileName ?? data.sourceFile,
+        file_date: data.fileDate ?? null,
+        rev: data.rev ?? null,
+        row_count: rows.length,
+      })
+      .select("id")
+      .single();
+    if (batch.error) throw new Error(batch.error.message);
+
+    // 항목별 스냅샷 기록 (같은 배치 내 중복 키 제거)
+    const seen = new Set<string>();
+    const snaps: Array<Record<string, unknown>> = [];
+    for (const r of rows) {
+      const key = `${r.discipline}|${r.activity_no ?? ""}|${r.activity}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      snaps.push({
+        batch_id: batch.data.id,
+        snapshot_date: data.fileDate ?? new Date().toISOString().slice(0, 10),
+        baseline_date: data.fileDate ?? null,
+        discipline: r.discipline,
+        item_key: key,
+        activity_no: r.activity_no,
+        activity: r.activity,
+        building: r.building,
+        room: r.room,
+        work_scope: r.work_scope,
+        milestone: r.milestone,
+        subcontractor: r.subcontractor,
+        unit: r.unit,
+        done_quantity: r.done_quantity,
+        total_quantity: r.total_quantity,
+        planned_progress: r.planned_progress,
+        actual_progress: r.actual_progress,
+        start_date: r.start_date,
+        finish_date: r.finish_date,
+        source_file: data.sourceFile,
+      });
+    }
+    for (let i = 0; i < snaps.length; i += 500) {
+      const chunk = snaps.slice(i, i + 500);
+      const { error } = await supabaseAdmin.from("activity_snapshots").insert(chunk as never);
+      if (error) throw new Error(error.message);
+    }
+
+    return { sourceFile: data.sourceFile, inserted: rows.length, batchId: batch.data.id, snapshots: snaps.length };
   });
+
