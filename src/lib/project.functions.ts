@@ -132,10 +132,13 @@ export const importTcItems = createServerFn({ method: "POST" })
       const key = `${data.discipline}|${r.bldg ?? ""}|${r.item ?? ""}|${r.equip ?? ""}|${r.row_no ?? ""}`;
       if (seen.has(key)) continue;
       seen.add(key);
-      const { row_no: _rowNo, bldg_raw: _bldgRaw, source_file: _sf, ...rest } = r as Record<string, unknown> as never;
-      void _rowNo; void _bldgRaw; void _sf;
+      const rest: Record<string, unknown> = { ...(r as Record<string, unknown>) };
+      delete rest["row_no"];
+      delete rest["bldg_raw"];
+      delete rest["source_file"];
       snaps.push({
-        ...(rest as Record<string, unknown>),
+        ...rest,
+
         batch_id: batch.data.id,
         snapshot_date: data.fileDate ?? new Date().toISOString().slice(0, 10),
         file_date: data.fileDate,
