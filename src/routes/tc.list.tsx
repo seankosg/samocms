@@ -59,8 +59,12 @@ function TcList() {
       const hay = [r.bldg, r.grp, r.item, r.equip, r.supplier, r.docref].join(" ").toLowerCase();
       if (!hay.includes(q.toLowerCase())) return false;
     }
+    for (const [k, v] of Object.entries(colq)) {
+      if (!v) continue;
+      if (!String(r[k as ColKey] ?? "").toLowerCase().includes(v.toLowerCase())) return false;
+    }
     return true;
-  }), [tcItems, q, disc, bldg, only, base]);
+  }), [tcItems, q, disc, bldg, only, base, colq]);
 
   const exportXlsx = () => {
     const wb = XLSX.utils.book_new();
