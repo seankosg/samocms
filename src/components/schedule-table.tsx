@@ -84,7 +84,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false }: { rows: Row[
       const c = typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv), undefined, { numeric: true });
       return c * (asc ? 1 : -1);
     });
-  }, [rows, q, dept, bldg, ms, sub, status, sort, asc, lockLate]);
+  }, [rows, q, dept, bldg, ms, sub, status, sort, asc, lockLate, colq]);
 
   const pages = Math.max(1, Math.ceil(filtered.length / size));
   const cur = Math.min(page, pages);
