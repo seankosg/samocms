@@ -39,6 +39,10 @@ export function ScheduleTable({ rows, fileName, lockLate = false }: { rows: Row[
   const [asc, setAsc] = useState(true);
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(50);
+  const [colq, setColq] = useState<Partial<Record<TextKey, string>>>({});
+  const setCol = (k: TextKey, v: string) => { setColq((o) => ({ ...o, [k]: v })); setPage(1); };
+  const selValue = { dept, bldg, ms, sub, status } as const;
+  const selSet = { dept: setDept, bldg: setBldg, ms: setMs, sub: setSub, status: setStatus } as const;
 
   const opts = useMemo(() => ({
     dept: [...new Set(rows.map((r) => r.dept))].sort(),
