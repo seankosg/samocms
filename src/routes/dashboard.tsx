@@ -34,7 +34,9 @@ function Dashboard() {
     const bySlot = KPI_SLOTS.map((s) => {
       const list = rows.filter((r) => r.slot === s || r.dept === s);
       const w = list.filter((r) => r.pl != null || r.pc != null);
-      return { slot: s, n: w.length, pl: avgOf(w, "pl"), pc: avgOf(w, "pc"), late: w.filter(isLate).length };
+      const plan = list.filter((r) => r.e && r.e <= base).length;
+      const act = list.filter(isDone).length;
+      return { slot: s, n: w.length, pl: avgOf(w, "pl"), pc: avgOf(w, "pc"), late: w.filter(isLate).length, total: list.length, plan, act, gap: act - plan };
     });
     const byMs = Object.keys(MSDEF).map((k) => {
       const list = rows.filter((r) => r.ms === k);
@@ -88,12 +90,28 @@ function Dashboard() {
 
   return (
     <AppShell title="대시보드" desc={`기준일 ${fmtDate(base)} · 전체 ${m.total.toLocaleString()}개 활동`}>
-      <section className="grid gap-3 xl:grid-cols-[0.8fr_1.2fr_1.2fr]">
-        <div className="rounded-md border border-border bg-card p-4 shadow-sm">
-          <p className="text-xs font-bold text-muted-foreground">총 활동</p>
-          <p className="mt-1 text-3xl font-bold">{m.total.toLocaleString()}<span className="ml-1 text-sm font-semibold text-muted-foreground">행</span></p>
-          <p className="mt-1 text-[11px] text-muted-foreground">완료 <b className="text-foreground">{m.done.toLocaleString()}</b>행 · <b className="text-foreground">{pct1(m.donePct)}%</b></p>
-          <Bar v={m.donePct} className="mt-3" />
+      <section className="grid gap-3 xl:grid-cols-3">
+        <div className="grid gap-4 rounded-md border border-border bg-card p-4 shadow-sm sm:grid-cols-[1.2fr_1fr]">
+          <div>
+            <p className="text-xs font-bold text-muted-foreground">총 활동</p>
+            <p className="mt-1 text-3xl font-bold">{m.total.toLocaleString()}<span className="ml-1 text-sm font-semibold text-muted-foreground">행</span></p>
+            <p className="mt-1 text-[11px] text-muted-foreground">완료 <b className="text-foreground">{m.done.toLocaleString()}</b>행 · <b className="text-foreground">{pct1(m.donePct)}%</b></p>
+            <Bar v={m.donePct} className="mt-3" />
+          </div>
+          <div className="border-t border-border pt-2 text-[11px] sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
+            <div className="grid grid-cols-4 gap-1 pb-1 text-right text-muted-foreground">
+              <span />{["계획", "실적", "차이"].map((h) => <span key={h}>{h}</span>)}
+            </div>
+            {m.bySlot.map((s) => (
+              <div key={s.slot} className="grid grid-cols-4 gap-1 border-t border-border/60 py-1 text-right">
+                <span className="text-left font-semibold">{SLOT_LABEL[s.slot]}</span>
+                <span>{s.plan}</span>
+                <span className="font-bold">{s.act}</span>
+                <span className={`font-semibold ${gapCls(s.gap)}`}>{sign(s.gap)}{Math.abs(s.gap)}</span>
+              </div>
+            ))}
+            <p className="mt-1 text-right text-[9px] text-muted-foreground">계획 = 기준일 내 완료 예정 · 실적 = 완료</p>
+          </div>
         </div>
 
         <div className="grid gap-4 rounded-md border border-primary/30 bg-primary/5 p-4 shadow-sm sm:grid-cols-[1.2fr_1fr]">
