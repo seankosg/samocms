@@ -76,15 +76,7 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
             </span>
           </Link>
           <div className="ml-auto flex flex-wrap items-center justify-end gap-2 text-xs">
-            <label className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1">
-              <CalendarDays className="size-3.5 text-muted-foreground" />
-              <span className="text-muted-foreground">기준일</span>
-              <Input
-                type="date" value={base} aria-label="기준일"
-                onChange={(e) => e.target.value && saveBase.mutate(e.target.value)}
-                className="h-6 w-[130px] border-0 p-0 text-xs shadow-none focus-visible:ring-0"
-              />
-            </label>
+            <BaseSetting base={base} batches={batches} onApply={(d) => saveBase.mutate(d)} saving={saveBase.isPending} />
             <span className="rounded-md border border-border px-2 py-1.5 text-muted-foreground">
               총 <strong className="text-foreground">{rows.length.toLocaleString()}</strong>행 · Rev{rev}
             </span>
