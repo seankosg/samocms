@@ -130,6 +130,7 @@ function Block({ title, firstLabel, secondLabel, rows, edit, block, memoValue, s
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const toggle = (k: SortKey) => {
+    if (typeof window !== "undefined") (window as unknown as { __tcSort?: string }).__tcSort = k;
     if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else { setSortKey(k); setSortDir("asc"); }
   };
