@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { AppShell } from "@/components/app-shell";
-import { projectQuery, useProject } from "@/lib/use-project";
+import { projectQuery, useProgressHistory, useProject } from "@/lib/use-project";
 import {
   avgOf, isDone, isLate, MSDEF, milestoneDates, pct1, SLOT_LABEL, KPI_SLOTS, fmtDate, dayDiff, type Row,
 } from "@/lib/schedule-model";
@@ -330,6 +330,45 @@ function Bar({ v, marker, tone = "ok", className = "" }: { v: number; marker?: n
     </div>
   );
 }
+
+/** 업로드 시점마다 저장된 기록으로 계산한 계획·실적 추이와 일일 진도율 */
+function TrendCard() {
+  const { data, isLoading } = useProgressHistory();
+  const series = data?.series ?? [];
+  return (
+    <Card title="진도 추이 · 일일 진도율 (기록 기반)">
+      {isLoading ? (
+        <p className="text-xs text-muted-foreground">불러오는 중…</p>
+      ) : series.length === 0 ? (
+        <p className="text-xs text-muted-foreground">아직 저장된 기록이 없습니다. 파일을 업로드하면 기록이 쌓입니다.</p>
+      ) : (
+        <>
+          <table className="w-full text-left text-xs">
+            <thead className="border-b text-muted-foreground">
+              <tr><th className="py-2">기록일</th><th className="text-right">항목수</th><th className="text-right">계획</th><th className="text-right">실적</th><th className="text-right">차이</th><th className="text-right">일일 진도율</th></tr>
+            </thead>
+            <tbody>
+              {series.map((s) => (
+                <tr key={s.date} className="border-b border-border/60">
+                  <td className="py-2 font-semibold">{s.date}</td>
+                  <td className="text-right">{s.count}</td>
+                  <td className="text-right">{pct1(s.planned)}%</td>
+                  <td className="text-right font-semibold">{pct1(s.actual)}%</td>
+                  <td className={`text-right ${gapCls(s.actual - s.planned)}`}>{sign(s.actual - s.planned)}{pct1(Math.abs(s.actual - s.planned))}%p</td>
+                  <td className="text-right">{s.dailyRate == null ? "—" : `${pct1(s.dailyRate)}%p/일`}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {series.length < 2 && (
+            <p className="mt-2 text-xs text-muted-foreground">기록 시점이 1개라 아직 변화량을 계산할 수 없습니다. 다음 업데이트 파일을 올리면 추이가 표시됩니다.</p>
+          )}
+        </>
+      )}
+    </Card>
+  );
+}
+
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
