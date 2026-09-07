@@ -112,6 +112,16 @@ function TcList() {
                 <th className="border-b border-r border-border px-2 py-2 font-bold">Status</th>
                 <th className="border-b border-border px-2 py-2 font-bold">Doc Ref.</th>
               </tr>
+              <tr>
+                {COL_FILTERS.map((c) => (
+                  <th key={c.key} className="border-b border-r border-border bg-secondary p-1"><ColInput k={c.key} /></th>
+                ))}
+                <th className="border-b border-r border-border bg-secondary p-1" />
+                <th className="border-b border-r border-border bg-secondary p-1"><ColInput k="supplier" /></th>
+                {TC_STAGES.map((s) => <th key={`f-${s}`} className="border-b border-r border-border bg-secondary p-1" />)}
+                <th className="border-b border-r border-border bg-secondary p-1"><ColInput k="status" /></th>
+                <th className="border-b border-border bg-secondary p-1"><ColInput k="docref" /></th>
+              </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
