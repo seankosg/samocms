@@ -150,6 +150,31 @@ export function ScheduleTable({ rows, fileName, lockLate = false }: { rows: Row[
                 </th>
               ))}
             </tr>
+            <tr>
+              {COLS.map((c) => (
+                <th key={`f-${c.label}`} className="border-b border-r border-border bg-secondary p-1">
+                  {c.f?.kind === "text" && (
+                    <input
+                      aria-label={`${c.label} 필터`} placeholder="필터"
+                      value={colq[c.f.field] ?? ""} onChange={(e) => setCol((c.f as { field: TextKey }).field, e.target.value)}
+                      className="h-7 w-full min-w-[70px] rounded border border-input bg-background px-1.5 text-[11px] font-normal text-foreground"
+                    />
+                  )}
+                  {c.f?.kind === "sel" && (
+                    <select
+                      aria-label={`${c.label} 필터`} value={selValue[c.f.field]}
+                      onChange={(e) => { selSet[(c.f as { field: keyof typeof selSet }).field](e.target.value); setPage(1); }}
+                      className="h-7 w-full min-w-[80px] rounded border border-input bg-background px-1 text-[11px] font-normal text-foreground"
+                    >
+                      <option value="전체">전체</option>
+                      {(c.f.field === "status" ? ["done", "ongoing", "plan", "delay"] : opts[c.f.field as "dept" | "bldg" | "ms" | "sub"]).map((x) => (
+                        <option key={x} value={x}>{c.f!.field === "status" ? STATUS_LABEL[x] : c.f!.field === "dept" ? SLOT_LABEL[x] ?? x : x}</option>
+                      ))}
+                    </select>
+                  )}
+                </th>
+              ))}
+            </tr>
           </thead>
           <tbody>
             {shown.map((r) => {
