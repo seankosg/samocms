@@ -1,12 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { AlertTriangle, CheckCircle2, Gauge } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { projectQuery, useProject } from "@/lib/use-project";
 import {
-  avgOf, isDone, isLate, MSDEF, milestoneDates, pct1, SLOT_LABEL, KPI_SLOTS, fmtDate, type Row,
+  avgOf, isDone, isLate, MSDEF, milestoneDates, pct1, SLOT_LABEL, KPI_SLOTS, fmtDate, dayDiff, type Row,
 } from "@/lib/schedule-model";
-import { stageProgress, tcPct } from "@/lib/tc-model";
+import { stageProgress, tcPct, TC_DISC_LABEL, type TcStage } from "@/lib/tc-model";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [
@@ -21,19 +20,35 @@ export const Route = createFileRoute("/dashboard")({
   component: Dashboard,
 });
 
+const sign = (v: number) => (v > 0 ? "+" : v < 0 ? "−" : "");
+const gapCls = (v: number) => (v < 0 ? "text-destructive" : v > 0 ? "text-primary" : "text-muted-foreground");
+
 function Dashboard() {
   const { rows, base, tcItems } = useProject();
+
   const m = useMemo(() => {
     const withP = rows.filter((r) => r.pl != null || r.pc != null);
     const late = withP.filter(isLate);
-    const done = withP.filter(isDone);
+    const done = rows.filter(isDone);
     const msDates = milestoneDates(rows);
+    const bySlot = KPI_SLOTS.map((s) => {
+      const list = rows.filter((r) => r.slot === s || r.dept === s);
+      const w = list.filter((r) => r.pl != null || r.pc != null);
+      return { slot: s, n: w.length, pl: avgOf(w, "pl"), pc: avgOf(w, "pc"), late: w.filter(isLate).length };
+    });
     const byMs = Object.keys(MSDEF).map((k) => {
       const list = rows.filter((r) => r.ms === k);
+      const w = list.filter((r) => r.pl != null || r.pc != null);
+      const due = msDates[k] ?? null;
+      const plan = list.filter((r) => r.e && r.e <= base).length;
+      const act = list.filter(isDone).length;
       return {
-        key: k, name: MSDEF[k]!, due: msDates[k] ?? null, total: list.length,
-        done: list.filter(isDone).length, late: list.filter(isLate).length,
-        pc: avgOf(list, "pc"), pl: avgOf(list, "pl"),
+        key: k, name: MSDEF[k]!, due, total: list.length,
+        pc: w.length ? avgOf(w, "pc") : null,
+        late: list.filter(isLate).length,
+        over: due ? list.filter((r) => r.e && r.e > due).length : 0,
+        dd: due ? dayDiff(base, due) : null,
+        plan, act, gap: act - plan,
       };
     });
     const byDept = KPI_SLOTS.map((s) => {
@@ -57,38 +72,91 @@ function Dashboard() {
     };
     return {
       total: rows.length, withP: withP.length, done: done.length, late: late.length,
+      donePct: rows.length ? done.length / rows.length : 0,
+      latePct: withP.length ? late.length / withP.length : 0,
       pl: avgOf(withP, "pl"), pc: avgOf(withP, "pc"),
-      byMs, byDept, bldg: rank((r) => r.bldg), sub: rank((r) => r.sub),
+      bySlot, byMs, byDept, bldg: rank((r) => r.bldg), sub: rank((r) => r.sub),
     };
-  }, [rows]);
+  }, [rows, base]);
 
-  const tc = useMemo(() => stageProgress(tcItems, base), [tcItems, base]);
+  const tcDisc = useMemo(() => {
+    const keys = [...new Set(tcItems.map((i) => i.discipline))];
+    return keys.map((k) => ({ key: k, label: TC_DISC_LABEL[k] ?? k.toUpperCase(), pr: stageProgress(tcItems.filter((i) => i.discipline === k), base) }));
+  }, [tcItems, base]);
+
+  const maxLate = Math.max(1, ...m.bySlot.map((s) => s.late));
 
   return (
     <AppShell title="대시보드" desc={`기준일 ${fmtDate(base)} · 전체 ${m.total.toLocaleString()}개 활동`}>
-      <section className="grid gap-3 md:grid-cols-3">
-        <Kpi icon={Gauge} label="총 활동" value={m.total.toLocaleString()} sub={`진도 입력 ${m.withP.toLocaleString()}건`} />
-        <Kpi icon={CheckCircle2} tone="ok" label="계획 대비 실적" value={`${pct1(m.pc)}%`} sub={`계획 ${pct1(m.pl)}% · 차이 ${pct1(m.pc - m.pl)}%p`} />
-        <Kpi icon={AlertTriangle} tone="bad" label="지연" value={m.late.toLocaleString()} sub={`완료 ${m.done.toLocaleString()}건`} />
-      </section>
+      <section className="grid gap-3 xl:grid-cols-[0.8fr_1.2fr_1.2fr]">
+        <div className="rounded-md border border-border bg-card p-4 shadow-sm">
+          <p className="text-xs font-bold text-muted-foreground">총 활동</p>
+          <p className="mt-1 text-3xl font-bold">{m.total.toLocaleString()}<span className="ml-1 text-sm font-semibold text-muted-foreground">행</span></p>
+          <p className="mt-1 text-[11px] text-muted-foreground">완료 <b className="text-foreground">{m.done.toLocaleString()}</b>행 · <b className="text-foreground">{pct1(m.donePct)}%</b></p>
+          <Bar v={m.donePct} className="mt-3" />
+        </div>
 
-      <section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {(["T1", "Report", "T2"] as const).map((st) => (
-          <Card key={st} title={`MEP T&C · ${st}`}>
-            <strong className="text-2xl">{tcPct(tc[st].pct)}</strong>
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              완료 {tc[st].qty.toLocaleString()} / {tc._tot.toLocaleString()} · 계획 대비 {tcPct(tc[st].pvCap)}
+        <div className="grid gap-4 rounded-md border border-primary/30 bg-primary/5 p-4 shadow-sm sm:grid-cols-[1.2fr_1fr]">
+          <div>
+            <p className="text-xs font-bold text-muted-foreground">계획 대비 실적</p>
+            <p className="mt-1 flex flex-wrap items-baseline gap-1.5">
+              <span className="text-3xl font-bold">{pct1(m.pc)}%</span>
+              <span className="text-sm text-muted-foreground">/ {pct1(m.pl)}%</span>
+              <span className={`text-xs font-bold ${gapCls(m.pc - m.pl)}`}>{sign(m.pc - m.pl)}{pct1(Math.abs(m.pc - m.pl))}p</span>
             </p>
-          </Card>
-        ))}
-        <Card title="T&C Status">
-          <strong className="text-2xl">{tcPct(tc._tot ? tc._pass / tc._tot : null)}</strong>
-          <p className="mt-1 text-[11px] text-muted-foreground">Pass {tc._pass.toLocaleString()} · Fail {tc._fail.toLocaleString()}</p>
-        </Card>
+            <p className="mt-1 text-[11px] text-muted-foreground">평균 진도 · 대상 {m.withP.toLocaleString()}행</p>
+            <Bar v={m.pc} marker={m.pl} className="mt-3" />
+          </div>
+          <div className="border-t border-border pt-2 text-[11px] sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
+            <div className="grid grid-cols-4 gap-1 pb-1 text-right text-muted-foreground">
+              <span />{["계획", "실적", "차이"].map((h) => <span key={h}>{h}</span>)}
+            </div>
+            {m.bySlot.map((s) => (
+              <div key={s.slot} className="grid grid-cols-4 gap-1 border-t border-border/60 py-1 text-right">
+                <span className="text-left font-semibold">{SLOT_LABEL[s.slot]}</span>
+                {s.n === 0 ? <><span className="text-muted-foreground">—</span><span className="text-muted-foreground">—</span><span className="text-muted-foreground">—</span></> : (
+                  <>
+                    <span>{pct1(s.pl)}</span>
+                    <span className="font-bold">{pct1(s.pc)}</span>
+                    <span className={`font-semibold ${gapCls(s.pc - s.pl)}`}>{sign(s.pc - s.pl)}{pct1(Math.abs(s.pc - s.pl))}</span>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-4 rounded-md border border-destructive/30 bg-destructive/5 p-4 shadow-sm sm:grid-cols-[1.2fr_1fr]">
+          <div>
+            <p className="text-xs font-bold text-muted-foreground">지연</p>
+            <p className="mt-1 text-3xl font-bold text-destructive">{m.late.toLocaleString()}<span className="ml-1 text-sm font-semibold text-muted-foreground">건</span></p>
+            <p className="mt-1 text-[11px] text-muted-foreground">대상 {m.withP.toLocaleString()}행 중 · <b className="text-foreground">{pct1(m.latePct)}%</b></p>
+            <Bar v={m.latePct} tone="bad" className="mt-3" />
+          </div>
+          <div className="border-t border-border pt-2 text-[11px] sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
+            <div className="grid grid-cols-[1fr_auto_60px] gap-2 pb-1 text-right text-muted-foreground"><span /><span>지연</span><span>비교</span></div>
+            {m.bySlot.map((s) => (
+              <div key={s.slot} className="grid grid-cols-[1fr_auto_60px] items-center gap-2 border-t border-border/60 py-1">
+                <span className="font-semibold">{SLOT_LABEL[s.slot]}</span>
+                <span className={`text-right font-bold ${s.late ? "text-destructive" : "text-muted-foreground"}`}>{s.late}</span>
+                <span className="h-1.5 overflow-hidden rounded bg-muted"><span className="block h-full bg-destructive" style={{ width: `${(s.late / maxLate) * 100}%` }} /></span>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
-      <section className="mt-5">
-        <h2 className="mb-2 text-sm font-bold">마일스톤 M1 ~ M8</h2>
+      {tcDisc.length > 0 && (
+        <section className="mt-6">
+          <h2 className="mb-2 text-sm font-bold">MEP T&amp;C 현황 <span className="ml-1 text-[11px] font-normal text-muted-foreground">MECH + ELEC 합계</span></h2>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {TC_CARDS.map((c) => <TcCard key={c.k} card={c} disc={tcDisc} />)}
+          </div>
+        </section>
+      )}
+
+      <section className="mt-6">
+        <h2 className="mb-2 text-sm font-bold">마일스톤 현황</h2>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {m.byMs.map((x) => (
             <div key={x.key} className={`rounded-md border bg-card p-3 shadow-sm ${x.late ? "border-destructive/40" : "border-border"}`}>
@@ -97,19 +165,25 @@ function Dashboard() {
                 <span className="text-[11px] text-muted-foreground">{fmtDate(x.due)}</span>
               </div>
               <p className="mt-0.5 truncate text-[11px] text-muted-foreground" title={x.name}>{x.name}</p>
-              <div className="mt-2 h-1.5 overflow-hidden rounded bg-muted">
-                <div className="h-full bg-primary" style={{ width: `${Math.min(100, x.pc * 100)}%` }} />
+              <Bar v={x.pc ?? 0} className="mt-2" />
+              <div className="mt-1.5 flex flex-wrap gap-x-2 text-[11px] text-muted-foreground">
+                <span>총 {x.total}건</span>
+                <span>평균 {x.pc == null ? "—" : `${pct1(x.pc)}%`}</span>
+                <span className={x.late ? "font-bold text-destructive" : ""}>지연 {x.late}</span>
+                {x.over > 0 && <span className="font-bold text-destructive">초과 {x.over}</span>}
+                {x.dd != null && <span className={x.dd < 0 ? "font-bold text-destructive" : x.dd <= 14 ? "font-bold text-chart-3" : ""}>D{x.dd >= 0 ? "-" : "+"}{Math.abs(x.dd)}</span>}
               </div>
-              <p className="mt-1.5 text-[11px]">
-                실적 {pct1(x.pc)}% · 계획 {pct1(x.pl)}% · <span className="text-muted-foreground">{x.done}/{x.total}</span>
-                {x.late > 0 && <span className="ml-1 font-bold text-destructive">지연 {x.late}</span>}
-              </p>
+              <div className="mt-2 border-t border-border pt-1.5 text-[11px]">
+                <MsRow label="계획" n={x.plan} p={x.total ? x.plan / x.total : 0} />
+                <MsRow label="실적" n={x.act} p={x.total ? x.act / x.total : 0} />
+                <MsRow label="차이" n={x.gap} p={x.total ? x.gap / x.total : 0} signed />
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="mt-5 grid gap-4 xl:grid-cols-[1.1fr_1fr]">
+      <section className="mt-6 grid gap-4 xl:grid-cols-[1.1fr_1fr]">
         <Card title="부서별 진도">
           <table className="w-full text-left text-xs">
             <thead className="border-b text-muted-foreground">
@@ -122,7 +196,7 @@ function Dashboard() {
                   <td className="text-right">{d.n}</td>
                   <td className="text-right">{pct1(d.pl)}%</td>
                   <td className="text-right font-semibold">{pct1(d.pc)}%</td>
-                  <td className={`text-right ${d.pc - d.pl < 0 ? "text-destructive" : "text-primary"}`}>{pct1(d.pc - d.pl)}%p</td>
+                  <td className={`text-right ${gapCls(d.pc - d.pl)}`}>{pct1(d.pc - d.pl)}%p</td>
                   <td className="text-right">{d.late}</td>
                 </tr>
               ))}
@@ -142,15 +216,94 @@ function Dashboard() {
   );
 }
 
-function Kpi({ icon: Icon, label, value, sub, tone }: { icon: typeof Gauge; label: string; value: string; sub: string; tone?: "ok" | "bad" }) {
+const TC_CARDS = [
+  { k: "T1" as TcStage | "Status", t: "T1", s: "Internal T&C" },
+  { k: "Report" as TcStage | "Status", t: "Report", s: "검사 보고서" },
+  { k: "T2" as TcStage | "Status", t: "T2", s: "Consultant Inspection" },
+  { k: "Status" as TcStage | "Status", t: "Status", s: "T2 판정 (Pass / Fail)" },
+];
+
+type Disc = { key: string; label: string; pr: ReturnType<typeof stageProgress> };
+
+function TcCard({ card, disc }: { card: (typeof TC_CARDS)[number]; disc: Disc[] }) {
+  const isSt = card.k === "Status";
+  let act = 0, plan = 0, tot = 0;
+  const side = disc.map((d) => {
+    const P = d.pr;
+    const T = P._tot || 0;
+    const a = isSt ? P._pass : P[card.k as TcStage].act;
+    const p = isSt ? P._fail : P[card.k as TcStage].plan;
+    act += a; plan += p; tot += T;
+    return { lbl: d.label, a, p, T };
+  });
+  const prog = tot ? act / tot : 0;
+  const planP = tot ? plan / tot : 0;
+  const gap = act - plan;
+  const tone = isSt ? (plan ? "border-chart-3/40 bg-chart-3/5" : "border-primary/30 bg-primary/5") : gap < 0 ? "border-destructive/30 bg-destructive/5" : "border-primary/30 bg-primary/5";
+
   return (
-    <div className="rounded-md border border-border bg-card p-4 shadow-sm">
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-xs font-semibold text-muted-foreground">{label}</span>
-        <Icon className={`size-4 ${tone === "bad" ? "text-destructive" : tone === "ok" ? "text-primary" : "text-muted-foreground"}`} />
+    <div className={`grid gap-3 rounded-md border p-3 shadow-sm sm:grid-cols-[1.15fr_1fr] ${tone}`}>
+      <div>
+        <p className="text-xs font-bold">{card.t}<span className="ml-1 block text-[10px] font-normal text-muted-foreground">{card.s}</span></p>
+        <p className="mt-1 flex flex-wrap items-baseline gap-1">
+          <span className="text-2xl font-bold">{tcPct(prog)}</span>
+          {!isSt && <>
+            <span className="text-xs text-muted-foreground">/ {tcPct(planP)}</span>
+            <span className={`text-[11px] font-bold ${gapCls(prog - planP)}`}>{sign(prog - planP)}{tcPct(Math.abs(prog - planP)).replace("%", "")}%p</span>
+          </>}
+        </p>
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          {isSt ? `Pass ${act} · Fail ${plan}` : `실적 ${act} / 계획 ${plan}`} · 전체 {tot} Qty
+        </p>
+        <Bar v={prog} marker={isSt ? undefined : planP} className="mt-2" tone={isSt ? "warn" : "ok"} />
       </div>
-      <strong className="text-2xl">{value}</strong>
-      <p className="mt-1 text-[11px] text-muted-foreground">{sub}</p>
+      <div className="border-t border-border pt-2 text-[11px] sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
+        <p className="mb-1 text-right text-muted-foreground">{isSt ? "Pass / Fail" : "실적 / 계획"}</p>
+        {side.map((x) => (
+          <div key={x.lbl} className="border-t border-border/60 py-1">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-semibold">{x.lbl}</span>
+              <span>
+                <b>{x.a}</b>
+                <span className="text-muted-foreground"> / {x.p}</span>
+                {!isSt && x.p > 0 && x.a > x.p && <span className="ml-0.5 text-[9px] text-chart-3">▲</span>}
+              </span>
+            </div>
+            <span className="mt-1 block h-1 overflow-hidden rounded bg-muted">
+              <span className="block h-full bg-primary" style={{ width: `${x.T ? Math.min(100, (x.a / x.T) * 100) : 0}%` }} />
+            </span>
+          </div>
+        ))}
+        {!isSt && (
+          <div className="mt-1 flex items-center justify-between border-t border-border pt-1">
+            <span className="text-muted-foreground">차이</span>
+            <b className={gapCls(gap)}>{sign(gap)}{Math.abs(gap)}</b>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MsRow({ label, n, p, signed }: { label: string; n: number; p: number; signed?: boolean }) {
+  const cls = signed ? gapCls(n) : "";
+  return (
+    <div className="flex items-center justify-between py-0.5">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="flex items-baseline gap-3">
+        <b className={cls}>{signed ? `${sign(n)}${Math.abs(n)}` : n}</b>
+        <span className={`w-14 text-right ${cls || "text-muted-foreground"}`}>{signed ? `${sign(n)}${pct1(Math.abs(p))}%p` : `${pct1(p)}%`}</span>
+      </span>
+    </div>
+  );
+}
+
+function Bar({ v, marker, tone = "ok", className = "" }: { v: number; marker?: number; tone?: "ok" | "bad" | "warn"; className?: string }) {
+  const color = tone === "bad" ? "bg-destructive" : tone === "warn" ? "bg-chart-3" : "bg-primary";
+  return (
+    <div className={`relative h-1.5 overflow-hidden rounded bg-muted ${className}`}>
+      <div className={`h-full ${color}`} style={{ width: `${Math.min(100, Math.max(0, v * 100))}%` }} />
+      {marker != null && <span className="absolute top-0 h-full w-px bg-foreground/60" style={{ left: `${Math.min(100, marker * 100)}%` }} />}
     </div>
   );
 }
