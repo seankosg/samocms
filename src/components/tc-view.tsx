@@ -2,13 +2,15 @@ import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
-import { Download, Pencil, Save } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronsUpDown, Download, Pencil, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { saveTcMemo } from "@/lib/project.functions";
 import {
   buildBlocks, memoMap, stageProgress, TC_STAGES, TC_STAGE_SUB, tcPct, type TcItem, type TcManual, type TcStage,
 } from "@/lib/tc-model";
+
+type SortKey = "loc" | "item" | "qty" | "pass" | "fail" | `${TcStage}-d` | `${TcStage}-r`;
 
 export function TcView({ discipline, items, manual, base }: { discipline: string; items: TcItem[]; manual: TcManual[]; base: string }) {
   const [bldg, setBldg] = useState("전체");
@@ -108,45 +110,121 @@ export function TcView({ discipline, items, manual, base }: { discipline: string
 
 type BlockRow = { a: string | null; b: string | null; qty: number; st: Record<TcStage, [number, number, number]>; pass: number; fail: number; key: string | null; typ: string };
 
+const cellVal = (r: BlockRow, k: SortKey): number | string => {
+  if (k === "loc") return r.a ?? "";
+  if (k === "item") return r.b ?? "";
+  if (k === "qty") return r.qty;
+  if (k === "pass") return r.pass;
+  if (k === "fail") return r.fail;
+  const [stage, which] = k.split("-") as [TcStage, "d" | "r"];
+  return which === "d" ? r.st[stage][0] : r.st[stage][1];
+};
+
 function Block({ title, firstLabel, secondLabel, rows, edit, block, memoValue, setDraft, save }: {
   title: string; firstLabel: string; secondLabel: string | null; rows: BlockRow[]; edit: boolean;
   block: "center" | "right"; memoValue: (b: "center" | "right", k: string) => string;
   setDraft: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   save: (v: { block: "center" | "right"; itemKey: string; memo: string }) => void;
 }) {
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const toggle = (k: SortKey) => {
+    if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(k); setSortDir("asc"); }
+  };
+
+  const sortedRows = useMemo(() => {
+    if (!sortKey) return rows;
+    const cmp = (x: BlockRow, y: BlockRow) => {
+      const vx = cellVal(x, sortKey), vy = cellVal(y, sortKey);
+      const c = typeof vx === "number" && typeof vy === "number"
+        ? vx - vy
+        : String(vx ?? "").localeCompare(String(vy ?? ""), "ko");
+      return sortDir === "asc" ? c : -c;
+    };
+    const tot = rows.filter((r) => r.typ === "tot");
+    const body = rows.filter((r) => r.typ !== "tot");
+    if (secondLabel) {
+      // 건물 그룹(세그먼트) 보존: 각 세그먼트는 'sub' 행으로 끝남
+      const segs: BlockRow[][] = [];
+      let cur: BlockRow[] = [];
+      for (const r of body) {
+        cur.push(r);
+        if (r.typ === "sub") { segs.push(cur); cur = []; }
+      }
+      if (cur.length) segs.push(cur);
+      if (sortKey === "loc") {
+        segs.sort((a, b) => cmp(a[0]!, b[0]!));
+      } else {
+        segs.forEach((seg) => {
+          const bldg = seg[0]!.a;
+          const items = seg.filter((r) => r.typ === "row").sort(cmp).map((r, i) => ({ ...r, a: i === 0 ? bldg : null }));
+          const sub = seg.filter((r) => r.typ === "sub");
+          seg.splice(0, seg.length, ...items, ...sub);
+        });
+      }
+      return [...segs.flat(), ...tot];
+    }
+    return [...body.sort(cmp), ...tot];
+  }, [rows, sortKey, sortDir, secondLabel]);
+
+  const SortIcon = ({ k, className = "" }: { k: SortKey; className?: string }) => {
+    const on = sortKey === k;
+    const Icon = on ? (sortDir === "asc" ? ArrowUp : ArrowDown) : ChevronsUpDown;
+    return <Icon className={`size-3 shrink-0 ${on ? "text-primary-foreground" : "text-primary-foreground/40"} ${className}`} />;
+  };
+
+  const thBase = "border border-primary-foreground/15 px-2 py-1.5 text-center whitespace-nowrap";
+  const thSort = (k: SortKey, label: React.ReactNode, align = "", rowSpan?: number) => (
+    <th rowSpan={rowSpan} className={`${thBase} ${align} cursor-pointer select-none hover:bg-primary-foreground/10`} onClick={() => toggle(k)}>
+      <span className="inline-flex items-center justify-center gap-1">{label}<SortIcon k={k} /></span>
+    </th>
+  );
+
   return (
     <section className="rounded-md border border-border bg-card shadow-sm">
       <p className="border-b border-border px-3 py-2 text-xs font-bold">{title}</p>
       <div className="max-h-[560px] overflow-auto">
         <table className="w-full min-w-[1500px] border-collapse text-left text-xs">
-          <thead className="sticky top-0 z-10 bg-secondary text-secondary-foreground">
+          <thead className="sticky top-0 z-10 bg-primary text-primary-foreground">
             <tr>
-              <th className="border-b border-r border-border px-3 py-2">{firstLabel}</th>
-              {secondLabel && <th className="border-b border-r border-border px-3 py-2">{secondLabel}</th>}
-              <th className="border-b border-r border-border px-3 py-2 text-right">Q'ty</th>
+              {thSort("loc", firstLabel, "text-left", 2)}
+              {secondLabel && thSort("item", secondLabel, "text-left", 2)}
+              {thSort("qty", <span>Q'ty</span>, "text-right", 2)}
+              {TC_STAGES.map((s) => (
+                <th key={s} colSpan={2} className={`${thBase} text-[11px] font-bold tracking-wide`}>{s}</th>
+              ))}
+              <th colSpan={2} className={`${thBase} text-[11px] font-bold tracking-wide`}>Status</th>
+              <th rowSpan={2} className={`${thBase} text-left`}>비고</th>
+            </tr>
+            <tr className="bg-primary/85">
               {TC_STAGES.flatMap((s) => [
-                <th key={`${s}-d`} className="border-b border-r border-border px-3 py-2 text-center">{s}<br /><span className="text-[9px] font-normal">완료</span></th>,
-                <th key={`${s}-r`} className="border-b border-r border-border px-3 py-2 text-center"><span className="text-[9px] font-normal">잔여</span></th>,
+                thSort(`${s}-d` as SortKey, <span className="text-[10px] font-normal">완료</span>),
+                thSort(`${s}-r` as SortKey, <span className="text-[10px] font-normal">잔여</span>),
               ])}
-              <th className="border-b border-r border-border px-3 py-2 text-center">Pass / Fail</th>
-              <th className="border-b border-border px-3 py-2">비고</th>
+              {thSort("pass", <span className="text-[10px] font-normal">Pass</span>)}
+              {thSort("fail", <span className="text-[10px] font-normal">Fail</span>)}
             </tr>
           </thead>
           <tbody>
-            {rows.map((r, i) => (
-              <tr key={i} className={`border-b border-border ${r.typ !== "row" ? "bg-muted/60 font-bold" : ""}`}>
+            {sortedRows.map((r, i) => (
+              <tr key={i} className={`border-b border-border ${r.typ === "tot" ? "bg-primary/10 font-bold" : r.typ === "sub" ? "bg-muted/60 font-bold" : ""}`}>
                 <td className="border-r border-border px-3 py-1.5">{r.a ?? ""}</td>
                 {secondLabel && <td className="border-r border-border px-3 py-1.5">{r.b ?? ""}</td>}
-                <td className="border-r border-border px-3 py-1.5 text-right">{r.qty.toLocaleString()}</td>
+                <td className="border-r border-border px-3 py-1.5 text-right tabular-nums">{r.qty.toLocaleString()}</td>
                 {TC_STAGES.flatMap((s) => {
                   const [d, rem, late] = r.st[s];
                   return [
-                    <td key={`${s}-d`} className="border-r border-border px-3 py-1.5 text-center whitespace-nowrap text-primary">{d}</td>,
-                    <td key={`${s}-r`} className={`border-r border-border px-3 py-1.5 text-center whitespace-nowrap ${late ? "bg-yellow-200/70 font-bold text-destructive" : "text-muted-foreground"}`}>{rem}</td>,
+                    <td key={`${s}-d`} className="border-r border-border px-3 py-1.5 text-center whitespace-nowrap tabular-nums text-primary">{d}</td>,
+                    <td key={`${s}-r`} className={`border-r border-border px-3 py-1.5 text-center whitespace-nowrap tabular-nums ${late ? "bg-yellow-200/70 font-bold text-destructive" : "text-muted-foreground"}`}>{rem}</td>,
                   ];
                 })}
-                <td className="border-r border-border px-3 py-1.5 text-center whitespace-nowrap">
-                  <span className="text-primary">{r.pass}</span> / <span className={r.fail ? "font-bold text-destructive" : "text-muted-foreground"}>{r.fail}</span>
+                <td className="border-r border-border px-3 py-1.5 text-center whitespace-nowrap tabular-nums">
+                  <span className="text-primary">{r.pass}</span>
+                </td>
+                <td className="border-r border-border px-3 py-1.5 text-center whitespace-nowrap tabular-nums">
+                  <span className={r.fail ? "font-bold text-destructive" : "text-muted-foreground"}>{r.fail}</span>
                 </td>
                 <td className="px-2 py-1">
                   {r.key && edit ? (
