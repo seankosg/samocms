@@ -6,13 +6,26 @@ import { Input } from "@/components/ui/input";
 import { fmtDate, isLate, pct1, SLOT_LABEL, statusOfRow, STATUS_LABEL, type Row } from "@/lib/schedule-model";
 
 type SortKey = "no" | "dept" | "bldg" | "act" | "pl" | "pc" | "e";
-const COLS: { key: SortKey | null; label: string }[] = [
-  { key: "no", label: "No." }, { key: "dept", label: "담당부서" }, { key: "bldg", label: "Bldg." },
-  { key: null, label: "Room" }, { key: null, label: "Work Scope" }, { key: null, label: "Milestone" },
-  { key: null, label: "Subcon" }, { key: "act", label: "Activity" }, { key: null, label: "Unit" },
-  { key: null, label: "Done / Total" }, { key: "pl", label: "계획" }, { key: "pc", label: "실적" },
-  { key: null, label: "상태" }, { key: null, label: "Predecessor" }, { key: null, label: "Successor" },
-  { key: null, label: "Start" }, { key: "e", label: "Finish" },
+type TextKey = "no" | "room" | "scope" | "act" | "unit" | "pred" | "succ" | "s" | "e";
+type ColFilter = { kind: "text"; field: TextKey } | { kind: "sel"; field: "dept" | "bldg" | "ms" | "sub" | "status" } | null;
+const COLS: { key: SortKey | null; label: string; f: ColFilter }[] = [
+  { key: "no", label: "No.", f: { kind: "text", field: "no" } },
+  { key: "dept", label: "담당부서", f: { kind: "sel", field: "dept" } },
+  { key: "bldg", label: "Bldg.", f: { kind: "sel", field: "bldg" } },
+  { key: null, label: "Room", f: { kind: "text", field: "room" } },
+  { key: null, label: "Work Scope", f: { kind: "text", field: "scope" } },
+  { key: null, label: "Milestone", f: { kind: "sel", field: "ms" } },
+  { key: null, label: "Subcon", f: { kind: "sel", field: "sub" } },
+  { key: "act", label: "Activity", f: { kind: "text", field: "act" } },
+  { key: null, label: "Unit", f: { kind: "text", field: "unit" } },
+  { key: null, label: "Done / Total", f: null },
+  { key: "pl", label: "계획", f: null },
+  { key: "pc", label: "실적", f: null },
+  { key: null, label: "상태", f: { kind: "sel", field: "status" } },
+  { key: null, label: "Predecessor", f: { kind: "text", field: "pred" } },
+  { key: null, label: "Successor", f: { kind: "text", field: "succ" } },
+  { key: null, label: "Start", f: { kind: "text", field: "s" } },
+  { key: "e", label: "Finish", f: { kind: "text", field: "e" } },
 ];
 
 export function ScheduleTable({ rows, fileName, lockLate = false }: { rows: Row[]; fileName: string; lockLate?: boolean }) {
