@@ -86,6 +86,89 @@ export type Database = {
         }
         Relationships: []
       }
+      activity_snapshots: {
+        Row: {
+          activity: string | null
+          activity_no: string | null
+          actual_progress: number | null
+          baseline_date: string | null
+          batch_id: number | null
+          building: string | null
+          captured_at: string
+          discipline: string
+          done_quantity: number | null
+          finish_date: string | null
+          id: number
+          item_key: string
+          milestone: string | null
+          planned_progress: number | null
+          room: string | null
+          snapshot_date: string
+          source_file: string | null
+          start_date: string | null
+          subcontractor: string | null
+          total_quantity: number | null
+          unit: string | null
+          work_scope: string | null
+        }
+        Insert: {
+          activity?: string | null
+          activity_no?: string | null
+          actual_progress?: number | null
+          baseline_date?: string | null
+          batch_id?: number | null
+          building?: string | null
+          captured_at?: string
+          discipline: string
+          done_quantity?: number | null
+          finish_date?: string | null
+          id?: number
+          item_key: string
+          milestone?: string | null
+          planned_progress?: number | null
+          room?: string | null
+          snapshot_date?: string
+          source_file?: string | null
+          start_date?: string | null
+          subcontractor?: string | null
+          total_quantity?: number | null
+          unit?: string | null
+          work_scope?: string | null
+        }
+        Update: {
+          activity?: string | null
+          activity_no?: string | null
+          actual_progress?: number | null
+          baseline_date?: string | null
+          batch_id?: number | null
+          building?: string | null
+          captured_at?: string
+          discipline?: string
+          done_quantity?: number | null
+          finish_date?: string | null
+          id?: number
+          item_key?: string
+          milestone?: string | null
+          planned_progress?: number | null
+          room?: string | null
+          snapshot_date?: string
+          source_file?: string | null
+          start_date?: string | null
+          subcontractor?: string | null
+          total_quantity?: number | null
+          unit?: string | null
+          work_scope?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_snapshots_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "import_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_settings: {
         Row: {
           key: string
@@ -277,6 +360,128 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      tc_snapshots: {
+        Row: {
+          batch_id: number | null
+          bldg: string | null
+          captured_at: string
+          discipline: string
+          docref: string | null
+          equip: string | null
+          file_date: string | null
+          grp: string | null
+          id: number
+          item: string | null
+          item_key: string
+          qty: number
+          resp_a: string | null
+          resp_p: string | null
+          rfi_a: string | null
+          rfi_d: number | null
+          rfi_p: string | null
+          rfi_rem: number | null
+          rp_a: string | null
+          rp_d: number | null
+          rp_p: string | null
+          rp_rem: number | null
+          snapshot_date: string
+          status: string | null
+          supplier: string | null
+          t0_a: string | null
+          t0_d: number | null
+          t0_p: string | null
+          t0_rem: number | null
+          t1_a: string | null
+          t1_d: number | null
+          t1_p: string | null
+          t1_rem: number | null
+          t2_a: string | null
+          t2_p: string | null
+        }
+        Insert: {
+          batch_id?: number | null
+          bldg?: string | null
+          captured_at?: string
+          discipline: string
+          docref?: string | null
+          equip?: string | null
+          file_date?: string | null
+          grp?: string | null
+          id?: number
+          item?: string | null
+          item_key: string
+          qty?: number
+          resp_a?: string | null
+          resp_p?: string | null
+          rfi_a?: string | null
+          rfi_d?: number | null
+          rfi_p?: string | null
+          rfi_rem?: number | null
+          rp_a?: string | null
+          rp_d?: number | null
+          rp_p?: string | null
+          rp_rem?: number | null
+          snapshot_date?: string
+          status?: string | null
+          supplier?: string | null
+          t0_a?: string | null
+          t0_d?: number | null
+          t0_p?: string | null
+          t0_rem?: number | null
+          t1_a?: string | null
+          t1_d?: number | null
+          t1_p?: string | null
+          t1_rem?: number | null
+          t2_a?: string | null
+          t2_p?: string | null
+        }
+        Update: {
+          batch_id?: number | null
+          bldg?: string | null
+          captured_at?: string
+          discipline?: string
+          docref?: string | null
+          equip?: string | null
+          file_date?: string | null
+          grp?: string | null
+          id?: number
+          item?: string | null
+          item_key?: string
+          qty?: number
+          resp_a?: string | null
+          resp_p?: string | null
+          rfi_a?: string | null
+          rfi_d?: number | null
+          rfi_p?: string | null
+          rfi_rem?: number | null
+          rp_a?: string | null
+          rp_d?: number | null
+          rp_p?: string | null
+          rp_rem?: number | null
+          snapshot_date?: string
+          status?: string | null
+          supplier?: string | null
+          t0_a?: string | null
+          t0_d?: number | null
+          t0_p?: string | null
+          t0_rem?: number | null
+          t1_a?: string | null
+          t1_d?: number | null
+          t1_p?: string | null
+          t1_rem?: number | null
+          t2_a?: string | null
+          t2_p?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tc_snapshots_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "import_batches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
