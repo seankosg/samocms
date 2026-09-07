@@ -5,10 +5,11 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
   AlertTriangle, BarChart3, CalendarDays, ChevronLeft, Download, HardHat, ListChecks,
-  Network, PanelLeft, Table2, UploadCloud, Wrench, Zap,
+  Network, PanelLeft, Settings, Table2, UploadCloud, Wrench, Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useProject } from "@/lib/use-project";
 import { setBaselineDate } from "@/lib/project.functions";
 import { SLOT_LABEL } from "@/lib/schedule-model";
