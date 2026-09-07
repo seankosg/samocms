@@ -227,6 +227,11 @@ function Dashboard() {
         </div>
       </section>
 
+      <section className="mt-6">
+        <TrendCard />
+      </section>
+
+
       <p className="mt-4 text-xs text-muted-foreground">
         지연 상세는 <Link to="/delays" className="font-semibold text-primary underline">지연 리스트</Link>에서 확인할 수 있습니다.
       </p>
