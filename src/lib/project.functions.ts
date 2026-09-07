@@ -113,15 +113,88 @@ export const importTcItems = createServerFn({ method: "POST" })
     }));
     const ins = await supabaseAdmin.from("tc_items").insert(rows);
     if (ins.error) throw new Error(ins.error.message);
-    await supabaseAdmin.from("import_batches").insert({
-      kind: "tc",
-      slot: data.discipline,
-      file_name: data.fileName,
-      file_date: data.fileDate,
-      row_count: rows.length,
-    });
-    return { discipline: data.discipline, inserted: rows.length };
+    const batch = await supabaseAdmin
+      .from("import_batches")
+      .insert({
+        kind: "tc",
+        slot: data.discipline,
+        file_name: data.fileName,
+        file_date: data.fileDate,
+        row_count: rows.length,
+      })
+      .select("id")
+      .single();
+    if (batch.error) throw new Error(batch.error.message);
+
+    const seen = new Set<string>();
+    const snaps: Array<Record<string, unknown>> = [];
+    for (const r of rows) {
+      const key = `${data.discipline}|${r.bldg ?? ""}|${r.item ?? ""}|${r.equip ?? ""}|${r.row_no ?? ""}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const { row_no: _rowNo, bldg_raw: _bldgRaw, source_file: _sf, ...rest } = r as Record<string, unknown> as never;
+      void _rowNo; void _bldgRaw; void _sf;
+      snaps.push({
+        ...(rest as Record<string, unknown>),
+        batch_id: batch.data.id,
+        snapshot_date: data.fileDate ?? new Date().toISOString().slice(0, 10),
+        file_date: data.fileDate,
+        discipline: data.discipline,
+        item_key: key,
+      });
+    }
+    for (let i = 0; i < snaps.length; i += 500) {
+      const { error } = await supabaseAdmin.from("tc_snapshots").insert(snaps.slice(i, i + 500) as never);
+      if (error) throw new Error(error.message);
+    }
+    return { discipline: data.discipline, inserted: rows.length, batchId: batch.data.id, snapshots: snaps.length };
   });
+
+/** 항목별 이력(스냅샷) 조회 — 추이·일일 진도율 계산용 */
+export const getProgressHistory = createServerFn({ method: "GET" })
+  .inputValidator((d: unknown) =>
+    z.object({ itemKey: z.string().min(1).max(300).optional(), discipline: z.string().max(32).optional() }).parse(d ?? {}),
+  )
+  .handler(async ({ data }) => {
+    const c = publicClient();
+    let q = c
+      .from("activity_snapshots")
+      .select("snapshot_date,discipline,item_key,activity,planned_progress,actual_progress,done_quantity,total_quantity")
+      .order("snapshot_date");
+    if (data.itemKey) q = q.eq("item_key", data.itemKey);
+    if (data.discipline) q = q.eq("discipline", data.discipline);
+    const { data: rows, error } = await q.limit(5000);
+    if (error) throw new Error(error.message);
+
+    // 날짜별 평균 계획/실적 + 일일 진도율
+    const byDate = new Map<string, { p: number; a: number; n: number }>();
+    (rows ?? []).forEach((r) => {
+      const d = r.snapshot_date;
+      const cur = byDate.get(d) ?? { p: 0, a: 0, n: 0 };
+      cur.p += Number(r.planned_progress ?? 0);
+      cur.a += Number(r.actual_progress ?? 0);
+      cur.n += 1;
+      byDate.set(d, cur);
+    });
+    const series = [...byDate.entries()]
+      .sort((x, y) => x[0].localeCompare(y[0]))
+      .map(([date, v], i, arr) => {
+        const planned = v.n ? v.p / v.n : 0;
+        const actual = v.n ? v.a / v.n : 0;
+        const prev = i > 0 ? arr[i - 1]! : null;
+        const prevActual = prev && prev[1].n ? prev[1].a / prev[1].n : null;
+        const days = prev ? Math.max(1, (new Date(date).getTime() - new Date(prev[0]).getTime()) / 86400000) : 0;
+        return {
+          date,
+          planned,
+          actual,
+          count: v.n,
+          dailyRate: prevActual === null ? null : (actual - prevActual) / days,
+        };
+      });
+    return { rows: rows ?? [], series };
+  });
+
 
 export const recordScheduleBatch = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
