@@ -26,12 +26,26 @@ const PLAN: Record<TcStage, keyof TcItem> = { T0: "t0_p", T1: "t1_p", Report: "r
 const ACT: Record<TcStage, keyof TcItem> = { T0: "t0_a", T1: "t1_a", Report: "rp_a", RFI: "rfi_a", T2: "t2_a", Response: "resp_a" };
 const REM: Partial<Record<TcStage, keyof TcItem>> = { T0: "t0_rem", T1: "t1_rem", Report: "rp_rem", RFI: "rfi_rem" };
 
+type ColKey = "discipline" | "bldg" | "grp" | "item" | "equip" | "supplier" | "status" | "docref";
+const COL_FILTERS: { key: ColKey; label: string }[] = [
+  { key: "discipline", label: "공종" }, { key: "bldg", label: "Bldg." }, { key: "grp", label: "Group" },
+  { key: "item", label: "Item" }, { key: "equip", label: "Equipment" },
+];
+
 function TcList() {
   const { tcItems, base } = useProject();
   const [q, setQ] = useState("");
   const [disc, setDisc] = useState("전체");
   const [bldg, setBldg] = useState("전체");
   const [only, setOnly] = useState("전체");
+  const [colq, setColq] = useState<Partial<Record<ColKey, string>>>({});
+  const setCol = (k: ColKey, v: string) => setColq((o) => ({ ...o, [k]: v }));
+  const ColInput = ({ k }: { k: ColKey }) => (
+    <input
+      aria-label={`${k} 필터`} placeholder="필터" value={colq[k] ?? ""} onChange={(e) => setCol(k, e.target.value)}
+      className="h-6 w-full min-w-[64px] rounded border border-input bg-background px-1 text-[10px] font-normal text-foreground"
+    />
+  );
 
   const bldgs = useMemo(() => [...new Set(tcItems.map((i) => i.bldg ?? "(미지정)"))].sort(), [tcItems]);
   const discs = useMemo(() => [...new Set(tcItems.map((i) => i.discipline))].sort(), [tcItems]);
