@@ -86,6 +86,198 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string | null
+        }
+        Relationships: []
+      }
+      import_batches: {
+        Row: {
+          created_at: string
+          file_date: string | null
+          file_name: string
+          id: number
+          kind: string
+          rev: number | null
+          row_count: number
+          slot: string
+        }
+        Insert: {
+          created_at?: string
+          file_date?: string | null
+          file_name: string
+          id?: number
+          kind: string
+          rev?: number | null
+          row_count?: number
+          slot: string
+        }
+        Update: {
+          created_at?: string
+          file_date?: string | null
+          file_name?: string
+          id?: number
+          kind?: string
+          rev?: number | null
+          row_count?: number
+          slot?: string
+        }
+        Relationships: []
+      }
+      tc_items: {
+        Row: {
+          bldg: string | null
+          bldg_raw: string | null
+          created_at: string
+          discipline: string
+          docref: string | null
+          equip: string | null
+          file_date: string | null
+          grp: string | null
+          id: number
+          item: string | null
+          qty: number
+          resp_a: string | null
+          resp_p: string | null
+          rfi_a: string | null
+          rfi_d: number | null
+          rfi_p: string | null
+          rfi_rem: number | null
+          row_no: number | null
+          rp_a: string | null
+          rp_d: number | null
+          rp_p: string | null
+          rp_rem: number | null
+          source_file: string | null
+          status: string | null
+          supplier: string | null
+          t0_a: string | null
+          t0_d: number | null
+          t0_p: string | null
+          t0_rem: number | null
+          t1_a: string | null
+          t1_d: number | null
+          t1_p: string | null
+          t1_rem: number | null
+          t2_a: string | null
+          t2_p: string | null
+        }
+        Insert: {
+          bldg?: string | null
+          bldg_raw?: string | null
+          created_at?: string
+          discipline: string
+          docref?: string | null
+          equip?: string | null
+          file_date?: string | null
+          grp?: string | null
+          id?: number
+          item?: string | null
+          qty?: number
+          resp_a?: string | null
+          resp_p?: string | null
+          rfi_a?: string | null
+          rfi_d?: number | null
+          rfi_p?: string | null
+          rfi_rem?: number | null
+          row_no?: number | null
+          rp_a?: string | null
+          rp_d?: number | null
+          rp_p?: string | null
+          rp_rem?: number | null
+          source_file?: string | null
+          status?: string | null
+          supplier?: string | null
+          t0_a?: string | null
+          t0_d?: number | null
+          t0_p?: string | null
+          t0_rem?: number | null
+          t1_a?: string | null
+          t1_d?: number | null
+          t1_p?: string | null
+          t1_rem?: number | null
+          t2_a?: string | null
+          t2_p?: string | null
+        }
+        Update: {
+          bldg?: string | null
+          bldg_raw?: string | null
+          created_at?: string
+          discipline?: string
+          docref?: string | null
+          equip?: string | null
+          file_date?: string | null
+          grp?: string | null
+          id?: number
+          item?: string | null
+          qty?: number
+          resp_a?: string | null
+          resp_p?: string | null
+          rfi_a?: string | null
+          rfi_d?: number | null
+          rfi_p?: string | null
+          rfi_rem?: number | null
+          row_no?: number | null
+          rp_a?: string | null
+          rp_d?: number | null
+          rp_p?: string | null
+          rp_rem?: number | null
+          source_file?: string | null
+          status?: string | null
+          supplier?: string | null
+          t0_a?: string | null
+          t0_d?: number | null
+          t0_p?: string | null
+          t0_rem?: number | null
+          t1_a?: string | null
+          t1_d?: number | null
+          t1_p?: string | null
+          t1_rem?: number | null
+          t2_a?: string | null
+          t2_p?: string | null
+        }
+        Relationships: []
+      }
+      tc_manual: {
+        Row: {
+          block: string
+          discipline: string
+          id: number
+          item_key: string
+          memo: string | null
+          updated_at: string
+        }
+        Insert: {
+          block: string
+          discipline: string
+          id?: number
+          item_key: string
+          memo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          block?: string
+          discipline?: string
+          id?: number
+          item_key?: string
+          memo?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,0 +1,167 @@
+import { useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import * as XLSX from "xlsx";
+import { Download, Pencil, Save } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { saveTcMemo } from "@/lib/project.functions";
+import {
+  buildBlocks, memoMap, stageProgress, TC_STAGES, TC_STAGE_SUB, tcPct, type TcItem, type TcManual, type TcStage,
+} from "@/lib/tc-model";
+
+export function TcView({ discipline, items, manual, base }: { discipline: string; items: TcItem[]; manual: TcManual[]; base: string }) {
+  const [bldg, setBldg] = useState("전체");
+  const [edit, setEdit] = useState(false);
+  const qc = useQueryClient();
+  const memos = useMemo(() => ({ center: memoMap(manual, discipline, "center"), right: memoMap(manual, discipline, "right") }), [manual, discipline]);
+  const [draft, setDraft] = useState<Record<string, string>>({});
+
+  const save = useMutation({
+    mutationFn: (v: { block: "center" | "right"; itemKey: string; memo: string }) => saveTcMemo({ data: { discipline, ...v } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["project"] });
+      toast.success("메모가 저장되었습니다");
+    },
+    onError: (e: Error) => toast.error("저장 실패", { description: e.message }),
+  });
+
+  const bldgs = useMemo(() => [...new Set(items.map((i) => i.bldg ?? "(미지정)"))].sort(), [items]);
+  const scoped = useMemo(() => (bldg === "전체" ? items : items.filter((i) => (i.bldg ?? "(미지정)") === bldg)), [items, bldg]);
+  const prog = useMemo(() => stageProgress(scoped, base), [scoped, base]);
+  const blocks = useMemo(() => buildBlocks(scoped, base), [scoped, base]);
+
+  const memoValue = (block: "center" | "right", key: string) => draft[`${block}|${key}`] ?? memos[block][key] ?? "";
+
+  const exportXlsx = () => {
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(blocks.center.map((r) => ({
+      Location: r.loc, Item: r.item, "Q'ty": r.qty,
+      ...Object.fromEntries(TC_STAGES.flatMap((s) => [[`${s} 완료`, r.st[s][0]], [`${s} 잔여`, r.st[s][1]], [`${s} 지연`, r.st[s][2]]])),
+      Pass: r.pass, Fail: r.fail, 비고: r.key ? memoValue("center", r.key) : "",
+    }))), "Ready for Operation");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(blocks.right.map((r) => ({
+      Item: r.equip, Total: r.tot,
+      ...Object.fromEntries(TC_STAGES.flatMap((s) => [[`${s} 완료`, r.st[s][0]], [`${s} 잔여`, r.st[s][1]], [`${s} 지연`, r.st[s][2]]])),
+      Pass: r.pass, Fail: r.fail, 비고: memoValue("right", r.equip),
+    }))), "Equipment Status");
+    XLSX.writeFile(wb, `HMMME_${discipline}_TC.xlsx`);
+  };
+
+  if (!items.length) {
+    return (
+      <div className="rounded-md border border-dashed border-border bg-card p-10 text-center">
+        <p className="text-sm font-semibold">아직 업로드된 {discipline} T&C 데이터가 없습니다.</p>
+        <p className="mt-1 text-xs text-muted-foreground">업로드 화면에서 T&C 워크북을 올리면 이 화면이 채워집니다.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <section className="grid gap-3 sm:grid-cols-3 xl:grid-cols-6">
+        {TC_STAGES.map((s) => (
+          <div key={s} className="rounded-md border border-border bg-card p-3 shadow-sm">
+            <p className="text-xs font-bold">{s}</p>
+            <p className="text-[10px] text-muted-foreground">{TC_STAGE_SUB[s]}</p>
+            <strong className="mt-2 block text-xl">{tcPct(prog[s].pct)}</strong>
+            <div className="mt-1.5 h-1.5 overflow-hidden rounded bg-muted">
+              <div className="h-full bg-primary" style={{ width: `${Math.min(100, prog[s].pct * 100)}%` }} />
+            </div>
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              {prog[s].qty.toLocaleString()} / {prog._tot.toLocaleString()} · 계획 대비 {tcPct(prog[s].pvCap)}
+            </p>
+          </div>
+        ))}
+      </section>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap gap-1">
+          {["전체", ...bldgs].map((b) => (
+            <button key={b} onClick={() => setBldg(b)} className={`rounded-md border px-2.5 py-1.5 text-xs font-semibold ${bldg === b ? "border-primary bg-primary/10 text-primary" : "border-input bg-background text-muted-foreground"}`}>
+              {b}
+            </button>
+          ))}
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Pass {prog._pass.toLocaleString()} · Fail {prog._fail.toLocaleString()}</span>
+          <Button size="sm" variant={edit ? "default" : "outline"} onClick={() => setEdit((v) => !v)}>
+            {edit ? <Save className="size-3.5" /> : <Pencil className="size-3.5" />}{edit ? "편집 종료" : "편집 모드"}
+          </Button>
+          <Button size="sm" onClick={exportXlsx}><Download className="size-3.5" />XLSX</Button>
+        </div>
+      </div>
+
+      <Block
+        title="Ready for Operation (건물 × Item)" firstLabel="Location" secondLabel="Item"
+        rows={blocks.center.map((r) => ({ a: r.loc, b: r.item, qty: r.qty, st: r.st, pass: r.pass, fail: r.fail, key: r.key, typ: r.typ }))}
+        edit={edit} block="center" memoValue={memoValue} setDraft={setDraft} save={save.mutate}
+      />
+      <Block
+        title="Equipment Status (Item 합계)" firstLabel="Item" secondLabel={null}
+        rows={blocks.right.map((r) => ({ a: r.equip, b: null, qty: r.tot, st: r.st, pass: r.pass, fail: r.fail, key: r.equip === "Total" ? null : r.equip, typ: r.equip === "Total" ? "tot" : "row" }))}
+        edit={edit} block="right" memoValue={memoValue} setDraft={setDraft} save={save.mutate}
+      />
+    </div>
+  );
+}
+
+type BlockRow = { a: string | null; b: string | null; qty: number; st: Record<TcStage, [number, number, number]>; pass: number; fail: number; key: string | null; typ: string };
+
+function Block({ title, firstLabel, secondLabel, rows, edit, block, memoValue, setDraft, save }: {
+  title: string; firstLabel: string; secondLabel: string | null; rows: BlockRow[]; edit: boolean;
+  block: "center" | "right"; memoValue: (b: "center" | "right", k: string) => string;
+  setDraft: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  save: (v: { block: "center" | "right"; itemKey: string; memo: string }) => void;
+}) {
+  return (
+    <section className="rounded-md border border-border bg-card shadow-sm">
+      <p className="border-b border-border px-3 py-2 text-xs font-bold">{title}</p>
+      <div className="max-h-[560px] overflow-auto">
+        <table className="w-full min-w-[1200px] border-collapse text-left text-xs">
+          <thead className="sticky top-0 z-10 bg-secondary text-secondary-foreground">
+            <tr>
+              <th className="border-b border-r border-border px-3 py-2">{firstLabel}</th>
+              {secondLabel && <th className="border-b border-r border-border px-3 py-2">{secondLabel}</th>}
+              <th className="border-b border-r border-border px-3 py-2 text-right">Q'ty</th>
+              {TC_STAGES.map((s) => <th key={s} className="border-b border-r border-border px-3 py-2 text-center">{s}<br /><span className="text-[9px] font-normal">완료 / 잔여 / 지연</span></th>)}
+              <th className="border-b border-r border-border px-3 py-2 text-center">Pass / Fail</th>
+              <th className="border-b border-border px-3 py-2">비고</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i} className={`border-b border-border ${r.typ !== "row" ? "bg-muted/60 font-bold" : ""}`}>
+                <td className="border-r border-border px-3 py-1.5">{r.a ?? ""}</td>
+                {secondLabel && <td className="border-r border-border px-3 py-1.5">{r.b ?? ""}</td>}
+                <td className="border-r border-border px-3 py-1.5 text-right">{r.qty.toLocaleString()}</td>
+                {TC_STAGES.map((s) => {
+                  const [d, rem, late] = r.st[s];
+                  return (
+                    <td key={s} className="border-r border-border px-3 py-1.5 text-center whitespace-nowrap">
+                      <span className="text-primary">{d}</span> / <span className="text-muted-foreground">{rem}</span> / <span className={late ? "font-bold text-destructive" : "text-muted-foreground"}>{late}</span>
+                    </td>
+                  );
+                })}
+                <td className="border-r border-border px-3 py-1.5 text-center whitespace-nowrap">
+                  <span className="text-primary">{r.pass}</span> / <span className={r.fail ? "font-bold text-destructive" : "text-muted-foreground"}>{r.fail}</span>
+                </td>
+                <td className="px-2 py-1">
+                  {r.key && edit ? (
+                    <Input
+                      className="h-7 text-xs" defaultValue={memoValue(block, r.key)} aria-label="비고"
+                      onChange={(e) => setDraft((d) => ({ ...d, [`${block}|${r.key}`]: e.target.value }))}
+                      onBlur={(e) => save({ block, itemKey: r.key!, memo: e.target.value })}
+                    />
+                  ) : (
+                    <span className="text-muted-foreground">{r.key ? memoValue(block, r.key) : ""}</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
