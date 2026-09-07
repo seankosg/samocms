@@ -15,6 +15,7 @@ import { Route as DelaysRouteImport } from './routes/delays'
 import { Route as NetworkRouteImport } from './routes/network'
 import { Route as RawDataRouteImport } from './routes/raw-data'
 import { Route as ScheduleRouteImport } from './routes/schedule'
+import { Route as TcMechRouteImport } from './routes/tc.mech'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +47,11 @@ const ScheduleRoute = ScheduleRouteImport.update({
   path: '/schedule',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TcMechRoute = TcMechRouteImport.update({
+  id: '/tc/mech',
+  path: '/tc/mech',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/network': typeof NetworkRoute
   '/raw-data': typeof RawDataRoute
   '/schedule': typeof ScheduleRoute
+  '/tc/mech': typeof TcMechRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/network': typeof NetworkRoute
   '/raw-data': typeof RawDataRoute
   '/schedule': typeof ScheduleRoute
+  '/tc/mech': typeof TcMechRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,13 +79,27 @@ export interface FileRoutesById {
   '/network': typeof NetworkRoute
   '/raw-data': typeof RawDataRoute
   '/schedule': typeof ScheduleRoute
+  '/tc/mech': typeof TcMechRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/dashboard' | '/delays' | '/network' | '/raw-data' | '/schedule'
+    | '/'
+    | '/dashboard'
+    | '/delays'
+    | '/network'
+    | '/raw-data'
+    | '/schedule'
+    | '/tc/mech'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/delays' | '/network' | '/raw-data' | '/schedule'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/delays'
+    | '/network'
+    | '/raw-data'
+    | '/schedule'
+    | '/tc/mech'
   id:
     | '__root__'
     | '/'
@@ -86,6 +108,7 @@ export interface FileRouteTypes {
     | '/network'
     | '/raw-data'
     | '/schedule'
+    | '/tc/mech'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -95,6 +118,7 @@ export interface RootRouteChildren {
   NetworkRoute: typeof NetworkRoute
   RawDataRoute: typeof RawDataRoute
   ScheduleRoute: typeof ScheduleRoute
+  TcMechRoute: typeof TcMechRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -141,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ScheduleRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tc/mech': {
+      id: '/tc/mech'
+      path: '/tc/mech'
+      fullPath: '/tc/mech'
+      preLoaderRoute: typeof TcMechRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -151,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   NetworkRoute: NetworkRoute,
   RawDataRoute: RawDataRoute,
   ScheduleRoute: ScheduleRoute,
+  TcMechRoute: TcMechRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
