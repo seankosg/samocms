@@ -10,7 +10,7 @@ import { projectQuery, useProject } from "@/lib/use-project";
 import { parseScheduleWorkbook, sourceKeyFromFileName } from "@/lib/import-schedule";
 import { isTcWorkbook, metaFromFileName, parseTcWorkbook } from "@/lib/import-tc";
 import { importActivities } from "@/lib/activities.functions";
-import { importTcItems, recordScheduleBatch } from "@/lib/project.functions";
+import { importTcItems } from "@/lib/project.functions";
 import { dayDiff, fmtDate, SLOTS, SLOT_LABEL } from "@/lib/schedule-model";
 
 export const Route = createFileRoute("/upload")({
