@@ -10,7 +10,7 @@ import { projectQuery, useProject } from "@/lib/use-project";
 import { parseScheduleWorkbook, sourceKeyFromFileName } from "@/lib/import-schedule";
 import { isTcWorkbook, metaFromFileName, parseTcWorkbook } from "@/lib/import-tc";
 import { importActivities } from "@/lib/activities.functions";
-import { importTcItems, recordScheduleBatch } from "@/lib/project.functions";
+import { importTcItems } from "@/lib/project.functions";
 import { dayDiff, fmtDate, SLOTS, SLOT_LABEL } from "@/lib/schedule-model";
 
 export const Route = createFileRoute("/upload")({
@@ -51,8 +51,16 @@ function UploadPage() {
         } else {
           const parsed = parseScheduleWorkbook(buf, file.name);
           const slot = sourceKeyFromFileName(file.name);
-          const res = await importActivities({ data: { sourceFile: slot, rows: parsed.map((r) => ({ ...r, source_file: slot })) } });
-          await recordScheduleBatch({ data: { slot, fileName: file.name, fileDate: meta.date, rev: meta.rev, rowCount: res.inserted } });
+          const res = await importActivities({
+            data: {
+              sourceFile: slot,
+              fileName: file.name,
+              fileDate: meta.date,
+              rev: meta.rev,
+              rows: parsed.map((r) => ({ ...r, source_file: slot })),
+            },
+          });
+
           done.push(`${SLOT_LABEL[slot] ?? slot} ${res.inserted}건`);
         }
       }

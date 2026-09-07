@@ -15,6 +15,13 @@
       "when": 1788767885923,
       "tag": "0001_create_tc_and_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788789597663,
+      "tag": "0002_create_snapshots",
+      "breakpoints": true
     }
   ]
 }

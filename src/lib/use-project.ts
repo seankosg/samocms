@@ -1,6 +1,6 @@
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { getProjectData } from "./project.functions";
+import { getProgressHistory, getProjectData } from "./project.functions";
 import { toRow } from "./schedule-model";
 
 export const projectQuery = queryOptions({
@@ -8,6 +8,16 @@ export const projectQuery = queryOptions({
   queryFn: () => getProjectData(),
   staleTime: 120_000,
 });
+
+/** 항목/공종별 진도 이력(추이·일일 진도율) */
+export function useProgressHistory(opts: { itemKey?: string; discipline?: string } = {}) {
+  return useQuery({
+    queryKey: ["progress-history", opts.itemKey ?? null, opts.discipline ?? null],
+    queryFn: () => getProgressHistory({ data: opts }),
+    staleTime: 120_000,
+  });
+}
+
 
 export function useProject() {
   const { data } = useSuspenseQuery(projectQuery);
