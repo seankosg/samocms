@@ -72,6 +72,10 @@ export function ScheduleTable({ rows, fileName, lockLate = false }: { rows: Row[
         const hay = [r.no, r.dept, r.bldg, r.room, r.scope, r.ms, r.sub, r.act].join(" ").toLowerCase();
         if (!hay.includes(q.toLowerCase())) return false;
       }
+      for (const [k, v] of Object.entries(colq)) {
+        if (!v) continue;
+        if (!String(r[k as TextKey] ?? "").toLowerCase().includes(v.toLowerCase())) return false;
+      }
       return true;
     });
     return out.sort((a, b) => {
