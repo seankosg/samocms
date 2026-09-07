@@ -10,11 +10,30 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DelaysRouteImport } from './routes/delays'
+import { Route as NetworkRouteImport } from './routes/network'
 import { Route as RawDataRouteImport } from './routes/raw-data'
+import { Route as ScheduleRouteImport } from './routes/schedule'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DelaysRoute = DelaysRouteImport.update({
+  id: '/delays',
+  path: '/delays',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NetworkRoute = NetworkRouteImport.update({
+  id: '/network',
+  path: '/network',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RawDataRoute = RawDataRouteImport.update({
@@ -22,31 +41,60 @@ const RawDataRoute = RawDataRouteImport.update({
   path: '/raw-data',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ScheduleRoute = ScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/delays': typeof DelaysRoute
+  '/network': typeof NetworkRoute
   '/raw-data': typeof RawDataRoute
+  '/schedule': typeof ScheduleRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/delays': typeof DelaysRoute
+  '/network': typeof NetworkRoute
   '/raw-data': typeof RawDataRoute
+  '/schedule': typeof ScheduleRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/delays': typeof DelaysRoute
+  '/network': typeof NetworkRoute
   '/raw-data': typeof RawDataRoute
+  '/schedule': typeof ScheduleRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/raw-data'
+  fullPaths:
+    '/' | '/dashboard' | '/delays' | '/network' | '/raw-data' | '/schedule'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/raw-data'
-  id: '__root__' | '/' | '/raw-data'
+  to: '/' | '/dashboard' | '/delays' | '/network' | '/raw-data' | '/schedule'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/delays'
+    | '/network'
+    | '/raw-data'
+    | '/schedule'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRoute
+  DelaysRoute: typeof DelaysRoute
+  NetworkRoute: typeof NetworkRoute
   RawDataRoute: typeof RawDataRoute
+  ScheduleRoute: typeof ScheduleRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -58,6 +106,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/delays': {
+      id: '/delays'
+      path: '/delays'
+      fullPath: '/delays'
+      preLoaderRoute: typeof DelaysRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/network': {
+      id: '/network'
+      path: '/network'
+      fullPath: '/network'
+      preLoaderRoute: typeof NetworkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/raw-data': {
       id: '/raw-data'
       path: '/raw-data'
@@ -65,12 +134,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RawDataRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/schedule': {
+      id: '/schedule'
+      path: '/schedule'
+      fullPath: '/schedule'
+      preLoaderRoute: typeof ScheduleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRoute,
+  DelaysRoute: DelaysRoute,
+  NetworkRoute: NetworkRoute,
   RawDataRoute: RawDataRoute,
+  ScheduleRoute: ScheduleRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

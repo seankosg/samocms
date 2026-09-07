@@ -8,6 +8,13 @@
       "when": 1788614828236,
       "tag": "0000_create_activities",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788767885923,
+      "tag": "0001_create_tc_and_settings",
+      "breakpoints": true
     }
   ]
 }
