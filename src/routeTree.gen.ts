@@ -15,6 +15,7 @@ import { Route as DelaysRouteImport } from './routes/delays'
 import { Route as NetworkRouteImport } from './routes/network'
 import { Route as RawDataRouteImport } from './routes/raw-data'
 import { Route as ScheduleRouteImport } from './routes/schedule'
+import { Route as TcElecRouteImport } from './routes/tc.elec'
 import { Route as TcMechRouteImport } from './routes/tc.mech'
 
 const IndexRoute = IndexRouteImport.update({
@@ -47,6 +48,11 @@ const ScheduleRoute = ScheduleRouteImport.update({
   path: '/schedule',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TcElecRoute = TcElecRouteImport.update({
+  id: '/tc/elec',
+  path: '/tc/elec',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TcMechRoute = TcMechRouteImport.update({
   id: '/tc/mech',
   path: '/tc/mech',
@@ -60,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/network': typeof NetworkRoute
   '/raw-data': typeof RawDataRoute
   '/schedule': typeof ScheduleRoute
+  '/tc/elec': typeof TcElecRoute
   '/tc/mech': typeof TcMechRoute
 }
 export interface FileRoutesByTo {
@@ -69,6 +76,7 @@ export interface FileRoutesByTo {
   '/network': typeof NetworkRoute
   '/raw-data': typeof RawDataRoute
   '/schedule': typeof ScheduleRoute
+  '/tc/elec': typeof TcElecRoute
   '/tc/mech': typeof TcMechRoute
 }
 export interface FileRoutesById {
@@ -79,6 +87,7 @@ export interface FileRoutesById {
   '/network': typeof NetworkRoute
   '/raw-data': typeof RawDataRoute
   '/schedule': typeof ScheduleRoute
+  '/tc/elec': typeof TcElecRoute
   '/tc/mech': typeof TcMechRoute
 }
 export interface FileRouteTypes {
@@ -90,6 +99,7 @@ export interface FileRouteTypes {
     | '/network'
     | '/raw-data'
     | '/schedule'
+    | '/tc/elec'
     | '/tc/mech'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -99,6 +109,7 @@ export interface FileRouteTypes {
     | '/network'
     | '/raw-data'
     | '/schedule'
+    | '/tc/elec'
     | '/tc/mech'
   id:
     | '__root__'
@@ -108,6 +119,7 @@ export interface FileRouteTypes {
     | '/network'
     | '/raw-data'
     | '/schedule'
+    | '/tc/elec'
     | '/tc/mech'
   fileRoutesById: FileRoutesById
 }
@@ -118,6 +130,7 @@ export interface RootRouteChildren {
   NetworkRoute: typeof NetworkRoute
   RawDataRoute: typeof RawDataRoute
   ScheduleRoute: typeof ScheduleRoute
+  TcElecRoute: typeof TcElecRoute
   TcMechRoute: typeof TcMechRoute
 }
 
@@ -165,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ScheduleRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tc/elec': {
+      id: '/tc/elec'
+      path: '/tc/elec'
+      fullPath: '/tc/elec'
+      preLoaderRoute: typeof TcElecRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tc/mech': {
       id: '/tc/mech'
       path: '/tc/mech'
@@ -182,6 +202,7 @@ const rootRouteChildren: RootRouteChildren = {
   NetworkRoute: NetworkRoute,
   RawDataRoute: RawDataRoute,
   ScheduleRoute: ScheduleRoute,
+  TcElecRoute: TcElecRoute,
   TcMechRoute: TcMechRoute,
 }
 export const routeTree = rootRouteImport
