@@ -212,21 +212,8 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
         </table>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border p-3 text-xs">
-        <div className="flex items-center gap-2">
-          <span>페이지당</span>
-          <select aria-label="페이지 크기" value={size} onChange={(e) => { setSize(Number(e.target.value)); setPage(1); }} className="h-8 rounded border border-input bg-background px-2">
-            {[25, 50, 100, 200].map((n) => <option key={n}>{n}</option>)}
-          </select>
-          <span>{filtered.length ? (cur - 1) * size + 1 : 0}–{Math.min(cur * size, filtered.length)} / {filtered.length}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button size="icon" variant="outline" aria-label="처음" disabled={cur === 1} onClick={() => setPage(1)}><ChevronsLeft /></Button>
-          <Button size="icon" variant="outline" aria-label="이전" disabled={cur === 1} onClick={() => setPage(cur - 1)}><ChevronLeft /></Button>
-          <span className="px-2">{cur} / {pages}</span>
-          <Button size="icon" variant="outline" aria-label="다음" disabled={cur === pages} onClick={() => setPage(cur + 1)}><ChevronRight /></Button>
-          <Button size="icon" variant="outline" aria-label="마지막" disabled={cur === pages} onClick={() => setPage(pages)}><ChevronsRight /></Button>
-        </div>
+      <div className="border-t border-border p-3 text-xs text-muted-foreground">
+        전체 {filtered.length.toLocaleString()}건 표시
       </div>
     </section>
   );
