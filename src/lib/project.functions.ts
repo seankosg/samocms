@@ -271,3 +271,23 @@ export const recordScheduleBatch = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** 기준일 직전 스냅샷의 항목별 실적 진도율 — 당일 실적 증분 계산용 */
+export const getPrevActuals = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ base: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("activity_snapshots")
+      .select("snapshot_date,item_key,actual_progress")
+      .lt("snapshot_date", data.base)
+      .order("snapshot_date")
+      .limit(20000);
+    if (error) throw new Error(error.message);
+    // 같은 item_key는 가장 최근(기준일 직전) 값으로 덮어쓴다
+    const map: Record<string, number> = {};
+    (rows ?? []).forEach((r: { item_key: string; actual_progress: number | null }) => {
+      if (r.actual_progress != null) map[r.item_key] = Number(r.actual_progress);
+    });
+    return { prev: map };
+  });

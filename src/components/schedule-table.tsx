@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/use-auth";
 import { numOrNull, useActivityEdit } from "@/lib/use-inline-edit";
-import { fmtDate, fmtShortDate, isLate, pct1, SLOT_LABEL, statusOfRow, STATUS_LABEL, type Row } from "@/lib/schedule-model";
+import { dailyActual, dailyPlan, fmtDate, fmtShortDate, isLate, pct1, SLOT_LABEL, statusOfRow, STATUS_LABEL, type Row } from "@/lib/schedule-model";
+import { useProject, usePrevActuals } from "@/lib/use-project";
 import {
   DateRangeFilter, MultiSelectFilter, TextFilter, EMPTY_TOKEN,
   matchDate, matchMulti, matchText, type DateFilterValue, type TextFilterValue,
@@ -36,6 +37,8 @@ const COLS: { key: SortKey | null; label: string; f: ColFilter }[] = [
   { key: null, label: "Done / Total", f: null },
   { key: "pl", label: "계획", f: null },
   { key: "pc", label: "실적", f: null },
+  { key: null, label: "당일 계획(증분)", f: null },
+  { key: null, label: "당일 실적(증분)", f: null },
   { key: null, label: "상태", f: { kind: "sel", field: "status" } },
   { key: null, label: "Predecessor", f: { kind: "text", field: "pred" } },
   { key: null, label: "Successor", f: { kind: "text", field: "succ" } },
@@ -56,6 +59,8 @@ export type TableInitial = Partial<{ dept: string; bldg: string; ms: string; sub
 
 export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy }: { rows: Row[]; fileName: string; lockLate?: boolean; initial?: TableInitial; dueBy?: string | null }) {
   const { canEdit, canWrite } = useAuth();
+  const { base } = useProject();
+  const prevActuals = usePrevActuals(base);
   const mut = useActivityEdit();
   const [edit, setEdit] = useState(false);
   const [q, setQ] = useState(initial?.q ?? "");
@@ -150,9 +155,11 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
       "No.": r.no, 담당부서: r.dept, "Bldg.": r.bldg, Room: r.room, "Work Scope": r.scope, Milestone: r.ms,
       Subcon: r.sub, Activity: r.act, Unit: r.unit, Done: r.done, Total: r.tot,
       "계획(%)": r.pl == null ? null : r.pl * 100, "실적(%)": r.pc == null ? null : r.pc * 100,
+      "당일계획(%)": dailyPlan(r, base) == null ? null : dailyPlan(r, base)! * 100,
+      "당일실적(%)": dailyActual(r, prevActuals) == null ? null : dailyActual(r, prevActuals)! * 100,
       상태: STATUS_LABEL[statusOfRow(r)], Predecessor: r.pred, Successor: r.succ, Start: r.s, Finish: r.e,
     },
-  })), [filtered]);
+  })), [filtered, base, prevActuals]);
 
   const setSortKey = (k: SortKey | null) => { if (!k) return; if (k === sort) setAsc((v) => !v); else { setSort(k); setAsc(true); } };
 
@@ -192,7 +199,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
       </div>
 
       <div className="max-h-[calc(100vh-330px)] overflow-auto">
-        <table className="raw-table w-full min-w-[1780px] border-collapse text-left text-xs">
+        <table className="raw-table w-full min-w-[1980px] border-collapse text-left text-xs">
           <thead className="sticky top-0 z-10 bg-secondary text-secondary-foreground">
             <tr>
               {COLS.map((c) => (
@@ -269,6 +276,8 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
                       <Bar v={r.pc} />
                     )}
                   </td>
+                  <td className="px-3 py-2"><Delta v={dailyPlan(r, base)} /></td>
+                  <td className="px-3 py-2"><Delta v={dailyActual(r, prevActuals)} /></td>
                   <td className="px-3 py-2"><Badge st={st} /></td>
                   <td className="px-3 py-2">{cell(r.pred, "predecessor", "text")}</td>
                   <td className="px-3 py-2">{cell(r.succ, "successor", "text")}</td>
@@ -299,6 +308,13 @@ function Bar({ v, muted = false }: { v: number | null; muted?: boolean }) {
       <span className="w-10 text-right">{pct1(v)}%</span>
     </div>
   );
+}
+
+function Delta({ v }: { v: number | null }) {
+  if (v == null) return <span className="text-muted-foreground">—</span>;
+  const p = Math.round(v * 1000) / 10;
+  const cls = p > 0 ? "text-primary font-semibold" : p < 0 ? "text-destructive font-semibold" : "text-muted-foreground";
+  return <span className={`whitespace-nowrap ${cls}`}>{p > 0 ? "+" : ""}{p.toFixed(1)}%</span>;
 }
 
 function Badge({ st }: { st: string }) {

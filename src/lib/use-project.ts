@@ -1,6 +1,6 @@
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { getProgressHistory, getProjectData } from "./project.functions";
+import { getPrevActuals, getProgressHistory, getProjectData } from "./project.functions";
 import { applyBaseline, toRow } from "./schedule-model";
 
 
@@ -18,6 +18,17 @@ export function useProgressHistory(opts: { itemKey?: string; discipline?: string
     staleTime: 120_000,
   });
 }
+
+/** 기준일 직전 스냅샷 실적값 맵 (당일 실적 증분용) */
+export function usePrevActuals(base: string) {
+  const q = useQuery({
+    queryKey: ["prev-actuals", base],
+    queryFn: () => getPrevActuals({ data: { base } }),
+    staleTime: 120_000,
+  });
+  return useMemo(() => (q.data ? new Map(Object.entries(q.data.prev)) : undefined), [q.data]);
+}
+
 
 
 export function useProject() {
