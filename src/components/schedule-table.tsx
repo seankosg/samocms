@@ -155,7 +155,15 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
           <Input value={q} onChange={(e) => { setQ(e.target.value); }} placeholder="Activity · 건물 · 협력사 검색" className="h-9 pl-9" />
         </div>
         <Button variant="outline" size="sm" onClick={reset}><RotateCcw className="size-3.5" />초기화</Button>
-        <Button size="sm" onClick={exportXlsx}><Download className="size-3.5" />XLSX</Button>
+        <Button size="sm" onClick={() => setExportOpen(true)}><Download className="size-3.5" />XLSX</Button>
+        <ExportDialog
+          open={exportOpen}
+          onOpenChange={setExportOpen}
+          title={`${fileName.replace(/\.xlsx$/, "").replace(/^HMMME_/, "")} 내보내기`}
+          getRows={exportRows}
+          fileBase={fileName.replace(/\.xlsx$/, "")}
+          sheetName="Data"
+        />
       </div>
 
       <div className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs">
