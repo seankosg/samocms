@@ -36,6 +36,13 @@
       "when": 1788885887323,
       "tag": "0004_activity_daily_progress",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788886501917,
+      "tag": "0005_tc_daily_progress",
+      "breakpoints": true
     }
   ]
 }

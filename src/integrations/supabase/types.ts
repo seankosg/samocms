@@ -307,6 +307,69 @@ export type Database = {
         }
         Relationships: []
       }
+      tc_daily_progress: {
+        Row: {
+          actual_count: number
+          actual_qty: number
+          bldg: string | null
+          discipline: string
+          equip: string | null
+          event_date: string
+          file_date: string | null
+          grp: string | null
+          id: number
+          item: string | null
+          item_key: string
+          plan_count: number
+          plan_qty: number
+          qty: number
+          source_file: string | null
+          stage: string
+          supplier: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_count?: number
+          actual_qty?: number
+          bldg?: string | null
+          discipline: string
+          equip?: string | null
+          event_date: string
+          file_date?: string | null
+          grp?: string | null
+          id?: number
+          item?: string | null
+          item_key: string
+          plan_count?: number
+          plan_qty?: number
+          qty?: number
+          source_file?: string | null
+          stage: string
+          supplier?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_count?: number
+          actual_qty?: number
+          bldg?: string | null
+          discipline?: string
+          equip?: string | null
+          event_date?: string
+          file_date?: string | null
+          grp?: string | null
+          id?: number
+          item?: string | null
+          item_key?: string
+          plan_count?: number
+          plan_qty?: number
+          qty?: number
+          source_file?: string | null
+          stage?: string
+          supplier?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tc_items: {
         Row: {
           bldg: string | null
@@ -630,6 +693,7 @@ export type Database = {
       }
       refresh_activity_daily: { Args: { _date: string }; Returns: number }
       refresh_activity_daily_all: { Args: never; Returns: number }
+      refresh_tc_daily: { Args: { _discipline?: string }; Returns: number }
       slot_scope: { Args: { _slot: string }; Returns: string }
     }
     Enums: {
