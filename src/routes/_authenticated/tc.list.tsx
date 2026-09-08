@@ -109,7 +109,7 @@ function TcList() {
     return true;
   };
 
-  const rows = useMemo(() => tcItems.filter((r) => passes(r)), [tcItems, q, only, multi, texts, dates, base]);
+  const rows = useMemo(() => tcItems.filter((r) => passes(r)), [tcItems, q, only, multi, texts, dates, base, cellF]);
 
   const facet = (k: MultiKey) => {
     const counts = new Map<string, number>();
@@ -146,6 +146,11 @@ function TcList() {
           <select aria-label="상태" value={only} onChange={(e) => setOnly(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-xs">
             <option>전체</option><option>지연</option><option>Fail</option>
           </select>
+          {cellF && (
+            <Button size="sm" variant="secondary" onClick={() => setCellF(null)}>
+              <X className="size-3.5" />{cellChip}
+            </Button>
+          )}
           {activeCount > 0 && (
             <Button size="sm" variant="outline" onClick={clearAll}><X className="size-3.5" />필터 {activeCount}개 해제</Button>
           )}
