@@ -4,7 +4,7 @@ import { TcView } from "@/components/tc-view";
 import { projectQuery, useProject } from "@/lib/use-project";
 import { fmtDate } from "@/lib/schedule-model";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/tc/elec")({
+export const Route = createFileRoute("/_authenticated/tc/elec")({
   head: () => ({ meta: [
     { title: "ELEC T&C | HMMME 통합 공정 관리" },
     { name: "description", content: "전기 시운전 단계별 완료·잔여·지연과 Pass/Fail 현황을 건물별로 확인합니다." },

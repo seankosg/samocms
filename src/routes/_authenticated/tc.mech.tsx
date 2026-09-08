@@ -4,7 +4,7 @@ import { TcView } from "@/components/tc-view";
 import { projectQuery, useProject } from "@/lib/use-project";
 import { fmtDate } from "@/lib/schedule-model";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/tc/mech")({
+export const Route = createFileRoute("/_authenticated/tc/mech")({
   head: () => ({ meta: [
     { title: "MECH T&C | HMMME 통합 공정 관리" },
     { name: "description", content: "기계 시운전 T0·T1·Report·RFI·T2·Response 단계별 완료와 지연을 건물별로 확인합니다." },

@@ -4,7 +4,7 @@ import { ScheduleTable } from "@/components/schedule-table";
 import { projectQuery, useProject } from "@/lib/use-project";
 import { fmtDate } from "@/lib/schedule-model";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/schedule")({
+export const Route = createFileRoute("/_authenticated/schedule")({
   head: () => ({ meta: [
     { title: "공정리스트 | HMMME 통합 공정 관리" },
     { name: "description", content: "통합공정표 전체 활동을 검색·필터·정렬하고 Excel로 내보냅니다." },
