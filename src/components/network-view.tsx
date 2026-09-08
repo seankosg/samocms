@@ -299,7 +299,7 @@ export function NetworkView({ rows, search, onChange, base }: { rows: Row[]; sea
       )}
 
       {hover && <Tip n={hover.n} x={hover.x} y={hover.y} edges={M.edges} />}
-      {selNode && <Detail node={selNode} rows={rows} onClose={() => setLock(null)} />}
+      {selNode && <Detail node={selNode} rows={rows} base={base} edges={M.edges} onClose={() => setLock(null)} />}
     </div>
   );
 }
@@ -334,47 +334,159 @@ function Tip({ n, x, y, edges }: { n: NetNode; x: number; y: number; edges: { a:
   );
 }
 
-function Detail({ node, rows, onClose }: { node: NetNode; rows: Row[]; onClose: () => void }) {
-  const list = rows.filter((r) => node.rowIds.includes(r.id));
+function Bar({ pl, pc }: { pl: number | null; pc: number | null }) {
+  const pcv = Math.max(0, Math.min(1, pc ?? 0));
+  const plv = pl == null ? null : Math.max(0, Math.min(1, pl));
+  const st = pl != null && pc != null && pc < pl ? "delay" : pcv >= 1 ? "done" : pcv > 0 ? "ongoing" : "plan";
   return (
-    <aside className="fixed bottom-0 right-0 top-14 z-40 w-full max-w-[420px] overflow-y-auto border-l border-border bg-card p-4 shadow-xl">
-      <div className="mb-3 flex items-start justify-between gap-2">
-        <div>
-          <p className="text-[11px] font-bold uppercase text-primary">{node.grp ? node.gb : BANDS[node.band]?.label}</p>
-          <h2 className="text-sm font-bold">{node.nm}</h2>
-          <p className="text-xs text-muted-foreground">{node.sub}</p>
-        </div>
-        <button type="button" aria-label="닫기" onClick={onClose} className="rounded p-1 hover:bg-accent"><X className="size-4" /></button>
-      </div>
-      <dl className="mb-4 grid grid-cols-2 gap-2 text-xs">
-        <Item k="상태" v={STATUS_LABEL[node.st] ?? "—"} />
-        <Item k="활동 수" v={`${node.cnt}건`} />
-        <Item k="시작" v={fmtDate(node.s)} />
-        <Item k="종료" v={fmtDate(node.e)} />
-        <Item k="계획" v={`${pct1(node.pl)}%`} />
-        <Item k="실적" v={`${pct1(node.pc)}%`} />
-      </dl>
-      <ul className="space-y-2">
-        {list.map((r) => (
-          <li key={r.id} className="rounded-md border border-border p-2 text-xs">
-            <p className="font-semibold">{r.no ? `${r.no} · ` : ""}{r.act}</p>
-            <p className="mt-0.5 text-muted-foreground">
-              {[r.bldg, r.room, r.sub].filter(Boolean).join(" · ") || "-"} · {r.ms ? `${r.ms} ${MSDEF[r.ms] ?? ""}` : "마일스톤 없음"}
+    <div className="relative h-2 w-full overflow-hidden rounded-full bg-muted">
+      <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${pcv * 100}%`, background: STATUS_COLOR[st] }} />
+      {plv != null && <div className="absolute inset-y-[-2px] w-[2px]" style={{ left: `calc(${plv * 100}% - 1px)`, background: STATUS_COLOR["delay"] }} />}
+    </div>
+  );
+}
+
+function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row[]; base: string; edges: { a: string; b: string; ty?: string }[]; onClose: () => void }) {
+  const list = rows.filter((r) => node.rowIds.includes(r.id));
+  const gap = node.pl != null && node.pc != null ? node.pl - node.pc : null;
+  const behind = gap != null && gap > 0;
+  const dday = node.e ? dayDur(base, node.e) : null;
+  const dur = node.s && node.e ? dayDur(node.s, node.e) + 1 : null;
+  const elapsed = node.s && node.e ? Math.max(0, Math.min(dur ?? 0, dayDur(node.s, base) + 1)) : null;
+  const lateRows = list.filter((r) => r.pl != null && r.pc != null && r.pc < r.pl);
+  const preds = edges.filter((e) => e.b === node.id);
+  const succs = edges.filter((e) => e.a === node.id);
+  const sorted = [...list].sort((a, b) => {
+    const ga = a.pl != null && a.pc != null ? a.pl - a.pc : -9;
+    const gb = b.pl != null && b.pc != null ? b.pl - b.pc : -9;
+    return gb - ga;
+  });
+
+  return (
+    <aside className="fixed bottom-0 right-0 top-14 z-40 flex w-full max-w-[460px] flex-col border-l border-border bg-card shadow-2xl">
+      {/* 헤더 */}
+      <div className="border-b border-border px-4 py-3" style={{ background: `${STATUS_COLOR[node.st]}0f` }}>
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-[10.5px] font-bold uppercase tracking-wide text-muted-foreground">
+              {node.grp ? node.gb : BANDS[node.band]?.label}{node.id && !node.grp && !node.roll ? ` · ${node.id}` : ""}
             </p>
-            <p className="mt-0.5">계획 {pct1(r.pl)}% · 실적 {pct1(r.pc)}% · {fmtDate(r.s)} ~ {fmtDate(r.e)}</p>
-            {(r.pred || r.succ) && <p className="mt-0.5 text-muted-foreground">선행 {r.pred ?? "-"} / 후행 {r.succ ?? "-"}</p>}
-          </li>
-        ))}
-      </ul>
+            <h2 className="truncate text-[15px] font-bold leading-snug">{node.nm}</h2>
+            {node.sub && <p className="truncate text-[11.5px] text-muted-foreground">협력사 {node.sub}</p>}
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <span className="rounded-full px-2 py-0.5 text-[11px] font-bold text-white" style={{ background: STATUS_COLOR[node.st] }}>
+              {STATUS_LABEL[node.st] ?? "—"}
+            </span>
+            <button type="button" aria-label="닫기" onClick={onClose} className="rounded p-1 hover:bg-accent"><X className="size-4" /></button>
+          </div>
+        </div>
+
+        {/* 핵심 지표 */}
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <Metric k="계획" v={`${pct1(node.pl)}%`} />
+          <Metric k="실적" v={`${pct1(node.pc)}%`} tone={behind ? "warn" : "ok"} />
+          <Metric k="차이" v={gap == null ? "—" : `${gap > 0 ? "-" : "+"}${pct1(Math.abs(gap))}%p`} tone={behind ? "bad" : gap == null ? undefined : "ok"} />
+        </div>
+        <div className="mt-2"><Bar pl={node.pl} pc={node.pc} /></div>
+        <p className="mt-1.5 text-[10.5px] text-muted-foreground">
+          기준일 {fmtDate(base)} 기준 · 진행 {elapsed != null && dur ? `${elapsed}/${dur}일 (${Math.round((elapsed / dur) * 100)}%)` : "—"}
+        </p>
+      </div>
+
+      <div className="flex-1 space-y-4 overflow-y-auto p-4">
+        {/* 일정 */}
+        <section>
+          <h3 className="mb-1.5 text-[11px] font-bold text-muted-foreground">일정</h3>
+          <dl className="grid grid-cols-2 gap-2 text-xs">
+            <Item k="착수" v={fmtDate(node.s)} />
+            <Item k="종료" v={fmtDate(node.e)} />
+            <Item k="기간" v={dur ? `${dur}일` : "—"} />
+            <Item
+              k={dday == null ? "잔여" : dday >= 0 ? "종료까지" : "종료일 경과"}
+              v={dday == null ? "—" : `${Math.abs(dday)}일`}
+              tone={dday == null ? undefined : dday < 0 && (node.pc ?? 0) < 1 ? "bad" : dday <= 7 && (node.pc ?? 0) < 1 ? "warn" : undefined}
+            />
+          </dl>
+        </section>
+
+        {/* 구성/책임 */}
+        <section>
+          <h3 className="mb-1.5 text-[11px] font-bold text-muted-foreground">관리 정보</h3>
+          <dl className="grid grid-cols-2 gap-2 text-xs">
+            <Item k="활동 수" v={`${node.cnt}건`} />
+            <Item k="완료" v={`${node.done ?? 0}건`} />
+            <Item k="지연" v={`${node.lateN ?? lateRows.length}건`} tone={(node.lateN ?? lateRows.length) > 0 ? "bad" : "ok"} />
+            <Item k="부서" v={(node.roll || node.grp ? node.depts : SLOT_LABEL[node.dept ?? ""] ?? node.dept) || "—"} />
+            {!node.grp && !node.roll && <Item k="건물" v={node.bldg ?? "—"} />}
+            {!node.grp && !node.roll && <Item k="Room" v={node.room ?? "—"} />}
+            <Item k="마일스톤" v={node.ms ? `${node.ms}${MSDEF[node.ms] ? ` ${MSDEF[node.ms]}` : ""}` : "—"} />
+            <Item k="연결" v={`선행 ${preds.length} / 후행 ${succs.length}`} />
+          </dl>
+        </section>
+
+        {/* 선후행 */}
+        {(node.predRaw || node.succRaw) && (
+          <section className="rounded-md border border-border p-2.5 text-[11.5px]">
+            <p><span className="font-bold text-muted-foreground">선행</span> {node.predRaw || "—"}</p>
+            <p className="mt-1"><span className="font-bold text-muted-foreground">후행</span> {node.succRaw || "—"}</p>
+          </section>
+        )}
+
+        {/* 세부작업 */}
+        <section>
+          <h3 className="mb-1.5 flex items-center justify-between text-[11px] font-bold text-muted-foreground">
+            <span>세부작업 {list.length}건</span>
+            {lateRows.length > 0 && <span style={{ color: STATUS_COLOR["delay"] }}>지연 {lateRows.length}건 우선 표시</span>}
+          </h3>
+          <ul className="space-y-2">
+            {sorted.map((r) => {
+              const g = r.pl != null && r.pc != null ? r.pl - r.pc : null;
+              const late = g != null && g > 0;
+              return (
+                <li key={r.id} className="rounded-md border p-2.5 text-xs"
+                  style={late ? { borderColor: `${STATUS_COLOR["delay"]}66`, background: `${STATUS_COLOR["delay"]}0a` } : undefined}>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-semibold leading-snug">{r.no ? `${r.no} · ` : ""}{r.act}</p>
+                    {late && <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: STATUS_COLOR["delay"] }}>-{pct1(g)}%p</span>}
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {[r.bldg, r.room, r.sub].filter(Boolean).join(" · ") || "-"}{r.ms ? ` · ${r.ms} ${MSDEF[r.ms] ?? ""}` : ""}
+                  </p>
+                  <div className="mt-1.5"><Bar pl={r.pl} pc={r.pc} /></div>
+                  <p className="mt-1 flex flex-wrap gap-x-3 text-[11px] tabular-nums">
+                    <span>계획 <b>{pct1(r.pl)}%</b></span>
+                    <span style={late ? { color: STATUS_COLOR["delay"] } : undefined}>실적 <b>{pct1(r.pc)}%</b></span>
+                    <span className="text-muted-foreground">{fmtDate(r.s)} ~ {fmtDate(r.e)}</span>
+                    {r.tot != null && <span className="text-muted-foreground">수량 {r.done ?? 0}/{r.tot}{r.unit ?? ""}</span>}
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      </div>
     </aside>
   );
 }
 
-function Item({ k, v }: { k: string; v: string }) {
+function Metric({ k, v, tone }: { k: string; v: string; tone?: "ok" | "warn" | "bad" | undefined }) {
+  const c = tone === "bad" ? STATUS_COLOR["delay"] : tone === "warn" ? "#b26a00" : tone === "ok" ? STATUS_COLOR["done"] : undefined;
   return (
-    <div className="rounded-md bg-muted/50 p-2">
-      <dt className="text-[10px] text-muted-foreground">{k}</dt>
-      <dd className="font-semibold">{v}</dd>
+    <div className="rounded-md border border-border bg-card px-2 py-1.5 text-center">
+      <p className="text-[10px] text-muted-foreground">{k}</p>
+      <p className="text-[15px] font-bold tabular-nums" style={c ? { color: c } : undefined}>{v}</p>
     </div>
   );
 }
+
+function Item({ k, v, tone }: { k: string; v: string; tone?: "ok" | "warn" | "bad" | undefined }) {
+  const c = tone === "bad" ? STATUS_COLOR["delay"] : tone === "warn" ? "#b26a00" : tone === "ok" ? STATUS_COLOR["done"] : undefined;
+  return (
+    <div className="rounded-md bg-muted/50 p-2">
+      <dt className="text-[10px] text-muted-foreground">{k}</dt>
+      <dd className="font-semibold" style={c ? { color: c } : undefined}>{v}</dd>
+    </div>
+  );
+}
+
