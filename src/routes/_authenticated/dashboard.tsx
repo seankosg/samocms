@@ -1,6 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { Eye, FileText, Printer } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { projectQuery, useProgressHistory, useProject } from "@/lib/use-project";
 import {
   avgOf, isDone, isLate, MSDEF, milestoneDates, pct1, SLOT_LABEL, KPI_SLOTS, fmtDate, dayDiff, type Row,
@@ -89,7 +92,7 @@ function Dashboard() {
   const maxLate = Math.max(1, ...m.bySlot.map((s) => s.late));
 
   return (
-    <AppShell title="대시보드" desc={`기준일 ${fmtDate(base)} · 전체 ${m.total.toLocaleString()}개 활동`}>
+    <AppShell title="대시보드" desc={`기준일 ${fmtDate(base)} · 전체 ${m.total.toLocaleString()}개 활동`} actions={<ReportButton base={base} />}>
       <section className="grid gap-3 xl:grid-cols-3">
         <div className="grid gap-4 rounded-md border border-border bg-card p-4 shadow-sm sm:grid-cols-[1.2fr_1fr]">
           <div>
@@ -248,6 +251,46 @@ function Dashboard() {
         지연 상세는 <Link to="/delays" className="font-semibold text-primary underline">지연 리스트</Link>에서 확인할 수 있습니다.
       </p>
     </AppShell>
+  );
+}
+
+/** 리포트 버튼 — 미리보기 / 바로 출력 선택 */
+function ReportButton({ base }: { base: string }) {
+  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline"><FileText className="mr-1 size-4" />리포트</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[440px]">
+        <DialogHeader>
+          <DialogTitle>SAMO 현장 Progress Report</DialogTitle>
+          <DialogDescription>기준일 {fmtDate(base)} 기준 A4 3페이지 리포트 (요약 · 지연 상세 · T&amp;C T1/T2)</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            className="rounded-md border border-border p-3 text-left hover:border-primary hover:bg-accent"
+            onClick={() => { setOpen(false); navigate({ to: "/report", search: {} }); }}
+          >
+            <Eye className="mb-1 size-4 text-primary" />
+            <p className="text-sm font-semibold">미리보기</p>
+            <p className="text-[11px] text-muted-foreground">화면에서 3페이지를 확인한 뒤 인쇄</p>
+          </button>
+          <button
+            type="button"
+            className="rounded-md border border-border p-3 text-left hover:border-primary hover:bg-accent"
+            onClick={() => { setOpen(false); window.open("/report?print=1", "_blank", "noopener"); }}
+          >
+            <Printer className="mb-1 size-4 text-primary" />
+            <p className="text-sm font-semibold">출력 (PDF 저장)</p>
+            <p className="text-[11px] text-muted-foreground">새 창에서 바로 인쇄 창 열기</p>
+          </button>
+        </div>
+        <p className="text-[11px] text-muted-foreground">인쇄 대화상자에서 대상을 &quot;PDF로 저장&quot;, 배경 그래픽 켜기를 선택하세요.</p>
+      </DialogContent>
+    </Dialog>
   );
 }
 

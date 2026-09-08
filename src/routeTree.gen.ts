@@ -16,6 +16,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDelaysRouteImport } from './routes/_authenticated/delays'
 import { Route as AuthenticatedNetworkRouteImport } from './routes/_authenticated/network'
 import { Route as AuthenticatedRawDataRouteImport } from './routes/_authenticated/raw-data'
+import { Route as AuthenticatedReportRouteImport } from './routes/_authenticated/report'
 import { Route as AuthenticatedScheduleRouteImport } from './routes/_authenticated/schedule'
 import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
@@ -56,6 +57,11 @@ const AuthenticatedNetworkRoute = AuthenticatedNetworkRouteImport.update({
 const AuthenticatedRawDataRoute = AuthenticatedRawDataRouteImport.update({
   id: '/raw-data',
   path: '/raw-data',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedReportRoute = AuthenticatedReportRouteImport.update({
+  id: '/report',
+  path: '/report',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedScheduleRoute = AuthenticatedScheduleRouteImport.update({
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/delays': typeof AuthenticatedDelaysRoute
   '/network': typeof AuthenticatedNetworkRoute
   '/raw-data': typeof AuthenticatedRawDataRoute
+  '/report': typeof AuthenticatedReportRoute
   '/schedule': typeof AuthenticatedScheduleRoute
   '/upload': typeof AuthenticatedUploadRoute
   '/users': typeof AuthenticatedUsersRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/delays': typeof AuthenticatedDelaysRoute
   '/network': typeof AuthenticatedNetworkRoute
   '/raw-data': typeof AuthenticatedRawDataRoute
+  '/report': typeof AuthenticatedReportRoute
   '/schedule': typeof AuthenticatedScheduleRoute
   '/upload': typeof AuthenticatedUploadRoute
   '/users': typeof AuthenticatedUsersRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/_authenticated/delays': typeof AuthenticatedDelaysRoute
   '/_authenticated/network': typeof AuthenticatedNetworkRoute
   '/_authenticated/raw-data': typeof AuthenticatedRawDataRoute
+  '/_authenticated/report': typeof AuthenticatedReportRoute
   '/_authenticated/schedule': typeof AuthenticatedScheduleRoute
   '/_authenticated/upload': typeof AuthenticatedUploadRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/delays'
     | '/network'
     | '/raw-data'
+    | '/report'
     | '/schedule'
     | '/upload'
     | '/users'
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
     | '/delays'
     | '/network'
     | '/raw-data'
+    | '/report'
     | '/schedule'
     | '/upload'
     | '/users'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
     | '/_authenticated/delays'
     | '/_authenticated/network'
     | '/_authenticated/raw-data'
+    | '/_authenticated/report'
     | '/_authenticated/schedule'
     | '/_authenticated/upload'
     | '/_authenticated/users'
@@ -248,6 +260,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRawDataRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/report': {
+      id: '/_authenticated/report'
+      path: '/report'
+      fullPath: '/report'
+      preLoaderRoute: typeof AuthenticatedReportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/schedule': {
       id: '/_authenticated/schedule'
       path: '/schedule'
@@ -305,6 +324,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDelaysRoute: typeof AuthenticatedDelaysRoute
   AuthenticatedNetworkRoute: typeof AuthenticatedNetworkRoute
   AuthenticatedRawDataRoute: typeof AuthenticatedRawDataRoute
+  AuthenticatedReportRoute: typeof AuthenticatedReportRoute
   AuthenticatedScheduleRoute: typeof AuthenticatedScheduleRoute
   AuthenticatedUploadRoute: typeof AuthenticatedUploadRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
@@ -318,6 +338,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDelaysRoute: AuthenticatedDelaysRoute,
   AuthenticatedNetworkRoute: AuthenticatedNetworkRoute,
   AuthenticatedRawDataRoute: AuthenticatedRawDataRoute,
+  AuthenticatedReportRoute: AuthenticatedReportRoute,
   AuthenticatedScheduleRoute: AuthenticatedScheduleRoute,
   AuthenticatedUploadRoute: AuthenticatedUploadRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
