@@ -6,7 +6,7 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-const buildId = process.env.VITE_APP_BUILD_ID || new Date().toISOString();
+const buildId = process.env["VITE_APP_BUILD_ID"] || new Date().toISOString();
 
 export default defineConfig({
   tanstackStart: {
