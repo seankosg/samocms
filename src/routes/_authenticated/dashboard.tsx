@@ -94,8 +94,12 @@ function Dashboard() {
         <div className="grid gap-4 rounded-md border border-border bg-card p-4 shadow-sm sm:grid-cols-[1.2fr_1fr]">
           <div>
             <p className="text-xs font-bold text-muted-foreground">총 활동</p>
-            <p className="mt-1 text-3xl font-bold">{m.total.toLocaleString()}<span className="ml-1 text-sm font-semibold text-muted-foreground">행</span></p>
-            <p className="mt-1 text-[11px] text-muted-foreground">완료 <b className="text-foreground">{m.done.toLocaleString()}</b>행 · <b className="text-foreground">{pct1(m.donePct)}%</b></p>
+            <p className="mt-1 text-3xl font-bold">
+              <Drill to="/schedule">{m.total.toLocaleString()}</Drill><span className="ml-1 text-sm font-semibold text-muted-foreground">행</span>
+            </p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              완료 <Drill to="/schedule" search={{ status: "done" }} className="font-bold text-foreground">{m.done.toLocaleString()}</Drill>행 · <b className="text-foreground">{pct1(m.donePct)}%</b>
+            </p>
             <Bar v={m.donePct} className="mt-3" />
           </div>
           <div className="border-t border-border pt-2 text-[11px] sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
@@ -104,9 +108,9 @@ function Dashboard() {
             </div>
             {m.bySlot.map((s) => (
               <div key={s.slot} className="grid grid-cols-4 gap-1 border-t border-border/60 py-1 text-right">
-                <span className="text-left font-semibold">{SLOT_LABEL[s.slot]}</span>
-                <span>{s.plan}</span>
-                <span className="font-bold">{s.act}</span>
+                <span className="text-left font-semibold"><Drill to="/schedule" search={{ dept: s.slot }}>{SLOT_LABEL[s.slot]}</Drill></span>
+                <span><Drill to="/schedule" search={{ dept: s.slot, duebyBase: true }}>{s.plan}</Drill></span>
+                <span className="font-bold"><Drill to="/schedule" search={{ dept: s.slot, status: "done" }}>{s.act}</Drill></span>
                 <span className={`font-semibold ${gapCls(s.gap)}`}>{sign(s.gap)}{Math.abs(s.gap)}</span>
               </div>
             ))}
@@ -118,7 +122,7 @@ function Dashboard() {
           <div>
             <p className="text-xs font-bold text-muted-foreground">계획 대비 실적</p>
             <p className="mt-1 flex flex-wrap items-baseline gap-1.5">
-              <span className="text-3xl font-bold">{pct1(m.pc)}%</span>
+              <span className="text-3xl font-bold"><Drill to="/schedule">{pct1(m.pc)}%</Drill></span>
               <span className="text-sm text-muted-foreground">/ {pct1(m.pl)}%</span>
               <span className={`text-xs font-bold ${gapCls(m.pc - m.pl)}`}>{sign(m.pc - m.pl)}{pct1(Math.abs(m.pc - m.pl))}p</span>
             </p>
@@ -131,11 +135,11 @@ function Dashboard() {
             </div>
             {m.bySlot.map((s) => (
               <div key={s.slot} className="grid grid-cols-4 gap-1 border-t border-border/60 py-1 text-right">
-                <span className="text-left font-semibold">{SLOT_LABEL[s.slot]}</span>
+                <span className="text-left font-semibold"><Drill to="/schedule" search={{ dept: s.slot }}>{SLOT_LABEL[s.slot]}</Drill></span>
                 {s.n === 0 ? <><span className="text-muted-foreground">—</span><span className="text-muted-foreground">—</span><span className="text-muted-foreground">—</span></> : (
                   <>
-                    <span>{pct1(s.pl)}</span>
-                    <span className="font-bold">{pct1(s.pc)}</span>
+                    <span><Drill to="/schedule" search={{ dept: s.slot }}>{pct1(s.pl)}</Drill></span>
+                    <span className="font-bold"><Drill to="/schedule" search={{ dept: s.slot }}>{pct1(s.pc)}</Drill></span>
                     <span className={`font-semibold ${gapCls(s.pc - s.pl)}`}>{sign(s.pc - s.pl)}{pct1(Math.abs(s.pc - s.pl))}</span>
                   </>
                 )}
@@ -147,7 +151,9 @@ function Dashboard() {
         <div className="grid gap-4 rounded-md border border-destructive/30 bg-destructive/5 p-4 shadow-sm sm:grid-cols-[1.2fr_1fr]">
           <div>
             <p className="text-xs font-bold text-muted-foreground">지연</p>
-            <p className="mt-1 text-3xl font-bold text-destructive">{m.late.toLocaleString()}<span className="ml-1 text-sm font-semibold text-muted-foreground">건</span></p>
+            <p className="mt-1 text-3xl font-bold text-destructive">
+              <Drill to="/delays">{m.late.toLocaleString()}</Drill><span className="ml-1 text-sm font-semibold text-muted-foreground">건</span>
+            </p>
             <p className="mt-1 text-[11px] text-muted-foreground">대상 {m.withP.toLocaleString()}행 중 · <b className="text-foreground">{pct1(m.latePct)}%</b></p>
             <Bar v={m.latePct} tone="bad" className="mt-3" />
           </div>
@@ -155,13 +161,16 @@ function Dashboard() {
             <div className="grid grid-cols-[1fr_auto_60px] gap-2 pb-1 text-right text-muted-foreground"><span /><span>지연</span><span>비교</span></div>
             {m.bySlot.map((s) => (
               <div key={s.slot} className="grid grid-cols-[1fr_auto_60px] items-center gap-2 border-t border-border/60 py-1">
-                <span className="font-semibold">{SLOT_LABEL[s.slot]}</span>
-                <span className={`text-right font-bold ${s.late ? "text-destructive" : "text-muted-foreground"}`}>{s.late}</span>
+                <span className="font-semibold"><Drill to="/delays" search={{ dept: s.slot }}>{SLOT_LABEL[s.slot]}</Drill></span>
+                <span className={`text-right font-bold ${s.late ? "text-destructive" : "text-muted-foreground"}`}>
+                  <Drill to="/delays" search={{ dept: s.slot }}>{s.late}</Drill>
+                </span>
                 <span className="h-1.5 overflow-hidden rounded bg-muted"><span className="block h-full bg-destructive" style={{ width: `${(s.late / maxLate) * 100}%` }} /></span>
               </div>
             ))}
           </div>
         </div>
+
       </section>
 
       {tcDisc.length > 0 && (
