@@ -118,7 +118,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
       <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
         <div className="relative min-w-[240px] flex-1">
           <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
-          <Input value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} placeholder="Activity · 건물 · 협력사 검색" className="h-9 pl-9" />
+          <Input value={q} onChange={(e) => { setQ(e.target.value); }} placeholder="Activity · 건물 · 협력사 검색" className="h-9 pl-9" />
         </div>
         <Sel label="공종" value={dept} set={setDept} list={opts.dept} render={(x) => SLOT_LABEL[x] ?? x} />
         <Sel label="건물" value={bldg} set={setBldg} list={opts.bldg} />
@@ -132,7 +132,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
       <div className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs">
         <strong>{filtered.length.toLocaleString()}건</strong>
         {chips.map((c) => (
-          <button key={c.k} onClick={() => { c.clear(); setPage(1); }} className="inline-flex items-center gap-1 rounded bg-accent px-2 py-1 text-[11px]">
+          <button key={c.k} onClick={() => { c.clear(); }} className="inline-flex items-center gap-1 rounded bg-accent px-2 py-1 text-[11px]">
             {c.k}: {c.v}<X className="size-3" />
           </button>
         ))}
@@ -166,7 +166,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
                   {c.f?.kind === "sel" && (
                     <select
                       aria-label={`${c.label} 필터`} value={selValue[c.f.field]}
-                      onChange={(e) => { selSet[(c.f as { field: keyof typeof selSet }).field](e.target.value); setPage(1); }}
+                      onChange={(e) => { selSet[(c.f as { field: keyof typeof selSet }).field](e.target.value); }}
                       className="h-7 w-full min-w-[80px] rounded border border-input bg-background px-1 text-[11px] font-normal text-foreground"
                     >
                       <option value="전체">전체</option>
