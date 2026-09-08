@@ -194,17 +194,18 @@ function Dashboard() {
               <p className="mt-0.5 truncate text-[11px] text-muted-foreground" title={x.name}>{x.name}</p>
               <Bar v={x.pc ?? 0} className="mt-2" />
               <div className="mt-1.5 flex flex-wrap gap-x-2 text-[11px] text-muted-foreground">
-                <span>총 {x.total}건</span>
+                <span>총 <Drill to="/schedule" search={{ ms: x.key }}>{x.total}</Drill>건</span>
                 <span>평균 {x.pc == null ? "—" : `${pct1(x.pc)}%`}</span>
-                <span className={x.late ? "font-bold text-destructive" : ""}>지연 {x.late}</span>
+                <span className={x.late ? "font-bold text-destructive" : ""}>지연 <Drill to="/delays" search={{ ms: x.key }}>{x.late}</Drill></span>
                 {x.over > 0 && <span className="font-bold text-destructive">초과 {x.over}</span>}
                 {x.dd != null && <span className={x.dd < 0 ? "font-bold text-destructive" : x.dd <= 14 ? "font-bold text-chart-3" : ""}>D{x.dd >= 0 ? "-" : "+"}{Math.abs(x.dd)}</span>}
               </div>
               <div className="mt-2 border-t border-border pt-1.5 text-[11px]">
-                <MsRow label="계획" n={x.plan} p={x.total ? x.plan / x.total : 0} />
-                <MsRow label="실적" n={x.act} p={x.total ? x.act / x.total : 0} />
+                <MsRow label="계획" n={x.plan} p={x.total ? x.plan / x.total : 0} search={{ ms: x.key, duebyBase: true }} />
+                <MsRow label="실적" n={x.act} p={x.total ? x.act / x.total : 0} search={{ ms: x.key, status: "done" }} />
                 <MsRow label="차이" n={x.gap} p={x.total ? x.gap / x.total : 0} signed />
               </div>
+
             </div>
           ))}
         </div>
