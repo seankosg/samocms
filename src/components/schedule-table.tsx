@@ -28,13 +28,16 @@ const COLS: { key: SortKey | null; label: string; f: ColFilter }[] = [
   { key: "e", label: "Finish", f: { kind: "text", field: "e" } },
 ];
 
-export function ScheduleTable({ rows, fileName, lockLate = false }: { rows: Row[]; fileName: string; lockLate?: boolean }) {
-  const [q, setQ] = useState("");
-  const [dept, setDept] = useState("전체");
-  const [bldg, setBldg] = useState("전체");
-  const [ms, setMs] = useState("전체");
-  const [sub, setSub] = useState("전체");
-  const [status, setStatus] = useState("전체");
+export type TableInitial = Partial<{ dept: string; bldg: string; ms: string; sub: string; status: string; q: string }>;
+
+export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy }: { rows: Row[]; fileName: string; lockLate?: boolean; initial?: TableInitial; dueBy?: string | null }) {
+  const [q, setQ] = useState(initial?.q ?? "");
+  const [dept, setDept] = useState(initial?.dept ?? "전체");
+  const [bldg, setBldg] = useState(initial?.bldg ?? "전체");
+  const [ms, setMs] = useState(initial?.ms ?? "전체");
+  const [sub, setSub] = useState(initial?.sub ?? "전체");
+  const [status, setStatus] = useState(initial?.status ?? "전체");
+  const [due, setDue] = useState<string | null>(dueBy ?? null);
   const [sort, setSort] = useState<SortKey>("e");
   const [asc, setAsc] = useState(true);
   const [page, setPage] = useState(1);
@@ -43,6 +46,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false }: { rows: Row[
   const setCol = (k: TextKey, v: string) => { setColq((o) => ({ ...o, [k]: v })); setPage(1); };
   const selValue = { dept, bldg, ms, sub, status } as const;
   const selSet = { dept: setDept, bldg: setBldg, ms: setMs, sub: setSub, status: setStatus } as const;
+
 
   const opts = useMemo(() => ({
     dept: [...new Set(rows.map((r) => r.dept))].sort(),
