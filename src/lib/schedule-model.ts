@@ -131,7 +131,9 @@ export function toRow(a: ActivityRow): Row {
     done: a.done_quantity,
     tot: a.total_quantity,
     pl: a.planned_progress,
+    plRaw: a.planned_progress,
     pc: a.actual_progress,
+
     pred: a.predecessor,
     succ: a.successor,
     s: a.start_date,
