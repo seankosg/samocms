@@ -16,7 +16,6 @@ function TriggerButton({ active }: { active: boolean }) {
       type="button"
       title="필터"
       aria-label="필터"
-      onClick={(e) => e.stopPropagation()}
       className={cn(
         "inline-flex h-4 w-4 items-center justify-center rounded hover:bg-muted/80",
         active ? "text-primary" : "text-muted-foreground/50",
