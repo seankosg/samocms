@@ -112,3 +112,38 @@ export const importActivities = createServerFn({ method: "POST" })
     return { sourceFile: data.sourceFile, inserted: rows.length, batchId: batch.data.id, snapshots: snaps.length };
   });
 
+const activityPatch = z
+  .object({
+    building: z.string().nullable(),
+    room: z.string().nullable(),
+    work_scope: z.string().nullable(),
+    milestone: z.string().nullable(),
+    subcontractor: z.string().nullable(),
+    activity: z.string().min(1),
+    unit: z.string().nullable(),
+    done_quantity: z.number().nullable(),
+    total_quantity: z.number().nullable(),
+    actual_progress: z.number().nullable(),
+    predecessor: z.string().nullable(),
+    successor: z.string().nullable(),
+    start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+    finish_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+  })
+  .partial();
+
+/** 공정리스트 인라인 수정 — 담당 공종만 수정 가능 */
+export const updateActivity = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.number(), patch: activityPatch }).parse(d))
+  .handler(async ({ data, context }) => {
+    const cur = await context.supabase.from("activities").select("source_file").eq("id", data.id).single();
+    if (cur.error) throw new Error("항목을 찾을 수 없습니다.");
+    await assertCanEdit(context as never, cur.data.source_file);
+    if (Object.keys(data.patch).length === 0) return { ok: true };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("activities").update(data.patch as never).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+

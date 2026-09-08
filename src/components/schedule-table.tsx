@@ -1,13 +1,17 @@
 import { useCallback, useMemo, useState } from "react";
-import { ArrowDownAZ, ArrowUpAZ, Download, RotateCcw, Search, X } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Download, Pencil, RotateCcw, Search, X } from "lucide-react";
 import { ExportDialog, type ExportRow } from "@/components/export-dialog";
+import { EditableCell } from "@/components/editable-cell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/lib/use-auth";
+import { numOrNull, useActivityEdit } from "@/lib/use-inline-edit";
 import { fmtDate, fmtShortDate, isLate, pct1, SLOT_LABEL, statusOfRow, STATUS_LABEL, type Row } from "@/lib/schedule-model";
 import {
   DateRangeFilter, MultiSelectFilter, TextFilter, EMPTY_TOKEN,
   matchDate, matchMulti, matchText, type DateFilterValue, type TextFilterValue,
 } from "@/components/column-filter";
+
 
 type SortKey = "no" | "dept" | "bldg" | "act" | "pl" | "pc" | "e";
 type TextKey = "no" | "room" | "scope" | "act" | "unit" | "pred" | "succ";
@@ -51,7 +55,11 @@ function multiValue(r: Row, k: MultiKey): string {
 export type TableInitial = Partial<{ dept: string; bldg: string; ms: string; sub: string; status: string; q: string }>;
 
 export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy }: { rows: Row[]; fileName: string; lockLate?: boolean; initial?: TableInitial; dueBy?: string | null }) {
+  const { canEdit, canWrite } = useAuth();
+  const mut = useActivityEdit();
+  const [edit, setEdit] = useState(false);
   const [q, setQ] = useState(initial?.q ?? "");
+
   const [exportOpen, setExportOpen] = useState(false);
   const [due, setDue] = useState<string | null>(dueBy ?? null);
   const [sort, setSort] = useState<SortKey>("e");
@@ -156,6 +164,12 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
           <Input value={q} onChange={(e) => { setQ(e.target.value); }} placeholder="Activity · 건물 · 협력사 검색" className="h-9 pl-9" />
         </div>
         <Button variant="outline" size="sm" onClick={reset}><RotateCcw className="size-3.5" />초기화</Button>
+        {canWrite && (
+          <Button variant={edit ? "default" : "outline"} size="sm" onClick={() => setEdit((v) => !v)}>
+            <Pencil className="size-3.5" />{edit ? "수정 종료" : "인라인 수정"}
+          </Button>
+        )}
+
         <Button size="sm" onClick={() => setExportOpen(true)}><Download className="size-3.5" />XLSX</Button>
         <ExportDialog
           open={exportOpen}
@@ -206,29 +220,65 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
           <tbody>
             {filtered.map((r) => {
               const st = statusOfRow(r);
+              const on = edit && canEdit(r.slot);
+              const save = (patch: Record<string, unknown>) => mut.mutate({ id: r.id, patch });
+              const cell = (v: string | number | null, k: string, kind: "text" | "number" | "date", map?: (x: string | null) => unknown) => (
+                <EditableCell
+                  value={v}
+                  kind={kind}
+                  editable={on}
+                  {...(kind === "date" ? { display: fmtShortDate(v as string | null) } : {})}
+                  onSave={(x) => save({ [k]: map ? map(x) : x })}
+                />
+              );
               return (
                 <tr key={r.id} className={`border-b border-border ${st === "delay" ? "bg-destructive/5" : ""}`}>
                   <td className="whitespace-nowrap border-r border-border px-3 py-2 font-medium">{r.no ?? "-"}</td>
                   <td className="px-3 py-2">{SLOT_LABEL[r.dept] ?? r.dept}</td>
-                  <td className="px-3 py-2">{r.bldg ?? "-"}</td>
-                  <td className="px-3 py-2">{r.room ?? "-"}</td>
-                  <td className="max-w-[200px] truncate px-3 py-2">{r.scope ?? "-"}</td>
-                  <td className="px-3 py-2">{r.ms ?? "-"}</td>
-                  <td className="px-3 py-2">{r.sub ?? "-"}</td>
-                  <td className="max-w-[340px] px-3 py-2 font-medium">{r.act}</td>
-                  <td className="px-3 py-2">{r.unit ?? "-"}</td>
-                  <td className="px-3 py-2">{r.done ?? 0} / {r.tot ?? 0}</td>
+                  <td className="px-3 py-2">{cell(r.bldg, "building", "text")}</td>
+                  <td className="px-3 py-2">{cell(r.room, "room", "text")}</td>
+                  <td className="max-w-[200px] truncate px-3 py-2">{cell(r.scope, "work_scope", "text")}</td>
+                  <td className="px-3 py-2">{cell(r.ms, "milestone", "text")}</td>
+                  <td className="px-3 py-2">{cell(r.sub, "subcontractor", "text")}</td>
+                  <td className="max-w-[340px] px-3 py-2 font-medium">
+                    <EditableCell value={r.act} editable={on} onSave={(x) => x && save({ activity: x })} />
+                  </td>
+                  <td className="px-3 py-2">{cell(r.unit, "unit", "text")}</td>
+                  <td className="whitespace-nowrap px-3 py-2">
+                    {on ? (
+                      <span className="inline-flex items-center gap-1">
+                        <EditableCell value={r.done ?? 0} kind="number" editable onSave={(x) => save({ done_quantity: numOrNull(x) })} />
+                        /
+                        <EditableCell value={r.tot ?? 0} kind="number" editable onSave={(x) => save({ total_quantity: numOrNull(x) })} />
+                      </span>
+                    ) : (
+                      <>{r.done ?? 0} / {r.tot ?? 0}</>
+                    )}
+                  </td>
                   <td className="px-3 py-2"><Bar v={r.pl} muted /></td>
-                  <td className="px-3 py-2"><Bar v={r.pc} /></td>
+                  <td className="px-3 py-2">
+                    {on ? (
+                      <EditableCell
+                        value={r.pc == null ? null : Math.round(r.pc * 1000) / 10}
+                        kind="number"
+                        editable
+                        display={`${pct1(r.pc)}%`}
+                        onSave={(x) => save({ actual_progress: x == null ? null : (numOrNull(x) ?? 0) / 100 })}
+                      />
+                    ) : (
+                      <Bar v={r.pc} />
+                    )}
+                  </td>
                   <td className="px-3 py-2"><Badge st={st} /></td>
-                  <td className="px-3 py-2">{r.pred ?? "-"}</td>
-                  <td className="px-3 py-2">{r.succ ?? "-"}</td>
-                  <td className="whitespace-nowrap px-3 py-2">{fmtShortDate(r.s)}</td>
-                  <td className="whitespace-nowrap px-3 py-2">{fmtShortDate(r.e)}</td>
+                  <td className="px-3 py-2">{cell(r.pred, "predecessor", "text")}</td>
+                  <td className="px-3 py-2">{cell(r.succ, "successor", "text")}</td>
+                  <td className="whitespace-nowrap px-3 py-2">{cell(r.s, "start_date", "date")}</td>
+                  <td className="whitespace-nowrap px-3 py-2">{cell(r.e, "finish_date", "date")}</td>
                 </tr>
               );
             })}
           </tbody>
+
         </table>
       </div>
 
