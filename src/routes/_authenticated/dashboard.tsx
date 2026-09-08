@@ -94,7 +94,7 @@ function Dashboard() {
   const maxLate = Math.max(1, ...m.bySlot.map((s) => s.late));
 
   return (
-    <AppShell title="대시보드" desc={`기준일 ${fmtDate(base)} · 전체 ${m.total.toLocaleString()}개 활동`} actions={<ReportButton base={base} />}>
+    <AppShell title="대시보드" desc={`기준일 ${fmtDate(base)} · 전체 ${m.total.toLocaleString()}개 활동`} actions={isAdmin ? <ReportButton base={base} /> : undefined}>
       <section className="grid gap-3 xl:grid-cols-3">
         <div className="grid gap-4 rounded-md border border-border bg-card p-4 shadow-sm sm:grid-cols-[1.2fr_1fr]">
           <div>
