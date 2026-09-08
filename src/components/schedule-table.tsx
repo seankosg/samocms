@@ -1,13 +1,17 @@
 import { useCallback, useMemo, useState } from "react";
-import { ArrowDownAZ, ArrowUpAZ, Download, RotateCcw, Search, X } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Download, Pencil, RotateCcw, Search, X } from "lucide-react";
 import { ExportDialog, type ExportRow } from "@/components/export-dialog";
+import { EditableCell } from "@/components/editable-cell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/lib/use-auth";
+import { numOrNull, useActivityEdit } from "@/lib/use-inline-edit";
 import { fmtDate, fmtShortDate, isLate, pct1, SLOT_LABEL, statusOfRow, STATUS_LABEL, type Row } from "@/lib/schedule-model";
 import {
   DateRangeFilter, MultiSelectFilter, TextFilter, EMPTY_TOKEN,
   matchDate, matchMulti, matchText, type DateFilterValue, type TextFilterValue,
 } from "@/components/column-filter";
+
 
 type SortKey = "no" | "dept" | "bldg" | "act" | "pl" | "pc" | "e";
 type TextKey = "no" | "room" | "scope" | "act" | "unit" | "pred" | "succ";
