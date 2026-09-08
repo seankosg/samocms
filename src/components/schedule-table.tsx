@@ -135,16 +135,16 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
 
   const reset = () => { setQ(""); setDue(null); setMulti({}); setTexts({}); setDates({}); };
 
-  const exportXlsx = () => {
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(filtered.map((r) => ({
+  const exportRows = (): ExportRow[] => filtered.map((r) => ({
+    group: r.sub ?? "",
+    rec: {
       "No.": r.no, 담당부서: r.dept, "Bldg.": r.bldg, Room: r.room, "Work Scope": r.scope, Milestone: r.ms,
       Subcon: r.sub, Activity: r.act, Unit: r.unit, Done: r.done, Total: r.tot,
       "계획(%)": r.pl == null ? null : r.pl * 100, "실적(%)": r.pc == null ? null : r.pc * 100,
       상태: STATUS_LABEL[statusOfRow(r)], Predecessor: r.pred, Successor: r.succ, Start: r.s, Finish: r.e,
-    }))), "Data");
-    XLSX.writeFile(wb, fileName);
-  };
+    },
+  }));
+
   const setSortKey = (k: SortKey | null) => { if (!k) return; if (k === sort) setAsc((v) => !v); else { setSort(k); setAsc(true); } };
 
   return (
