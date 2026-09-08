@@ -101,13 +101,17 @@ export type Row = {
   unit: string | null;
   done: number | null;
   tot: number | null;
+  /** 기준일 기준 재계산된 계획 진도율 */
   pl: number | null;
+  /** 엑셀 원문 계획 진도율 (화면 미표시) */
+  plRaw: number | null;
   pc: number | null;
   pred: string | null;
   succ: string | null;
   s: string | null;
   e: string | null;
 };
+
 
 export function toRow(a: ActivityRow): Row {
   const bldg = normBldg(a.building);
