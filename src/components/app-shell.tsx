@@ -135,7 +135,8 @@ function BaseSetting({ base, batches, onApply, saving }: { base: string; batches
     const key = `${b.kind}:${b.slot ?? "-"}`;
     if (!latest.has(key)) latest.set(key, b);
   });
-  const auto = [...latest.values()].map((b) => b.file_date).filter(Boolean).sort().pop() ?? null;
+  const auto = autoBaseline(batches);
+
 
   return (
     <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o) setVal(base); }}>
