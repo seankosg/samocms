@@ -192,8 +192,8 @@ const MON3 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oc
 export const fmtShortDate = (v: string | null) => {
   if (!v) return "—";
   const m = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!m) return v;
-  return `${m[3]}-${MON3[parseInt(m[2], 10) - 1]}`;
+  if (!m || !m[2] || !m[3]) return v;
+  return `${m[3]}-${MON3[parseInt(m[2], 10) - 1] ?? ""}`;
 };
 export const dayDiff = (a: string, b: string) => Math.round((Date.parse(b) - Date.parse(a)) / 864e5);
 
