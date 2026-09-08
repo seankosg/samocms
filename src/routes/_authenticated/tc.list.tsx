@@ -77,6 +77,19 @@ function TcList() {
   const passes = (r: TcItem, exclude?: string) => {
     if (only === "지연" && !TC_STAGES.some((s) => !stageDone(r, s) && (r[PLAN[s]] as string | null) && (r[PLAN[s]] as string) <= base)) return false;
     if (only === "Fail" && flat(r.status).toLowerCase() !== "fail") return false;
+    if (cellF) {
+      const st = flat(r.status).toLowerCase();
+      if (cellF.cell === "pass" && st !== "pass") return false;
+      if (cellF.cell === "fail" && st !== "fail") return false;
+      if (cellF.stage) {
+        const s = cellF.stage;
+        const done = stageDone(r, s);
+        const plan = r[PLAN[s]] as string | null;
+        if (cellF.cell === "done" && !done) return false;
+        if (cellF.cell === "remain" && done) return false;
+        if (cellF.cell === "late" && (done || !plan || plan > base)) return false;
+      }
+    }
     if (q) {
       const hay = [r.bldg, r.grp, r.item, r.equip, r.supplier, r.docref].join(" ").toLowerCase();
       if (!hay.includes(q.toLowerCase())) return false;
