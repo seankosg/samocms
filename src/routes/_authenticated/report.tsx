@@ -18,20 +18,46 @@ export const Route = createFileRoute("/_authenticated/report")({
     { property: "og:description", content: "대시보드 요약 · 지연 상세 · T&C T1/T2 현황" },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
   ] }),
-  validateSearch: (s: Record<string, unknown>) => z.object({ print: z.boolean().optional() }).parse({
+  validateSearch: (s: Record<string, unknown>) => z.object({ print: z.boolean().optional(), summary: z.boolean() }).parse({
     print: s["print"] === true || s["print"] === "1" || s["print"] === "true" ? true : undefined,
+    summary: !(s["summary"] === false || s["summary"] === "0" || s["summary"] === "false"),
   }),
   loader: ({ context }) => context.queryClient.ensureQueryData(projectQuery),
   errorComponent: () => <div role="alert" className="p-8">리포트 데이터를 불러오지 못했습니다.</div>,
   component: ReportPage,
 });
 
+const LABEL_TONE: Record<string, string> = { 진도: "#1d4ed8", 공종: "#0f766e", 리스크: "#b91c1c", 조치: "#7c3aed" };
+
+/** "[라벨] 본문" 형태의 문단 파싱 */
+function parseSummary(text: string) {
+  return text
+    .split(/\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => {
+      const mm = /^\[([^\]]{1,8})\]\s*/.exec(p);
+      return mm ? { label: mm[1] as string, text: p.slice(mm[0].length) } : { label: undefined as string | undefined, text: p };
+    });
+}
+
+/** **강조** 구간을 하이라이트로 렌더 */
+function renderEmphasis(text: string) {
+  return text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map((part, i) =>
+    part.startsWith("**") && part.endsWith("**") ? (
+      <strong key={i} className="rounded-[2px] bg-amber-100 px-[3px] font-bold text-slate-900">{part.slice(2, -2)}</strong>
+    ) : (
+      <Fragment key={i}>{part}</Fragment>
+    ),
+  );
+}
+
 const sign = (v: number) => (v > 0 ? "+" : v < 0 ? "−" : "");
 const gapColor = (v: number) => (v < 0 ? "#b91c1c" : v > 0 ? "#1d4ed8" : "#475569");
 
 function ReportPage() {
   const { rows, base, tcItems } = useProject();
-  const { print } = Route.useSearch();
+  const { print, summary: withSummary } = Route.useSearch();
   const m = useMemo(() => buildReportMetrics(rows, base), [rows, base]);
   const tc = useMemo(() => buildTcT1T2(tcItems, base, (k) => TC_DISC_LABEL[k] ?? k.toUpperCase()), [tcItems, base]);
 
@@ -52,16 +78,17 @@ function ReportPage() {
     queryFn: () => generateExecSummary({ data: { base, facts } }),
     staleTime: 10 * 60_000,
     retry: false,
+    enabled: withSummary,
   });
 
   const printed = useRef(false);
   useEffect(() => {
     if (!print || printed.current) return;
-    if (ai.isLoading) return;
+    if (withSummary && ai.isLoading) return;
     printed.current = true;
     const t = setTimeout(() => window.print(), 400);
     return () => clearTimeout(t);
-  }, [print, ai.isLoading]);
+  }, [print, withSummary, ai.isLoading]);
 
   const title = `SAMO 현장 Progress Report [기준일 ${base}]`;
 
@@ -90,16 +117,30 @@ function ReportPage() {
 
       <Sheet>
         <Header title={title} page="1 / 3" sub="대시보드 요약" />
-        <section className="avoid-break mt-3 rounded border border-slate-300 bg-slate-50 p-3">
-          <h2 className="mb-1 text-[11px] font-bold tracking-wide text-slate-700">EXECUTIVE SUMMARY</h2>
-          {ai.isLoading && <p className="text-[10px] text-slate-500">AI가 기준일 현황을 분석해 요약을 작성하는 중입니다…</p>}
-          {ai.isError && <p className="text-[10px] text-red-700">AI 요약을 생성하지 못했습니다: {(ai.error as Error).message}</p>}
-          {ai.data && (
-            <div className="space-y-1.5 text-[10.5px] leading-relaxed text-slate-800">
-              {ai.data.summary.split(/\n{1,}/).filter((p) => p.trim()).map((p, i) => <p key={i}>{p.trim()}</p>)}
-            </div>
-          )}
+        {withSummary && (
+        <section className="avoid-break mt-3 overflow-hidden rounded-md border border-slate-300 bg-white">
+          <div className="flex items-center gap-2 border-b border-slate-300 bg-[#1e3a5f] px-3 py-1.5">
+            <span className="text-[11px] font-bold tracking-[0.14em] text-white">EXECUTIVE SUMMARY</span>
+            <span className="ml-auto text-[9px] text-slate-300">기준일 {base} · AI 분석</span>
+          </div>
+          <div className="px-3 py-2.5">
+            {ai.isLoading && <p className="text-[10px] text-slate-500">AI가 기준일 현황을 분석해 요약을 작성하는 중입니다…</p>}
+            {ai.isError && <p className="text-[10px] text-red-700">AI 요약을 생성하지 못했습니다: {(ai.error as Error).message}</p>}
+            {ai.data && (
+              <div className="space-y-2">
+                {parseSummary(ai.data.summary).map((b, i) => (
+                  <div key={i} className="flex gap-2">
+                    <span className="mt-[1px] shrink-0 rounded-sm px-1.5 py-[1px] text-[9px] font-bold text-white" style={{ background: (b.label ? LABEL_TONE[b.label] : undefined) ?? "#475569" }}>
+                      {b.label ?? "요약"}
+                    </span>
+                    <p className="text-[10.5px] leading-[1.6] text-slate-800">{renderEmphasis(b.text)}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </section>
+        )}
 
         <div className="mt-3 grid grid-cols-3 gap-2">
           <KpiCard label="총 활동" value={`${m.total.toLocaleString()}`} unit="행"

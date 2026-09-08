@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { Eye, FileText, Printer } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { projectQuery, useProgressHistory, useProject } from "@/lib/use-project";
 import {
@@ -257,6 +258,7 @@ function Dashboard() {
 /** 리포트 버튼 — 미리보기 / 바로 출력 선택 */
 function ReportButton({ base }: { base: string }) {
   const [open, setOpen] = useState(false);
+  const [withSummary, setWithSummary] = useState(true);
   const navigate = useNavigate();
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -268,11 +270,18 @@ function ReportButton({ base }: { base: string }) {
           <DialogTitle>SAMO 현장 Progress Report</DialogTitle>
           <DialogDescription>기준일 {fmtDate(base)} 기준 A4 3페이지 리포트 (요약 · 지연 상세 · T&amp;C T1/T2)</DialogDescription>
         </DialogHeader>
+        <label className="flex cursor-pointer items-start gap-2 rounded-md border border-border bg-muted/40 p-2.5">
+          <Checkbox checked={withSummary} onCheckedChange={(v) => setWithSummary(v === true)} className="mt-0.5" />
+          <span>
+            <span className="block text-sm font-medium">Executive Summary 포함</span>
+            <span className="block text-[11px] text-muted-foreground">AI가 기준일 현황을 분석해 1페이지 상단에 요약을 작성합니다 (해제 시 생성하지 않음)</span>
+          </span>
+        </label>
         <div className="grid gap-2 sm:grid-cols-2">
           <button
             type="button"
             className="rounded-md border border-border p-3 text-left hover:border-primary hover:bg-accent"
-            onClick={() => { setOpen(false); navigate({ to: "/report", search: {} }); }}
+            onClick={() => { setOpen(false); navigate({ to: "/report", search: { summary: withSummary } }); }}
           >
             <Eye className="mb-1 size-4 text-primary" />
             <p className="text-sm font-semibold">미리보기</p>
@@ -281,7 +290,7 @@ function ReportButton({ base }: { base: string }) {
           <button
             type="button"
             className="rounded-md border border-border p-3 text-left hover:border-primary hover:bg-accent"
-            onClick={() => { setOpen(false); window.open("/report?print=1", "_blank", "noopener"); }}
+            onClick={() => { setOpen(false); window.open(`/report?print=1&summary=${withSummary ? 1 : 0}`, "_blank", "noopener"); }}
           >
             <Printer className="mb-1 size-4 text-primary" />
             <p className="text-sm font-semibold">출력 (PDF 저장)</p>
