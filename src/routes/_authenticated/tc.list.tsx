@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Fragment, useCallback, useMemo, useState } from "react";
-import { Download, Search, X } from "lucide-react";
+import { Download, Pencil, Search, X } from "lucide-react";
 import { ExportDialog, type ExportRow } from "@/components/export-dialog";
+import { EditableCell } from "@/components/editable-cell";
+import { useAuth } from "@/lib/use-auth";
+import { numOrNull, useTcEdit } from "@/lib/use-inline-edit";
+
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
