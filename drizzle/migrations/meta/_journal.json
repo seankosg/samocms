@@ -29,6 +29,13 @@
       "when": 1788856394610,
       "tag": "0003_create_auth_profiles_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788885887323,
+      "tag": "0004_activity_daily_progress",
+      "breakpoints": true
     }
   ]
 }
