@@ -97,17 +97,17 @@ function TcList() {
     return [...counts.entries()].map(([value, count]) => ({ value, count }));
   };
 
-  const exportXlsx = () => {
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.map((r) => ({
+  const exportRows = useCallback((): ExportRow[] => rows.map((r) => ({
+    group: r.supplier ?? "",
+    rec: {
       공종: r.discipline, "Bldg.": r.bldg, Group: r.grp, Item: r.item, Equipment: r.equip, "Q'ty": r.qty, Supplier: r.supplier,
       ...Object.fromEntries(TC_STAGES.flatMap((s) => [
         [`${s} 계획`, r[PLAN[s]]], [`${s} 실적`, r[ACT[s]]], [`${s} 잔여`, remainOf(r, s)],
       ])),
       Status: r.status, "Doc Reference": r.docref,
-    }))), "T&C List");
-    XLSX.writeFile(wb, "HMMME_TC_List.xlsx");
-  };
+    },
+  })), [rows]);
+
 
   const headCell = "whitespace-nowrap border-b border-r border-border px-2 py-1.5 font-bold";
 
