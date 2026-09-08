@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import * as XLSX from "xlsx";
-import { ArrowDownAZ, ArrowUpAZ, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, RotateCcw, Search, X } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Download, RotateCcw, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fmtDate, isLate, pct1, SLOT_LABEL, statusOfRow, STATUS_LABEL, type Row } from "@/lib/schedule-model";
@@ -40,10 +40,8 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
   const [due, setDue] = useState<string | null>(dueBy ?? null);
   const [sort, setSort] = useState<SortKey>("e");
   const [asc, setAsc] = useState(true);
-  const [page, setPage] = useState(1);
-  const [size, setSize] = useState(50);
   const [colq, setColq] = useState<Partial<Record<TextKey, string>>>({});
-  const setCol = (k: TextKey, v: string) => { setColq((o) => ({ ...o, [k]: v })); setPage(1); };
+  const setCol = (k: TextKey, v: string) => { setColq((o) => ({ ...o, [k]: v })); };
   const selValue = { dept, bldg, ms, sub, status } as const;
   const selSet = { dept: setDept, bldg: setBldg, ms: setMs, sub: setSub, status: setStatus } as const;
 
@@ -94,7 +92,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
 
   const shown = filtered;
 
-  const reset = () => { setQ(""); setDept("전체"); setBldg("전체"); setMs("전체"); setSub("전체"); setStatus("전체"); setDue(null); setColq({}); setPage(1); };
+  const reset = () => { setQ(""); setDept("전체"); setBldg("전체"); setMs("전체"); setSub("전체"); setStatus("전체"); setDue(null); setColq({}); };
 
   const exportXlsx = () => {
     const wb = XLSX.utils.book_new();
@@ -109,7 +107,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
   const setSortKey = (k: SortKey | null) => { if (!k) return; if (k === sort) setAsc((v) => !v); else { setSort(k); setAsc(true); } };
 
   const Sel = ({ label, value, set, list, render }: { label: string; value: string; set: (v: string) => void; list: string[]; render?: (v: string) => string }) => (
-    <select aria-label={label} value={value} onChange={(e) => { set(e.target.value); setPage(1); }} className="h-9 rounded-md border border-input bg-background px-2 text-xs">
+    <select aria-label={label} value={value} onChange={(e) => { set(e.target.value); }} className="h-9 rounded-md border border-input bg-background px-2 text-xs">
       <option value="전체">{label}: 전체</option>
       {list.map((x) => <option key={x} value={x}>{render ? render(x) : x}</option>)}
     </select>
