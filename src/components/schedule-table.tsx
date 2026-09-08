@@ -135,7 +135,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
 
   const reset = () => { setQ(""); setDue(null); setMulti({}); setTexts({}); setDates({}); };
 
-  const exportRows = (): ExportRow[] => filtered.map((r) => ({
+  const exportRows = useCallback((): ExportRow[] => filtered.map((r) => ({
     group: r.sub ?? "",
     rec: {
       "No.": r.no, 담당부서: r.dept, "Bldg.": r.bldg, Room: r.room, "Work Scope": r.scope, Milestone: r.ms,
