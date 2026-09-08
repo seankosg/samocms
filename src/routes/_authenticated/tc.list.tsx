@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Fragment, useMemo, useState } from "react";
-import * as XLSX from "xlsx";
+import { Fragment, useCallback, useMemo, useState } from "react";
 import { Download, Search, X } from "lucide-react";
+import { ExportDialog, type ExportRow } from "@/components/export-dialog";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -125,7 +125,15 @@ function TcList() {
           {activeCount > 0 && (
             <Button size="sm" variant="outline" onClick={clearAll}><X className="size-3.5" />필터 {activeCount}개 해제</Button>
           )}
-          <Button size="sm" onClick={exportXlsx}><Download className="size-3.5" />XLSX</Button>
+          <Button size="sm" onClick={() => setExportOpen(true)}><Download className="size-3.5" />XLSX</Button>
+          <ExportDialog
+            open={exportOpen}
+            onOpenChange={setExportOpen}
+            title="T&C List 내보내기"
+            getRows={exportRows}
+            fileBase="HMMME_TC_List"
+            sheetName="T&C List"
+          />
         </div>
         <div className="max-h-[calc(100vh-300px)] overflow-auto">
           <table className="w-full min-w-[2400px] border-collapse text-left text-[11px]">
