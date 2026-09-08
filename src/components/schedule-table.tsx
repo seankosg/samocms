@@ -52,6 +52,7 @@ export type TableInitial = Partial<{ dept: string; bldg: string; ms: string; sub
 
 export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy }: { rows: Row[]; fileName: string; lockLate?: boolean; initial?: TableInitial; dueBy?: string | null }) {
   const [q, setQ] = useState(initial?.q ?? "");
+  const [exportOpen, setExportOpen] = useState(false);
   const [due, setDue] = useState<string | null>(dueBy ?? null);
   const [sort, setSort] = useState<SortKey>("e");
   const [asc, setAsc] = useState(true);
