@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { Download, Search, X } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
@@ -197,11 +197,11 @@ function TcList() {
                     const late = !stageDone(r, s) && !!plan && plan <= base;
                     const cell = `whitespace-nowrap border-r border-border px-2 py-1.5 text-center ${done ? "bg-muted text-muted-foreground" : ""}`;
                     return (
-                      <>
-                        <td key={`${s}-p`} className={cell}>{fmtDate(plan)}</td>
-                        <td key={`${s}-a`} className={cell}>{fmtDate(act)}</td>
-                        <td key={`${s}-r`} className={`${cell} ${late ? "bg-yellow-100 font-semibold text-destructive dark:bg-yellow-900/40" : ""}`}>{rem}</td>
-                      </>
+                      <Fragment key={s}>
+                        <td className={cell}>{fmtDate(plan)}</td>
+                        <td className={cell}>{fmtDate(act)}</td>
+                        <td className={`${cell} ${late ? "bg-yellow-100 font-semibold text-destructive dark:bg-yellow-900/40" : ""}`}>{rem}</td>
+                      </Fragment>
                     );
                   })}
                   <td className={`border-r border-border px-2 py-1.5 font-semibold ${flat(r.status).toLowerCase() === "fail" ? "text-destructive" : flat(r.status).toLowerCase() === "pass" ? "text-primary" : ""}`}>{r.status ?? "-"}</td>
