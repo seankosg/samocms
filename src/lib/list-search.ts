@@ -36,11 +36,24 @@ export const toInitial = (s: ListSearch) => ({
 
 export const searchKey = (s: ListSearch) => JSON.stringify(s);
 
-export type TcSearch = { disc?: string; only?: string };
+export type TcSearch = {
+  disc?: string;
+  only?: string;
+  bldg?: string;
+  item?: string;
+  /** 단계명 (T0·T1·Report·RFI·T2·Response) */
+  stage?: string;
+  /** done | remain | late | pass | fail */
+  cell?: string;
+};
 
 export function validateTcSearch(raw: Record<string, unknown>): TcSearch {
   const out: TcSearch = {};
   const disc = str(raw["disc"]); if (disc) out.disc = disc;
   const only = str(raw["only"]); if (only) out.only = only;
+  const bldg = str(raw["bldg"]); if (bldg) out.bldg = bldg;
+  const item = str(raw["item"]); if (item) out.item = item;
+  const stage = str(raw["stage"]); if (stage) out.stage = stage;
+  const cell = str(raw["cell"]); if (cell) out.cell = cell;
   return out;
 }

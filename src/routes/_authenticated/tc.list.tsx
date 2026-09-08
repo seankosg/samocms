@@ -47,8 +47,15 @@ function TcList() {
   const [q, setQ] = useState("");
   const [exportOpen, setExportOpen] = useState(false);
   const [only, setOnly] = useState(search.only ?? "전체");
-  const [multi, setMulti] = useState<Partial<Record<MultiKey, string[]>>>(
-    search.disc && search.disc !== "전체" ? { discipline: [search.disc] } : {},
+  const [multi, setMulti] = useState<Partial<Record<MultiKey, string[]>>>(() => {
+    const init: Partial<Record<MultiKey, string[]>> = {};
+    if (search.disc && search.disc !== "전체") init.discipline = [search.disc];
+    if (search.bldg && search.bldg !== "전체") init.bldg = [search.bldg];
+    if (search.item) init.item = [search.item];
+    return init;
+  });
+  const [cellF, setCellF] = useState<{ stage?: TcStage; cell: string } | null>(
+    search.cell ? { ...(TC_STAGES.includes(search.stage as TcStage) ? { stage: search.stage as TcStage } : {}), cell: search.cell } : null,
   );
   const [texts, setTexts] = useState<Partial<Record<TextKey, TextFilterValue>>>({});
   const [dates, setDates] = useState<Record<string, DateFilterValue>>({});
@@ -58,15 +65,31 @@ function TcList() {
   const setDateCol = (k: string, v: DateFilterValue | undefined) => setDates((o) => {
     const next = { ...o }; if (v) next[k] = v; else delete next[k]; return next;
   });
-  const clearAll = () => { setMulti({}); setTexts({}); setDates({}); setQ(""); setOnly("전체"); };
+  const clearAll = () => { setMulti({}); setTexts({}); setDates({}); setQ(""); setOnly("전체"); setCellF(null); };
   const activeCount =
     Object.values(multi).filter((v) => v && v.length).length +
-    Object.values(texts).filter(Boolean).length + Object.keys(dates).length;
+    Object.values(texts).filter(Boolean).length + Object.keys(dates).length + (cellF ? 1 : 0);
+
+  const CELL_LABEL: Record<string, string> = { done: "완료", remain: "잔여", late: "지연", pass: "Pass", fail: "Fail" };
+  const cellChip = cellF ? `${cellF.stage ? `${cellF.stage} ` : ""}${CELL_LABEL[cellF.cell] ?? cellF.cell}` : "";
 
   /** exclude: 해당 컬럼 필터를 제외하고 판정 (facet 크로스 필터링용) */
   const passes = (r: TcItem, exclude?: string) => {
     if (only === "지연" && !TC_STAGES.some((s) => !stageDone(r, s) && (r[PLAN[s]] as string | null) && (r[PLAN[s]] as string) <= base)) return false;
     if (only === "Fail" && flat(r.status).toLowerCase() !== "fail") return false;
+    if (cellF) {
+      const st = flat(r.status).toLowerCase();
+      if (cellF.cell === "pass" && st !== "pass") return false;
+      if (cellF.cell === "fail" && st !== "fail") return false;
+      if (cellF.stage) {
+        const s = cellF.stage;
+        const done = stageDone(r, s);
+        const plan = r[PLAN[s]] as string | null;
+        if (cellF.cell === "done" && !done) return false;
+        if (cellF.cell === "remain" && done) return false;
+        if (cellF.cell === "late" && (done || !plan || plan > base)) return false;
+      }
+    }
     if (q) {
       const hay = [r.bldg, r.grp, r.item, r.equip, r.supplier, r.docref].join(" ").toLowerCase();
       if (!hay.includes(q.toLowerCase())) return false;
@@ -86,7 +109,7 @@ function TcList() {
     return true;
   };
 
-  const rows = useMemo(() => tcItems.filter((r) => passes(r)), [tcItems, q, only, multi, texts, dates, base]);
+  const rows = useMemo(() => tcItems.filter((r) => passes(r)), [tcItems, q, only, multi, texts, dates, base, cellF]);
 
   const facet = (k: MultiKey) => {
     const counts = new Map<string, number>();
@@ -123,6 +146,11 @@ function TcList() {
           <select aria-label="상태" value={only} onChange={(e) => setOnly(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-xs">
             <option>전체</option><option>지연</option><option>Fail</option>
           </select>
+          {cellF && (
+            <Button size="sm" variant="secondary" onClick={() => setCellF(null)}>
+              <X className="size-3.5" />{cellChip}
+            </Button>
+          )}
           {activeCount > 0 && (
             <Button size="sm" variant="outline" onClick={clearAll}><X className="size-3.5" />필터 {activeCount}개 해제</Button>
           )}
