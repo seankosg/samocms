@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
-import * as XLSX from "xlsx";
+import { useCallback, useMemo, useState } from "react";
 import { ArrowDownAZ, ArrowUpAZ, Download, RotateCcw, Search, X } from "lucide-react";
+import { ExportDialog, type ExportRow } from "@/components/export-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fmtDate, isLate, pct1, SLOT_LABEL, statusOfRow, STATUS_LABEL, type Row } from "@/lib/schedule-model";
@@ -52,6 +52,7 @@ export type TableInitial = Partial<{ dept: string; bldg: string; ms: string; sub
 
 export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy }: { rows: Row[]; fileName: string; lockLate?: boolean; initial?: TableInitial; dueBy?: string | null }) {
   const [q, setQ] = useState(initial?.q ?? "");
+  const [exportOpen, setExportOpen] = useState(false);
   const [due, setDue] = useState<string | null>(dueBy ?? null);
   const [sort, setSort] = useState<SortKey>("e");
   const [asc, setAsc] = useState(true);
@@ -135,16 +136,16 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
 
   const reset = () => { setQ(""); setDue(null); setMulti({}); setTexts({}); setDates({}); };
 
-  const exportXlsx = () => {
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(filtered.map((r) => ({
+  const exportRows = useCallback((): ExportRow[] => filtered.map((r) => ({
+    group: r.sub ?? "",
+    rec: {
       "No.": r.no, 담당부서: r.dept, "Bldg.": r.bldg, Room: r.room, "Work Scope": r.scope, Milestone: r.ms,
       Subcon: r.sub, Activity: r.act, Unit: r.unit, Done: r.done, Total: r.tot,
       "계획(%)": r.pl == null ? null : r.pl * 100, "실적(%)": r.pc == null ? null : r.pc * 100,
       상태: STATUS_LABEL[statusOfRow(r)], Predecessor: r.pred, Successor: r.succ, Start: r.s, Finish: r.e,
-    }))), "Data");
-    XLSX.writeFile(wb, fileName);
-  };
+    },
+  })), [filtered]);
+
   const setSortKey = (k: SortKey | null) => { if (!k) return; if (k === sort) setAsc((v) => !v); else { setSort(k); setAsc(true); } };
 
   return (
@@ -155,7 +156,15 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
           <Input value={q} onChange={(e) => { setQ(e.target.value); }} placeholder="Activity · 건물 · 협력사 검색" className="h-9 pl-9" />
         </div>
         <Button variant="outline" size="sm" onClick={reset}><RotateCcw className="size-3.5" />초기화</Button>
-        <Button size="sm" onClick={exportXlsx}><Download className="size-3.5" />XLSX</Button>
+        <Button size="sm" onClick={() => setExportOpen(true)}><Download className="size-3.5" />XLSX</Button>
+        <ExportDialog
+          open={exportOpen}
+          onOpenChange={setExportOpen}
+          title={`${fileName.replace(/\.xlsx$/, "").replace(/^HMMME_/, "")} 내보내기`}
+          getRows={exportRows}
+          fileBase={fileName.replace(/\.xlsx$/, "")}
+          sheetName="Data"
+        />
       </div>
 
       <div className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs">

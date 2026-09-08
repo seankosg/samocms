@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Fragment, useMemo, useState } from "react";
-import * as XLSX from "xlsx";
+import { Fragment, useCallback, useMemo, useState } from "react";
 import { Download, Search, X } from "lucide-react";
+import { ExportDialog, type ExportRow } from "@/components/export-dialog";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +45,7 @@ function TcList() {
   const { tcItems, base } = useProject();
   const search = Route.useSearch();
   const [q, setQ] = useState("");
+  const [exportOpen, setExportOpen] = useState(false);
   const [only, setOnly] = useState(search.only ?? "전체");
   const [multi, setMulti] = useState<Partial<Record<MultiKey, string[]>>>(
     search.disc && search.disc !== "전체" ? { discipline: [search.disc] } : {},
@@ -97,17 +98,17 @@ function TcList() {
     return [...counts.entries()].map(([value, count]) => ({ value, count }));
   };
 
-  const exportXlsx = () => {
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.map((r) => ({
+  const exportRows = useCallback((): ExportRow[] => rows.map((r) => ({
+    group: r.supplier ?? "",
+    rec: {
       공종: r.discipline, "Bldg.": r.bldg, Group: r.grp, Item: r.item, Equipment: r.equip, "Q'ty": r.qty, Supplier: r.supplier,
       ...Object.fromEntries(TC_STAGES.flatMap((s) => [
         [`${s} 계획`, r[PLAN[s]]], [`${s} 실적`, r[ACT[s]]], [`${s} 잔여`, remainOf(r, s)],
       ])),
       Status: r.status, "Doc Reference": r.docref,
-    }))), "T&C List");
-    XLSX.writeFile(wb, "HMMME_TC_List.xlsx");
-  };
+    },
+  })), [rows]);
+
 
   const headCell = "whitespace-nowrap border-b border-r border-border px-2 py-1.5 font-bold";
 
@@ -125,7 +126,15 @@ function TcList() {
           {activeCount > 0 && (
             <Button size="sm" variant="outline" onClick={clearAll}><X className="size-3.5" />필터 {activeCount}개 해제</Button>
           )}
-          <Button size="sm" onClick={exportXlsx}><Download className="size-3.5" />XLSX</Button>
+          <Button size="sm" onClick={() => setExportOpen(true)}><Download className="size-3.5" />XLSX</Button>
+          <ExportDialog
+            open={exportOpen}
+            onOpenChange={setExportOpen}
+            title="T&C List 내보내기"
+            getRows={exportRows}
+            fileBase="HMMME_TC_List"
+            sheetName="T&C List"
+          />
         </div>
         <div className="max-h-[calc(100vh-300px)] overflow-auto">
           <table className="w-full min-w-[2400px] border-collapse text-left text-[11px]">
