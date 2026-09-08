@@ -45,6 +45,7 @@ function TcList() {
   const { tcItems, base } = useProject();
   const search = Route.useSearch();
   const [q, setQ] = useState("");
+  const [exportOpen, setExportOpen] = useState(false);
   const [only, setOnly] = useState(search.only ?? "전체");
   const [multi, setMulti] = useState<Partial<Record<MultiKey, string[]>>>(
     search.disc && search.disc !== "전체" ? { discipline: [search.disc] } : {},
