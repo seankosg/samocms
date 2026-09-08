@@ -88,29 +88,42 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
               총 <strong className="text-foreground">{rows.length.toLocaleString()}</strong>행 · Rev{rev}
             </span>
             <Button size="sm" variant="outline" onClick={exportAll}><Download className="size-3.5" />통합 엑셀</Button>
-            <span className="rounded-md border border-border px-2 py-1.5">
-              <strong>{profile?.full_name ?? "사용자"}</strong>
-              <span className="ml-1 text-muted-foreground">{ROLE_LABEL[role]}</span>
-            </span>
-            <Button
-              size="sm"
-              variant="ghost"
-              title="로그아웃"
-              onClick={async () => {
-                await qc.cancelQueries();
-                qc.clear();
-                await supabase.auth.signOut();
-                navigate({ to: "/auth", replace: true });
-              }}
-            >
-              <LogOut className="size-3.5" />로그아웃
-            </Button>
           </div>
         </div>
       </header>
 
       <div className="flex">
         <aside className={`${open ? "w-[212px]" : "w-0 lg:w-[62px]"} sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 overflow-y-auto border-r border-border bg-card transition-all sm:block`}>
+          <div className="border-b border-border p-2">
+            <div className="flex items-center gap-2 rounded-md bg-accent/40 px-2 py-1.5">
+              <div className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground uppercase">
+                {(profile?.username ?? profile?.full_name ?? "U").slice(0, 2)}
+              </div>
+              {open && (
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <strong className="truncate text-sm leading-tight">{profile?.username ?? "사용자"}</strong>
+                    <span className="shrink-0 rounded bg-primary/15 px-1 text-[10px] font-semibold text-primary">{ROLE_LABEL[role]}</span>
+                  </div>
+                  <p className="truncate text-[11px] leading-tight text-muted-foreground">{profile?.full_name ?? ""}{profile?.team ? ` · ${profile.team}` : ""}</p>
+                </div>
+              )}
+              <Button
+                size="icon"
+                variant="ghost"
+                className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+                title={open ? "로그아웃" : ""}
+                onClick={async () => {
+                  await qc.cancelQueries();
+                  qc.clear();
+                  await supabase.auth.signOut();
+                  navigate({ to: "/auth", replace: true });
+                }}
+              >
+                <LogOut className="size-3.5" />
+              </Button>
+            </div>
+          </div>
           <nav className="p-2" aria-label="주 메뉴">
             {[...NAV, ...(isAdmin ? [ADMIN_NAV] : [])].map((g) => (
               <div key={g.group} className="mb-3">
