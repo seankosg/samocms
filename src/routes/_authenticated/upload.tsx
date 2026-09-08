@@ -13,7 +13,7 @@ import { importActivities } from "@/lib/activities.functions";
 import { importTcItems } from "@/lib/project.functions";
 import { dayDiff, fmtDate, SLOTS, SLOT_LABEL } from "@/lib/schedule-model";
 
-export const Route = createFileRoute("/upload")({
+export const Route = createFileRoute("/_authenticated/_authenticated/upload")({
   head: () => ({ meta: [
     { title: "데이터 업로드 | HMMME 통합 공정 관리" },
     { name: "description", content: "공정표와 시운전 워크북을 올리면 공종별 데이터가 최신 파일로 교체됩니다." },

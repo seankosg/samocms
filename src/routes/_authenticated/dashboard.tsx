@@ -7,7 +7,7 @@ import {
 } from "@/lib/schedule-model";
 import { stageProgress, tcPct, TC_DISC_LABEL, type TcStage } from "@/lib/tc-model";
 
-export const Route = createFileRoute("/dashboard")({
+export const Route = createFileRoute("/_authenticated/_authenticated/dashboard")({
   head: () => ({ meta: [
     { title: "대시보드 | HMMME 통합 공정 관리" },
     { name: "description", content: "공정 계획 대비 실적, 지연 현황, 마일스톤과 MEP 시운전 진도를 한 화면에서 확인합니다." },

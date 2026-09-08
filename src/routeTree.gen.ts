@@ -10,108 +10,124 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as DelaysRouteImport } from './routes/delays'
-import { Route as NetworkRouteImport } from './routes/network'
-import { Route as RawDataRouteImport } from './routes/raw-data'
-import { Route as ScheduleRouteImport } from './routes/schedule'
-import { Route as UploadRouteImport } from './routes/upload'
-import { Route as TcElecRouteImport } from './routes/tc.elec'
-import { Route as TcListRouteImport } from './routes/tc.list'
-import { Route as TcMechRouteImport } from './routes/tc.mech'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedDelaysRouteImport } from './routes/_authenticated/delays'
+import { Route as AuthenticatedNetworkRouteImport } from './routes/_authenticated/network'
+import { Route as AuthenticatedRawDataRouteImport } from './routes/_authenticated/raw-data'
+import { Route as AuthenticatedScheduleRouteImport } from './routes/_authenticated/schedule'
+import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
+import { Route as AuthenticatedTcElecRouteImport } from './routes/_authenticated/tc.elec'
+import { Route as AuthenticatedTcListRouteImport } from './routes/_authenticated/tc.list'
+import { Route as AuthenticatedTcMechRouteImport } from './routes/_authenticated/tc.mech'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardRoute = DashboardRouteImport.update({
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const DelaysRoute = DelaysRouteImport.update({
+const AuthenticatedDelaysRoute = AuthenticatedDelaysRouteImport.update({
   id: '/delays',
   path: '/delays',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const NetworkRoute = NetworkRouteImport.update({
+const AuthenticatedNetworkRoute = AuthenticatedNetworkRouteImport.update({
   id: '/network',
   path: '/network',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const RawDataRoute = RawDataRouteImport.update({
+const AuthenticatedRawDataRoute = AuthenticatedRawDataRouteImport.update({
   id: '/raw-data',
   path: '/raw-data',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ScheduleRoute = ScheduleRouteImport.update({
+const AuthenticatedScheduleRoute = AuthenticatedScheduleRouteImport.update({
   id: '/schedule',
   path: '/schedule',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const UploadRoute = UploadRouteImport.update({
+const AuthenticatedUploadRoute = AuthenticatedUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const TcElecRoute = TcElecRouteImport.update({
+const AuthenticatedTcElecRoute = AuthenticatedTcElecRouteImport.update({
   id: '/tc/elec',
   path: '/tc/elec',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const TcListRoute = TcListRouteImport.update({
+const AuthenticatedTcListRoute = AuthenticatedTcListRouteImport.update({
   id: '/tc/list',
   path: '/tc/list',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const TcMechRoute = TcMechRouteImport.update({
+const AuthenticatedTcMechRoute = AuthenticatedTcMechRouteImport.update({
   id: '/tc/mech',
   path: '/tc/mech',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
-  '/delays': typeof DelaysRoute
-  '/network': typeof NetworkRoute
-  '/raw-data': typeof RawDataRoute
-  '/schedule': typeof ScheduleRoute
-  '/upload': typeof UploadRoute
-  '/tc/elec': typeof TcElecRoute
-  '/tc/list': typeof TcListRoute
-  '/tc/mech': typeof TcMechRoute
+  '/auth': typeof AuthRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/delays': typeof AuthenticatedDelaysRoute
+  '/network': typeof AuthenticatedNetworkRoute
+  '/raw-data': typeof AuthenticatedRawDataRoute
+  '/schedule': typeof AuthenticatedScheduleRoute
+  '/upload': typeof AuthenticatedUploadRoute
+  '/tc/elec': typeof AuthenticatedTcElecRoute
+  '/tc/list': typeof AuthenticatedTcListRoute
+  '/tc/mech': typeof AuthenticatedTcMechRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
-  '/delays': typeof DelaysRoute
-  '/network': typeof NetworkRoute
-  '/raw-data': typeof RawDataRoute
-  '/schedule': typeof ScheduleRoute
-  '/upload': typeof UploadRoute
-  '/tc/elec': typeof TcElecRoute
-  '/tc/list': typeof TcListRoute
-  '/tc/mech': typeof TcMechRoute
+  '/auth': typeof AuthRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/delays': typeof AuthenticatedDelaysRoute
+  '/network': typeof AuthenticatedNetworkRoute
+  '/raw-data': typeof AuthenticatedRawDataRoute
+  '/schedule': typeof AuthenticatedScheduleRoute
+  '/upload': typeof AuthenticatedUploadRoute
+  '/tc/elec': typeof AuthenticatedTcElecRoute
+  '/tc/list': typeof AuthenticatedTcListRoute
+  '/tc/mech': typeof AuthenticatedTcMechRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
-  '/delays': typeof DelaysRoute
-  '/network': typeof NetworkRoute
-  '/raw-data': typeof RawDataRoute
-  '/schedule': typeof ScheduleRoute
-  '/upload': typeof UploadRoute
-  '/tc/elec': typeof TcElecRoute
-  '/tc/list': typeof TcListRoute
-  '/tc/mech': typeof TcMechRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/delays': typeof AuthenticatedDelaysRoute
+  '/_authenticated/network': typeof AuthenticatedNetworkRoute
+  '/_authenticated/raw-data': typeof AuthenticatedRawDataRoute
+  '/_authenticated/schedule': typeof AuthenticatedScheduleRoute
+  '/_authenticated/upload': typeof AuthenticatedUploadRoute
+  '/_authenticated/tc/elec': typeof AuthenticatedTcElecRoute
+  '/_authenticated/tc/list': typeof AuthenticatedTcListRoute
+  '/_authenticated/tc/mech': typeof AuthenticatedTcMechRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
     | '/dashboard'
     | '/delays'
     | '/network'
@@ -124,6 +140,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth'
     | '/dashboard'
     | '/delays'
     | '/network'
@@ -136,28 +153,23 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/dashboard'
-    | '/delays'
-    | '/network'
-    | '/raw-data'
-    | '/schedule'
-    | '/upload'
-    | '/tc/elec'
-    | '/tc/list'
-    | '/tc/mech'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/delays'
+    | '/_authenticated/network'
+    | '/_authenticated/raw-data'
+    | '/_authenticated/schedule'
+    | '/_authenticated/upload'
+    | '/_authenticated/tc/elec'
+    | '/_authenticated/tc/list'
+    | '/_authenticated/tc/mech'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DashboardRoute: typeof DashboardRoute
-  DelaysRoute: typeof DelaysRoute
-  NetworkRoute: typeof NetworkRoute
-  RawDataRoute: typeof RawDataRoute
-  ScheduleRoute: typeof ScheduleRoute
-  UploadRoute: typeof UploadRoute
-  TcElecRoute: typeof TcElecRoute
-  TcListRoute: typeof TcListRoute
-  TcMechRoute: typeof TcMechRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -169,83 +181,117 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard': {
-      id: '/dashboard'
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/delays': {
-      id: '/delays'
+    '/_authenticated/delays': {
+      id: '/_authenticated/delays'
       path: '/delays'
       fullPath: '/delays'
-      preLoaderRoute: typeof DelaysRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedDelaysRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/network': {
-      id: '/network'
+    '/_authenticated/network': {
+      id: '/_authenticated/network'
       path: '/network'
       fullPath: '/network'
-      preLoaderRoute: typeof NetworkRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedNetworkRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/raw-data': {
-      id: '/raw-data'
+    '/_authenticated/raw-data': {
+      id: '/_authenticated/raw-data'
       path: '/raw-data'
       fullPath: '/raw-data'
-      preLoaderRoute: typeof RawDataRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedRawDataRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/schedule': {
-      id: '/schedule'
+    '/_authenticated/schedule': {
+      id: '/_authenticated/schedule'
       path: '/schedule'
       fullPath: '/schedule'
-      preLoaderRoute: typeof ScheduleRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedScheduleRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/upload': {
-      id: '/upload'
+    '/_authenticated/upload': {
+      id: '/_authenticated/upload'
       path: '/upload'
       fullPath: '/upload'
-      preLoaderRoute: typeof UploadRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedUploadRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/tc/elec': {
-      id: '/tc/elec'
+    '/_authenticated/tc/elec': {
+      id: '/_authenticated/tc/elec'
       path: '/tc/elec'
       fullPath: '/tc/elec'
-      preLoaderRoute: typeof TcElecRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedTcElecRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/tc/list': {
-      id: '/tc/list'
+    '/_authenticated/tc/list': {
+      id: '/_authenticated/tc/list'
       path: '/tc/list'
       fullPath: '/tc/list'
-      preLoaderRoute: typeof TcListRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedTcListRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/tc/mech': {
-      id: '/tc/mech'
+    '/_authenticated/tc/mech': {
+      id: '/_authenticated/tc/mech'
       path: '/tc/mech'
       fullPath: '/tc/mech'
-      preLoaderRoute: typeof TcMechRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedTcMechRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDelaysRoute: typeof AuthenticatedDelaysRoute
+  AuthenticatedNetworkRoute: typeof AuthenticatedNetworkRoute
+  AuthenticatedRawDataRoute: typeof AuthenticatedRawDataRoute
+  AuthenticatedScheduleRoute: typeof AuthenticatedScheduleRoute
+  AuthenticatedUploadRoute: typeof AuthenticatedUploadRoute
+  AuthenticatedTcElecRoute: typeof AuthenticatedTcElecRoute
+  AuthenticatedTcListRoute: typeof AuthenticatedTcListRoute
+  AuthenticatedTcMechRoute: typeof AuthenticatedTcMechRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDelaysRoute: AuthenticatedDelaysRoute,
+  AuthenticatedNetworkRoute: AuthenticatedNetworkRoute,
+  AuthenticatedRawDataRoute: AuthenticatedRawDataRoute,
+  AuthenticatedScheduleRoute: AuthenticatedScheduleRoute,
+  AuthenticatedUploadRoute: AuthenticatedUploadRoute,
+  AuthenticatedTcElecRoute: AuthenticatedTcElecRoute,
+  AuthenticatedTcListRoute: AuthenticatedTcListRoute,
+  AuthenticatedTcMechRoute: AuthenticatedTcMechRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DashboardRoute: DashboardRoute,
-  DelaysRoute: DelaysRoute,
-  NetworkRoute: NetworkRoute,
-  RawDataRoute: RawDataRoute,
-  ScheduleRoute: ScheduleRoute,
-  UploadRoute: UploadRoute,
-  TcElecRoute: TcElecRoute,
-  TcListRoute: TcListRoute,
-  TcMechRoute: TcMechRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

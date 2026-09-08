@@ -9,7 +9,7 @@ import { projectQuery, useProject } from "@/lib/use-project";
 import { fmtDate, flat } from "@/lib/schedule-model";
 import { stageDone, TC_STAGES, type TcItem, type TcStage } from "@/lib/tc-model";
 
-export const Route = createFileRoute("/tc/list")({
+export const Route = createFileRoute("/_authenticated/_authenticated/tc/list")({
   head: () => ({ meta: [
     { title: "T&C List | HMMME 통합 공정 관리" },
     { name: "description", content: "시운전 전 항목의 단계별 계획일·실적일·잔여 수량을 한 표에서 확인하고 내보냅니다." },

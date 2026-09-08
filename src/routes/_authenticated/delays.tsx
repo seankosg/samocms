@@ -5,7 +5,7 @@ import { ScheduleTable } from "@/components/schedule-table";
 import { projectQuery, useProject } from "@/lib/use-project";
 import { fmtDate, isLate, pct1 } from "@/lib/schedule-model";
 
-export const Route = createFileRoute("/delays")({
+export const Route = createFileRoute("/_authenticated/_authenticated/delays")({
   head: () => ({ meta: [
     { title: "지연 리스트 | HMMME 통합 공정 관리" },
     { name: "description", content: "계획 대비 실적이 미달한 지연 활동만 모아 공종·건물·협력사별로 확인합니다." },
