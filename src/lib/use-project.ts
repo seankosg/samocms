@@ -1,7 +1,8 @@
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { getProgressHistory, getProjectData } from "./project.functions";
-import { toRow } from "./schedule-model";
+import { applyBaseline, toRow } from "./schedule-model";
+
 
 export const projectQuery = queryOptions({
   queryKey: ["project"],
