@@ -86,7 +86,7 @@ export function MultiSelectFilter({
 export function TextFilter({ value, onChange }: { value?: TextFilterValue; onChange: (v: TextFilterValue | undefined) => void }) {
   const text = value?.text ?? "";
   const emptyOnly = !!value?.emptyOnly;
-  const update = (patch: TextFilterValue) => {
+  const update = (patch: { text?: string | undefined; emptyOnly?: boolean | undefined }) => {
     const next = { ...(value ?? {}), ...patch };
     onChange(next.text || next.emptyOnly ? next : undefined);
   };
@@ -112,7 +112,7 @@ export function TextFilter({ value, onChange }: { value?: TextFilterValue; onCha
 
 /** 날짜 범위 필터 */
 export function DateRangeFilter({ value, onChange }: { value?: DateFilterValue; onChange: (v: DateFilterValue | undefined) => void }) {
-  const update = (patch: DateFilterValue) => {
+  const update = (patch: { from?: string | undefined; to?: string | undefined; emptyOnly?: boolean | undefined }) => {
     const next = { ...(value ?? {}), ...patch };
     onChange(next.from || next.to || next.emptyOnly ? next : undefined);
   };
