@@ -4,6 +4,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { FileSpreadsheet, Loader2, UploadCloud } from "lucide-react";
+import { useAuth } from "@/lib/use-auth";
+import { SCOPE_LABEL } from "@/lib/roster";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { projectQuery, useProject } from "@/lib/use-project";
@@ -28,6 +30,7 @@ export const Route = createFileRoute("/_authenticated/upload")({
 
 function UploadPage() {
   const { rows, tcItems, batches, base } = useProject();
+  const { canEdit, canWrite, scopes, isAdmin } = useAuth();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -46,11 +49,13 @@ function UploadPage() {
         if (isTcWorkbook(wb)) {
           const parsed = parseTcWorkbook(buf, file.name);
           const disc = meta.disc === "Elec" ? "Elec" : "Mech";
+          if (!canEdit(disc)) throw new Error(`${disc} T&C 자료를 업로드할 권한이 없습니다.`);
           const res = await importTcItems({ data: { discipline: disc, fileName: file.name, fileDate: meta.date, rows: parsed } });
           done.push(`${disc} T&C ${res.inserted}건`);
         } else {
           const parsed = parseScheduleFile(buf, file.name);
           const slot = sourceKeyFromFileName(file.name);
+          if (!canEdit(slot)) throw new Error(`${SLOT_LABEL[slot] ?? slot} 자료를 업로드할 권한이 없습니다.`);
           const res = await importActivities({
             data: {
               sourceFile: slot,
@@ -97,8 +102,11 @@ function UploadPage() {
       >
         {busy ? <Loader2 className="mb-2 size-8 animate-spin text-primary" /> : <UploadCloud className="mb-2 size-8 text-muted-foreground" />}
         <p className="text-sm font-semibold">엑셀 파일을 여기로 끌어다 놓으세요</p>
+        <p className="mt-1 text-xs font-semibold text-primary">
+          {isAdmin ? "관리자: 모든 공종 업로드 가능" : canWrite ? `담당 공종: ${scopes.map((x) => SCOPE_LABEL[x]).join(" · ") || "없음"}` : "조회 전용 계정입니다"}
+        </p>
         <p className="mt-1 text-xs text-muted-foreground">공정표(Arch · Elec · Mech · Int · Permit)와 시운전(MECH T&C · ELEC T&C) 워크북을 자동으로 구분합니다.</p>
-        <Button className="mt-4" disabled={busy} onClick={() => fileRef.current?.click()}>
+        <Button className="mt-4" disabled={busy || !canWrite} onClick={() => fileRef.current?.click()}>
           {busy ? <Loader2 className="animate-spin" /> : <FileSpreadsheet />}파일 선택
         </Button>
       </div>
