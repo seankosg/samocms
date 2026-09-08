@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
   AlertTriangle, BarChart3, CalendarDays, ChevronLeft, Download, HardHat, ListChecks,
-  LogOut, Network, PanelLeft, Settings, Table2, UploadCloud, Users, Wrench, Zap,
+  LogOut, Network, PanelLeft, Settings, Sparkles, Table2, UploadCloud, Users, Wrench, Zap,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ROLE_LABEL, useAuth } from "@/lib/use-auth";
@@ -15,6 +15,25 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { autoBaseline, useProject } from "@/lib/use-project";
 import { setBaselineDate } from "@/lib/project.functions";
 import { SLOT_LABEL } from "@/lib/schedule-model";
+import { currentBuildId, forceFreshAppLoad } from "@/hooks/use-version-check";
+import { UpdateAvailableBanner } from "@/components/update-available-banner";
+
+function NewVersionButton() {
+  const buildId = currentBuildId();
+  if (!buildId || buildId.startsWith("__") || buildId === "development") return null;
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => void forceFreshAppLoad()}
+      aria-label="New Version - 강제 새로고침"
+      className="hidden sm:inline-flex print:hidden"
+    >
+      <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+      New Version
+    </Button>
+  );
+}
 
 const NAV = [
   { group: "현황", items: [
@@ -88,9 +107,12 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
               총 <strong className="text-foreground">{rows.length.toLocaleString()}</strong>행 · Rev{rev}
             </span>
             <Button size="sm" variant="outline" onClick={exportAll}><Download className="size-3.5" />통합 엑셀</Button>
+            <NewVersionButton />
           </div>
         </div>
       </header>
+      <UpdateAvailableBanner />
+
 
       <div className="flex">
         <aside className={`${open ? "w-[212px]" : "w-0 lg:w-[62px]"} sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 overflow-y-auto border-r border-border bg-card transition-all sm:block`}>
