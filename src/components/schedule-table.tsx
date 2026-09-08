@@ -92,9 +92,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
     });
   }, [rows, q, dept, bldg, ms, sub, status, due, sort, asc, lockLate, colq]);
 
-  const pages = Math.max(1, Math.ceil(filtered.length / size));
-  const cur = Math.min(page, pages);
-  const shown = filtered.slice((cur - 1) * size, cur * size);
+  const shown = filtered;
 
   const reset = () => { setQ(""); setDept("전체"); setBldg("전체"); setMs("전체"); setSub("전체"); setStatus("전체"); setDue(null); setColq({}); setPage(1); };
 
