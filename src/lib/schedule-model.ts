@@ -161,6 +161,29 @@ export function planAt(r: { s: string | null; e: string | null; plRaw: number | 
 export const applyBaseline = (rows: Row[], base: string): Row[] =>
   rows.map((r) => ({ ...r, pl: planAt(r, base) }));
 
+/** 기준일 하루 전 날짜 (yyyy-mm-dd) */
+export const prevDay = (base: string) => new Date(Date.parse(base) - 864e5).toISOString().slice(0, 10);
+
+/** 당일 계획 진도율 증분 = 기준일 계획 - (기준일-1일) 계획 */
+export function dailyPlan(r: Row, base: string): number | null {
+  if (!r.s || !r.e) return null;
+  const a = planAt(r, base);
+  const b = planAt(r, prevDay(base));
+  return a == null || b == null ? null : a - b;
+}
+
+/** 스냅샷 매칭용 항목 키 (업로드 시 기록되는 키와 동일 규칙) */
+export const itemKeyOf = (discipline: string, activityNo: string | null, activity: string) =>
+  `${discipline}|${normMS(activityNo) ?? ""}|${flat(activity)}`;
+
+/** 당일 실적 진도율 증분 = 기준일 실적 - 직전 스냅샷 실적 */
+export function dailyActual(r: Row, prev: Map<string, number> | undefined): number | null {
+  if (!prev || r.pc == null) return null;
+  const p = prev.get(`${r.dept}|${r.no ?? ""}|${r.act}`);
+  return p == null ? null : r.pc - p;
+}
+
+
 
 export const isLate = (r: Row) => r.pl != null && r.pc != null && r.pc < r.pl;
 export const isDone = (r: Row) => r.pc != null && r.pc >= 1;
