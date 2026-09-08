@@ -164,6 +164,11 @@ export const importTcItems = createServerFn({ method: "POST" })
       const { error } = await supabaseAdmin.from("tc_snapshots").insert(snaps.slice(i, i + 500) as never);
       if (error) throw new Error(error.message);
     }
+    // 단계별 일자 증분(건수/수량) 자동 집계
+    {
+      const { error } = await supabaseAdmin.rpc("refresh_tc_daily", { _discipline: data.discipline } as never);
+      if (error) console.error("refresh_tc_daily", data.discipline, error.message);
+    }
     return { discipline: data.discipline, inserted: rows.length, batchId: batch.data.id, snapshots: snaps.length };
   });
 
