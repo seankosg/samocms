@@ -21,8 +21,9 @@ export function ChangePassword({ forced, onDone }: { forced?: boolean; onDone?: 
       toast.error("두 비밀번호가 일치하지 않습니다.");
       return;
     }
-
+    setBusy(true);
     try {
+
       const { error } = await supabase.auth.updateUser({ password: pw });
       if (error) throw new Error(error.message);
       await markPasswordChanged();
