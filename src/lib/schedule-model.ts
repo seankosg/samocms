@@ -186,6 +186,15 @@ export const pct1 = (v: number | null | undefined) =>
   v == null || !isFinite(v) ? "—" : (Math.round(v * 1000) / 10).toFixed(1);
 
 export const fmtDate = (v: string | null) => (v ? v.replace(/-/g, ".") : "—");
+
+const MON3 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+/** dd-mmm 형식 (예: 05-Sep). 리스트 테이블 날짜 표시용. */
+export const fmtShortDate = (v: string | null) => {
+  if (!v) return "—";
+  const m = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return v;
+  return `${m[3]}-${MON3[parseInt(m[2], 10) - 1]}`;
+};
 export const dayDiff = (a: string, b: string) => Math.round((Date.parse(b) - Date.parse(a)) / 864e5);
 
 /** 인허가 파일의 M1~M8 행에서 마일스톤 목표일을 읽는다. */
