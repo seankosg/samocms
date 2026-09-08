@@ -86,6 +86,57 @@ export type Database = {
         }
         Relationships: []
       }
+      activity_daily_progress: {
+        Row: {
+          activity: string | null
+          actual_delta: number | null
+          actual_progress: number | null
+          discipline: string
+          id: number
+          item_key: string
+          plan_delta: number | null
+          planned_progress: number | null
+          prev_actual_progress: number | null
+          prev_date: string | null
+          prev_planned_progress: number | null
+          snapshot_date: string
+          source_file: string | null
+          updated_at: string
+        }
+        Insert: {
+          activity?: string | null
+          actual_delta?: number | null
+          actual_progress?: number | null
+          discipline: string
+          id?: number
+          item_key: string
+          plan_delta?: number | null
+          planned_progress?: number | null
+          prev_actual_progress?: number | null
+          prev_date?: string | null
+          prev_planned_progress?: number | null
+          snapshot_date: string
+          source_file?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activity?: string | null
+          actual_delta?: number | null
+          actual_progress?: number | null
+          discipline?: string
+          id?: number
+          item_key?: string
+          plan_delta?: number | null
+          planned_progress?: number | null
+          prev_actual_progress?: number | null
+          prev_date?: string | null
+          prev_planned_progress?: number | null
+          snapshot_date?: string
+          source_file?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       activity_snapshots: {
         Row: {
           activity: string | null
@@ -577,6 +628,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      refresh_activity_daily: { Args: { _date: string }; Returns: number }
+      refresh_activity_daily_all: { Args: never; Returns: number }
       slot_scope: { Args: { _slot: string }; Returns: string }
     }
     Enums: {
