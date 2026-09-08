@@ -6,7 +6,7 @@ import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { projectQuery, useProject } from "@/lib/use-project";
-import { fmtDate, flat } from "@/lib/schedule-model";
+import { fmtDate, fmtShortDate, flat } from "@/lib/schedule-model";
 import { validateTcSearch } from "@/lib/list-search";
 import { stageDone, TC_STAGES, type TcItem, type TcStage } from "@/lib/tc-model";
 import {
@@ -235,8 +235,8 @@ function TcList() {
                     const cell = `whitespace-nowrap border-r border-border px-2 py-1.5 text-center ${done ? "bg-muted text-muted-foreground" : ""}`;
                     return (
                       <Fragment key={s}>
-                        <td className={cell}>{fmtDate(plan)}</td>
-                        <td className={cell}>{fmtDate(act)}</td>
+                        <td className={cell}>{fmtShortDate(plan)}</td>
+                        <td className={cell}>{fmtShortDate(act)}</td>
                         <td className={`${cell} ${late ? "bg-yellow-100 font-semibold text-destructive dark:bg-yellow-900/40" : ""}`}>{rem}</td>
                       </Fragment>
                     );
