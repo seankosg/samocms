@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { projectQuery, useProject } from "@/lib/use-project";
 import { fmtDate, flat } from "@/lib/schedule-model";
+import { validateTcSearch } from "@/lib/list-search";
 import { stageDone, TC_STAGES, type TcItem, type TcStage } from "@/lib/tc-model";
 
 export const Route = createFileRoute("/_authenticated/tc/list")({
@@ -17,6 +18,7 @@ export const Route = createFileRoute("/_authenticated/tc/list")({
     { property: "og:description", content: "장비별 시운전 단계 계획과 실적 상세." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
   ] }),
+  validateSearch: validateTcSearch,
   loader: ({ context }) => context.queryClient.ensureQueryData(projectQuery),
   errorComponent: () => <div role="alert" className="p-8">T&C 데이터를 불러오지 못했습니다.</div>,
   component: TcList,
@@ -34,10 +36,12 @@ const COL_FILTERS: { key: ColKey; label: string }[] = [
 
 function TcList() {
   const { tcItems, base } = useProject();
+  const search = Route.useSearch();
   const [q, setQ] = useState("");
-  const [disc, setDisc] = useState("전체");
+  const [disc, setDisc] = useState(search.disc ?? "전체");
   const [bldg, setBldg] = useState("전체");
-  const [only, setOnly] = useState("전체");
+  const [only, setOnly] = useState(search.only ?? "전체");
+
   const [colq, setColq] = useState<Partial<Record<ColKey, string>>>({});
   const setCol = (k: ColKey, v: string) => setColq((o) => ({ ...o, [k]: v }));
   const ColInput = ({ k }: { k: ColKey }) => (
