@@ -43,7 +43,7 @@ export function ChangePassword({ forced, onDone }: { forced?: boolean; onDone?: 
     <div className="mx-auto w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-sm">
       <h2 className="text-lg font-bold">비밀번호 변경</h2>
       <p className="mt-1 text-xs text-muted-foreground">
-        {forced ? "초기 비밀번호를 사용 중입니다. 새 비밀번호를 설정해야 앱을 사용할 수 있습니다." : "새 비밀번호는 최소 8자 이상이어야 합니다."}
+        {forced ? "초기 비밀번호(Samo@2026!)를 사용 중입니다. 새 비밀번호를 설정해야 앱을 사용할 수 있습니다." : "새 비밀번호는 최소 8자 이상이어야 합니다."}
       </p>
       <div className="mt-4 space-y-3">
         <PasswordInput label="새 비밀번호" value={pw} onChange={setPw} autoComplete="new-password" />

@@ -72,8 +72,13 @@ function AuthPage() {
             {busy ? "로그인 중…" : "로그인"}
           </Button>
         </div>
-        <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">
-          계정은 관리자가 발급합니다. 초기 비밀번호로 로그인하면 새 비밀번호를 설정해야 합니다.
+        <div className="mt-4 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-800 dark:border-amber-700/50 dark:bg-amber-950/40 dark:text-amber-300">
+          <p className="font-semibold">최초 로그인 안내</p>
+          <p>초기 비밀번호는 <code className="rounded bg-amber-100 px-1 font-mono dark:bg-amber-900/60">Samo@2026!</code> 입니다.</p>
+          <p>최초 로그인 후 반드시 새 비밀번호(최소 8자)로 변경해야 합니다.</p>
+        </div>
+        <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+          계정은 관리자가 발급합니다. 아이디는 이니셜+성 형식입니다. (예: hjlee)
         </p>
       </form>
     </main>
