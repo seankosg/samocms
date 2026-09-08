@@ -109,6 +109,15 @@ export const importActivities = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
+    // 일일 증분(계획/실적) 자동 집계: 해당 기준일과 다음 날짜분 갱신
+    const base = data.fileDate ?? new Date().toISOString().slice(0, 10);
+    const next = new Date(`${base}T00:00:00Z`);
+    next.setUTCDate(next.getUTCDate() + 1);
+    for (const d of [base, next.toISOString().slice(0, 10)]) {
+      const { error } = await supabaseAdmin.rpc("refresh_activity_daily", { _date: d } as never);
+      if (error) console.error("refresh_activity_daily", d, error.message);
+    }
+
     return { sourceFile: data.sourceFile, inserted: rows.length, batchId: batch.data.id, snapshots: snaps.length };
   });
 
