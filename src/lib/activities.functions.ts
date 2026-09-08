@@ -1,21 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
-import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import type { Database, Tables } from "@/integrations/supabase/types";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertCanEdit } from "./project.functions";
+import type { Tables } from "@/integrations/supabase/types";
 
 export type Activity = Tables<"activities">;
 
-export const getActivities = createServerFn({ method: "GET" }).handler(async () => {
-  const url = process.env["SUPABASE_URL"];
-  const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
-  if (!url || !key) throw new Error("공정 데이터를 불러올 수 없습니다.");
-  const client = createClient<Database>(url, key, {
-    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+export const getActivities = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase.from("activities").select("*").order("id");
+    if (error) throw new Error(error.message);
+    return data;
   });
-  const { data, error } = await client.from("activities").select("*").order("id");
-  if (error) throw new Error(error.message);
-  return data;
-});
 
 const rowSchema = z.object({
   activity_no: z.string().nullable(),
@@ -48,8 +45,10 @@ const importSchema = z.object({
 
 /** 특정 공종(source_file)의 데이터를 업로드한 파일 내용으로 교체하고, 이력(스냅샷)을 남깁니다. */
 export const importActivities = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => importSchema.parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertCanEdit(context as never, data.sourceFile);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const rows = data.rows.map((r) => ({ ...r, source_file: data.sourceFile }));
 

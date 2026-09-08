@@ -6,7 +6,7 @@ import { fmtDate } from "@/lib/schedule-model";
 
 const toNum = (v: unknown, d: number) => (Number.isFinite(Number(v)) && v !== "" && v != null ? Number(v) : d);
 
-export const Route = createFileRoute("/network")({
+export const Route = createFileRoute("/_authenticated/network")({
   head: () => ({ meta: [
     { title: "네트워크 | HMMME 통합 공정 관리" },
     { name: "description", content: "선후행 관계를 시간축 네트워크로 보고 마일스톤·건물·지연 기준으로 공정 흐름을 추적합니다." },

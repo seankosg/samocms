@@ -1,20 +1,28 @@
 import { createServerFn } from "@tanstack/react-start";
-import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import type { Database } from "@/integrations/supabase/types";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-function publicClient() {
-  const url = process.env["SUPABASE_URL"];
-  const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
-  if (!url || !key) throw new Error("데이터를 불러올 수 없습니다.");
-  return createClient<Database>(url, key, {
-    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
-  });
+type Ctx = { supabase: any; userId: string };
+
+/** 공종(파일 종류) 편집 권한 검사 — 관리자 전체, 사용자는 담당 공종만 */
+export async function assertCanEdit(context: Ctx, slot: string) {
+  const { data, error } = await context.supabase.rpc("can_edit_slot", { _user_id: context.userId, _slot: slot });
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("해당 공종을 수정할 권한이 없습니다.");
+}
+
+/** 공통 쓰기 권한 (게스트 차단) */
+export async function assertCanWrite(context: Ctx) {
+  const { data, error } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "guest" });
+  if (error) throw new Error(error.message);
+  if (data) throw new Error("게스트는 자료를 수정할 수 없습니다.");
 }
 
 /** 대시보드·리스트·T&C 화면이 함께 쓰는 전체 데이터 */
-export const getProjectData = createServerFn({ method: "GET" }).handler(async () => {
-  const c = publicClient();
+export const getProjectData = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+  const c = context.supabase;
   const [acts, tc, manual, batches, settings] = await Promise.all([
     c.from("activities").select("*").order("id"),
     c.from("tc_items").select("*").order("id"),
@@ -38,8 +46,10 @@ export const getProjectData = createServerFn({ method: "GET" }).handler(async ()
 });
 
 export const setBaselineDate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertCanWrite(context as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("app_settings")
@@ -49,12 +59,14 @@ export const setBaselineDate = createServerFn({ method: "POST" })
   });
 
 export const saveTcMemo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
       .object({ discipline: z.string().min(1), block: z.enum(["center", "right"]), itemKey: z.string().min(1), memo: z.string().max(2000) })
       .parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertCanEdit(context as never, data.discipline);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("tc_manual").upsert(
       {
@@ -91,6 +103,7 @@ const tcRow = z.object({
 
 /** T&C 워크북 업로드 — 해당 공종 데이터 교체, 수기 메모는 유지 */
 export const importTcItems = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -101,7 +114,8 @@ export const importTcItems = createServerFn({ method: "POST" })
       })
       .parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertCanEdit(context as never, data.discipline);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const del = await supabaseAdmin.from("tc_items").delete().eq("discipline", data.discipline);
     if (del.error) throw new Error(del.error.message);
@@ -155,11 +169,12 @@ export const importTcItems = createServerFn({ method: "POST" })
 
 /** 항목별 이력(스냅샷) 조회 — 추이·일일 진도율 계산용 */
 export const getProgressHistory = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z.object({ itemKey: z.string().min(1).max(300).optional(), discipline: z.string().max(32).optional() }).parse(d ?? {}),
   )
-  .handler(async ({ data }) => {
-    const c = publicClient();
+  .handler(async ({ data, context }) => {
+    const c = context.supabase;
     let q = c
       .from("activity_snapshots")
       .select("snapshot_date,discipline,item_key,activity,planned_progress,actual_progress,done_quantity,total_quantity")
@@ -200,12 +215,14 @@ export const getProgressHistory = createServerFn({ method: "GET" })
 
 
 export const recordScheduleBatch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
       .object({ slot: z.string().min(1), fileName: z.string().min(1), fileDate: z.string().nullable(), rev: z.number().nullable(), rowCount: z.number() })
       .parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertCanEdit(context as never, data.slot);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("import_batches").insert({
       kind: "schedule",
