@@ -94,8 +94,12 @@ function Dashboard() {
         <div className="grid gap-4 rounded-md border border-border bg-card p-4 shadow-sm sm:grid-cols-[1.2fr_1fr]">
           <div>
             <p className="text-xs font-bold text-muted-foreground">총 활동</p>
-            <p className="mt-1 text-3xl font-bold">{m.total.toLocaleString()}<span className="ml-1 text-sm font-semibold text-muted-foreground">행</span></p>
-            <p className="mt-1 text-[11px] text-muted-foreground">완료 <b className="text-foreground">{m.done.toLocaleString()}</b>행 · <b className="text-foreground">{pct1(m.donePct)}%</b></p>
+            <p className="mt-1 text-3xl font-bold">
+              <Drill to="/schedule">{m.total.toLocaleString()}</Drill><span className="ml-1 text-sm font-semibold text-muted-foreground">행</span>
+            </p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              완료 <Drill to="/schedule" search={{ status: "done" }} className="font-bold text-foreground">{m.done.toLocaleString()}</Drill>행 · <b className="text-foreground">{pct1(m.donePct)}%</b>
+            </p>
             <Bar v={m.donePct} className="mt-3" />
           </div>
           <div className="border-t border-border pt-2 text-[11px] sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
@@ -104,9 +108,9 @@ function Dashboard() {
             </div>
             {m.bySlot.map((s) => (
               <div key={s.slot} className="grid grid-cols-4 gap-1 border-t border-border/60 py-1 text-right">
-                <span className="text-left font-semibold">{SLOT_LABEL[s.slot]}</span>
-                <span>{s.plan}</span>
-                <span className="font-bold">{s.act}</span>
+                <span className="text-left font-semibold"><Drill to="/schedule" search={{ dept: s.slot }}>{SLOT_LABEL[s.slot]}</Drill></span>
+                <span><Drill to="/schedule" search={{ dept: s.slot, duebyBase: true }}>{s.plan}</Drill></span>
+                <span className="font-bold"><Drill to="/schedule" search={{ dept: s.slot, status: "done" }}>{s.act}</Drill></span>
                 <span className={`font-semibold ${gapCls(s.gap)}`}>{sign(s.gap)}{Math.abs(s.gap)}</span>
               </div>
             ))}
@@ -118,7 +122,7 @@ function Dashboard() {
           <div>
             <p className="text-xs font-bold text-muted-foreground">계획 대비 실적</p>
             <p className="mt-1 flex flex-wrap items-baseline gap-1.5">
-              <span className="text-3xl font-bold">{pct1(m.pc)}%</span>
+              <span className="text-3xl font-bold"><Drill to="/schedule">{pct1(m.pc)}%</Drill></span>
               <span className="text-sm text-muted-foreground">/ {pct1(m.pl)}%</span>
               <span className={`text-xs font-bold ${gapCls(m.pc - m.pl)}`}>{sign(m.pc - m.pl)}{pct1(Math.abs(m.pc - m.pl))}p</span>
             </p>
@@ -131,11 +135,11 @@ function Dashboard() {
             </div>
             {m.bySlot.map((s) => (
               <div key={s.slot} className="grid grid-cols-4 gap-1 border-t border-border/60 py-1 text-right">
-                <span className="text-left font-semibold">{SLOT_LABEL[s.slot]}</span>
+                <span className="text-left font-semibold"><Drill to="/schedule" search={{ dept: s.slot }}>{SLOT_LABEL[s.slot]}</Drill></span>
                 {s.n === 0 ? <><span className="text-muted-foreground">—</span><span className="text-muted-foreground">—</span><span className="text-muted-foreground">—</span></> : (
                   <>
-                    <span>{pct1(s.pl)}</span>
-                    <span className="font-bold">{pct1(s.pc)}</span>
+                    <span><Drill to="/schedule" search={{ dept: s.slot }}>{pct1(s.pl)}</Drill></span>
+                    <span className="font-bold"><Drill to="/schedule" search={{ dept: s.slot }}>{pct1(s.pc)}</Drill></span>
                     <span className={`font-semibold ${gapCls(s.pc - s.pl)}`}>{sign(s.pc - s.pl)}{pct1(Math.abs(s.pc - s.pl))}</span>
                   </>
                 )}
@@ -147,7 +151,9 @@ function Dashboard() {
         <div className="grid gap-4 rounded-md border border-destructive/30 bg-destructive/5 p-4 shadow-sm sm:grid-cols-[1.2fr_1fr]">
           <div>
             <p className="text-xs font-bold text-muted-foreground">지연</p>
-            <p className="mt-1 text-3xl font-bold text-destructive">{m.late.toLocaleString()}<span className="ml-1 text-sm font-semibold text-muted-foreground">건</span></p>
+            <p className="mt-1 text-3xl font-bold text-destructive">
+              <Drill to="/delays">{m.late.toLocaleString()}</Drill><span className="ml-1 text-sm font-semibold text-muted-foreground">건</span>
+            </p>
             <p className="mt-1 text-[11px] text-muted-foreground">대상 {m.withP.toLocaleString()}행 중 · <b className="text-foreground">{pct1(m.latePct)}%</b></p>
             <Bar v={m.latePct} tone="bad" className="mt-3" />
           </div>
@@ -155,13 +161,16 @@ function Dashboard() {
             <div className="grid grid-cols-[1fr_auto_60px] gap-2 pb-1 text-right text-muted-foreground"><span /><span>지연</span><span>비교</span></div>
             {m.bySlot.map((s) => (
               <div key={s.slot} className="grid grid-cols-[1fr_auto_60px] items-center gap-2 border-t border-border/60 py-1">
-                <span className="font-semibold">{SLOT_LABEL[s.slot]}</span>
-                <span className={`text-right font-bold ${s.late ? "text-destructive" : "text-muted-foreground"}`}>{s.late}</span>
+                <span className="font-semibold"><Drill to="/delays" search={{ dept: s.slot }}>{SLOT_LABEL[s.slot]}</Drill></span>
+                <span className={`text-right font-bold ${s.late ? "text-destructive" : "text-muted-foreground"}`}>
+                  <Drill to="/delays" search={{ dept: s.slot }}>{s.late}</Drill>
+                </span>
                 <span className="h-1.5 overflow-hidden rounded bg-muted"><span className="block h-full bg-destructive" style={{ width: `${(s.late / maxLate) * 100}%` }} /></span>
               </div>
             ))}
           </div>
         </div>
+
       </section>
 
       {tcDisc.length > 0 && (
@@ -185,17 +194,18 @@ function Dashboard() {
               <p className="mt-0.5 truncate text-[11px] text-muted-foreground" title={x.name}>{x.name}</p>
               <Bar v={x.pc ?? 0} className="mt-2" />
               <div className="mt-1.5 flex flex-wrap gap-x-2 text-[11px] text-muted-foreground">
-                <span>총 {x.total}건</span>
+                <span>총 <Drill to="/schedule" search={{ ms: x.key }}>{x.total}</Drill>건</span>
                 <span>평균 {x.pc == null ? "—" : `${pct1(x.pc)}%`}</span>
-                <span className={x.late ? "font-bold text-destructive" : ""}>지연 {x.late}</span>
+                <span className={x.late ? "font-bold text-destructive" : ""}>지연 <Drill to="/delays" search={{ ms: x.key }}>{x.late}</Drill></span>
                 {x.over > 0 && <span className="font-bold text-destructive">초과 {x.over}</span>}
                 {x.dd != null && <span className={x.dd < 0 ? "font-bold text-destructive" : x.dd <= 14 ? "font-bold text-chart-3" : ""}>D{x.dd >= 0 ? "-" : "+"}{Math.abs(x.dd)}</span>}
               </div>
               <div className="mt-2 border-t border-border pt-1.5 text-[11px]">
-                <MsRow label="계획" n={x.plan} p={x.total ? x.plan / x.total : 0} />
-                <MsRow label="실적" n={x.act} p={x.total ? x.act / x.total : 0} />
+                <MsRow label="계획" n={x.plan} p={x.total ? x.plan / x.total : 0} search={{ ms: x.key, duebyBase: true }} />
+                <MsRow label="실적" n={x.act} p={x.total ? x.act / x.total : 0} search={{ ms: x.key, status: "done" }} />
                 <MsRow label="차이" n={x.gap} p={x.total ? x.gap / x.total : 0} signed />
               </div>
+
             </div>
           ))}
         </div>
@@ -210,20 +220,22 @@ function Dashboard() {
             <tbody>
               {m.byDept.map((d) => (
                 <tr key={d.slot} className="border-b border-border/60">
-                  <td className="py-2 font-semibold">{SLOT_LABEL[d.slot]}</td>
-                  <td className="text-right">{d.n}</td>
+                  <td className="py-2 font-semibold"><Drill to="/schedule" search={{ dept: d.slot }}>{SLOT_LABEL[d.slot]}</Drill></td>
+                  <td className="text-right"><Drill to="/schedule" search={{ dept: d.slot }}>{d.n}</Drill></td>
                   <td className="text-right">{pct1(d.pl)}%</td>
                   <td className="text-right font-semibold">{pct1(d.pc)}%</td>
                   <td className={`text-right ${gapCls(d.pc - d.pl)}`}>{pct1(d.pc - d.pl)}%p</td>
-                  <td className="text-right">{d.late}</td>
+                  <td className="text-right"><Drill to="/delays" search={{ dept: d.slot }}>{d.late}</Drill></td>
                 </tr>
               ))}
+
             </tbody>
           </table>
         </Card>
         <div className="grid gap-4">
-          <RankCard title="건물별 지연" rows={m.bldg} />
-          <RankCard title="협력사별 지연" rows={m.sub} />
+          <RankCard title="건물별 지연" rows={m.bldg} field="bldg" />
+          <RankCard title="협력사별 지연" rows={m.sub} field="sub" />
+
         </div>
       </section>
 
@@ -257,7 +269,7 @@ function TcCard({ card, disc }: { card: (typeof TC_CARDS)[number]; disc: Disc[] 
     const a = isSt ? P._pass : P[card.k as TcStage].act;
     const p = isSt ? P._fail : P[card.k as TcStage].plan;
     act += a; plan += p; tot += T;
-    return { lbl: d.label, a, p, T };
+    return { lbl: d.label, key: d.key, a, p, T };
   });
   const prog = tot ? act / tot : 0;
   const planP = tot ? plan / tot : 0;
@@ -269,7 +281,7 @@ function TcCard({ card, disc }: { card: (typeof TC_CARDS)[number]; disc: Disc[] 
       <div>
         <p className="text-xs font-bold">{card.t}<span className="ml-1 block text-[10px] font-normal text-muted-foreground">{card.s}</span></p>
         <p className="mt-1 flex flex-wrap items-baseline gap-1">
-          <span className="text-2xl font-bold">{tcPct(prog)}</span>
+          <span className="text-2xl font-bold"><Drill to="/tc/list" search={isSt ? { only: "Fail" } : {}}>{tcPct(prog)}</Drill></span>
           {!isSt && <>
             <span className="text-xs text-muted-foreground">/ {tcPct(planP)}</span>
             <span className={`text-[11px] font-bold ${gapCls(prog - planP)}`}>{sign(prog - planP)}{tcPct(Math.abs(prog - planP)).replace("%", "")}%p</span>
@@ -285,13 +297,14 @@ function TcCard({ card, disc }: { card: (typeof TC_CARDS)[number]; disc: Disc[] 
         {side.map((x) => (
           <div key={x.lbl} className="border-t border-border/60 py-1">
             <div className="flex items-center justify-between gap-2">
-              <span className="font-semibold">{x.lbl}</span>
+              <span className="font-semibold"><Drill to="/tc/list" search={{ disc: x.key }}>{x.lbl}</Drill></span>
               <span>
-                <b>{x.a}</b>
+                <b><Drill to="/tc/list" search={isSt ? { disc: x.key, only: "Fail" } : { disc: x.key }}>{x.a}</Drill></b>
                 <span className="text-muted-foreground"> / {x.p}</span>
                 {!isSt && x.p > 0 && x.a > x.p && <span className="ml-0.5 text-[9px] text-chart-3">▲</span>}
               </span>
             </div>
+
             <span className="mt-1 block h-1 overflow-hidden rounded bg-muted">
               <span className="block h-full bg-primary" style={{ width: `${x.T ? Math.min(100, (x.a / x.T) * 100) : 0}%` }} />
             </span>
@@ -308,18 +321,35 @@ function TcCard({ card, disc }: { card: (typeof TC_CARDS)[number]; disc: Disc[] 
   );
 }
 
-function MsRow({ label, n, p, signed }: { label: string; n: number; p: number; signed?: boolean }) {
+type DrillSearch = { dept?: string; ms?: string; bldg?: string; sub?: string; status?: string; duebyBase?: boolean };
+
+/** 대시보드 수치 → 리스트 드릴다운 링크 */
+function Drill({ to, search, className = "", children }: { to: "/schedule" | "/delays" | "/tc/list"; search?: DrillSearch | { disc?: string; only?: string }; className?: string; children: React.ReactNode }) {
+  return (
+    <Link
+      to={to}
+      search={(search ?? {}) as never}
+      className={`cursor-pointer rounded underline-offset-2 transition-colors hover:text-primary hover:underline focus-visible:underline ${className}`}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function MsRow({ label, n, p, signed, search }: { label: string; n: number; p: number; signed?: boolean; search?: DrillSearch }) {
   const cls = signed ? gapCls(n) : "";
+  const val = signed ? `${sign(n)}${Math.abs(n)}` : n;
   return (
     <div className="flex items-center justify-between py-0.5">
       <span className="text-muted-foreground">{label}</span>
       <span className="flex items-baseline gap-3">
-        <b className={cls}>{signed ? `${sign(n)}${Math.abs(n)}` : n}</b>
+        <b className={cls}>{search ? <Drill to="/schedule" search={search}>{val}</Drill> : val}</b>
         <span className={`w-14 text-right ${cls || "text-muted-foreground"}`}>{signed ? `${sign(n)}${pct1(Math.abs(p))}%p` : `${pct1(p)}%`}</span>
       </span>
     </div>
   );
 }
+
 
 function Bar({ v, marker, tone = "ok", className = "" }: { v: number; marker?: number | undefined; tone?: "ok" | "bad" | "warn"; className?: string }) {
   const color = tone === "bad" ? "bg-destructive" : tone === "warn" ? "bg-chart-3" : "bg-primary";
@@ -379,7 +409,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   );
 }
 
-function RankCard({ title, rows }: { title: string; rows: { k: string; n: number; late: number; gap: number }[] }) {
+function RankCard({ title, rows, field }: { title: string; rows: { k: string; n: number; late: number; gap: number }[]; field: "bldg" | "sub" }) {
   const max = Math.max(1, ...rows.map((r) => r.late));
   return (
     <Card title={title}>
@@ -387,14 +417,15 @@ function RankCard({ title, rows }: { title: string; rows: { k: string; n: number
       <ul className="space-y-1.5">
         {rows.map((r) => (
           <li key={r.k} className="flex items-center gap-2 text-xs">
-            <span className="w-[36%] truncate" title={r.k}>{r.k}</span>
+            <span className="w-[36%] truncate" title={r.k}><Drill to="/delays" search={{ [field]: r.k }}>{r.k}</Drill></span>
             <span className="h-2 flex-1 overflow-hidden rounded bg-muted">
               <span className="block h-full bg-destructive" style={{ width: `${(r.late / max) * 100}%` }} />
             </span>
-            <span className="w-14 text-right font-semibold">{r.late}건</span>
+            <span className="w-14 text-right font-semibold"><Drill to="/delays" search={{ [field]: r.k }}>{r.late}건</Drill></span>
           </li>
         ))}
       </ul>
+
     </Card>
   );
 }
