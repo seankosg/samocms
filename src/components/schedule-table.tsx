@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import * as XLSX from "xlsx";
-import { ArrowDownAZ, ArrowUpAZ, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, RotateCcw, Search, X } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Download, RotateCcw, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fmtDate, isLate, pct1, SLOT_LABEL, statusOfRow, STATUS_LABEL, type Row } from "@/lib/schedule-model";
@@ -40,10 +40,8 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
   const [due, setDue] = useState<string | null>(dueBy ?? null);
   const [sort, setSort] = useState<SortKey>("e");
   const [asc, setAsc] = useState(true);
-  const [page, setPage] = useState(1);
-  const [size, setSize] = useState(50);
   const [colq, setColq] = useState<Partial<Record<TextKey, string>>>({});
-  const setCol = (k: TextKey, v: string) => { setColq((o) => ({ ...o, [k]: v })); setPage(1); };
+  const setCol = (k: TextKey, v: string) => { setColq((o) => ({ ...o, [k]: v })); };
   const selValue = { dept, bldg, ms, sub, status } as const;
   const selSet = { dept: setDept, bldg: setBldg, ms: setMs, sub: setSub, status: setStatus } as const;
 
@@ -92,11 +90,9 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
     });
   }, [rows, q, dept, bldg, ms, sub, status, due, sort, asc, lockLate, colq]);
 
-  const pages = Math.max(1, Math.ceil(filtered.length / size));
-  const cur = Math.min(page, pages);
-  const shown = filtered.slice((cur - 1) * size, cur * size);
+  const shown = filtered;
 
-  const reset = () => { setQ(""); setDept("전체"); setBldg("전체"); setMs("전체"); setSub("전체"); setStatus("전체"); setDue(null); setColq({}); setPage(1); };
+  const reset = () => { setQ(""); setDept("전체"); setBldg("전체"); setMs("전체"); setSub("전체"); setStatus("전체"); setDue(null); setColq({}); };
 
   const exportXlsx = () => {
     const wb = XLSX.utils.book_new();
@@ -111,7 +107,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
   const setSortKey = (k: SortKey | null) => { if (!k) return; if (k === sort) setAsc((v) => !v); else { setSort(k); setAsc(true); } };
 
   const Sel = ({ label, value, set, list, render }: { label: string; value: string; set: (v: string) => void; list: string[]; render?: (v: string) => string }) => (
-    <select aria-label={label} value={value} onChange={(e) => { set(e.target.value); setPage(1); }} className="h-9 rounded-md border border-input bg-background px-2 text-xs">
+    <select aria-label={label} value={value} onChange={(e) => { set(e.target.value); }} className="h-9 rounded-md border border-input bg-background px-2 text-xs">
       <option value="전체">{label}: 전체</option>
       {list.map((x) => <option key={x} value={x}>{render ? render(x) : x}</option>)}
     </select>
@@ -122,7 +118,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
       <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
         <div className="relative min-w-[240px] flex-1">
           <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
-          <Input value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} placeholder="Activity · 건물 · 협력사 검색" className="h-9 pl-9" />
+          <Input value={q} onChange={(e) => { setQ(e.target.value); }} placeholder="Activity · 건물 · 협력사 검색" className="h-9 pl-9" />
         </div>
         <Sel label="공종" value={dept} set={setDept} list={opts.dept} render={(x) => SLOT_LABEL[x] ?? x} />
         <Sel label="건물" value={bldg} set={setBldg} list={opts.bldg} />
@@ -136,7 +132,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
       <div className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs">
         <strong>{filtered.length.toLocaleString()}건</strong>
         {chips.map((c) => (
-          <button key={c.k} onClick={() => { c.clear(); setPage(1); }} className="inline-flex items-center gap-1 rounded bg-accent px-2 py-1 text-[11px]">
+          <button key={c.k} onClick={() => { c.clear(); }} className="inline-flex items-center gap-1 rounded bg-accent px-2 py-1 text-[11px]">
             {c.k}: {c.v}<X className="size-3" />
           </button>
         ))}
@@ -170,7 +166,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
                   {c.f?.kind === "sel" && (
                     <select
                       aria-label={`${c.label} 필터`} value={selValue[c.f.field]}
-                      onChange={(e) => { selSet[(c.f as { field: keyof typeof selSet }).field](e.target.value); setPage(1); }}
+                      onChange={(e) => { selSet[(c.f as { field: keyof typeof selSet }).field](e.target.value); }}
                       className="h-7 w-full min-w-[80px] rounded border border-input bg-background px-1 text-[11px] font-normal text-foreground"
                     >
                       <option value="전체">전체</option>
@@ -212,21 +208,8 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
         </table>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border p-3 text-xs">
-        <div className="flex items-center gap-2">
-          <span>페이지당</span>
-          <select aria-label="페이지 크기" value={size} onChange={(e) => { setSize(Number(e.target.value)); setPage(1); }} className="h-8 rounded border border-input bg-background px-2">
-            {[25, 50, 100, 200].map((n) => <option key={n}>{n}</option>)}
-          </select>
-          <span>{filtered.length ? (cur - 1) * size + 1 : 0}–{Math.min(cur * size, filtered.length)} / {filtered.length}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button size="icon" variant="outline" aria-label="처음" disabled={cur === 1} onClick={() => setPage(1)}><ChevronsLeft /></Button>
-          <Button size="icon" variant="outline" aria-label="이전" disabled={cur === 1} onClick={() => setPage(cur - 1)}><ChevronLeft /></Button>
-          <span className="px-2">{cur} / {pages}</span>
-          <Button size="icon" variant="outline" aria-label="다음" disabled={cur === pages} onClick={() => setPage(cur + 1)}><ChevronRight /></Button>
-          <Button size="icon" variant="outline" aria-label="마지막" disabled={cur === pages} onClick={() => setPage(pages)}><ChevronsRight /></Button>
-        </div>
+      <div className="border-t border-border p-3 text-xs text-muted-foreground">
+        전체 {filtered.length.toLocaleString()}건 표시
       </div>
     </section>
   );
