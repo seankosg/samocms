@@ -303,7 +303,7 @@ function Block({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
-function KpiCard({ label, value, unit, note, bar, marker, tone }: { label: string; value: string; unit?: string; note: string; bar: number; marker?: number; tone?: "bad" }) {
+function KpiCard({ label, value, unit, note, bar, marker, tone }: { label: string; value: string; unit?: string | undefined; note: string; bar: number; marker?: number | undefined; tone?: "bad" | undefined }) {
   return (
     <div className="avoid-break rounded border p-2" style={{ borderColor: tone === "bad" ? "#fca5a5" : "#cbd5e1", background: tone === "bad" ? "#fef2f2" : "#f8fafc" }}>
       <p className="text-[9.5px] font-bold text-slate-500">{label}</p>
@@ -317,7 +317,7 @@ function KpiCard({ label, value, unit, note, bar, marker, tone }: { label: strin
   );
 }
 
-function MiniBar({ v, marker, tone }: { v: number; marker?: number; tone?: "bad" }) {
+function MiniBar({ v, marker, tone }: { v: number; marker?: number | undefined; tone?: "bad" | undefined }) {
   return (
     <div className="relative mt-1.5 h-1.5 w-full overflow-hidden rounded" style={{ background: "#e2e8f0" }}>
       <div className="h-full" style={{ width: `${Math.min(100, Math.max(0, v * 100))}%`, background: tone === "bad" ? "#dc2626" : "#1d4ed8" }} />
