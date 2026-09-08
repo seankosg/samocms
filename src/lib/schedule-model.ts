@@ -141,6 +141,27 @@ export function toRow(a: ActivityRow): Row {
   };
 }
 
+/**
+ * 기준일 기준 계획 진도율(선형).
+ * 기준일 < 시작일 → 0, 기준일 >= 종료일 → 1, 그 사이는 경과일 비율.
+ * 시작/종료일이 없으면 엑셀 원문값을 사용한다.
+ */
+export function planAt(r: { s: string | null; e: string | null; plRaw: number | null }, base: string): number | null {
+  const s = r.s, e = r.e;
+  if (!s || !e) return r.plRaw;
+  if (base >= e) return 1;
+  if (base < s) return 0;
+  const span = Date.parse(e) - Date.parse(s);
+  if (!(span > 0)) return base >= e ? 1 : 0;
+  const v = (Date.parse(base) - Date.parse(s)) / span;
+  return Math.max(0, Math.min(1, v));
+}
+
+/** 기준일을 적용해 계획 진도율을 재계산한 행 목록 */
+export const applyBaseline = (rows: Row[], base: string): Row[] =>
+  rows.map((r) => ({ ...r, pl: planAt(r, base) }));
+
+
 export const isLate = (r: Row) => r.pl != null && r.pc != null && r.pc < r.pl;
 export const isDone = (r: Row) => r.pc != null && r.pc >= 1;
 export const hasProgress = (r: Row) => r.pl != null || r.pc != null;
