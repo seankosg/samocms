@@ -30,6 +30,7 @@ const gapCls = (v: number) => (v < 0 ? "text-destructive" : v > 0 ? "text-primar
 
 function Dashboard() {
   const { rows, base, tcItems } = useProject();
+  const { isAdmin } = useAuth();
 
   const m = useMemo(() => {
     const withP = rows.filter((r) => r.pl != null || r.pc != null);
