@@ -407,7 +407,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   );
 }
 
-function RankCard({ title, rows }: { title: string; rows: { k: string; n: number; late: number; gap: number }[] }) {
+function RankCard({ title, rows, field }: { title: string; rows: { k: string; n: number; late: number; gap: number }[]; field: "bldg" | "sub" }) {
   const max = Math.max(1, ...rows.map((r) => r.late));
   return (
     <Card title={title}>
@@ -415,14 +415,15 @@ function RankCard({ title, rows }: { title: string; rows: { k: string; n: number
       <ul className="space-y-1.5">
         {rows.map((r) => (
           <li key={r.k} className="flex items-center gap-2 text-xs">
-            <span className="w-[36%] truncate" title={r.k}>{r.k}</span>
+            <span className="w-[36%] truncate" title={r.k}><Drill to="/delays" search={{ [field]: r.k }}>{r.k}</Drill></span>
             <span className="h-2 flex-1 overflow-hidden rounded bg-muted">
               <span className="block h-full bg-destructive" style={{ width: `${(r.late / max) * 100}%` }} />
             </span>
-            <span className="w-14 text-right font-semibold">{r.late}건</span>
+            <span className="w-14 text-right font-semibold"><Drill to="/delays" search={{ [field]: r.k }}>{r.late}건</Drill></span>
           </li>
         ))}
       </ul>
+
     </Card>
   );
 }
