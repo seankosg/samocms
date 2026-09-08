@@ -55,7 +55,11 @@ function multiValue(r: Row, k: MultiKey): string {
 export type TableInitial = Partial<{ dept: string; bldg: string; ms: string; sub: string; status: string; q: string }>;
 
 export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy }: { rows: Row[]; fileName: string; lockLate?: boolean; initial?: TableInitial; dueBy?: string | null }) {
+  const { canEdit, canWrite } = useAuth();
+  const mut = useActivityEdit();
+  const [edit, setEdit] = useState(false);
   const [q, setQ] = useState(initial?.q ?? "");
+
   const [exportOpen, setExportOpen] = useState(false);
   const [due, setDue] = useState<string | null>(dueBy ?? null);
   const [sort, setSort] = useState<SortKey>("e");
@@ -160,6 +164,12 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
           <Input value={q} onChange={(e) => { setQ(e.target.value); }} placeholder="Activity · 건물 · 협력사 검색" className="h-9 pl-9" />
         </div>
         <Button variant="outline" size="sm" onClick={reset}><RotateCcw className="size-3.5" />초기화</Button>
+        {canWrite && (
+          <Button variant={edit ? "default" : "outline"} size="sm" onClick={() => setEdit((v) => !v)}>
+            <Pencil className="size-3.5" />{edit ? "수정 종료" : "인라인 수정"}
+          </Button>
+        )}
+
         <Button size="sm" onClick={() => setExportOpen(true)}><Download className="size-3.5" />XLSX</Button>
         <ExportDialog
           open={exportOpen}
