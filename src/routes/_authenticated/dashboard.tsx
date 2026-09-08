@@ -269,7 +269,7 @@ function TcCard({ card, disc }: { card: (typeof TC_CARDS)[number]; disc: Disc[] 
     const a = isSt ? P._pass : P[card.k as TcStage].act;
     const p = isSt ? P._fail : P[card.k as TcStage].plan;
     act += a; plan += p; tot += T;
-    return { lbl: d.label, a, p, T };
+    return { lbl: d.label, key: d.key, a, p, T };
   });
   const prog = tot ? act / tot : 0;
   const planP = tot ? plan / tot : 0;
