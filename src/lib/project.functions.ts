@@ -167,6 +167,42 @@ export const importTcItems = createServerFn({ method: "POST" })
     return { discipline: data.discipline, inserted: rows.length, batchId: batch.data.id, snapshots: snaps.length };
   });
 
+const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable();
+const tcPatch = z
+  .object({
+    bldg: z.string().nullable(),
+    grp: z.string().nullable(),
+    item: z.string().nullable(),
+    equip: z.string().nullable(),
+    qty: z.number(),
+    supplier: z.string().nullable(),
+    status: z.string().nullable(),
+    docref: z.string().nullable(),
+    t0_p: dateStr, t0_a: dateStr, t0_rem: z.number().nullable(),
+    t1_p: dateStr, t1_a: dateStr, t1_rem: z.number().nullable(),
+    rp_p: dateStr, rp_a: dateStr, rp_rem: z.number().nullable(),
+    rfi_p: dateStr, rfi_a: dateStr, rfi_rem: z.number().nullable(),
+    t2_p: dateStr, t2_a: dateStr,
+    resp_p: dateStr, resp_a: dateStr,
+  })
+  .partial();
+
+/** T&C List 인라인 수정 — 담당 공종만 수정 가능 */
+export const updateTcItem = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.number(), patch: tcPatch }).parse(d))
+  .handler(async ({ data, context }) => {
+    const cur = await context.supabase.from("tc_items").select("discipline").eq("id", data.id).single();
+    if (cur.error) throw new Error("항목을 찾을 수 없습니다.");
+    await assertCanEdit(context as never, cur.data.discipline);
+    if (Object.keys(data.patch).length === 0) return { ok: true };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("tc_items").update(data.patch).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 /** 항목별 이력(스냅샷) 조회 — 추이·일일 진도율 계산용 */
 export const getProgressHistory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
