@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
-import { ArrowDown, ArrowUp, ChevronsUpDown, Download, Pencil, Save } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { ArrowDown, ArrowUp, ChevronsUpDown, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { saveTcMemo } from "@/lib/project.functions";
@@ -14,7 +15,6 @@ type SortKey = "loc" | "item" | "qty" | "pass" | "fail" | `${TcStage}-d` | `${Tc
 
 export function TcView({ discipline, items, manual, base }: { discipline: string; items: TcItem[]; manual: TcManual[]; base: string }) {
   const [bldg, setBldg] = useState("전체");
-  const [edit, setEdit] = useState(false);
   const qc = useQueryClient();
   const memos = useMemo(() => ({ center: memoMap(manual, discipline, "center"), right: memoMap(manual, discipline, "right") }), [manual, discipline]);
   const [draft, setDraft] = useState<Record<string, string>>({});
@@ -71,7 +71,14 @@ export function TcView({ discipline, items, manual, base }: { discipline: string
               <div className="h-full bg-primary" style={{ width: `${Math.min(100, prog[s].pct * 100)}%` }} />
             </div>
             <p className="mt-1 text-[10px] text-muted-foreground">
-              {prog[s].qty.toLocaleString()} / {prog._tot.toLocaleString()} · 계획 대비 {tcPct(prog[s].pvCap)}
+              <Link
+                to="/tc/list"
+                search={{ disc: discipline, ...(bldg !== "전체" ? { bldg } : {}), stage: s, cell: "done" }}
+                className="font-semibold text-primary underline-offset-2 hover:underline"
+              >
+                {prog[s].qty.toLocaleString()}
+              </Link>
+              {" / "}{prog._tot.toLocaleString()} · 계획 대비 {tcPct(prog[s].pvCap)}
             </p>
           </div>
         ))}
@@ -87,28 +94,52 @@ export function TcView({ discipline, items, manual, base }: { discipline: string
         </div>
         <div className="ml-auto flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Pass {prog._pass.toLocaleString()} · Fail {prog._fail.toLocaleString()}</span>
-          <Button size="sm" variant={edit ? "default" : "outline"} onClick={() => setEdit((v) => !v)}>
-            {edit ? <Save className="size-3.5" /> : <Pencil className="size-3.5" />}{edit ? "편집 종료" : "편집 모드"}
-          </Button>
           <Button size="sm" onClick={exportXlsx}><Download className="size-3.5" />XLSX</Button>
         </div>
       </div>
 
       <Block
         title="Ready for Operation (건물 × Item)" firstLabel="Location" secondLabel="Item"
-        rows={blocks.center.map((r) => ({ a: r.loc, b: r.item, qty: r.qty, st: r.st, pass: r.pass, fail: r.fail, key: r.key, typ: r.typ }))}
-        edit={edit} block="center" memoValue={memoValue} setDraft={setDraft} save={save.mutate}
+        rows={blocks.center.map((r) => ({
+          a: r.loc, b: r.item, qty: r.qty, st: r.st, pass: r.pass, fail: r.fail, key: r.key, typ: r.typ,
+          fBldg: r.key ? (r.key.split("|")[0] ?? null) : bldg !== "전체" ? bldg : null,
+          fItem: r.typ === "row" ? r.item : null,
+        }))}
+        discipline={discipline} block="center" memoValue={memoValue} setDraft={setDraft} save={save.mutate}
       />
       <Block
         title="Equipment Status (Item 합계)" firstLabel="Item" secondLabel={null}
-        rows={blocks.right.map((r) => ({ a: r.equip, b: null, qty: r.tot, st: r.st, pass: r.pass, fail: r.fail, key: r.equip === "Total" ? null : r.equip, typ: r.equip === "Total" ? "tot" : "row" }))}
-        edit={edit} block="right" memoValue={memoValue} setDraft={setDraft} save={save.mutate}
+        rows={blocks.right.map((r) => ({
+          a: r.equip, b: null, qty: r.tot, st: r.st, pass: r.pass, fail: r.fail,
+          key: r.equip === "Total" ? null : r.equip, typ: r.equip === "Total" ? "tot" : "row",
+          fBldg: bldg !== "전체" ? bldg : null, fItem: r.equip === "Total" ? null : r.equip,
+        }))}
+        discipline={discipline} block="right" memoValue={memoValue} setDraft={setDraft} save={save.mutate}
       />
     </div>
   );
 }
 
-type BlockRow = { a: string | null; b: string | null; qty: number; st: Record<TcStage, [number, number, number]>; pass: number; fail: number; key: string | null; typ: string };
+function DrillLink({ row, discipline, stage, cell, value }: { row: BlockRow; discipline: string; stage?: TcStage; cell: string; value: number }) {
+  if (!value) return <span>{value}</span>;
+  return (
+    <Link
+      to="/tc/list"
+      search={{
+        disc: discipline,
+        ...(row.fBldg ? { bldg: row.fBldg } : {}),
+        ...(row.fItem ? { item: row.fItem } : {}),
+        ...(stage ? { stage } : {}),
+        cell,
+      }}
+      className="underline-offset-2 hover:underline"
+    >
+      {value}
+    </Link>
+  );
+}
+
+type BlockRow = { a: string | null; b: string | null; qty: number; st: Record<TcStage, [number, number, number]>; pass: number; fail: number; key: string | null; typ: string; fBldg: string | null; fItem: string | null };
 
 const cellVal = (r: BlockRow, k: SortKey): number | string => {
   if (k === "loc") return r.a ?? "";
@@ -120,8 +151,8 @@ const cellVal = (r: BlockRow, k: SortKey): number | string => {
   return which === "d" ? r.st[stage][0] : r.st[stage][1];
 };
 
-function Block({ title, firstLabel, secondLabel, rows, edit, block, memoValue, setDraft, save }: {
-  title: string; firstLabel: string; secondLabel: string | null; rows: BlockRow[]; edit: boolean;
+function Block({ title, firstLabel, secondLabel, rows, discipline, block, memoValue, setDraft, save }: {
+  title: string; firstLabel: string; secondLabel: string | null; rows: BlockRow[]; discipline: string;
   block: "center" | "right"; memoValue: (b: "center" | "right", k: string) => string;
   setDraft: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   save: (v: { block: "center" | "right"; itemKey: string; memo: string }) => void;
@@ -216,18 +247,24 @@ function Block({ title, firstLabel, secondLabel, rows, edit, block, memoValue, s
                 {TC_STAGES.flatMap((s) => {
                   const [d, rem, late] = r.st[s];
                   return [
-                    <td key={`${s}-d`} className="border-r border-border px-3 py-1.5 text-center whitespace-nowrap tabular-nums text-primary">{d}</td>,
-                    <td key={`${s}-r`} className={`border-r border-border px-3 py-1.5 text-center whitespace-nowrap tabular-nums ${late ? "bg-yellow-200/70 font-bold text-destructive" : "text-muted-foreground"}`}>{rem}</td>,
+                    <td key={`${s}-d`} className="border-r border-border px-3 py-1.5 text-center whitespace-nowrap tabular-nums text-primary">
+                      <DrillLink row={r} discipline={discipline} stage={s} cell="done" value={d} />
+                    </td>,
+                    <td key={`${s}-r`} className={`border-r border-border px-3 py-1.5 text-center whitespace-nowrap tabular-nums ${late ? "bg-yellow-200/70 font-bold text-destructive" : "text-muted-foreground"}`}>
+                      <DrillLink row={r} discipline={discipline} stage={s} cell={late ? "late" : "remain"} value={rem} />
+                    </td>,
                   ];
                 })}
                 <td className="border-r border-border px-3 py-1.5 text-center whitespace-nowrap tabular-nums">
-                  <span className="text-primary">{r.pass}</span>
+                  <span className="text-primary"><DrillLink row={r} discipline={discipline} cell="pass" value={r.pass} /></span>
                 </td>
                 <td className="border-r border-border px-3 py-1.5 text-center whitespace-nowrap tabular-nums">
-                  <span className={r.fail ? "font-bold text-destructive" : "text-muted-foreground"}>{r.fail}</span>
+                  <span className={r.fail ? "font-bold text-destructive" : "text-muted-foreground"}>
+                    <DrillLink row={r} discipline={discipline} cell="fail" value={r.fail} />
+                  </span>
                 </td>
                 <td className="px-2 py-1">
-                  {r.key && edit ? (
+                  {r.key ? (
                     <Input
                       className="h-7 text-xs" defaultValue={memoValue(block, r.key)} aria-label="비고"
                       onChange={(e) => setDraft((d) => ({ ...d, [`${block}|${r.key}`]: e.target.value }))}
