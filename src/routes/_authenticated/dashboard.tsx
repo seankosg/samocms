@@ -318,18 +318,35 @@ function TcCard({ card, disc }: { card: (typeof TC_CARDS)[number]; disc: Disc[] 
   );
 }
 
-function MsRow({ label, n, p, signed }: { label: string; n: number; p: number; signed?: boolean }) {
+type DrillSearch = { dept?: string; ms?: string; bldg?: string; sub?: string; status?: string; duebyBase?: boolean };
+
+/** 대시보드 수치 → 리스트 드릴다운 링크 */
+function Drill({ to, search, className = "", children }: { to: "/schedule" | "/delays" | "/tc/list"; search?: DrillSearch | { disc?: string; only?: string }; className?: string; children: React.ReactNode }) {
+  return (
+    <Link
+      to={to}
+      search={(search ?? {}) as never}
+      className={`cursor-pointer rounded underline-offset-2 transition-colors hover:text-primary hover:underline focus-visible:underline ${className}`}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function MsRow({ label, n, p, signed, search }: { label: string; n: number; p: number; signed?: boolean; search?: DrillSearch }) {
   const cls = signed ? gapCls(n) : "";
+  const val = signed ? `${sign(n)}${Math.abs(n)}` : n;
   return (
     <div className="flex items-center justify-between py-0.5">
       <span className="text-muted-foreground">{label}</span>
       <span className="flex items-baseline gap-3">
-        <b className={cls}>{signed ? `${sign(n)}${Math.abs(n)}` : n}</b>
+        <b className={cls}>{search ? <Drill to="/schedule" search={search}>{val}</Drill> : val}</b>
         <span className={`w-14 text-right ${cls || "text-muted-foreground"}`}>{signed ? `${sign(n)}${pct1(Math.abs(p))}%p` : `${pct1(p)}%`}</span>
       </span>
     </div>
   );
 }
+
 
 function Bar({ v, marker, tone = "ok", className = "" }: { v: number; marker?: number | undefined; tone?: "ok" | "bad" | "warn"; className?: string }) {
   const color = tone === "bad" ? "bg-destructive" : tone === "warn" ? "bg-chart-3" : "bg-primary";
