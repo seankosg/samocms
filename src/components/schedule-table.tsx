@@ -4,10 +4,21 @@ import { ArrowDownAZ, ArrowUpAZ, Download, RotateCcw, Search, X } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fmtDate, isLate, pct1, SLOT_LABEL, statusOfRow, STATUS_LABEL, type Row } from "@/lib/schedule-model";
+import {
+  DateRangeFilter, MultiSelectFilter, TextFilter, EMPTY_TOKEN,
+  matchDate, matchMulti, matchText, type DateFilterValue, type TextFilterValue,
+} from "@/components/column-filter";
 
 type SortKey = "no" | "dept" | "bldg" | "act" | "pl" | "pc" | "e";
-type TextKey = "no" | "room" | "scope" | "act" | "unit" | "pred" | "succ" | "s" | "e";
-type ColFilter = { kind: "text"; field: TextKey } | { kind: "sel"; field: "dept" | "bldg" | "ms" | "sub" | "status" } | null;
+type TextKey = "no" | "room" | "scope" | "act" | "unit" | "pred" | "succ";
+type MultiKey = "dept" | "bldg" | "ms" | "sub" | "status";
+type DateKey = "s" | "e";
+type ColFilter =
+  | { kind: "text"; field: TextKey }
+  | { kind: "sel"; field: MultiKey }
+  | { kind: "date"; field: DateKey }
+  | null;
+
 const COLS: { key: SortKey | null; label: string; f: ColFilter }[] = [
   { key: "no", label: "No.", f: { kind: "text", field: "no" } },
   { key: "dept", label: "담당부서", f: { kind: "sel", field: "dept" } },
@@ -24,75 +35,105 @@ const COLS: { key: SortKey | null; label: string; f: ColFilter }[] = [
   { key: null, label: "상태", f: { kind: "sel", field: "status" } },
   { key: null, label: "Predecessor", f: { kind: "text", field: "pred" } },
   { key: null, label: "Successor", f: { kind: "text", field: "succ" } },
-  { key: null, label: "Start", f: { kind: "text", field: "s" } },
-  { key: "e", label: "Finish", f: { kind: "text", field: "e" } },
+  { key: null, label: "Start", f: { kind: "date", field: "s" } },
+  { key: "e", label: "Finish", f: { kind: "date", field: "e" } },
 ];
+
+const MULTI_LABEL: Record<MultiKey, string> = { dept: "담당부서", bldg: "Bldg.", ms: "Milestone", sub: "Subcon", status: "상태" };
+
+/** 컬럼 필터 비교값 = 화면 표시값 */
+function multiValue(r: Row, k: MultiKey): string {
+  if (k === "dept") return SLOT_LABEL[r.dept] ?? r.dept ?? "";
+  if (k === "status") return STATUS_LABEL[statusOfRow(r)] ?? statusOfRow(r);
+  return String(r[k] ?? "");
+}
 
 export type TableInitial = Partial<{ dept: string; bldg: string; ms: string; sub: string; status: string; q: string }>;
 
 export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy }: { rows: Row[]; fileName: string; lockLate?: boolean; initial?: TableInitial; dueBy?: string | null }) {
   const [q, setQ] = useState(initial?.q ?? "");
-  const [dept, setDept] = useState(initial?.dept ?? "전체");
-  const [bldg, setBldg] = useState(initial?.bldg ?? "전체");
-  const [ms, setMs] = useState(initial?.ms ?? "전체");
-  const [sub, setSub] = useState(initial?.sub ?? "전체");
-  const [status, setStatus] = useState(initial?.status ?? "전체");
   const [due, setDue] = useState<string | null>(dueBy ?? null);
   const [sort, setSort] = useState<SortKey>("e");
   const [asc, setAsc] = useState(true);
-  const [colq, setColq] = useState<Partial<Record<TextKey, string>>>({});
-  const setCol = (k: TextKey, v: string) => { setColq((o) => ({ ...o, [k]: v })); };
-  const selValue = { dept, bldg, ms, sub, status } as const;
-  const selSet = { dept: setDept, bldg: setBldg, ms: setMs, sub: setSub, status: setStatus } as const;
+  const [multi, setMulti] = useState<Partial<Record<MultiKey, string[]>>>(() => {
+    const init: Partial<Record<MultiKey, string[]>> = {};
+    const put = (k: MultiKey, v: string | undefined) => { if (v && v !== "전체") init[k] = [v]; };
+    put("dept", initial?.dept ? SLOT_LABEL[initial.dept] ?? initial.dept : undefined);
+    put("bldg", initial?.bldg);
+    put("ms", initial?.ms);
+    put("sub", initial?.sub);
+    put("status", initial?.status ? STATUS_LABEL[initial.status] ?? initial.status : undefined);
+    return init;
+  });
+  const [texts, setTexts] = useState<Partial<Record<TextKey, TextFilterValue>>>({});
+  const [dates, setDates] = useState<Partial<Record<DateKey, DateFilterValue>>>({});
 
+  const setMultiCol = (k: MultiKey, v: string[] | undefined) => setMulti((o) => ({ ...o, [k]: v }));
+  const setTextCol = (k: TextKey, v: TextFilterValue | undefined) => setTexts((o) => ({ ...o, [k]: v }));
+  const setDateCol = (k: DateKey, v: DateFilterValue | undefined) => setDates((o) => {
+    const next = { ...o }; if (v) next[k] = v; else delete next[k]; return next;
+  });
 
-  const opts = useMemo(() => ({
-    dept: [...new Set(rows.map((r) => r.dept))].sort(),
-    bldg: [...new Set(rows.map((r) => r.bldg).filter(Boolean))].sort() as string[],
-    ms: [...new Set(rows.map((r) => r.ms).filter(Boolean))].sort() as string[],
-    sub: [...new Set(rows.map((r) => r.sub).filter(Boolean))].sort() as string[],
-  }), [rows]);
-
-  const chips = [
-    dept !== "전체" && { k: "공종", v: SLOT_LABEL[dept] ?? dept, clear: () => setDept("전체") },
-    bldg !== "전체" && { k: "건물", v: bldg, clear: () => setBldg("전체") },
-    ms !== "전체" && { k: "마일스톤", v: ms, clear: () => setMs("전체") },
-    sub !== "전체" && { k: "협력사", v: sub, clear: () => setSub("전체") },
-    status !== "전체" && { k: "상태", v: STATUS_LABEL[status] ?? status, clear: () => setStatus("전체") },
-    due && { k: "종료 예정", v: `${fmtDate(due)} 이내`, clear: () => setDue(null) },
-    q && { k: "검색", v: q, clear: () => setQ("") },
-  ].filter(Boolean) as { k: string; v: string; clear: () => void }[];
+  /** exclude: 해당 컬럼 필터 제외 판정 (facet 크로스 필터링) */
+  const passes = (r: Row, exclude?: string) => {
+    if (lockLate && !isLate(r)) return false;
+    if (due && !(r.e && r.e <= due)) return false;
+    if (q) {
+      const hay = [r.no, r.dept, r.bldg, r.room, r.scope, r.ms, r.sub, r.act].join(" ").toLowerCase();
+      if (!hay.includes(q.toLowerCase())) return false;
+    }
+    for (const [k, v] of Object.entries(multi)) {
+      if (k === exclude) continue;
+      if (!matchMulti(multiValue(r, k as MultiKey), v)) return false;
+    }
+    for (const [k, v] of Object.entries(texts)) {
+      if (k === exclude) continue;
+      if (!matchText(r[k as TextKey], v)) return false;
+    }
+    for (const [k, v] of Object.entries(dates)) {
+      if (k === exclude) continue;
+      if (!matchDate(r[k as DateKey], v)) return false;
+    }
+    return true;
+  };
 
   const filtered = useMemo(() => {
-    const out = rows.filter((r) => {
-      if (lockLate && !isLate(r)) return false;
-      if (dept !== "전체" && r.dept !== dept && r.slot !== dept) return false;
-      if (bldg !== "전체" && r.bldg !== bldg) return false;
-      if (ms !== "전체" && r.ms !== ms) return false;
-      if (sub !== "전체" && r.sub !== sub) return false;
-      if (status !== "전체" && statusOfRow(r) !== status) return false;
-      if (due && !(r.e && r.e <= due)) return false;
-      if (q) {
-        const hay = [r.no, r.dept, r.bldg, r.room, r.scope, r.ms, r.sub, r.act].join(" ").toLowerCase();
-        if (!hay.includes(q.toLowerCase())) return false;
-      }
-      for (const [k, v] of Object.entries(colq)) {
-        if (!v) continue;
-        if (!String(r[k as TextKey] ?? "").toLowerCase().includes(v.toLowerCase())) return false;
-      }
-      return true;
-    });
+    const out = rows.filter((r) => passes(r));
     return out.sort((a, b) => {
       const av = a[sort] ?? "";
       const bv = b[sort] ?? "";
       const c = typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv), undefined, { numeric: true });
       return c * (asc ? 1 : -1);
     });
-  }, [rows, q, dept, bldg, ms, sub, status, due, sort, asc, lockLate, colq]);
+  }, [rows, q, due, sort, asc, lockLate, multi, texts, dates]);
 
-  const shown = filtered;
+  const facet = (k: MultiKey) => {
+    const counts = new Map<string, number>();
+    for (const r of rows) {
+      if (!passes(r, k)) continue;
+      const v = multiValue(r, k).trim() || EMPTY_TOKEN;
+      counts.set(v, (counts.get(v) ?? 0) + 1);
+    }
+    return [...counts.entries()].map(([value, count]) => ({ value, count }));
+  };
 
-  const reset = () => { setQ(""); setDept("전체"); setBldg("전체"); setMs("전체"); setSub("전체"); setStatus("전체"); setDue(null); setColq({}); };
+  const chips = [
+    ...(Object.entries(multi).filter(([, v]) => v && v.length) as [MultiKey, string[]][]).map(([k, v]) => ({
+      k: MULTI_LABEL[k], v: v.length > 2 ? `${v[0]} 외 ${v.length - 1}` : v.join(", "), clear: () => setMultiCol(k, undefined),
+    })),
+    ...(Object.entries(texts).filter(([, v]) => v) as [TextKey, TextFilterValue][]).map(([k, v]) => ({
+      k: k as string, v: v.emptyOnly ? "(비어 있음)" : v.text ?? "", clear: () => setTextCol(k, undefined),
+    })),
+    ...(Object.entries(dates) as [DateKey, DateFilterValue][]).map(([k, v]) => ({
+      k: k === "s" ? "Start" : "Finish",
+      v: v.emptyOnly ? "(비어 있음)" : `${v.from ?? ""}~${v.to ?? ""}`,
+      clear: () => setDateCol(k, undefined),
+    })),
+    ...(due ? [{ k: "종료 예정", v: `${fmtDate(due)} 이내`, clear: () => setDue(null) }] : []),
+    ...(q ? [{ k: "검색", v: q, clear: () => setQ("") }] : []),
+  ];
+
+  const reset = () => { setQ(""); setDue(null); setMulti({}); setTexts({}); setDates({}); };
 
   const exportXlsx = () => {
     const wb = XLSX.utils.book_new();
@@ -106,13 +147,6 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
   };
   const setSortKey = (k: SortKey | null) => { if (!k) return; if (k === sort) setAsc((v) => !v); else { setSort(k); setAsc(true); } };
 
-  const Sel = ({ label, value, set, list, render }: { label: string; value: string; set: (v: string) => void; list: string[]; render?: (v: string) => string }) => (
-    <select aria-label={label} value={value} onChange={(e) => { set(e.target.value); }} className="h-9 rounded-md border border-input bg-background px-2 text-xs">
-      <option value="전체">{label}: 전체</option>
-      {list.map((x) => <option key={x} value={x}>{render ? render(x) : x}</option>)}
-    </select>
-  );
-
   return (
     <section className="rounded-md border border-border bg-card shadow-sm">
       <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
@@ -120,11 +154,6 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
           <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
           <Input value={q} onChange={(e) => { setQ(e.target.value); }} placeholder="Activity · 건물 · 협력사 검색" className="h-9 pl-9" />
         </div>
-        <Sel label="공종" value={dept} set={setDept} list={opts.dept} render={(x) => SLOT_LABEL[x] ?? x} />
-        <Sel label="건물" value={bldg} set={setBldg} list={opts.bldg} />
-        <Sel label="마일스톤" value={ms} set={setMs} list={opts.ms} />
-        <Sel label="협력사" value={sub} set={setSub} list={opts.sub} />
-        {!lockLate && <Sel label="상태" value={status} set={setStatus} list={["done", "ongoing", "plan", "delay"]} render={(x) => STATUS_LABEL[x]!} />}
         <Button variant="outline" size="sm" onClick={reset}><RotateCcw className="size-3.5" />초기화</Button>
         <Button size="sm" onClick={exportXlsx}><Download className="size-3.5" />XLSX</Button>
       </div>
@@ -132,7 +161,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
       <div className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs">
         <strong>{filtered.length.toLocaleString()}건</strong>
         {chips.map((c) => (
-          <button key={c.k} onClick={() => { c.clear(); }} className="inline-flex items-center gap-1 rounded bg-accent px-2 py-1 text-[11px]">
+          <button key={`${c.k}-${c.v}`} onClick={() => { c.clear(); }} className="inline-flex items-center gap-1 rounded bg-accent px-2 py-1 text-[11px]">
             {c.k}: {c.v}<X className="size-3" />
           </button>
         ))}
@@ -145,42 +174,28 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
             <tr>
               {COLS.map((c) => (
                 <th key={c.label} className="whitespace-nowrap border-b border-r border-border px-3 py-2.5 font-bold">
-                  {c.key ? (
-                    <button className="inline-flex items-center gap-1" onClick={() => setSortKey(c.key)}>
-                      {c.label}{sort === c.key && (asc ? <ArrowDownAZ className="size-3" /> : <ArrowUpAZ className="size-3" />)}
-                    </button>
-                  ) : c.label}
-                </th>
-              ))}
-            </tr>
-            <tr>
-              {COLS.map((c) => (
-                <th key={`f-${c.label}`} className="border-b border-r border-border bg-secondary p-1">
-                  {c.f?.kind === "text" && (
-                    <input
-                      aria-label={`${c.label} 필터`} placeholder="필터"
-                      value={colq[c.f.field] ?? ""} onChange={(e) => setCol((c.f as { field: TextKey }).field, e.target.value)}
-                      className="h-7 w-full min-w-[70px] rounded border border-input bg-background px-1.5 text-[11px] font-normal text-foreground"
-                    />
-                  )}
-                  {c.f?.kind === "sel" && (
-                    <select
-                      aria-label={`${c.label} 필터`} value={selValue[c.f.field]}
-                      onChange={(e) => { selSet[(c.f as { field: keyof typeof selSet }).field](e.target.value); }}
-                      className="h-7 w-full min-w-[80px] rounded border border-input bg-background px-1 text-[11px] font-normal text-foreground"
-                    >
-                      <option value="전체">전체</option>
-                      {(c.f.field === "status" ? ["done", "ongoing", "plan", "delay"] : opts[c.f.field as "dept" | "bldg" | "ms" | "sub"]).map((x) => (
-                        <option key={x} value={x}>{c.f!.field === "status" ? STATUS_LABEL[x] : c.f!.field === "dept" ? SLOT_LABEL[x] ?? x : x}</option>
-                      ))}
-                    </select>
-                  )}
+                  <span className="inline-flex items-center gap-1">
+                    {c.key ? (
+                      <button className="inline-flex items-center gap-1" onClick={() => setSortKey(c.key)}>
+                        {c.label}{sort === c.key && (asc ? <ArrowDownAZ className="size-3" /> : <ArrowUpAZ className="size-3" />)}
+                      </button>
+                    ) : c.label}
+                    {c.f?.kind === "sel" && (
+                      <MultiSelectFilter options={facet(c.f.field)} selected={multi[c.f.field] ?? []} onChange={(v) => setMultiCol((c.f as { field: MultiKey }).field, v)} />
+                    )}
+                    {c.f?.kind === "text" && (
+                      <TextFilter value={texts[c.f.field]} onChange={(v) => setTextCol((c.f as { field: TextKey }).field, v)} />
+                    )}
+                    {c.f?.kind === "date" && (
+                      <DateRangeFilter value={dates[c.f.field]} onChange={(v) => setDateCol((c.f as { field: DateKey }).field, v)} />
+                    )}
+                  </span>
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {shown.map((r) => {
+            {filtered.map((r) => {
               const st = statusOfRow(r);
               return (
                 <tr key={r.id} className={`border-b border-border ${st === "delay" ? "bg-destructive/5" : ""}`}>
