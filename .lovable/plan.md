@@ -58,6 +58,8 @@
   - 본인 프로필 조회/수정, Admin 전체 조회·수정 정책
 - 기존 공개 읽기 정책(`activities`, `tc_items` 등)은 로그인 사용자 전용으로 좁힙니다. 서버 함수의 데이터 조회는 로그인 토큰 기반으로 전환합니다.
 - 쓰기 서버 함수(`importActivities`, `importTcItems`, `setBaselineDate`, `saveTcMemo`, `recordScheduleBatch`)에 인증 미들웨어와 역할 검사(admin/user 허용, guest 거부)를 추가합니다.
+- Admin 전용 데이터 관리 기능을 추가합니다: 공정·T&C 행의 개별 수정과 삭제, 업로드 배치·스냅샷 삭제, 공종 데이터 전체 삭제. 모든 삭제는 확인 대화상자를 거치고 서버에서 admin 여부를 다시 검사합니다.
+
 - 라우트는 `src/routes/_authenticated/` 하위로 이동(경로 주소는 그대로 유지), `/auth` 로그인과 `/auth/change-password`는 공개 라우트.
 - 초기 17개 계정(명부 16 + admin)은 관리자 전용 일괄 생성 서버 함수로 생성하고, 프로필·권한·비밀번호 변경 플래그를 함께 기록합니다.
 
