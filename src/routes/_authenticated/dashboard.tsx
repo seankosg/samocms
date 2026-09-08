@@ -297,13 +297,14 @@ function TcCard({ card, disc }: { card: (typeof TC_CARDS)[number]; disc: Disc[] 
         {side.map((x) => (
           <div key={x.lbl} className="border-t border-border/60 py-1">
             <div className="flex items-center justify-between gap-2">
-              <span className="font-semibold">{x.lbl}</span>
+              <span className="font-semibold"><Drill to="/tc/list" search={{ disc: x.key }}>{x.lbl}</Drill></span>
               <span>
-                <b>{x.a}</b>
+                <b><Drill to="/tc/list" search={isSt ? { disc: x.key, only: "Fail" } : { disc: x.key }}>{x.a}</Drill></b>
                 <span className="text-muted-foreground"> / {x.p}</span>
                 {!isSt && x.p > 0 && x.a > x.p && <span className="ml-0.5 text-[9px] text-chart-3">▲</span>}
               </span>
             </div>
+
             <span className="mt-1 block h-1 overflow-hidden rounded bg-muted">
               <span className="block h-full bg-primary" style={{ width: `${x.T ? Math.min(100, (x.a / x.T) * 100) : 0}%` }} />
             </span>
