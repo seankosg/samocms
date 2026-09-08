@@ -55,8 +55,18 @@ export function sourceKeyFromFileName(fileName: string): string {
   return hit ?? base.slice(0, 64);
 }
 
-/** 통합공정표 시트를 파싱해 activities 행으로 변환합니다. */
+/** 파일명의 YYYYMMDD → ISO 날짜 */
+export function dateFromFileName(fileName: string): string | null {
+  const m = fileName.match(/(20\d{2})[-._]?(\d{2})[-._]?(\d{2})/);
+  return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
+}
+
+/** 통합공정표 시트를 파싱해 activities 행과 파일 기준일을 반환합니다. */
 export function parseScheduleWorkbook(buffer: ArrayBuffer, fileName: string): ImportRow[] {
+  return parseScheduleFile(buffer, fileName).rows;
+}
+
+export function parseScheduleFile(buffer: ArrayBuffer, fileName: string): { rows: ImportRow[]; fileDate: string | null } {
   const wb = XLSX.read(buffer, { type: "array" });
   const sheetName = wb.SheetNames.find((n) => n.includes("통합공정표")) ?? wb.SheetNames[0]!;
   const grid = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[sheetName]!, { header: 1, blankrows: false, raw: true });
@@ -66,6 +76,22 @@ export function parseScheduleWorkbook(buffer: ArrayBuffer, fileName: string): Im
     if (grid[i]?.some((c) => text(c) === "No.")) { headerRow = i; break; }
   }
   if (headerRow < 0) throw new Error(`"${fileName}"에서 공정표 표 머리글(No.)을 찾지 못했습니다.`);
+
+  // 시트 상단의 「기준일」 셀 → 오른쪽 첫 날짜값
+  let sheetDate: string | null = null;
+  for (let i = 0; i < Math.min(grid.length, headerRow + 1); i += 1) {
+    const r = grid[i] ?? [];
+    const at = r.findIndex((c) => /기준일/.test(String(text(c) ?? "")));
+    if (at >= 0) {
+      for (let j = at + 1; j < r.length; j += 1) {
+        const d = date(r[j]);
+        if (d) { sheetDate = d; break; }
+      }
+    }
+    if (sheetDate) break;
+  }
+  const fileDate = sheetDate ?? dateFromFileName(fileName);
+
 
   const rows: ImportRow[] = [];
   for (let i = headerRow + 3; i < grid.length; i += 1) {
@@ -96,5 +122,5 @@ export function parseScheduleWorkbook(buffer: ArrayBuffer, fileName: string): Im
     });
   }
   if (!rows.length) throw new Error(`"${fileName}"에서 읽을 수 있는 공정 데이터가 없습니다.`);
-  return rows;
+  return { rows, fileDate };
 }

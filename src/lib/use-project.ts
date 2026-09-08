@@ -1,7 +1,8 @@
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { getProgressHistory, getProjectData } from "./project.functions";
-import { toRow } from "./schedule-model";
+import { applyBaseline, toRow } from "./schedule-model";
+
 
 export const projectQuery = queryOptions({
   queryKey: ["project"],
@@ -21,7 +22,20 @@ export function useProgressHistory(opts: { itemKey?: string; discipline?: string
 
 export function useProject() {
   const { data } = useSuspenseQuery(projectQuery);
-  const rows = useMemo(() => data.activities.map(toRow), [data.activities]);
-  const base = data.settings["baseline_date"] ?? "2026-09-05";
+  const raw = useMemo(() => data.activities.map(toRow), [data.activities]);
+  const base = data.settings["baseline_date"] ?? autoBaseline(data.batches) ?? "2026-09-05";
+  const rows = useMemo(() => applyBaseline(raw, base), [raw, base]);
   return { ...data, rows, base };
 }
+
+/** 업로드된 공종별 최신 파일 기준일 중 가장 빠른 날짜 */
+export function autoBaseline(batches: { kind: string; slot: string | null; file_date: string | null }[]): string | null {
+  const latest = new Map<string, string | null>();
+  batches.forEach((b) => {
+    const key = `${b.kind}:${b.slot ?? "-"}`;
+    if (!latest.has(key)) latest.set(key, b.file_date);
+  });
+  const dates = [...latest.values()].filter((d): d is string => !!d).sort();
+  return dates[0] ?? null;
+}
+

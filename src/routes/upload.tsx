@@ -7,7 +7,7 @@ import { FileSpreadsheet, Loader2, UploadCloud } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { projectQuery, useProject } from "@/lib/use-project";
-import { parseScheduleWorkbook, sourceKeyFromFileName } from "@/lib/import-schedule";
+import { parseScheduleFile, sourceKeyFromFileName } from "@/lib/import-schedule";
 import { isTcWorkbook, metaFromFileName, parseTcWorkbook } from "@/lib/import-tc";
 import { importActivities } from "@/lib/activities.functions";
 import { importTcItems } from "@/lib/project.functions";
@@ -49,17 +49,18 @@ function UploadPage() {
           const res = await importTcItems({ data: { discipline: disc, fileName: file.name, fileDate: meta.date, rows: parsed } });
           done.push(`${disc} T&C ${res.inserted}건`);
         } else {
-          const parsed = parseScheduleWorkbook(buf, file.name);
+          const parsed = parseScheduleFile(buf, file.name);
           const slot = sourceKeyFromFileName(file.name);
           const res = await importActivities({
             data: {
               sourceFile: slot,
               fileName: file.name,
-              fileDate: meta.date,
+              fileDate: parsed.fileDate ?? meta.date,
               rev: meta.rev,
-              rows: parsed.map((r) => ({ ...r, source_file: slot })),
+              rows: parsed.rows.map((r) => ({ ...r, source_file: slot })),
             },
           });
+
 
           done.push(`${SLOT_LABEL[slot] ?? slot} ${res.inserted}건`);
         }
