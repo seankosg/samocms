@@ -233,8 +233,9 @@ function Dashboard() {
           </table>
         </Card>
         <div className="grid gap-4">
-          <RankCard title="건물별 지연" rows={m.bldg} />
-          <RankCard title="협력사별 지연" rows={m.sub} />
+          <RankCard title="건물별 지연" rows={m.bldg} field="bldg" />
+          <RankCard title="협력사별 지연" rows={m.sub} field="sub" />
+
         </div>
       </section>
 
