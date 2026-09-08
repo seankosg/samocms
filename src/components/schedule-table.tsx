@@ -206,29 +206,65 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
           <tbody>
             {filtered.map((r) => {
               const st = statusOfRow(r);
+              const on = edit && canEdit(r.slot);
+              const save = (patch: Record<string, unknown>) => mut.mutate({ id: r.id, patch });
+              const cell = (v: string | number | null, k: string, kind: "text" | "number" | "date", map?: (x: string | null) => unknown) => (
+                <EditableCell
+                  value={v}
+                  kind={kind}
+                  editable={on}
+                  {...(kind === "date" ? { display: fmtShortDate(v as string | null) } : {})}
+                  onSave={(x) => save({ [k]: map ? map(x) : x })}
+                />
+              );
               return (
                 <tr key={r.id} className={`border-b border-border ${st === "delay" ? "bg-destructive/5" : ""}`}>
                   <td className="whitespace-nowrap border-r border-border px-3 py-2 font-medium">{r.no ?? "-"}</td>
                   <td className="px-3 py-2">{SLOT_LABEL[r.dept] ?? r.dept}</td>
-                  <td className="px-3 py-2">{r.bldg ?? "-"}</td>
-                  <td className="px-3 py-2">{r.room ?? "-"}</td>
-                  <td className="max-w-[200px] truncate px-3 py-2">{r.scope ?? "-"}</td>
-                  <td className="px-3 py-2">{r.ms ?? "-"}</td>
-                  <td className="px-3 py-2">{r.sub ?? "-"}</td>
-                  <td className="max-w-[340px] px-3 py-2 font-medium">{r.act}</td>
-                  <td className="px-3 py-2">{r.unit ?? "-"}</td>
-                  <td className="px-3 py-2">{r.done ?? 0} / {r.tot ?? 0}</td>
+                  <td className="px-3 py-2">{cell(r.bldg, "building", "text")}</td>
+                  <td className="px-3 py-2">{cell(r.room, "room", "text")}</td>
+                  <td className="max-w-[200px] truncate px-3 py-2">{cell(r.scope, "work_scope", "text")}</td>
+                  <td className="px-3 py-2">{cell(r.ms, "milestone", "text")}</td>
+                  <td className="px-3 py-2">{cell(r.sub, "subcontractor", "text")}</td>
+                  <td className="max-w-[340px] px-3 py-2 font-medium">
+                    <EditableCell value={r.act} editable={on} onSave={(x) => x && save({ activity: x })} />
+                  </td>
+                  <td className="px-3 py-2">{cell(r.unit, "unit", "text")}</td>
+                  <td className="whitespace-nowrap px-3 py-2">
+                    {on ? (
+                      <span className="inline-flex items-center gap-1">
+                        <EditableCell value={r.done ?? 0} kind="number" editable onSave={(x) => save({ done_quantity: numOrNull(x) })} />
+                        /
+                        <EditableCell value={r.tot ?? 0} kind="number" editable onSave={(x) => save({ total_quantity: numOrNull(x) })} />
+                      </span>
+                    ) : (
+                      <>{r.done ?? 0} / {r.tot ?? 0}</>
+                    )}
+                  </td>
                   <td className="px-3 py-2"><Bar v={r.pl} muted /></td>
-                  <td className="px-3 py-2"><Bar v={r.pc} /></td>
+                  <td className="px-3 py-2">
+                    {on ? (
+                      <EditableCell
+                        value={r.pc == null ? null : Math.round(r.pc * 1000) / 10}
+                        kind="number"
+                        editable
+                        display={`${pct1(r.pc)}%`}
+                        onSave={(x) => save({ actual_progress: x == null ? null : (numOrNull(x) ?? 0) / 100 })}
+                      />
+                    ) : (
+                      <Bar v={r.pc} />
+                    )}
+                  </td>
                   <td className="px-3 py-2"><Badge st={st} /></td>
-                  <td className="px-3 py-2">{r.pred ?? "-"}</td>
-                  <td className="px-3 py-2">{r.succ ?? "-"}</td>
-                  <td className="whitespace-nowrap px-3 py-2">{fmtShortDate(r.s)}</td>
-                  <td className="whitespace-nowrap px-3 py-2">{fmtShortDate(r.e)}</td>
+                  <td className="px-3 py-2">{cell(r.pred, "predecessor", "text")}</td>
+                  <td className="px-3 py-2">{cell(r.succ, "successor", "text")}</td>
+                  <td className="whitespace-nowrap px-3 py-2">{cell(r.s, "start_date", "date")}</td>
+                  <td className="whitespace-nowrap px-3 py-2">{cell(r.e, "finish_date", "date")}</td>
                 </tr>
               );
             })}
           </tbody>
+
         </table>
       </div>
 
