@@ -22,6 +22,7 @@ import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedTcElecRouteImport } from './routes/_authenticated/tc.elec'
 import { Route as AuthenticatedTcListRouteImport } from './routes/_authenticated/tc.list'
 import { Route as AuthenticatedTcMechRouteImport } from './routes/_authenticated/tc.mech'
+import { Route as ApiPublicBootstrapUsersRouteImport } from './routes/api/public/bootstrap-users'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -87,6 +88,11 @@ const AuthenticatedTcMechRoute = AuthenticatedTcMechRouteImport.update({
   path: '/tc/mech',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicBootstrapUsersRoute = ApiPublicBootstrapUsersRouteImport.update({
+  id: '/api/public/bootstrap-users',
+  path: '/api/public/bootstrap-users',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/tc/elec': typeof AuthenticatedTcElecRoute
   '/tc/list': typeof AuthenticatedTcListRoute
   '/tc/mech': typeof AuthenticatedTcMechRoute
+  '/api/public/bootstrap-users': typeof ApiPublicBootstrapUsersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/tc/elec': typeof AuthenticatedTcElecRoute
   '/tc/list': typeof AuthenticatedTcListRoute
   '/tc/mech': typeof AuthenticatedTcMechRoute
+  '/api/public/bootstrap-users': typeof ApiPublicBootstrapUsersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   '/_authenticated/tc/elec': typeof AuthenticatedTcElecRoute
   '/_authenticated/tc/list': typeof AuthenticatedTcListRoute
   '/_authenticated/tc/mech': typeof AuthenticatedTcMechRoute
+  '/api/public/bootstrap-users': typeof ApiPublicBootstrapUsersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/tc/elec'
     | '/tc/list'
     | '/tc/mech'
+    | '/api/public/bootstrap-users'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/tc/elec'
     | '/tc/list'
     | '/tc/mech'
+    | '/api/public/bootstrap-users'
   id:
     | '__root__'
     | '/'
@@ -176,12 +187,14 @@ export interface FileRouteTypes {
     | '/_authenticated/tc/elec'
     | '/_authenticated/tc/list'
     | '/_authenticated/tc/mech'
+    | '/api/public/bootstrap-users'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicBootstrapUsersRoute: typeof ApiPublicBootstrapUsersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -277,6 +290,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTcMechRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/bootstrap-users': {
+      id: '/api/public/bootstrap-users'
+      path: '/api/public/bootstrap-users'
+      fullPath: '/api/public/bootstrap-users'
+      preLoaderRoute: typeof ApiPublicBootstrapUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -313,6 +333,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicBootstrapUsersRoute: ApiPublicBootstrapUsersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
