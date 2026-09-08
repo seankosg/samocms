@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Eye, FileText, Printer } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { useAuth } from "@/lib/use-auth";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -29,6 +30,7 @@ const gapCls = (v: number) => (v < 0 ? "text-destructive" : v > 0 ? "text-primar
 
 function Dashboard() {
   const { rows, base, tcItems } = useProject();
+  const { isAdmin } = useAuth();
 
   const m = useMemo(() => {
     const withP = rows.filter((r) => r.pl != null || r.pc != null);
@@ -93,7 +95,7 @@ function Dashboard() {
   const maxLate = Math.max(1, ...m.bySlot.map((s) => s.late));
 
   return (
-    <AppShell title="대시보드" desc={`기준일 ${fmtDate(base)} · 전체 ${m.total.toLocaleString()}개 활동`} actions={<ReportButton base={base} />}>
+    <AppShell title="대시보드" desc={`기준일 ${fmtDate(base)} · 전체 ${m.total.toLocaleString()}개 활동`} actions={isAdmin ? <ReportButton base={base} /> : undefined}>
       <section className="grid gap-3 xl:grid-cols-3">
         <div className="grid gap-4 rounded-md border border-border bg-card p-4 shadow-sm sm:grid-cols-[1.2fr_1fr]">
           <div>
