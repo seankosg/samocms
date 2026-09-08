@@ -130,7 +130,7 @@ function ReportPage() {
               <div className="space-y-2">
                 {parseSummary(ai.data.summary).map((b, i) => (
                   <div key={i} className="flex gap-2">
-                    <span className="mt-[1px] shrink-0 rounded-sm px-1.5 py-[1px] text-[9px] font-bold text-white" style={{ background: LABEL_TONE[b.label] ?? "#475569" }}>
+                    <span className="mt-[1px] shrink-0 rounded-sm px-1.5 py-[1px] text-[9px] font-bold text-white" style={{ background: (b.label ? LABEL_TONE[b.label] : undefined) ?? "#475569" }}>
                       {b.label ?? "요약"}
                     </span>
                     <p className="text-[10.5px] leading-[1.6] text-slate-800">{renderEmphasis(b.text)}</p>
