@@ -3,16 +3,18 @@ import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
-import { FileSpreadsheet, Loader2, UploadCloud } from "lucide-react";
+import { AlertTriangle, FileSpreadsheet, Loader2, UploadCloud } from "lucide-react";
 import { useAuth } from "@/lib/use-auth";
 import { SCOPE_LABEL } from "@/lib/roster";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { projectQuery, useProject } from "@/lib/use-project";
 import { parseScheduleFile, sourceKeyFromFileName } from "@/lib/import-schedule";
-import { isTcWorkbook, metaFromFileName, parseTcWorkbook } from "@/lib/import-tc";
+import { isTcWorkbook, metaFromFileName, parseTcWorkbook, type TcImportRow } from "@/lib/import-tc";
 import { importActivities } from "@/lib/activities.functions";
 import { importTcItems } from "@/lib/project.functions";
+import type { ImportRow } from "@/lib/import-schedule";
 import { dayDiff, fmtDate, SLOTS, SLOT_LABEL } from "@/lib/schedule-model";
 
 export const Route = createFileRoute("/_authenticated/upload")({
@@ -28,6 +30,27 @@ export const Route = createFileRoute("/_authenticated/upload")({
   component: UploadPage,
 });
 
+type Job = {
+  id: string;
+  label: string;
+  fileName: string;
+  existing: number;
+  incoming: number;
+  added: string[];
+  removed: string[];
+  payload:
+    | { kind: "schedule"; slot: string; fileDate: string | null; rev: number | null; rows: ImportRow[] }
+    | { kind: "tc"; disc: "Mech" | "Elec"; fileDate: string | null; rows: TcImportRow[] };
+};
+
+const diffKeys = (before: string[], after: string[]) => {
+  const b = new Set(before), a = new Set(after);
+  return {
+    added: [...a].filter((k) => !b.has(k)),
+    removed: [...b].filter((k) => !a.has(k)),
+  };
+};
+
 function UploadPage() {
   const { rows, tcItems, batches, base } = useProject();
   const { canEdit, canWrite, scopes, isAdmin } = useAuth();
@@ -35,49 +58,91 @@ function UploadPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [drag, setDrag] = useState(false);
+  const [pending, setPending] = useState<Job[] | null>(null);
+  const [skip, setSkip] = useState<Record<string, boolean>>({});
+
+  /** 파일을 파싱해 기존 DB 행수와 비교한 작업 목록으로 만듭니다. */
+  const buildJobs = async (list: File[]) => {
+    const jobs: Job[] = [];
+    for (const file of list) {
+      const buf = await file.arrayBuffer();
+      const meta = metaFromFileName(file.name);
+      const wb = XLSX.read(buf, { type: "array", bookSheets: true });
+      if (isTcWorkbook(wb)) {
+        const disc = meta.disc === "Elec" ? "Elec" : "Mech";
+        if (!canEdit(disc)) throw new Error(`${disc} T&C 자료를 업로드할 권한이 없습니다.`);
+        const parsed = parseTcWorkbook(buf, file.name);
+        const before = tcItems.filter((i) => i.discipline === disc).map((i) => `${i.bldg ?? ""}|${i.item ?? ""}|${i.equip ?? ""}`);
+        const after = parsed.map((p) => `${p.bldg ?? ""}|${p.item ?? ""}|${p.equip ?? ""}`);
+        jobs.push({
+          id: `tc-${disc}-${file.name}`, label: `${disc.toUpperCase()} T&C`, fileName: file.name,
+          existing: before.length, incoming: parsed.length, ...diffKeys(before, after),
+          payload: { kind: "tc", disc, fileDate: meta.date, rows: parsed },
+        });
+      } else {
+        const slot = sourceKeyFromFileName(file.name);
+        if (!canEdit(slot)) throw new Error(`${SLOT_LABEL[slot] ?? slot} 자료를 업로드할 권한이 없습니다.`);
+        const parsed = parseScheduleFile(buf, file.name);
+        const before = rows.filter((r) => r.slot === slot).map((r, i) => r.no ?? `#${i}`);
+        const after = parsed.rows.map((r, i) => r.activity_no ?? `#${i}`);
+        jobs.push({
+          id: `s-${slot}-${file.name}`, label: SLOT_LABEL[slot] ?? slot, fileName: file.name,
+          existing: before.length, incoming: parsed.rows.length, ...diffKeys(before, after),
+          payload: { kind: "schedule", slot, fileDate: parsed.fileDate ?? meta.date, rev: meta.rev, rows: parsed.rows.map((r) => ({ ...r, source_file: slot })) },
+        });
+      }
+    }
+    return jobs;
+  };
+
+  const runJobs = async (jobs: Job[]) => {
+    setBusy(true);
+    const done: string[] = [];
+    try {
+      for (const job of jobs) {
+        if (job.payload.kind === "tc") {
+          const res = await importTcItems({ data: { discipline: job.payload.disc, fileName: job.fileName, fileDate: job.payload.fileDate, rows: job.payload.rows } });
+          done.push(`${job.label} ${res.inserted}건`);
+        } else {
+          const res = await importActivities({ data: {
+            sourceFile: job.payload.slot, fileName: job.fileName, fileDate: job.payload.fileDate,
+            rev: job.payload.rev, rows: job.payload.rows,
+          } });
+          done.push(`${job.label} ${res.inserted}건`);
+        }
+      }
+      await qc.invalidateQueries({ queryKey: ["project"] });
+      if (done.length) toast.success("업로드 반영 완료", { description: done.join(" · ") });
+      else toast.info("적용된 파일이 없습니다");
+    } catch (e) {
+      toast.error("업로드 실패", { description: e instanceof Error ? e.message : "파일을 확인해 주세요." });
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const handle = async (files: FileList | File[] | null) => {
     const list = files ? Array.from(files) : [];
     if (!list.length) return;
     setBusy(true);
-    const done: string[] = [];
     try {
-      for (const file of list) {
-        const buf = await file.arrayBuffer();
-        const meta = metaFromFileName(file.name);
-        const wb = XLSX.read(buf, { type: "array", bookSheets: true });
-        if (isTcWorkbook(wb)) {
-          const parsed = parseTcWorkbook(buf, file.name);
-          const disc = meta.disc === "Elec" ? "Elec" : "Mech";
-          if (!canEdit(disc)) throw new Error(`${disc} T&C 자료를 업로드할 권한이 없습니다.`);
-          const res = await importTcItems({ data: { discipline: disc, fileName: file.name, fileDate: meta.date, rows: parsed } });
-          done.push(`${disc} T&C ${res.inserted}건`);
-        } else {
-          const parsed = parseScheduleFile(buf, file.name);
-          const slot = sourceKeyFromFileName(file.name);
-          if (!canEdit(slot)) throw new Error(`${SLOT_LABEL[slot] ?? slot} 자료를 업로드할 권한이 없습니다.`);
-          const res = await importActivities({
-            data: {
-              sourceFile: slot,
-              fileName: file.name,
-              fileDate: parsed.fileDate ?? meta.date,
-              rev: meta.rev,
-              rows: parsed.rows.map((r) => ({ ...r, source_file: slot })),
-            },
-          });
-
-
-          done.push(`${SLOT_LABEL[slot] ?? slot} ${res.inserted}건`);
-        }
-      }
-      await qc.invalidateQueries({ queryKey: ["project"] });
-      toast.success("업로드 반영 완료", { description: done.join(" · ") });
-    } catch (e) {
-      toast.error("업로드 실패", { description: e instanceof Error ? e.message : "파일을 확인해 주세요." });
-    } finally {
+      const jobs = await buildJobs(list);
+      const changed = jobs.filter((j) => j.existing !== j.incoming);
       setBusy(false);
+      if (changed.length) { setSkip({}); setPending(jobs); }
+      else await runJobs(jobs);
+    } catch (e) {
+      setBusy(false);
+      toast.error("파일을 읽지 못했습니다", { description: e instanceof Error ? e.message : "파일을 확인해 주세요." });
+    } finally {
       if (fileRef.current) fileRef.current.value = "";
     }
+  };
+
+  const confirmPending = async () => {
+    const jobs = (pending ?? []).filter((j) => !skip[j.id]);
+    setPending(null);
+    await runJobs(jobs);
   };
 
   const latestOf = (kind: string, slot: string) => batches.find((b) => b.kind === kind && b.slot === slot) ?? null;
@@ -110,6 +175,49 @@ function UploadPage() {
           {busy ? <Loader2 className="animate-spin" /> : <FileSpreadsheet />}파일 선택
         </Button>
       </div>
+
+      <Dialog open={!!pending} onOpenChange={(o) => { if (!o) setPending(null); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><AlertTriangle className="size-4 text-chart-2" />기존 자료와 행 수가 다릅니다</DialogTitle>
+            <DialogDescription>적용하면 해당 공종의 기존 자료가 새 파일로 교체됩니다. 파일별로 적용 여부를 선택하세요.</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[50vh] space-y-3 overflow-auto">
+            {(pending ?? []).map((j) => {
+              const delta = j.incoming - j.existing;
+              const same = delta === 0;
+              return (
+                <div key={j.id} className={`rounded-md border p-3 text-xs ${same ? "border-border" : "border-chart-2/60 bg-chart-2/5"}`}>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <strong className="text-sm">{j.label}</strong>
+                      <span className="ml-2 text-muted-foreground">{j.fileName}</span>
+                    </div>
+                    <span className="font-semibold">
+                      기존 {j.existing.toLocaleString()}행 → 새 파일 {j.incoming.toLocaleString()}행{" "}
+                      {!same && <span className={delta > 0 ? "text-primary" : "text-destructive"}>({delta > 0 ? "+" : ""}{delta})</span>}
+                    </span>
+                  </div>
+                  {(j.added.length > 0 || j.removed.length > 0) && (
+                    <p className="mt-1.5 text-[11px] text-muted-foreground">
+                      신규 항목 {j.added.length}건{j.added.length ? ` (예: ${j.added.slice(0, 5).join(", ")})` : ""} · 사라진 항목 {j.removed.length}건
+                      {j.removed.length ? ` (예: ${j.removed.slice(0, 5).join(", ")})` : ""}
+                    </p>
+                  )}
+                  <div className="mt-2 flex gap-2">
+                    <Button size="sm" variant={skip[j.id] ? "outline" : "default"} onClick={() => setSkip((s) => ({ ...s, [j.id]: false }))}>이 파일 적용</Button>
+                    <Button size="sm" variant={skip[j.id] ? "default" : "outline"} onClick={() => setSkip((s) => ({ ...s, [j.id]: true }))}>건너뛰기</Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPending(null)}>전체 취소</Button>
+            <Button onClick={confirmPending}>선택한 파일 적용</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((c) => {
