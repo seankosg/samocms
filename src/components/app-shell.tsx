@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
   AlertTriangle, BarChart3, CalendarDays, ChevronLeft, Download, HardHat, ListChecks,
-  LogOut, Network, PanelLeft, Settings, Table2, UploadCloud, Users, Wrench, Zap,
+  LogOut, Network, PanelLeft, Settings, Sparkles, Table2, UploadCloud, Users, Wrench, Zap,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ROLE_LABEL, useAuth } from "@/lib/use-auth";
@@ -15,6 +15,25 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { autoBaseline, useProject } from "@/lib/use-project";
 import { setBaselineDate } from "@/lib/project.functions";
 import { SLOT_LABEL } from "@/lib/schedule-model";
+import { currentBuildId, forceFreshAppLoad } from "@/hooks/use-version-check";
+import { UpdateAvailableBanner } from "@/components/update-available-banner";
+
+function NewVersionButton() {
+  const buildId = currentBuildId();
+  if (!buildId || buildId.startsWith("__") || buildId === "development") return null;
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => void forceFreshAppLoad()}
+      aria-label="New Version - 강제 새로고침"
+      className="hidden sm:inline-flex print:hidden"
+    >
+      <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+      New Version
+    </Button>
+  );
+}
 
 const NAV = [
   { group: "현황", items: [
