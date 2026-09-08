@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef } from "react";
+import { Fragment, useEffect, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { Printer, X } from "lucide-react";
@@ -242,11 +242,11 @@ function ReportPage() {
                     <td className="border border-slate-300 px-1 py-0.5">{b.bldg}</td>
                     <td className="border border-slate-300 px-1 py-0.5 text-right">{b.qty}</td>
                     {(["t1", "t2"] as const).map((k) => (
-                      <>
+                      <Fragment key={k}>
                         <td key={`${k}d`} className="border border-slate-300 px-1 py-0.5 text-right">{b[k].doneQty}</td>
                         <td key={`${k}r`} className="border border-slate-300 px-1 py-0.5 text-right">{b[k].rem}</td>
                         <td key={`${k}l`} className="border border-slate-300 px-1 py-0.5 text-right font-semibold" style={{ background: b[k].lateQty ? "#fef3c7" : undefined, color: b[k].lateQty ? "#b91c1c" : "#94a3b8" }}>{b[k].lateQty}</td>
-                      </>
+                      </Fragment>
                     ))}
                     <td className="border border-slate-300 px-1 py-0.5 text-right">{b.pass}</td>
                     <td className="border border-slate-300 px-1 py-0.5 text-right" style={{ color: b.fail ? "#b91c1c" : undefined }}>{b.fail}</td>
@@ -256,11 +256,11 @@ function ReportPage() {
                   <td className="border border-slate-300 px-1 py-0.5">Total</td>
                   <td className="border border-slate-300 px-1 py-0.5 text-right">{d.qty}</td>
                   {(["t1", "t2"] as const).map((k) => (
-                    <>
+                    <Fragment key={k}>
                       <td key={`${k}d`} className="border border-slate-300 px-1 py-0.5 text-right">{d[k].doneQty}</td>
                       <td key={`${k}r`} className="border border-slate-300 px-1 py-0.5 text-right">{d[k].rem}</td>
                       <td key={`${k}l`} className="border border-slate-300 px-1 py-0.5 text-right" style={{ color: d[k].lateQty ? "#b91c1c" : undefined }}>{d[k].lateQty}</td>
-                    </>
+                    </Fragment>
                   ))}
                   <td className="border border-slate-300 px-1 py-0.5 text-right">{d.pass}</td>
                   <td className="border border-slate-300 px-1 py-0.5 text-right">{d.fail}</td>
