@@ -48,7 +48,11 @@ function remainOf(r: TcItem, s: TcStage) {
 function TcList() {
   const { tcItems, base } = useProject();
   const search = Route.useSearch();
+  const { canEdit, canWrite } = useAuth();
+  const mut = useTcEdit();
+  const [edit, setEdit] = useState(false);
   const [q, setQ] = useState("");
+
   const [exportOpen, setExportOpen] = useState(false);
   const [only, setOnly] = useState(search.only ?? "전체");
   const [multi, setMulti] = useState<Partial<Record<MultiKey, string[]>>>(() => {
@@ -158,7 +162,13 @@ function TcList() {
           {activeCount > 0 && (
             <Button size="sm" variant="outline" onClick={clearAll}><X className="size-3.5" />필터 {activeCount}개 해제</Button>
           )}
+          {canWrite && (
+            <Button size="sm" variant={edit ? "default" : "outline"} onClick={() => setEdit((v) => !v)}>
+              <Pencil className="size-3.5" />{edit ? "수정 종료" : "인라인 수정"}
+            </Button>
+          )}
           <Button size="sm" onClick={() => setExportOpen(true)}><Download className="size-3.5" />XLSX</Button>
+
           <ExportDialog
             open={exportOpen}
             onOpenChange={setExportOpen}
