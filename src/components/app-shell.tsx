@@ -1,12 +1,14 @@
 import { useState, type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
   AlertTriangle, BarChart3, CalendarDays, ChevronLeft, Download, HardHat, ListChecks,
-  Network, PanelLeft, Settings, Table2, UploadCloud, Wrench, Zap,
+  LogOut, Network, PanelLeft, Settings, Table2, UploadCloud, Users, Wrench, Zap,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { ROLE_LABEL, useAuth } from "@/lib/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -31,9 +33,13 @@ const NAV = [
   { group: "데이터", items: [{ to: "/upload", label: "업로드", icon: UploadCloud }] },
 ] as const;
 
+const ADMIN_NAV = { group: "관리", items: [{ to: "/users", label: "사용자 관리", icon: Users }] } as const;
+
 export function AppShell({ title, desc, actions, children }: { title: string; desc?: string; actions?: ReactNode; children: ReactNode }) {
   const [open, setOpen] = useState(true);
   const { rows, base, batches, tcItems } = useProject();
+  const { profile, role, isAdmin, canWrite } = useAuth();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const rev = Math.max(1, ...batches.map((b) => b.rev ?? 1));
 
@@ -77,11 +83,28 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
             </span>
           </Link>
           <div className="ml-auto flex flex-wrap items-center justify-end gap-2 text-xs">
-            <BaseSetting base={base} batches={batches} onApply={(d) => saveBase.mutate(d)} saving={saveBase.isPending} />
+            <BaseSetting base={base} batches={batches} onApply={(d) => saveBase.mutate(d)} saving={saveBase.isPending} canWrite={canWrite} />
             <span className="rounded-md border border-border px-2 py-1.5 text-muted-foreground">
               총 <strong className="text-foreground">{rows.length.toLocaleString()}</strong>행 · Rev{rev}
             </span>
             <Button size="sm" variant="outline" onClick={exportAll}><Download className="size-3.5" />통합 엑셀</Button>
+            <span className="rounded-md border border-border px-2 py-1.5">
+              <strong>{profile?.full_name ?? "사용자"}</strong>
+              <span className="ml-1 text-muted-foreground">{ROLE_LABEL[role]}</span>
+            </span>
+            <Button
+              size="sm"
+              variant="ghost"
+              title="로그아웃"
+              onClick={async () => {
+                await qc.cancelQueries();
+                qc.clear();
+                await supabase.auth.signOut();
+                navigate({ to: "/auth", replace: true });
+              }}
+            >
+              <LogOut className="size-3.5" />로그아웃
+            </Button>
           </div>
         </div>
       </header>
@@ -89,7 +112,7 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
       <div className="flex">
         <aside className={`${open ? "w-[212px]" : "w-0 lg:w-[62px]"} sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 overflow-y-auto border-r border-border bg-card transition-all sm:block`}>
           <nav className="p-2" aria-label="주 메뉴">
-            {NAV.map((g) => (
+            {[...NAV, ...(isAdmin ? [ADMIN_NAV] : [])].map((g) => (
               <div key={g.group} className="mb-3">
                 {open && <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{g.group}</p>}
                 {g.items.map((it) => (
@@ -126,7 +149,7 @@ export const slotLabel = (s: string) => SLOT_LABEL[s] ?? s;
 
 type Batch = { id: number; kind: string; slot: string | null; file_name: string | null; file_date: string | null };
 
-function BaseSetting({ base, batches, onApply, saving }: { base: string; batches: Batch[]; onApply: (d: string) => void; saving: boolean }) {
+function BaseSetting({ base, batches, onApply, saving, canWrite }: { base: string; batches: Batch[]; onApply: (d: string) => void; saving: boolean; canWrite: boolean }) {
   const [open, setOpen] = useState(false);
   const [val, setVal] = useState(base);
 
@@ -142,7 +165,7 @@ function BaseSetting({ base, batches, onApply, saving }: { base: string; batches
     <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o) setVal(base); }}>
       <div className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1.5">
         <PopoverTrigger asChild>
-          <button type="button" aria-label="기준일 설정" title="기준일 설정" className="grid size-5 place-items-center rounded border border-border text-muted-foreground hover:bg-accent hover:text-foreground">
+          <button type="button" disabled={!canWrite} aria-label="기준일 설정" title="기준일 설정" className="grid size-5 place-items-center rounded border border-border text-muted-foreground hover:bg-accent hover:text-foreground">
             <Settings className="size-3" />
           </button>
         </PopoverTrigger>
