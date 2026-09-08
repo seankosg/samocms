@@ -13,9 +13,15 @@ export function ChangePassword({ forced, onDone }: { forced?: boolean; onDone?: 
   const qc = useQueryClient();
 
   const submit = async () => {
-    if (pw.length < 8) return toast.error("비밀번호는 최소 8자 이상이어야 합니다.");
-    if (pw !== pw2) return toast.error("두 비밀번호가 일치하지 않습니다.");
-    setBusy(true);
+    if (pw.length < 8) {
+      toast.error("비밀번호는 최소 8자 이상이어야 합니다.");
+      return;
+    }
+    if (pw !== pw2) {
+      toast.error("두 비밀번호가 일치하지 않습니다.");
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.updateUser({ password: pw });
       if (error) throw new Error(error.message);
