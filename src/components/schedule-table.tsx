@@ -143,7 +143,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
       "계획(%)": r.pl == null ? null : r.pl * 100, "실적(%)": r.pc == null ? null : r.pc * 100,
       상태: STATUS_LABEL[statusOfRow(r)], Predecessor: r.pred, Successor: r.succ, Start: r.s, Finish: r.e,
     },
-  }));
+  })), [filtered]);
 
   const setSortKey = (k: SortKey | null) => { if (!k) return; if (k === sort) setAsc((v) => !v); else { setSort(k); setAsc(true); } };
 
