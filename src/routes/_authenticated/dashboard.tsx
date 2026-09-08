@@ -281,7 +281,7 @@ function TcCard({ card, disc }: { card: (typeof TC_CARDS)[number]; disc: Disc[] 
       <div>
         <p className="text-xs font-bold">{card.t}<span className="ml-1 block text-[10px] font-normal text-muted-foreground">{card.s}</span></p>
         <p className="mt-1 flex flex-wrap items-baseline gap-1">
-          <span className="text-2xl font-bold">{tcPct(prog)}</span>
+          <span className="text-2xl font-bold"><Drill to="/tc/list" search={isSt ? { only: "Fail" } : {}}>{tcPct(prog)}</Drill></span>
           {!isSt && <>
             <span className="text-xs text-muted-foreground">/ {tcPct(planP)}</span>
             <span className={`text-[11px] font-bold ${gapCls(prog - planP)}`}>{sign(prog - planP)}{tcPct(Math.abs(prog - planP)).replace("%", "")}%p</span>
