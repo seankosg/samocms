@@ -299,7 +299,7 @@ export function NetworkView({ rows, search, onChange, base }: { rows: Row[]; sea
       )}
 
       {hover && <Tip n={hover.n} x={hover.x} y={hover.y} edges={M.edges} />}
-      {selNode && <Detail node={selNode} rows={rows} onClose={() => setLock(null)} />}
+      {selNode && <Detail node={selNode} rows={rows} base={base} edges={M.edges} onClose={() => setLock(null)} />}
     </div>
   );
 }
@@ -470,7 +470,7 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
   );
 }
 
-function Metric({ k, v, tone }: { k: string; v: string; tone?: "ok" | "warn" | "bad" }) {
+function Metric({ k, v, tone }: { k: string; v: string; tone?: "ok" | "warn" | "bad" | undefined }) {
   const c = tone === "bad" ? STATUS_COLOR["delay"] : tone === "warn" ? "#b26a00" : tone === "ok" ? STATUS_COLOR["done"] : undefined;
   return (
     <div className="rounded-md border border-border bg-card px-2 py-1.5 text-center">
@@ -480,7 +480,7 @@ function Metric({ k, v, tone }: { k: string; v: string; tone?: "ok" | "warn" | "
   );
 }
 
-function Item({ k, v, tone }: { k: string; v: string; tone?: "ok" | "warn" | "bad" }) {
+function Item({ k, v, tone }: { k: string; v: string; tone?: "ok" | "warn" | "bad" | undefined }) {
   const c = tone === "bad" ? STATUS_COLOR["delay"] : tone === "warn" ? "#b26a00" : tone === "ok" ? STATUS_COLOR["done"] : undefined;
   return (
     <div className="rounded-md bg-muted/50 p-2">
