@@ -18,6 +18,7 @@ import { Route as AuthenticatedNetworkRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedRawDataRouteImport } from './routes/_authenticated/raw-data'
 import { Route as AuthenticatedScheduleRouteImport } from './routes/_authenticated/schedule'
 import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
+import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedTcElecRouteImport } from './routes/_authenticated/tc.elec'
 import { Route as AuthenticatedTcListRouteImport } from './routes/_authenticated/tc.list'
 import { Route as AuthenticatedTcMechRouteImport } from './routes/_authenticated/tc.mech'
@@ -66,6 +67,11 @@ const AuthenticatedUploadRoute = AuthenticatedUploadRouteImport.update({
   path: '/upload',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedTcElecRoute = AuthenticatedTcElecRouteImport.update({
   id: '/tc/elec',
   path: '/tc/elec',
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/raw-data': typeof AuthenticatedRawDataRoute
   '/schedule': typeof AuthenticatedScheduleRoute
   '/upload': typeof AuthenticatedUploadRoute
+  '/users': typeof AuthenticatedUsersRoute
   '/tc/elec': typeof AuthenticatedTcElecRoute
   '/tc/list': typeof AuthenticatedTcListRoute
   '/tc/mech': typeof AuthenticatedTcMechRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByTo {
   '/raw-data': typeof AuthenticatedRawDataRoute
   '/schedule': typeof AuthenticatedScheduleRoute
   '/upload': typeof AuthenticatedUploadRoute
+  '/users': typeof AuthenticatedUsersRoute
   '/tc/elec': typeof AuthenticatedTcElecRoute
   '/tc/list': typeof AuthenticatedTcListRoute
   '/tc/mech': typeof AuthenticatedTcMechRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/_authenticated/raw-data': typeof AuthenticatedRawDataRoute
   '/_authenticated/schedule': typeof AuthenticatedScheduleRoute
   '/_authenticated/upload': typeof AuthenticatedUploadRoute
+  '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/tc/elec': typeof AuthenticatedTcElecRoute
   '/_authenticated/tc/list': typeof AuthenticatedTcListRoute
   '/_authenticated/tc/mech': typeof AuthenticatedTcMechRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/raw-data'
     | '/schedule'
     | '/upload'
+    | '/users'
     | '/tc/elec'
     | '/tc/list'
     | '/tc/mech'
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/raw-data'
     | '/schedule'
     | '/upload'
+    | '/users'
     | '/tc/elec'
     | '/tc/list'
     | '/tc/mech'
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '/_authenticated/raw-data'
     | '/_authenticated/schedule'
     | '/_authenticated/upload'
+    | '/_authenticated/users'
     | '/_authenticated/tc/elec'
     | '/_authenticated/tc/list'
     | '/_authenticated/tc/mech'
@@ -237,6 +249,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUploadRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/users': {
+      id: '/_authenticated/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AuthenticatedUsersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/tc/elec': {
       id: '/_authenticated/tc/elec'
       path: '/tc/elec'
@@ -268,6 +287,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRawDataRoute: typeof AuthenticatedRawDataRoute
   AuthenticatedScheduleRoute: typeof AuthenticatedScheduleRoute
   AuthenticatedUploadRoute: typeof AuthenticatedUploadRoute
+  AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedTcElecRoute: typeof AuthenticatedTcElecRoute
   AuthenticatedTcListRoute: typeof AuthenticatedTcListRoute
   AuthenticatedTcMechRoute: typeof AuthenticatedTcMechRoute
@@ -280,6 +300,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRawDataRoute: AuthenticatedRawDataRoute,
   AuthenticatedScheduleRoute: AuthenticatedScheduleRoute,
   AuthenticatedUploadRoute: AuthenticatedUploadRoute,
+  AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedTcElecRoute: AuthenticatedTcElecRoute,
   AuthenticatedTcListRoute: AuthenticatedTcListRoute,
   AuthenticatedTcMechRoute: AuthenticatedTcMechRoute,
