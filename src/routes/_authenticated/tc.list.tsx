@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import * as XLSX from "xlsx";
-import { Download, Search } from "lucide-react";
+import { Download, Search, X } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,10 @@ import { projectQuery, useProject } from "@/lib/use-project";
 import { fmtDate, flat } from "@/lib/schedule-model";
 import { validateTcSearch } from "@/lib/list-search";
 import { stageDone, TC_STAGES, type TcItem, type TcStage } from "@/lib/tc-model";
+import {
+  DateRangeFilter, MultiSelectFilter, TextFilter, EMPTY_TOKEN,
+  matchDate, matchMulti, matchText, type DateFilterValue, type TextFilterValue,
+} from "@/components/column-filter";
 
 export const Route = createFileRoute("/_authenticated/tc/list")({
   head: () => ({ meta: [
@@ -28,59 +32,84 @@ const PLAN: Record<TcStage, keyof TcItem> = { T0: "t0_p", T1: "t1_p", Report: "r
 const ACT: Record<TcStage, keyof TcItem> = { T0: "t0_a", T1: "t1_a", Report: "rp_a", RFI: "rfi_a", T2: "t2_a", Response: "resp_a" };
 const REM: Partial<Record<TcStage, keyof TcItem>> = { T0: "t0_rem", T1: "t1_rem", Report: "rp_rem", RFI: "rfi_rem" };
 
-type ColKey = "discipline" | "bldg" | "grp" | "item" | "equip" | "supplier" | "status" | "docref";
-const COL_FILTERS: { key: ColKey; label: string }[] = [
-  { key: "discipline", label: "공종" }, { key: "bldg", label: "Bldg." }, { key: "grp", label: "Group" },
-  { key: "item", label: "Item" }, { key: "equip", label: "Equipment" },
-];
+type MultiKey = "discipline" | "bldg" | "grp" | "item" | "supplier" | "status";
+type TextKey = "equip" | "docref";
+const MULTI_LABEL: Record<MultiKey, string> = { discipline: "공종", bldg: "Bldg.", grp: "Group", item: "Item", supplier: "Supplier", status: "Status" };
+
+function remainOf(r: TcItem, s: TcStage) {
+  const col = REM[s];
+  return col ? Number(r[col] ?? 0) : stageDone(r, s) ? 0 : Number(r.qty);
+}
 
 function TcList() {
   const { tcItems, base } = useProject();
   const search = Route.useSearch();
   const [q, setQ] = useState("");
-  const [disc, setDisc] = useState(search.disc ?? "전체");
-  const [bldg, setBldg] = useState("전체");
   const [only, setOnly] = useState(search.only ?? "전체");
-
-  const [colq, setColq] = useState<Partial<Record<ColKey, string>>>({});
-  const setCol = (k: ColKey, v: string) => setColq((o) => ({ ...o, [k]: v }));
-  const ColInput = ({ k }: { k: ColKey }) => (
-    <input
-      aria-label={`${k} 필터`} placeholder="필터" value={colq[k] ?? ""} onChange={(e) => setCol(k, e.target.value)}
-      className="h-6 w-full min-w-[64px] rounded border border-input bg-background px-1 text-[10px] font-normal text-foreground"
-    />
+  const [multi, setMulti] = useState<Partial<Record<MultiKey, string[]>>>(
+    search.disc && search.disc !== "전체" ? { discipline: [search.disc] } : {},
   );
+  const [texts, setTexts] = useState<Partial<Record<TextKey, TextFilterValue>>>({});
+  const [dates, setDates] = useState<Record<string, DateFilterValue>>({});
 
-  const bldgs = useMemo(() => [...new Set(tcItems.map((i) => i.bldg ?? "(미지정)"))].sort(), [tcItems]);
-  const discs = useMemo(() => [...new Set(tcItems.map((i) => i.discipline))].sort(), [tcItems]);
+  const setMultiCol = (k: MultiKey, v: string[] | undefined) => setMulti((o) => ({ ...o, [k]: v }));
+  const setTextCol = (k: TextKey, v: TextFilterValue | undefined) => setTexts((o) => ({ ...o, [k]: v }));
+  const setDateCol = (k: string, v: DateFilterValue | undefined) => setDates((o) => {
+    const next = { ...o }; if (v) next[k] = v; else delete next[k]; return next;
+  });
+  const clearAll = () => { setMulti({}); setTexts({}); setDates({}); setQ(""); setOnly("전체"); };
+  const activeCount =
+    Object.values(multi).filter((v) => v && v.length).length +
+    Object.values(texts).filter(Boolean).length + Object.keys(dates).length;
 
-  const rows = useMemo(() => tcItems.filter((r) => {
-    if (disc !== "전체" && r.discipline !== disc) return false;
-    if (bldg !== "전체" && (r.bldg ?? "(미지정)") !== bldg) return false;
+  /** exclude: 해당 컬럼 필터를 제외하고 판정 (facet 크로스 필터링용) */
+  const passes = (r: TcItem, exclude?: string) => {
     if (only === "지연" && !TC_STAGES.some((s) => !stageDone(r, s) && (r[PLAN[s]] as string | null) && (r[PLAN[s]] as string) <= base)) return false;
     if (only === "Fail" && flat(r.status).toLowerCase() !== "fail") return false;
     if (q) {
       const hay = [r.bldg, r.grp, r.item, r.equip, r.supplier, r.docref].join(" ").toLowerCase();
       if (!hay.includes(q.toLowerCase())) return false;
     }
-    for (const [k, v] of Object.entries(colq)) {
-      if (!v) continue;
-      if (!String(r[k as ColKey] ?? "").toLowerCase().includes(v.toLowerCase())) return false;
+    for (const [k, v] of Object.entries(multi)) {
+      if (k === exclude) continue;
+      if (!matchMulti(r[k as MultiKey], v)) return false;
+    }
+    for (const [k, v] of Object.entries(texts)) {
+      if (k === exclude) continue;
+      if (!matchText(r[k as TextKey], v)) return false;
+    }
+    for (const [k, v] of Object.entries(dates)) {
+      if (k === exclude) continue;
+      if (!matchDate(r[k as keyof TcItem], v)) return false;
     }
     return true;
-  }), [tcItems, q, disc, bldg, only, base, colq]);
+  };
+
+  const rows = useMemo(() => tcItems.filter((r) => passes(r)), [tcItems, q, only, multi, texts, dates, base]);
+
+  const facet = (k: MultiKey) => {
+    const counts = new Map<string, number>();
+    for (const r of tcItems) {
+      if (!passes(r, k)) continue;
+      const v = String(r[k] ?? "").trim() || EMPTY_TOKEN;
+      counts.set(v, (counts.get(v) ?? 0) + 1);
+    }
+    return [...counts.entries()].map(([value, count]) => ({ value, count }));
+  };
 
   const exportXlsx = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.map((r) => ({
       공종: r.discipline, "Bldg.": r.bldg, Group: r.grp, Item: r.item, Equipment: r.equip, "Q'ty": r.qty, Supplier: r.supplier,
       ...Object.fromEntries(TC_STAGES.flatMap((s) => [
-        [`${s} Plan`, r[PLAN[s]]], [`${s} Actual`, r[ACT[s]]], [`${s} Remain`, REM[s] ? r[REM[s]!] : null],
+        [`${s} 계획`, r[PLAN[s]]], [`${s} 실적`, r[ACT[s]]], [`${s} 잔여`, remainOf(r, s)],
       ])),
       Status: r.status, "Doc Reference": r.docref,
     }))), "T&C List");
     XLSX.writeFile(wb, "HMMME_TC_List.xlsx");
   };
+
+  const headCell = "whitespace-nowrap border-b border-r border-border px-2 py-1.5 font-bold";
 
   return (
     <AppShell title="T&C List" desc={`기준일 ${fmtDate(base)} · ${rows.length.toLocaleString()} / ${tcItems.length.toLocaleString()}건`}>
@@ -90,46 +119,69 @@ function TcList() {
             <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="장비 · 건물 · 공급사 검색" className="h-9 pl-9" />
           </div>
-          <select aria-label="공종" value={disc} onChange={(e) => setDisc(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-xs">
-            <option>전체</option>{discs.map((d) => <option key={d}>{d}</option>)}
-          </select>
-          <select aria-label="건물" value={bldg} onChange={(e) => setBldg(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-xs">
-            <option>전체</option>{bldgs.map((d) => <option key={d}>{d}</option>)}
-          </select>
           <select aria-label="상태" value={only} onChange={(e) => setOnly(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-xs">
             <option>전체</option><option>지연</option><option>Fail</option>
           </select>
+          {activeCount > 0 && (
+            <Button size="sm" variant="outline" onClick={clearAll}><X className="size-3.5" />필터 {activeCount}개 해제</Button>
+          )}
           <Button size="sm" onClick={exportXlsx}><Download className="size-3.5" />XLSX</Button>
         </div>
         <div className="max-h-[calc(100vh-300px)] overflow-auto">
-          <table className="w-full min-w-[1900px] border-collapse text-left text-[11px]">
+          <table className="w-full min-w-[2400px] border-collapse text-left text-[11px]">
             <thead className="sticky top-0 z-10 bg-secondary text-secondary-foreground">
               <tr>
-                {["공종", "Bldg.", "Group", "Item", "Equipment", "Q'ty", "Supplier"].map((h) => (
-                  <th key={h} className="whitespace-nowrap border-b border-r border-border px-2 py-2 font-bold">{h}</th>
-                ))}
-                {TC_STAGES.map((s) => (
-                  <th key={s} className="whitespace-nowrap border-b border-r border-border px-2 py-2 text-center font-bold">
-                    {s}<br /><span className="text-[9px] font-normal">계획 / 실적 / 잔여</span>
+                {(["discipline", "bldg", "grp", "item"] as MultiKey[]).map((k) => (
+                  <th key={k} rowSpan={2} className={headCell}>
+                    <span className="inline-flex items-center gap-1">{MULTI_LABEL[k]}
+                      <MultiSelectFilter options={facet(k)} selected={multi[k] ?? []} onChange={(v) => setMultiCol(k, v)} />
+                    </span>
                   </th>
                 ))}
-                <th className="border-b border-r border-border px-2 py-2 font-bold">Status</th>
-                <th className="border-b border-border px-2 py-2 font-bold">Doc Ref.</th>
+                <th rowSpan={2} className={headCell}>
+                  <span className="inline-flex items-center gap-1">Equipment
+                    <TextFilter value={texts.equip} onChange={(v) => setTextCol("equip", v)} />
+                  </span>
+                </th>
+                <th rowSpan={2} className={headCell}>Q'ty</th>
+                <th rowSpan={2} className={headCell}>
+                  <span className="inline-flex items-center gap-1">Supplier
+                    <MultiSelectFilter options={facet("supplier")} selected={multi.supplier ?? []} onChange={(v) => setMultiCol("supplier", v)} />
+                  </span>
+                </th>
+                {TC_STAGES.map((s) => (
+                  <th key={s} colSpan={3} className="whitespace-nowrap border-b border-r border-border bg-primary/10 px-2 py-1.5 text-center font-bold">{s}</th>
+                ))}
+                <th rowSpan={2} className={headCell}>
+                  <span className="inline-flex items-center gap-1">Status
+                    <MultiSelectFilter options={facet("status")} selected={multi.status ?? []} onChange={(v) => setMultiCol("status", v)} />
+                  </span>
+                </th>
+                <th rowSpan={2} className="whitespace-nowrap border-b border-border px-2 py-1.5 font-bold">
+                  <span className="inline-flex items-center gap-1">Doc Ref.
+                    <TextFilter value={texts.docref} onChange={(v) => setTextCol("docref", v)} />
+                  </span>
+                </th>
               </tr>
               <tr>
-                {COL_FILTERS.map((c) => (
-                  <th key={c.key} className="border-b border-r border-border bg-secondary p-1"><ColInput k={c.key} /></th>
-                ))}
-                <th className="border-b border-r border-border bg-secondary p-1" />
-                <th className="border-b border-r border-border bg-secondary p-1"><ColInput k="supplier" /></th>
-                {TC_STAGES.map((s) => <th key={`f-${s}`} className="border-b border-r border-border bg-secondary p-1" />)}
-                <th className="border-b border-r border-border bg-secondary p-1"><ColInput k="status" /></th>
-                <th className="border-b border-border bg-secondary p-1"><ColInput k="docref" /></th>
+                {TC_STAGES.flatMap((s) => [
+                  <th key={`${s}-p`} className="whitespace-nowrap border-b border-r border-border px-2 py-1 text-center text-[10px] font-semibold">
+                    <span className="inline-flex items-center gap-1">계획
+                      <DateRangeFilter value={dates[PLAN[s] as string]} onChange={(v) => setDateCol(PLAN[s] as string, v)} />
+                    </span>
+                  </th>,
+                  <th key={`${s}-a`} className="whitespace-nowrap border-b border-r border-border px-2 py-1 text-center text-[10px] font-semibold">
+                    <span className="inline-flex items-center gap-1">실적
+                      <DateRangeFilter value={dates[ACT[s] as string]} onChange={(v) => setDateCol(ACT[s] as string, v)} />
+                    </span>
+                  </th>,
+                  <th key={`${s}-r`} className="whitespace-nowrap border-b border-r border-border px-2 py-1 text-center text-[10px] font-semibold">잔여</th>,
+                ])}
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id} className="border-b border-border">
+                <tr key={r.id} className="border-b border-border hover:bg-muted/40">
                   <td className="border-r border-border px-2 py-1.5">{r.discipline}</td>
                   <td className="border-r border-border px-2 py-1.5">{r.bldg ?? "-"}</td>
                   <td className="border-r border-border px-2 py-1.5">{r.grp ?? "-"}</td>
@@ -140,12 +192,16 @@ function TcList() {
                   {TC_STAGES.map((s) => {
                     const plan = r[PLAN[s]] as string | null;
                     const act = r[ACT[s]] as string | null;
-                    const rem = REM[s] ? Number(r[REM[s]!] ?? 0) : stageDone(r, s) ? 0 : Number(r.qty);
+                    const rem = remainOf(r, s);
+                    const done = rem === 0;
                     const late = !stageDone(r, s) && !!plan && plan <= base;
+                    const cell = `whitespace-nowrap border-r border-border px-2 py-1.5 text-center ${done ? "bg-muted text-muted-foreground" : ""}`;
                     return (
-                      <td key={s} className={`whitespace-nowrap border-r border-border px-2 py-1.5 text-center ${late ? "bg-destructive/10 font-semibold text-destructive" : ""}`}>
-                        {fmtDate(plan)} / {fmtDate(act)} / {rem}
-                      </td>
+                      <>
+                        <td key={`${s}-p`} className={cell}>{fmtDate(plan)}</td>
+                        <td key={`${s}-a`} className={cell}>{fmtDate(act)}</td>
+                        <td key={`${s}-r`} className={`${cell} ${late ? "bg-yellow-100 font-semibold text-destructive dark:bg-yellow-900/40" : ""}`}>{rem}</td>
+                      </>
                     );
                   })}
                   <td className={`border-r border-border px-2 py-1.5 font-semibold ${flat(r.status).toLowerCase() === "fail" ? "text-destructive" : flat(r.status).toLowerCase() === "pass" ? "text-primary" : ""}`}>{r.status ?? "-"}</td>
