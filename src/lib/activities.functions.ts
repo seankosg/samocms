@@ -145,13 +145,24 @@ export const updateActivity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.number(), patch: activityPatch }).parse(d))
   .handler(async ({ data, context }) => {
-    const cur = await context.supabase.from("activities").select("source_file").eq("id", data.id).single();
+    const cur = await context.supabase.from("activities").select("source_file, baseline_date").eq("id", data.id).single();
     if (cur.error) throw new Error("항목을 찾을 수 없습니다.");
     await assertCanEdit(context as never, cur.data.source_file);
     if (Object.keys(data.patch).length === 0) return { ok: true };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("activities").update(data.patch as never).eq("id", data.id);
     if (error) throw new Error(error.message);
+    // 인라인 수정 후에도 일일 증분(계획/실적) 자동 재계산 — 기준일과 다음 날짜
+    const base = cur.data.baseline_date as string;
+    if (base) {
+      const next = new Date(`${base}T00:00:00Z`);
+      next.setUTCDate(next.getUTCDate() + 1);
+      const nextStr = next.toISOString().slice(0, 10);
+      for (const d of [base, nextStr]) {
+        const rf = await supabaseAdmin.rpc("refresh_activity_daily", { _date: d } as never);
+        if (rf.error) console.error("refresh_activity_daily", d, rf.error.message);
+      }
+    }
     return { ok: true };
   });
 
