@@ -88,23 +88,6 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
               총 <strong className="text-foreground">{rows.length.toLocaleString()}</strong>행 · Rev{rev}
             </span>
             <Button size="sm" variant="outline" onClick={exportAll}><Download className="size-3.5" />통합 엑셀</Button>
-            <span className="rounded-md border border-border px-2 py-1.5">
-              <strong>{profile?.full_name ?? "사용자"}</strong>
-              <span className="ml-1 text-muted-foreground">{ROLE_LABEL[role]}</span>
-            </span>
-            <Button
-              size="sm"
-              variant="ghost"
-              title="로그아웃"
-              onClick={async () => {
-                await qc.cancelQueries();
-                qc.clear();
-                await supabase.auth.signOut();
-                navigate({ to: "/auth", replace: true });
-              }}
-            >
-              <LogOut className="size-3.5" />로그아웃
-            </Button>
           </div>
         </div>
       </header>
