@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 
 export const EMPTY_TOKEN = "__EMPTY__";
 
-export type TextFilterValue = { text?: string; emptyOnly?: boolean };
-export type DateFilterValue = { from?: string; to?: string; emptyOnly?: boolean };
+export type TextFilterValue = { text?: string | undefined; emptyOnly?: boolean | undefined };
+export type DateFilterValue = { from?: string | undefined; to?: string | undefined; emptyOnly?: boolean | undefined };
 
 function TriggerButton({ active }: { active: boolean }) {
   return (
