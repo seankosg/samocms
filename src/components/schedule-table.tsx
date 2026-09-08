@@ -3,7 +3,7 @@ import { ArrowDownAZ, ArrowUpAZ, Download, RotateCcw, Search, X } from "lucide-r
 import { ExportDialog, type ExportRow } from "@/components/export-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { fmtDate, isLate, pct1, SLOT_LABEL, statusOfRow, STATUS_LABEL, type Row } from "@/lib/schedule-model";
+import { fmtDate, fmtShortDate, isLate, pct1, SLOT_LABEL, statusOfRow, STATUS_LABEL, type Row } from "@/lib/schedule-model";
 import {
   DateRangeFilter, MultiSelectFilter, TextFilter, EMPTY_TOKEN,
   matchDate, matchMulti, matchText, type DateFilterValue, type TextFilterValue,
@@ -223,8 +223,8 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
                   <td className="px-3 py-2"><Badge st={st} /></td>
                   <td className="px-3 py-2">{r.pred ?? "-"}</td>
                   <td className="px-3 py-2">{r.succ ?? "-"}</td>
-                  <td className="whitespace-nowrap px-3 py-2">{fmtDate(r.s)}</td>
-                  <td className="whitespace-nowrap px-3 py-2">{fmtDate(r.e)}</td>
+                  <td className="whitespace-nowrap px-3 py-2">{fmtShortDate(r.s)}</td>
+                  <td className="whitespace-nowrap px-3 py-2">{fmtShortDate(r.e)}</td>
                 </tr>
               );
             })}
