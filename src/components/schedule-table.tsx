@@ -61,17 +61,19 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
     ms !== "전체" && { k: "마일스톤", v: ms, clear: () => setMs("전체") },
     sub !== "전체" && { k: "협력사", v: sub, clear: () => setSub("전체") },
     status !== "전체" && { k: "상태", v: STATUS_LABEL[status] ?? status, clear: () => setStatus("전체") },
+    due && { k: "종료 예정", v: `${fmtDate(due)} 이내`, clear: () => setDue(null) },
     q && { k: "검색", v: q, clear: () => setQ("") },
   ].filter(Boolean) as { k: string; v: string; clear: () => void }[];
 
   const filtered = useMemo(() => {
     const out = rows.filter((r) => {
       if (lockLate && !isLate(r)) return false;
-      if (dept !== "전체" && r.dept !== dept) return false;
+      if (dept !== "전체" && r.dept !== dept && r.slot !== dept) return false;
       if (bldg !== "전체" && r.bldg !== bldg) return false;
       if (ms !== "전체" && r.ms !== ms) return false;
       if (sub !== "전체" && r.sub !== sub) return false;
       if (status !== "전체" && statusOfRow(r) !== status) return false;
+      if (due && !(r.e && r.e <= due)) return false;
       if (q) {
         const hay = [r.no, r.dept, r.bldg, r.room, r.scope, r.ms, r.sub, r.act].join(" ").toLowerCase();
         if (!hay.includes(q.toLowerCase())) return false;
@@ -88,13 +90,14 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
       const c = typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv), undefined, { numeric: true });
       return c * (asc ? 1 : -1);
     });
-  }, [rows, q, dept, bldg, ms, sub, status, sort, asc, lockLate, colq]);
+  }, [rows, q, dept, bldg, ms, sub, status, due, sort, asc, lockLate, colq]);
 
   const pages = Math.max(1, Math.ceil(filtered.length / size));
   const cur = Math.min(page, pages);
   const shown = filtered.slice((cur - 1) * size, cur * size);
 
-  const reset = () => { setQ(""); setDept("전체"); setBldg("전체"); setMs("전체"); setSub("전체"); setStatus("전체"); setColq({}); setPage(1); };
+  const reset = () => { setQ(""); setDept("전체"); setBldg("전체"); setMs("전체"); setSub("전체"); setStatus("전체"); setDue(null); setColq({}); setPage(1); };
+
   const exportXlsx = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(filtered.map((r) => ({
