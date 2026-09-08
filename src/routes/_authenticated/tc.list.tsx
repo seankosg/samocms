@@ -217,15 +217,23 @@ function TcList() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
+              {rows.map((r) => {
+                const on = edit && canEdit(r.discipline);
+                const save = (patch: Record<string, unknown>) => mut.mutate({ id: r.id, patch });
+                const txt = (v: string | null, k: string) => (
+                  <EditableCell value={v} editable={on} onSave={(x) => save({ [k]: x })} />
+                );
+                return (
                 <tr key={r.id} className="border-b border-border hover:bg-muted/40">
                   <td className="border-r border-border px-2 py-1.5">{r.discipline}</td>
-                  <td className="border-r border-border px-2 py-1.5">{r.bldg ?? "-"}</td>
-                  <td className="border-r border-border px-2 py-1.5">{r.grp ?? "-"}</td>
-                  <td className="border-r border-border px-2 py-1.5">{r.item ?? "-"}</td>
-                  <td className="max-w-[240px] truncate border-r border-border px-2 py-1.5 font-medium">{r.equip ?? "-"}</td>
-                  <td className="border-r border-border px-2 py-1.5 text-right">{Number(r.qty)}</td>
-                  <td className="border-r border-border px-2 py-1.5">{r.supplier ?? "-"}</td>
+                  <td className="border-r border-border px-2 py-1.5">{txt(r.bldg, "bldg")}</td>
+                  <td className="border-r border-border px-2 py-1.5">{txt(r.grp, "grp")}</td>
+                  <td className="border-r border-border px-2 py-1.5">{txt(r.item, "item")}</td>
+                  <td className="max-w-[240px] truncate border-r border-border px-2 py-1.5 font-medium">{txt(r.equip, "equip")}</td>
+                  <td className="border-r border-border px-2 py-1.5 text-right">
+                    <EditableCell value={Number(r.qty)} kind="number" editable={on} onSave={(x) => save({ qty: numOrNull(x) ?? 0 })} />
+                  </td>
+                  <td className="border-r border-border px-2 py-1.5">{txt(r.supplier, "supplier")}</td>
                   {TC_STAGES.map((s) => {
                     const plan = r[PLAN[s]] as string | null;
                     const act = r[ACT[s]] as string | null;
@@ -233,18 +241,31 @@ function TcList() {
                     const done = rem === 0;
                     const late = !stageDone(r, s) && !!plan && plan <= base;
                     const cell = `whitespace-nowrap border-r border-border px-2 py-1.5 text-center ${done ? "bg-muted text-muted-foreground" : ""}`;
+                    const remCol = REM[s];
                     return (
                       <Fragment key={s}>
-                        <td className={cell}>{fmtShortDate(plan)}</td>
-                        <td className={cell}>{fmtShortDate(act)}</td>
-                        <td className={`${cell} ${late ? "bg-yellow-100 font-semibold text-destructive dark:bg-yellow-900/40" : ""}`}>{rem}</td>
+                        <td className={cell}>
+                          <EditableCell value={plan} kind="date" editable={on} display={fmtShortDate(plan)} onSave={(x) => save({ [PLAN[s] as string]: x })} />
+                        </td>
+                        <td className={cell}>
+                          <EditableCell value={act} kind="date" editable={on} display={fmtShortDate(act)} onSave={(x) => save({ [ACT[s] as string]: x })} />
+                        </td>
+                        <td className={`${cell} ${late ? "bg-yellow-100 font-semibold text-destructive dark:bg-yellow-900/40" : ""}`}>
+                          {on && remCol ? (
+                            <EditableCell value={rem} kind="number" editable onSave={(x) => save({ [remCol as string]: numOrNull(x) })} />
+                          ) : rem}
+                        </td>
                       </Fragment>
                     );
                   })}
-                  <td className={`border-r border-border px-2 py-1.5 font-semibold ${flat(r.status).toLowerCase() === "fail" ? "text-destructive" : flat(r.status).toLowerCase() === "pass" ? "text-primary" : ""}`}>{r.status ?? "-"}</td>
-                  <td className="max-w-[240px] truncate px-2 py-1.5">{r.docref ?? "-"}</td>
+                  <td className={`border-r border-border px-2 py-1.5 font-semibold ${flat(r.status).toLowerCase() === "fail" ? "text-destructive" : flat(r.status).toLowerCase() === "pass" ? "text-primary" : ""}`}>
+                    <EditableCell value={r.status} kind="select" options={["Pass", "Fail"]} editable={on} onSave={(x) => save({ status: x })} />
+                  </td>
+                  <td className="max-w-[240px] truncate px-2 py-1.5">{txt(r.docref, "docref")}</td>
                 </tr>
-              ))}
+                );
+              })}
+
             </tbody>
           </table>
         </div>
