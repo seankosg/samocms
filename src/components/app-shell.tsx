@@ -107,9 +107,12 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
               총 <strong className="text-foreground">{rows.length.toLocaleString()}</strong>행 · Rev{rev}
             </span>
             <Button size="sm" variant="outline" onClick={exportAll}><Download className="size-3.5" />통합 엑셀</Button>
+            <NewVersionButton />
           </div>
         </div>
       </header>
+      <UpdateAvailableBanner />
+
 
       <div className="flex">
         <aside className={`${open ? "w-[212px]" : "w-0 lg:w-[62px]"} sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 overflow-y-auto border-r border-border bg-card transition-all sm:block`}>
