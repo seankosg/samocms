@@ -197,7 +197,7 @@ export const updateTcItem = createServerFn({ method: "POST" })
     await assertCanEdit(context as never, cur.data.discipline);
     if (Object.keys(data.patch).length === 0) return { ok: true };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("tc_items").update(data.patch).eq("id", data.id);
+    const { error } = await supabaseAdmin.from("tc_items").update(data.patch as never).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
