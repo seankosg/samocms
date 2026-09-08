@@ -220,14 +220,15 @@ function Dashboard() {
             <tbody>
               {m.byDept.map((d) => (
                 <tr key={d.slot} className="border-b border-border/60">
-                  <td className="py-2 font-semibold">{SLOT_LABEL[d.slot]}</td>
-                  <td className="text-right">{d.n}</td>
+                  <td className="py-2 font-semibold"><Drill to="/schedule" search={{ dept: d.slot }}>{SLOT_LABEL[d.slot]}</Drill></td>
+                  <td className="text-right"><Drill to="/schedule" search={{ dept: d.slot }}>{d.n}</Drill></td>
                   <td className="text-right">{pct1(d.pl)}%</td>
                   <td className="text-right font-semibold">{pct1(d.pc)}%</td>
                   <td className={`text-right ${gapCls(d.pc - d.pl)}`}>{pct1(d.pc - d.pl)}%p</td>
-                  <td className="text-right">{d.late}</td>
+                  <td className="text-right"><Drill to="/delays" search={{ dept: d.slot }}>{d.late}</Drill></td>
                 </tr>
               ))}
+
             </tbody>
           </table>
         </Card>
