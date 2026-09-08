@@ -122,5 +122,5 @@ export function parseScheduleFile(buffer: ArrayBuffer, fileName: string): { rows
     });
   }
   if (!rows.length) throw new Error(`"${fileName}"에서 읽을 수 있는 공정 데이터가 없습니다.`);
-  return rows;
+  return { rows, fileDate };
 }
