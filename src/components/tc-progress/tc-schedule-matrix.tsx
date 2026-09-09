@@ -204,7 +204,11 @@ export function TcScheduleMatrix({
                   >{row.label}</button>
                 </div>
                 <div className="flex"><TotalDoneCells total={row.total} done={row.doneCount} bold /></div>
-                <div className="flex"><PlanActualCells plan={row.cumPlan} actual={row.cumActual} asOfLabel={asOfLabel} bold /></div>
+                <div className="flex"><PlanActualCells
+                  plan={row.cumPlan} actual={row.cumActual} asOfLabel={asOfLabel} bold
+                  onPlanClick={onCumClick ? () => onCumClick(row, null, "planned") : undefined}
+                  onActualClick={onCumClick ? () => onCumClick(row, null, "actual") : undefined}
+                /></div>
               </div>
               {isMultiStage && stages.map((st) => {
                 const sr = row.stages[st];
@@ -216,7 +220,11 @@ export function TcScheduleMatrix({
                       </span>
                     </div>
                     <div className="flex"><TotalDoneCells total={sr.total} done={sr.totalDone} /></div>
-                    <div className="flex"><PlanActualCells plan={sr.cumPlan} actual={sr.cumActual} asOfLabel={asOfLabel} /></div>
+                    <div className="flex"><PlanActualCells
+                      plan={sr.cumPlan} actual={sr.cumActual} asOfLabel={asOfLabel}
+                      onPlanClick={onCumClick ? () => onCumClick(row, st, "planned") : undefined}
+                      onActualClick={onCumClick ? () => onCumClick(row, st, "actual") : undefined}
+                    /></div>
                   </div>
                 );
               })}
