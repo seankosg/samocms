@@ -39,6 +39,15 @@ function NumCell({ width, children, className, borderLeft, borderRight, title }:
   );
 }
 
+function DrillNum({ value, onClick, className, title }: {
+  value: number; onClick?: (() => void) | undefined; className?: string; title?: string;
+}) {
+  if (!onClick || value === 0) return <span className={className} title={title}>{value}</span>;
+  return (
+    <button type="button" onClick={onClick} title={title} className={cn("hover:underline", className)}>{value}</button>
+  );
+}
+
 function TotalDoneCells({ total, done, bold }: { total: number; done: number; bold?: boolean }) {
   const pct = total > 0 ? (done / total) * 100 : null;
   const remain = total - done;
@@ -52,15 +61,22 @@ function TotalDoneCells({ total, done, bold }: { total: number; done: number; bo
   );
 }
 
-function PlanActualCells({ plan, actual, asOfLabel, bold }: { plan: number; actual: number; asOfLabel: string; bold?: boolean }) {
+function PlanActualCells({ plan, actual, asOfLabel, bold, onPlanClick, onActualClick }: {
+  plan: number; actual: number; asOfLabel: string; bold?: boolean;
+  onPlanClick?: (() => void) | undefined; onActualClick?: (() => void) | undefined;
+}) {
   const pct = plan > 0 ? (actual / plan) * 100 : null;
   const diff = actual - plan;
   const accent = pct === null ? "" : pct < 100 ? "text-schedule-short" : pct > 100 ? "text-schedule-over" : "";
   const diffAccent = diff < 0 ? "text-schedule-short" : diff > 0 ? "text-schedule-over" : "text-muted-foreground";
   return (
     <>
-      <NumCell width={W_NUM} borderLeft title={`${asOfLabel} 까지 계획`}>{plan}</NumCell>
-      <NumCell width={W_NUM} title={`${asOfLabel} 까지 실적`} className={cn(bold && "font-semibold", accent)}>{actual}</NumCell>
+      <NumCell width={W_NUM} borderLeft title={`${asOfLabel} 까지 계획`}>
+        <DrillNum value={plan} onClick={onPlanClick} title={`${asOfLabel} 까지 계획 항목 보기`} />
+      </NumCell>
+      <NumCell width={W_NUM} title={`${asOfLabel} 까지 실적`} className={cn(bold && "font-semibold", accent)}>
+        <DrillNum value={actual} onClick={onActualClick} title={`${asOfLabel} 까지 실적 항목 보기`} />
+      </NumCell>
       <NumCell width={W_PCT} className={cn("text-[10px]", accent)}>{pct === null ? "—" : `${pct.toFixed(0)}%`}</NumCell>
       <NumCell width={W_NUM} borderRight className={cn(diffAccent, bold && "font-semibold")}>{diff > 0 ? `+${diff}` : diff}</NumCell>
     </>
@@ -68,15 +84,18 @@ function PlanActualCells({ plan, actual, asOfLabel, bold }: { plan: number; actu
 }
 
 export function TcScheduleMatrix({
-  data, bucket, stages, base, asOfLabel, onCellClick, onRowClick,
+  data, bucket, stages, base, asOfLabel, onCellClick, onRowClick, onCumClick,
 }: {
   data: MatrixResult;
   bucket: Bucket;
   stages: TcStage[];
   base: string;
   asOfLabel: string;
-  onCellClick?: (row: GroupRow, bucketIso: string, stage: TcStage, kind: "planned" | "actual") => void;
+  /** stage=null 이면 선택된 전체 단계 합계 셀 */
+  onCellClick?: (row: GroupRow, bucketIso: string, stage: TcStage | null, kind: "planned" | "actual") => void;
   onRowClick?: (row: GroupRow) => void;
+  /** 좌측 누계 P/A 클릭 (기간 시작~기준일) */
+  onCumClick?: (row: GroupRow, stage: TcStage | null, kind: "planned" | "actual") => void;
 }) {
   const headerScrollRef = useRef<HTMLDivElement>(null);
   const bodyScrollRef = useRef<HTMLDivElement>(null);
@@ -185,7 +204,11 @@ export function TcScheduleMatrix({
                   >{row.label}</button>
                 </div>
                 <div className="flex"><TotalDoneCells total={row.total} done={row.doneCount} bold /></div>
-                <div className="flex"><PlanActualCells plan={row.cumPlan} actual={row.cumActual} asOfLabel={asOfLabel} bold /></div>
+                <div className="flex"><PlanActualCells
+                  plan={row.cumPlan} actual={row.cumActual} asOfLabel={asOfLabel} bold
+                  onPlanClick={onCumClick ? () => onCumClick(row, null, "planned") : undefined}
+                  onActualClick={onCumClick ? () => onCumClick(row, null, "actual") : undefined}
+                /></div>
               </div>
               {isMultiStage && stages.map((st) => {
                 const sr = row.stages[st];
@@ -197,7 +220,11 @@ export function TcScheduleMatrix({
                       </span>
                     </div>
                     <div className="flex"><TotalDoneCells total={sr.total} done={sr.totalDone} /></div>
-                    <div className="flex"><PlanActualCells plan={sr.cumPlan} actual={sr.cumActual} asOfLabel={asOfLabel} /></div>
+                    <div className="flex"><PlanActualCells
+                      plan={sr.cumPlan} actual={sr.cumActual} asOfLabel={asOfLabel}
+                      onPlanClick={onCumClick ? () => onCumClick(row, st, "planned") : undefined}
+                      onActualClick={onCumClick ? () => onCumClick(row, st, "actual") : undefined}
+                    /></div>
                   </div>
                 );
               })}
@@ -225,6 +252,8 @@ export function TcScheduleMatrix({
                         isFuture={vc.index > todayBucketIdx}
                         isToday={vc.index === todayBucketIdx}
                         width={cellWidth}
+                        onPlanClick={onCellClick ? () => onCellClick(row, c.bucket, null, "planned") : undefined}
+                        onActualClick={onCellClick ? () => onCellClick(row, c.bucket, null, "actual") : undefined}
                       />
                     );
                   })}

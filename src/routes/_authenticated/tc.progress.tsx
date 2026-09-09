@@ -100,17 +100,29 @@ function TcProgressPage() {
     return out;
   }, [matrix]);
 
-  const onCellClick = (row: GroupRow, bucketIso: string, stage: TcStage, kind: "planned" | "actual") => {
-    const field = String(kind === "planned" ? PLAN_COL[stage] : ACT_COL[stage]);
+  const colOf = (st: TcStage, kind: "planned" | "actual") =>
+    String(kind === "planned" ? PLAN_COL[st] : ACT_COL[st]);
+
+  const drill = (row: GroupRow, stage: TcStage | null, kind: "planned" | "actual", from: string, to: string) => {
+    const list = stage ? [stage] : stages;
+    const fields = list.map((st) => colOf(st, kind));
     void navigate({
       to: "/tc/list",
       search: {
         ...groupKeyToParams(groupBy.length ? groupBy : ["bldg"], row.groupKeyRaw),
         ...(disc !== "전체" ? { disc } : {}),
-        stage, field, from: bucketIso, to: bucketEnd(bucketIso, bucket),
+        ...(stage ? { stage, field: fields[0]! } : {}),
+        fields: fields.join(","),
+        from, to,
       },
     });
   };
+
+  const onCellClick = (row: GroupRow, bucketIso: string, stage: TcStage | null, kind: "planned" | "actual") =>
+    drill(row, stage, kind, bucketIso, bucketEnd(bucketIso, bucket));
+
+  const onCumClick = (row: GroupRow, stage: TcStage | null, kind: "planned" | "actual") =>
+    drill(row, stage, kind, from, base);
 
   const onRowClick = (row: GroupRow) => {
     void navigate({
@@ -197,7 +209,7 @@ function TcProgressPage() {
             <TcPlanVsActualCard scurve={scurve} stages={stages} bucket={bucket} unit={unit} totals={totals} base={base} />
             <TcScheduleMatrix
               data={matrix} bucket={bucket} stages={stages} base={base} asOfLabel={base}
-              onCellClick={onCellClick} onRowClick={onRowClick}
+              onCellClick={onCellClick} onRowClick={onRowClick} onCumClick={onCumClick}
             />
           </>
         )}

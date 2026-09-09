@@ -49,6 +49,8 @@ export type TcSearch = {
   cell?: string;
   /** 날짜 드릴다운 (field=계획/실적 컬럼명) */
   field?: string;
+  /** 여러 단계 동시 드릴다운 (컬럼명 콤마 목록, OR 조건) */
+  fields?: string;
   from?: string;
   to?: string;
 };
@@ -64,6 +66,7 @@ export function validateTcSearch(raw: Record<string, unknown>): TcSearch {
   const stage = str(raw["stage"]); if (stage) out.stage = stage;
   const cell = str(raw["cell"]); if (cell) out.cell = cell;
   const field = str(raw["field"]); if (field) out.field = field;
+  const fields = str(raw["fields"]); if (fields) out.fields = fields;
   const from = str(raw["from"]); if (from) out.from = from;
   const to = str(raw["to"]); if (to) out.to = to;
   return out;
