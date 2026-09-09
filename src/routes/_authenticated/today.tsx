@@ -82,10 +82,12 @@ function TodayPage() {
       <section>
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 text-sm font-bold"><ShieldAlert className="size-4 text-destructive" />Safety Focused Activities</h2>
-          <Button size="sm" disabled={safety.isPending} onClick={() => safety.mutate()}>
-            {safety.isPending ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : <AlertTriangle className="mr-1.5 size-3.5" />}
-            {safety.data ? "다시 분석" : "안전 위험 분석"}
-          </Button>
+          {isAdmin && (
+            <Button size="sm" disabled={safety.isPending} onClick={() => safety.mutate()}>
+              {safety.isPending ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : <AlertTriangle className="mr-1.5 size-3.5" />}
+              {safety.data ? "다시 분석" : "안전 위험 분석"}
+            </Button>
+          )}
         </div>
         <SafetyBlock
           pending={safety.isPending}
