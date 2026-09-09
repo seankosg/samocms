@@ -72,5 +72,11 @@ export const generateExecSummary = createServerFn({ method: "POST" })
     const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     const text = json.choices?.[0]?.message?.content?.trim() ?? "";
     if (!text) throw new Error("AI 요약 결과가 비어 있습니다.");
-    return { summary: text, generatedAt: new Date().toISOString() };
+
+    const generatedAt = new Date().toISOString();
+    await supabaseAdmin
+      .from("exec_summaries")
+      .upsert({ base: data.base, summary: text, generated_at: generatedAt, created_by: context.userId }, { onConflict: "base" });
+
+    return { summary: text, generatedAt };
   });
