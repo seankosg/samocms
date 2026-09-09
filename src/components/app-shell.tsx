@@ -90,88 +90,119 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
     XLSX.writeFile(wb, `HMMME_통합_공정_${base.replace(/-/g, "")}.xlsx`);
   };
 
+  const groups = [...NAV, ...(isAdmin ? [ADMIN_NAV] : [])];
+
+  const userBadge = (expanded: boolean) => (
+    <div className="flex items-center gap-2 rounded-md bg-accent/40 px-2 py-1.5">
+      <div className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground uppercase">
+        {(profile?.username ?? profile?.full_name ?? "U").slice(0, 2)}
+      </div>
+      {expanded && (
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <strong className="truncate text-sm leading-tight">{profile?.username ?? "사용자"}</strong>
+            <span className="shrink-0 rounded bg-primary/15 px-1 text-[10px] font-semibold text-primary">{ROLE_LABEL[role]}</span>
+          </div>
+          <p className="truncate text-[11px] leading-tight text-muted-foreground">{profile?.full_name ?? ""}{profile?.team ? ` · ${profile.team}` : ""}</p>
+        </div>
+      )}
+      <Button
+        size="icon"
+        variant="ghost"
+        className="size-9 shrink-0 text-muted-foreground hover:text-foreground"
+        title="로그아웃"
+        aria-label="로그아웃"
+        onClick={async () => {
+          await qc.cancelQueries();
+          qc.clear();
+          await supabase.auth.signOut();
+          navigate({ to: "/auth", replace: true });
+        }}
+      >
+        <LogOut className="size-3.5" />
+      </Button>
+    </div>
+  );
+
+  const navList = (expanded: boolean, onNavigate?: () => void) => (
+    <nav className="p-2" aria-label="주 메뉴">
+      {groups.map((g) => (
+        <div key={g.group} className="mb-3">
+          {expanded && <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{g.group}</p>}
+          {g.items.map((it) => (
+            <Link
+              key={it.to} to={it.to} title={it.label} onClick={onNavigate}
+              className="flex items-center gap-2.5 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+              activeProps={{ className: "!bg-primary/10 !text-primary" }}
+            >
+              <it.icon className="size-4 shrink-0" />
+              {expanded && <span className="truncate">{it.label}</span>}
+            </Link>
+          ))}
+        </div>
+      ))}
+    </nav>
+  );
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b border-border bg-card">
-        <div className="flex h-14 items-center gap-3 px-3 lg:px-4">
-          <Button size="icon" variant="ghost" aria-label="사이드바 토글" onClick={() => setOpen((v) => !v)}>
+        <div className="flex h-14 items-center gap-2 px-2 sm:gap-3 sm:px-3 lg:px-4">
+          <Button size="icon" variant="ghost" aria-label="사이드바 토글" className="lg:hidden" onClick={() => setMobileOpen(true)}>
+            <Menu />
+          </Button>
+          <Button size="icon" variant="ghost" aria-label="사이드바 토글" className="hidden lg:inline-flex" onClick={() => setOpen((v) => !v)}>
             {open ? <ChevronLeft /> : <PanelLeft />}
           </Button>
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <span className="grid size-8 place-items-center rounded-md bg-primary text-primary-foreground"><HardHat className="size-4" /></span>
-            <span className="hidden sm:block">
-              <strong className="block text-sm leading-tight">HMMME 통합 공정 관리</strong>
+          <Link to="/dashboard" className="flex min-w-0 items-center gap-2">
+            <span className="grid size-8 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground"><HardHat className="size-4" /></span>
+            <span className="hidden min-w-0 md:block">
+              <strong className="block truncate text-sm leading-tight">HMMME 통합 공정 관리</strong>
               <small className="block text-[11px] text-muted-foreground">Integrated Schedule Control</small>
             </span>
           </Link>
-          <div className="ml-auto flex flex-wrap items-center justify-end gap-2 text-xs">
+          <div className="ml-auto flex items-center justify-end gap-2 text-xs">
             <BaseSetting base={base} batches={batches} onApply={(d) => saveBase.mutate(d)} saving={saveBase.isPending} canWrite={canWrite} />
-            <span className="rounded-md border border-border px-2 py-1.5 text-muted-foreground">
+            <span className="hidden rounded-md border border-border px-2 py-1.5 text-muted-foreground lg:inline-block">
               총 <strong className="text-foreground">{rows.length.toLocaleString()}</strong>행 · Rev{rev}
             </span>
-            <Button size="sm" variant="outline" onClick={exportAll}><Download className="size-3.5" />통합 엑셀</Button>
+            <Button size="sm" variant="outline" onClick={exportAll} className="hidden lg:inline-flex"><Download className="size-3.5" />통합 엑셀</Button>
             <NewVersionButton />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" variant="ghost" aria-label="추가 메뉴" className="lg:hidden"><MoreVertical /></Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="text-[11px] font-normal text-muted-foreground">
+                  총 {rows.length.toLocaleString()}행 · Rev{rev}
+                </DropdownMenuLabel>
+                <DropdownMenuItem onSelect={() => exportAll()}><Download className="size-3.5" />통합 엑셀 다운로드</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => void forceFreshAppLoad()}><Sparkles className="size-3.5" />New Version (새로고침)</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
       <UpdateAvailableBanner />
 
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent side="left" className="w-[260px] overflow-y-auto p-0">
+          <SheetHeader className="sr-only"><SheetTitle>주 메뉴</SheetTitle></SheetHeader>
+          <div className="border-b border-border p-2 pt-10">{userBadge(true)}</div>
+          {navList(true, () => setMobileOpen(false))}
+        </SheetContent>
+      </Sheet>
 
       <div className="flex">
-        <aside className={`${open ? "w-[212px]" : "w-0 lg:w-[62px]"} sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 overflow-y-auto border-r border-border bg-card transition-all sm:block`}>
-          <div className="border-b border-border p-2">
-            <div className="flex items-center gap-2 rounded-md bg-accent/40 px-2 py-1.5">
-              <div className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground uppercase">
-                {(profile?.username ?? profile?.full_name ?? "U").slice(0, 2)}
-              </div>
-              {open && (
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <strong className="truncate text-sm leading-tight">{profile?.username ?? "사용자"}</strong>
-                    <span className="shrink-0 rounded bg-primary/15 px-1 text-[10px] font-semibold text-primary">{ROLE_LABEL[role]}</span>
-                  </div>
-                  <p className="truncate text-[11px] leading-tight text-muted-foreground">{profile?.full_name ?? ""}{profile?.team ? ` · ${profile.team}` : ""}</p>
-                </div>
-              )}
-              <Button
-                size="icon"
-                variant="ghost"
-                className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
-                title={open ? "로그아웃" : ""}
-                onClick={async () => {
-                  await qc.cancelQueries();
-                  qc.clear();
-                  await supabase.auth.signOut();
-                  navigate({ to: "/auth", replace: true });
-                }}
-              >
-                <LogOut className="size-3.5" />
-              </Button>
-            </div>
-          </div>
-          <nav className="p-2" aria-label="주 메뉴">
-            {[...NAV, ...(isAdmin ? [ADMIN_NAV] : [])].map((g) => (
-              <div key={g.group} className="mb-3">
-                {open && <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{g.group}</p>}
-                {g.items.map((it) => (
-                  <Link
-                    key={it.to} to={it.to} title={it.label}
-                    className="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
-                    activeProps={{ className: "!bg-primary/10 !text-primary" }}
-                  >
-                    <it.icon className="size-4 shrink-0" />
-                    {open && <span className="truncate">{it.label}</span>}
-                  </Link>
-                ))}
-              </div>
-            ))}
-          </nav>
+        <aside className={`${open ? "w-[212px]" : "w-[62px]"} sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 overflow-y-auto border-r border-border bg-card transition-all lg:block`}>
+          <div className="border-b border-border p-2">{userBadge(open)}</div>
+          {navList(open)}
         </aside>
 
-        <main className="min-w-0 flex-1 px-4 py-5 lg:px-6">
+        <main className="min-w-0 flex-1 px-3 py-4 sm:px-4 sm:py-5 lg:px-6">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h1 className="text-xl font-bold tracking-tight">{title}</h1>
+            <div className="min-w-0">
+              <h1 className="text-lg font-bold tracking-tight sm:text-xl">{title}</h1>
               {desc && <p className="mt-0.5 text-xs text-muted-foreground">{desc}</p>}
             </div>
             {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
@@ -182,6 +213,7 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
     </div>
   );
 }
+
 
 export const slotLabel = (s: string) => SLOT_LABEL[s] ?? s;
 
