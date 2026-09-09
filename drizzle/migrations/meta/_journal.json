@@ -43,6 +43,13 @@
       "when": 1788886501917,
       "tag": "0005_tc_daily_progress",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788956709015,
+      "tag": "0006_create_safety_reports",
+      "breakpoints": true
     }
   ]
 }
