@@ -459,7 +459,7 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
         {/* 세부작업 */}
         <section>
           <h3 className="mb-1.5 flex items-center justify-between text-[11px] font-bold text-muted-foreground">
-            <span>세부작업 {list.length}건</span>
+            <span>세부작업 {filtered.length}{filtered.length !== list.length ? ` / ${list.length}` : ""}건</span>
             {lateRows.length > 0 && <span style={{ color: STATUS_COLOR["delay"] }}>지연 {lateRows.length}건 우선 표시</span>}
           </h3>
           <ul className="space-y-2">
