@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
-  AlertTriangle, BarChart3, CalendarDays, ChevronLeft, Download, HardHat, ListChecks,
+  AlertTriangle, BarChart3, CalendarClock, CalendarDays, ChevronLeft, Download, HardHat, ListChecks,
   LogOut, Network, PanelLeft, Settings, Sparkles, Table2, UploadCloud, Users, Wrench, Zap,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +38,7 @@ function NewVersionButton() {
 const NAV = [
   { group: "현황", items: [
     { to: "/dashboard", label: "대시보드", icon: BarChart3 },
+    { to: "/today", label: "오늘의 주요 작업", icon: CalendarClock },
     { to: "/network", label: "네트워크", icon: Network },
   ] },
   { group: "공정", items: [
