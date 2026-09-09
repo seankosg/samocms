@@ -400,6 +400,24 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
+        {/* 팀/건물 탭 필터 (스크롤 고정) */}
+        <div className="sticky top-[-16px] z-10 -mx-4 space-y-1.5 border-b border-border bg-card px-4 pb-2 pt-3">
+          {[
+            { label: "팀", value: fDept, set: setFDept, list: deptOpts, labelOf: (x: string) => SLOT_LABEL[x] ?? x },
+            { label: "건물", value: fBldg, set: setFBldg, list: bldgOpts, labelOf: (x: string) => x },
+          ].map(({ label, value, set, list: opts2, labelOf }) => (
+            <div key={label} className="flex flex-wrap items-center gap-1">
+              <span className="mr-0.5 w-7 shrink-0 text-[10.5px] font-bold text-muted-foreground">{label}</span>
+              {["", ...opts2].map((v) => (
+                <button key={v || "__all"} type="button" onClick={() => set(v)}
+                  className={`rounded-full border px-2 py-0.5 text-[10.5px] font-bold ${value === v ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background text-muted-foreground hover:bg-accent"}`}>
+                  {v === "" ? "전체" : labelOf(v)}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+
         {/* 일정 */}
         <section>
           <h3 className="mb-1.5 text-[11px] font-bold text-muted-foreground">일정</h3>
