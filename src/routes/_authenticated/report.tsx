@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Fragment, useEffect, useMemo, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { Printer, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { fmtDate, fmtShortDate, pct1, SLOT_LABEL } from "@/lib/schedule-model";
 import { buildReportMetrics, buildTcT1T2 } from "@/lib/report-metrics";
 import { TC_DISC_LABEL } from "@/lib/tc-model";
 import { generateExecSummary } from "@/lib/report.functions";
+import { useAuth } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/report")({
   head: () => ({ meta: [
