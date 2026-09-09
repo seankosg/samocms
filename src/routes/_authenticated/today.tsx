@@ -30,7 +30,9 @@ function TodayPage() {
   const { rows, tcItems } = useProject();
   const { isAdmin } = useAuth();
   const [today, setToday] = useState<string | null>(null);
+  const [focus, setFocus] = useState<Focus | null>(null);
   useEffect(() => setToday(jeddahToday()), []);
+
 
   const groups = useMemo(() => (today ? splitToday(rows, today) : null), [rows, today]);
   const tc = useMemo(() => (today ? todayTc(tcItems, today) : []), [tcItems, today]);
