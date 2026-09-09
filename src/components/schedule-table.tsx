@@ -166,10 +166,11 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
   return (
     <section className="rounded-md border border-border bg-card shadow-sm">
       <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
-        <div className="relative min-w-[240px] flex-1">
+        <div className="relative w-full min-w-[200px] sm:w-auto sm:flex-1">
           <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
           <Input value={q} onChange={(e) => { setQ(e.target.value); }} placeholder="Activity · 건물 · 협력사 검색" className="h-9 pl-9" />
         </div>
+
         <Button variant="outline" size="sm" onClick={reset}><RotateCcw className="size-3.5" />초기화</Button>
         {canWrite && (
           <Button variant={edit ? "default" : "outline"} size="sm" onClick={() => setEdit((v) => !v)}>
@@ -188,7 +189,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs">
+      <div className="flex items-center gap-2 overflow-x-auto border-b border-border bg-muted/40 px-3 py-2 text-xs whitespace-nowrap sm:flex-wrap sm:whitespace-normal">
         <strong>{filtered.length.toLocaleString()}건</strong>
         {chips.map((c) => (
           <button key={`${c.k}-${c.v}`} onClick={() => { c.clear(); }} className="inline-flex items-center gap-1 rounded bg-accent px-2 py-1 text-[11px]">
