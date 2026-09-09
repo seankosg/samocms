@@ -28,6 +28,7 @@ const card = "rounded-lg border border-border bg-card p-4";
 
 function TodayPage() {
   const { rows, tcItems } = useProject();
+  const { isAdmin } = useAuth();
   const [today, setToday] = useState<string | null>(null);
   useEffect(() => setToday(qatarToday()), []);
 
