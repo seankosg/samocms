@@ -41,10 +41,16 @@ export type TcSearch = {
   only?: string;
   bldg?: string;
   item?: string;
+  grp?: string;
+  supplier?: string;
   /** 단계명 (T0·T1·Report·RFI·T2·Response) */
   stage?: string;
   /** done | remain | late | pass | fail */
   cell?: string;
+  /** 날짜 드릴다운 (field=계획/실적 컬럼명) */
+  field?: string;
+  from?: string;
+  to?: string;
 };
 
 export function validateTcSearch(raw: Record<string, unknown>): TcSearch {
@@ -53,7 +59,12 @@ export function validateTcSearch(raw: Record<string, unknown>): TcSearch {
   const only = str(raw["only"]); if (only) out.only = only;
   const bldg = str(raw["bldg"]); if (bldg) out.bldg = bldg;
   const item = str(raw["item"]); if (item) out.item = item;
+  const grp = str(raw["grp"]); if (grp) out.grp = grp;
+  const supplier = str(raw["supplier"]); if (supplier) out.supplier = supplier;
   const stage = str(raw["stage"]); if (stage) out.stage = stage;
   const cell = str(raw["cell"]); if (cell) out.cell = cell;
+  const field = str(raw["field"]); if (field) out.field = field;
+  const from = str(raw["from"]); if (from) out.from = from;
+  const to = str(raw["to"]); if (to) out.to = to;
   return out;
 }

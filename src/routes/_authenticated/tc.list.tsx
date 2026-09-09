@@ -60,13 +60,18 @@ function TcList() {
     if (search.disc && search.disc !== "전체") init.discipline = [search.disc];
     if (search.bldg && search.bldg !== "전체") init.bldg = [search.bldg];
     if (search.item) init.item = [search.item];
+    if (search.grp) init.grp = [search.grp];
+    if (search.supplier) init.supplier = [search.supplier];
     return init;
   });
   const [cellF, setCellF] = useState<{ stage?: TcStage; cell: string } | null>(
     search.cell ? { ...(TC_STAGES.includes(search.stage as TcStage) ? { stage: search.stage as TcStage } : {}), cell: search.cell } : null,
   );
   const [texts, setTexts] = useState<Partial<Record<TextKey, TextFilterValue>>>({});
-  const [dates, setDates] = useState<Record<string, DateFilterValue>>({});
+  const [dates, setDates] = useState<Record<string, DateFilterValue>>(() => {
+    if (!search.field || (!search.from && !search.to)) return {};
+    return { [search.field]: { ...(search.from ? { from: search.from } : {}), ...(search.to ? { to: search.to } : {}) } };
+  });
 
   const setMultiCol = (k: MultiKey, v: string[] | undefined) => setMulti((o) => ({ ...o, [k]: v }));
   const setTextCol = (k: TextKey, v: TextFilterValue | undefined) => setTexts((o) => ({ ...o, [k]: v }));
