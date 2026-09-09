@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
-  AlertTriangle, BarChart3, CalendarClock, TrendingUp, CalendarDays, ChevronLeft, Download, HardHat, ListChecks,
+  AlertTriangle, BarChart3, CalendarClock, TrendingUp, CalendarDays, ChevronLeft, Download, FileText, HardHat, ListChecks,
   LogOut, Network, PanelLeft, Settings, Sparkles, Table2, UploadCloud, Users, Wrench, Zap,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,6 +49,7 @@ const NAV = [
     { to: "/tc/mech", label: "MECH T&C", icon: Wrench },
     { to: "/tc/elec", label: "ELEC T&C", icon: Zap },
     { to: "/tc/list", label: "T&C List", icon: ListChecks },
+    { to: "/report", label: "T&C Report", icon: FileText },
     { to: "/tc/progress", label: "T&C Progress", icon: TrendingUp },
   ] },
   { group: "데이터", items: [{ to: "/upload", label: "업로드", icon: UploadCloud }] },
