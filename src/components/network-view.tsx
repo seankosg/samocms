@@ -348,15 +348,20 @@ function Bar({ pl, pc }: { pl: number | null; pc: number | null }) {
 
 function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row[]; base: string; edges: { a: string; b: string; ty?: string }[]; onClose: () => void }) {
   const list = rows.filter((r) => node.rowIds.includes(r.id));
+  const [fDept, setFDept] = useState("");
+  const [fBldg, setFBldg] = useState("");
+  const deptOpts = useMemo(() => [...new Set(list.map((r) => r.dept).filter(Boolean))].sort() as string[], [list]);
+  const bldgOpts = useMemo(() => [...new Set(list.map((r) => r.bldg).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "ko")) as string[], [list]);
   const gap = node.pl != null && node.pc != null ? node.pl - node.pc : null;
   const behind = gap != null && gap > 0;
   const dday = node.e ? dayDur(base, node.e) : null;
   const dur = node.s && node.e ? dayDur(node.s, node.e) + 1 : null;
   const elapsed = node.s && node.e ? Math.max(0, Math.min(dur ?? 0, dayDur(node.s, base) + 1)) : null;
-  const lateRows = list.filter((r) => r.pl != null && r.pc != null && r.pc < r.pl);
+  const filtered = list.filter((r) => (!fDept || r.dept === fDept) && (!fBldg || r.bldg === fBldg));
+  const lateRows = filtered.filter((r) => r.pl != null && r.pc != null && r.pc < r.pl);
   const preds = edges.filter((e) => e.b === node.id);
   const succs = edges.filter((e) => e.a === node.id);
-  const sorted = [...list].sort((a, b) => {
+  const sorted = [...filtered].sort((a, b) => {
     const ga = a.pl != null && a.pc != null ? a.pl - a.pc : -9;
     const gb = b.pl != null && b.pc != null ? b.pl - b.pc : -9;
     return gb - ga;
@@ -395,6 +400,24 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
+        {/* 팀/건물 탭 필터 (스크롤 고정) */}
+        <div className="sticky top-[-16px] z-10 -mx-4 space-y-1.5 border-b border-border bg-card px-4 pb-2 pt-3">
+          {[
+            { label: "팀", value: fDept, set: setFDept, list: deptOpts, labelOf: (x: string) => SLOT_LABEL[x] ?? x },
+            { label: "건물", value: fBldg, set: setFBldg, list: bldgOpts, labelOf: (x: string) => x },
+          ].map(({ label, value, set, list: opts2, labelOf }) => (
+            <div key={label} className="flex flex-wrap items-center gap-1">
+              <span className="mr-0.5 w-7 shrink-0 text-[10.5px] font-bold text-muted-foreground">{label}</span>
+              {["", ...opts2].map((v) => (
+                <button key={v || "__all"} type="button" onClick={() => set(v)}
+                  className={`rounded-full border px-2 py-0.5 text-[10.5px] font-bold ${value === v ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background text-muted-foreground hover:bg-accent"}`}>
+                  {v === "" ? "전체" : labelOf(v)}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+
         {/* 일정 */}
         <section>
           <h3 className="mb-1.5 text-[11px] font-bold text-muted-foreground">일정</h3>
@@ -436,7 +459,7 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
         {/* 세부작업 */}
         <section>
           <h3 className="mb-1.5 flex items-center justify-between text-[11px] font-bold text-muted-foreground">
-            <span>세부작업 {list.length}건</span>
+            <span>세부작업 {filtered.length}{filtered.length !== list.length ? ` / ${list.length}` : ""}건</span>
             {lateRows.length > 0 && <span style={{ color: STATUS_COLOR["delay"] }}>지연 {lateRows.length}건 우선 표시</span>}
           </h3>
           <ul className="space-y-2">
