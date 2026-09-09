@@ -364,6 +364,12 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
   );
   const lateRows = deptBldgFiltered.filter((r) => r.pl != null && r.pc != null && r.pc < r.pl);
   const aheadRows = deptBldgFiltered.filter((r) => r.pl != null && r.pc != null && r.pc > r.pl);
+  /** 롤업(마일스톤/그룹) 노드는 하위 지연 유무가 아니라 평균 계획/실적으로 상태를 판정 */
+  const badgeSt = node.roll || node.grp
+    ? (node.pc != null && node.pc >= 0.995 ? "done"
+      : node.pl != null && node.pc != null && node.pc < node.pl ? "delay"
+      : node.pc != null && node.pc > 0 ? "ongoing" : "plan")
+    : node.st;
   const preds = edges.filter((e) => e.b === node.id);
   const succs = edges.filter((e) => e.a === node.id);
   const sorted = [...filtered].sort((a, b) => {
