@@ -33,6 +33,19 @@ export const analyzeSafety = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    if (!data.force) {
+      const { data: exist } = await supabaseAdmin
+        .from("safety_reports")
+        .select("day, risks, generated_at")
+        .eq("day", data.day)
+        .maybeSingle();
+      if (exist) {
+        return { day: exist.day, risks: (exist.risks as unknown as SafetyRisk[]) ?? [], generatedAt: exist.generated_at };
+      }
+    }
+
     const key = process.env["LOVABLE_API_KEY"];
     if (!key) throw new Error("AI 키가 설정되어 있지 않습니다.");
 
