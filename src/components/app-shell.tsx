@@ -62,6 +62,8 @@ const ADMIN_NAV = { group: "관리", items: [{ to: "/users", label: "사용자 �
 
 export function AppShell({ title, desc, actions, children }: { title: string; desc?: string; actions?: ReactNode; children: ReactNode }) {
   const [open, setOpen] = useState(true);
+  useEffect(() => { if (window.innerWidth < 1024) setOpen(false); }, []);
+
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const { rows, base, batches, tcItems } = useProject();
