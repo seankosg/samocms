@@ -350,6 +350,7 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
   const list = rows.filter((r) => node.rowIds.includes(r.id));
   const [fDept, setFDept] = useState("");
   const [fBldg, setFBldg] = useState("");
+  const [fStatus, setFStatus] = useState<"" | "delay" | "ahead">("");
   const deptOpts = useMemo(() => [...new Set(list.map((r) => r.dept).filter(Boolean))].sort() as string[], [list]);
   const bldgOpts = useMemo(() => [...new Set(list.map((r) => r.bldg).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "ko")) as string[], [list]);
   const gap = node.pl != null && node.pc != null ? node.pl - node.pc : null;
@@ -357,8 +358,12 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
   const dday = node.e ? dayDur(base, node.e) : null;
   const dur = node.s && node.e ? dayDur(node.s, node.e) + 1 : null;
   const elapsed = node.s && node.e ? Math.max(0, Math.min(dur ?? 0, dayDur(node.s, base) + 1)) : null;
-  const filtered = list.filter((r) => (!fDept || r.dept === fDept) && (!fBldg || r.bldg === fBldg));
+  const filtered = list.filter((r) =>
+    (!fDept || r.dept === fDept) && (!fBldg || r.bldg === fBldg) &&
+    (!fStatus || (fStatus === "delay" && r.pl != null && r.pc != null && r.pc < r.pl) || (fStatus === "ahead" && r.pl != null && r.pc != null && r.pc > r.pl))
+  );
   const lateRows = filtered.filter((r) => r.pl != null && r.pc != null && r.pc < r.pl);
+  const aheadRows = filtered.filter((r) => r.pl != null && r.pc != null && r.pc > r.pl);
   const preds = edges.filter((e) => e.b === node.id);
   const succs = edges.filter((e) => e.a === node.id);
   const sorted = [...filtered].sort((a, b) => {
