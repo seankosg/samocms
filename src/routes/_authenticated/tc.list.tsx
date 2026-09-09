@@ -132,10 +132,11 @@ function TcList() {
       if (k === exclude) continue;
       if (!matchDate(r[k as keyof TcItem], v)) return false;
     }
+    if (orDates && !orDates.fields.some((f) => matchDate(r[f as keyof TcItem], orDates.range))) return false;
     return true;
   };
 
-  const rows = useMemo(() => tcItems.filter((r) => passes(r)), [tcItems, q, only, multi, texts, dates, base, cellF]);
+  const rows = useMemo(() => tcItems.filter((r) => passes(r)), [tcItems, q, only, multi, texts, dates, base, cellF, orDates]);
 
   const facet = (k: MultiKey) => {
     const counts = new Map<string, number>();
