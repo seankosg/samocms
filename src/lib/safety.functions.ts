@@ -30,7 +30,7 @@ const SYSTEM =
 export const analyzeSafety = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => Input.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const key = process.env["LOVABLE_API_KEY"];
     if (!key) throw new Error("AI 키가 설정되어 있지 않습니다.");
 
@@ -80,5 +80,25 @@ export const analyzeSafety = createServerFn({ method: "POST" })
       throw new Error("AI 분석 결과를 해석하지 못했습니다. 다시 시도해 주세요.");
     }
 
-    return { day: data.day, risks, generatedAt: new Date().toISOString() };
+    const generatedAt = new Date().toISOString();
+    await context.supabase
+      .from("safety_reports")
+      .upsert({ day: data.day, risks, generated_at: generatedAt, created_by: context.userId }, { onConflict: "day" });
+
+    return { day: data.day, risks, generatedAt };
+  });
+
+/** 저장된 당일 안전 위험 분석 결과 조회 */
+export const getSafetyReport = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("safety_reports")
+      .select("day, risks, generated_at")
+      .eq("day", data.day)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) return null;
+    return { day: row.day, risks: (row.risks as unknown as SafetyRisk[]) ?? [], generatedAt: row.generated_at };
   });
