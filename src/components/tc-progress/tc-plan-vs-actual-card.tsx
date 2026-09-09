@@ -147,7 +147,9 @@ export function TcPlanVsActualCard({
               fill="hsl(160,60%,42%)"
               shape={(props: { x?: number; y?: number; width?: number; height?: number; value?: number }) => {
                 const { x = 0, y = 0, width = 0, height = 0, value = 0 } = props;
-                return <rect x={x} y={y} width={width} height={height} fill={value >= 0 ? "hsl(160,60%,42%)" : "hsl(0,72%,51%)"} />;
+                const h = Math.abs(height);
+                const top = height < 0 ? y + height : y;
+                return <rect x={x} y={top} width={width} height={h} fill={value >= 0 ? "hsl(160,60%,42%)" : "hsl(0,72%,51%)"} />;
               }}
             />
           </ComposedChart>
