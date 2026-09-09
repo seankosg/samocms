@@ -358,12 +358,12 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
   const dday = node.e ? dayDur(base, node.e) : null;
   const dur = node.s && node.e ? dayDur(node.s, node.e) + 1 : null;
   const elapsed = node.s && node.e ? Math.max(0, Math.min(dur ?? 0, dayDur(node.s, base) + 1)) : null;
-  const filtered = list.filter((r) =>
-    (!fDept || r.dept === fDept) && (!fBldg || r.bldg === fBldg) &&
-    (!fStatus || (fStatus === "delay" && r.pl != null && r.pc != null && r.pc < r.pl) || (fStatus === "ahead" && r.pl != null && r.pc != null && r.pc > r.pl))
+  const deptBldgFiltered = list.filter((r) => (!fDept || r.dept === fDept) && (!fBldg || r.bldg === fBldg));
+  const filtered = deptBldgFiltered.filter((r) =>
+    !fStatus || (fStatus === "delay" && r.pl != null && r.pc != null && r.pc < r.pl) || (fStatus === "ahead" && r.pl != null && r.pc != null && r.pc > r.pl)
   );
-  const lateRows = filtered.filter((r) => r.pl != null && r.pc != null && r.pc < r.pl);
-  const aheadRows = filtered.filter((r) => r.pl != null && r.pc != null && r.pc > r.pl);
+  const lateRows = deptBldgFiltered.filter((r) => r.pl != null && r.pc != null && r.pc < r.pl);
+  const aheadRows = deptBldgFiltered.filter((r) => r.pl != null && r.pc != null && r.pc > r.pl);
   const preds = edges.filter((e) => e.b === node.id);
   const succs = edges.filter((e) => e.a === node.id);
   const sorted = [...filtered].sort((a, b) => {
@@ -425,9 +425,9 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
           <div className="flex flex-wrap items-center gap-1">
             <span className="mr-0.5 w-7 shrink-0 text-[10.5px] font-bold text-muted-foreground">상태</span>
             {[
-              { v: "", label: "전체", n: list.length },
-              { v: "delay", label: "지연", n: list.filter((r) => r.pl != null && r.pc != null && r.pc < r.pl).length, color: STATUS_COLOR["delay"] },
-              { v: "ahead", label: "선행", n: list.filter((r) => r.pl != null && r.pc != null && r.pc > r.pl).length, color: STATUS_COLOR["done"] },
+              { v: "", label: "전체", n: deptBldgFiltered.length },
+              { v: "delay", label: "지연", n: lateRows.length, color: STATUS_COLOR["delay"] },
+              { v: "ahead", label: "선행", n: aheadRows.length, color: STATUS_COLOR["done"] },
             ].map((opt) => (
               <button key={opt.v || "__all"} type="button" onClick={() => setFStatus(opt.v as "" | "delay" | "ahead")}
                 className={`rounded-full border px-2 py-0.5 text-[10.5px] font-bold ${fStatus === opt.v ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background text-muted-foreground hover:bg-accent"}`}>
