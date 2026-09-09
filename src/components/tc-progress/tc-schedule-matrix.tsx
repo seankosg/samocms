@@ -84,15 +84,18 @@ function PlanActualCells({ plan, actual, asOfLabel, bold, onPlanClick, onActualC
 }
 
 export function TcScheduleMatrix({
-  data, bucket, stages, base, asOfLabel, onCellClick, onRowClick,
+  data, bucket, stages, base, asOfLabel, onCellClick, onRowClick, onCumClick,
 }: {
   data: MatrixResult;
   bucket: Bucket;
   stages: TcStage[];
   base: string;
   asOfLabel: string;
-  onCellClick?: (row: GroupRow, bucketIso: string, stage: TcStage, kind: "planned" | "actual") => void;
+  /** stage=null 이면 선택된 전체 단계 합계 셀 */
+  onCellClick?: (row: GroupRow, bucketIso: string, stage: TcStage | null, kind: "planned" | "actual") => void;
   onRowClick?: (row: GroupRow) => void;
+  /** 좌측 누계 P/A 클릭 (기간 시작~기준일) */
+  onCumClick?: (row: GroupRow, stage: TcStage | null, kind: "planned" | "actual") => void;
 }) {
   const headerScrollRef = useRef<HTMLDivElement>(null);
   const bodyScrollRef = useRef<HTMLDivElement>(null);
