@@ -73,6 +73,13 @@ function TcList() {
     return { [search.field]: { ...(search.from ? { from: search.from } : {}), ...(search.to ? { to: search.to } : {}) } };
   });
 
+  /** 여러 단계 동시(OR) 날짜 드릴다운 */
+  const [orDates, setOrDates] = useState<{ fields: string[]; range: DateFilterValue } | null>(() => {
+    const list = (search.fields ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+    if (!list.length || (!search.from && !search.to)) return null;
+    return { fields: list, range: { ...(search.from ? { from: search.from } : {}), ...(search.to ? { to: search.to } : {}) } };
+  });
+
   const setMultiCol = (k: MultiKey, v: string[] | undefined) => setMulti((o) => ({ ...o, [k]: v }));
   const setTextCol = (k: TextKey, v: TextFilterValue | undefined) => setTexts((o) => ({ ...o, [k]: v }));
   const setDateCol = (k: string, v: DateFilterValue | undefined) => setDates((o) => {
