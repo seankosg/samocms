@@ -66,20 +66,6 @@ function TodayPage() {
       </div>
 
       <section className="mb-5">
-        <h2 className="mb-2 flex items-center gap-2 text-sm font-bold"><HardHat className="size-4 text-primary" />Today's Activities</h2>
-        <div className="space-y-3">
-          {TODAY_GROUPS.map((g) => (
-            <ActivityGroup key={g.key} gkey={g.key} label={g.label} desc={g.desc} rows={groups[g.key]} />
-          ))}
-        </div>
-      </section>
-
-      <section className="mb-5">
-        <h2 className="mb-2 text-sm font-bold">Today's T&amp;C</h2>
-        <TcBlock list={tc} />
-      </section>
-
-      <section>
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 text-sm font-bold"><ShieldAlert className="size-4 text-destructive" />Safety Focused Activities</h2>
           {isAdmin && (
@@ -97,7 +83,22 @@ function TodayPage() {
           canAnalyze={isAdmin}
         />
       </section>
-    </AppShell>
+
+      <section className="mb-5">
+        <h2 className="mb-2 flex items-center gap-2 text-sm font-bold"><HardHat className="size-4 text-primary" />Today's Activities</h2>
+        <div className="space-y-3">
+          {TODAY_GROUPS.map((g) => (
+            <ActivityGroup key={g.key} gkey={g.key} label={g.label} desc={g.desc} rows={groups[g.key]} />
+          ))}
+        </div>
+      </section>
+
+      <section className="mb-5">
+        <h2 className="mb-2 text-sm font-bold">Today's T&amp;C</h2>
+        <TcBlock list={tc} />
+      </section>
+
+     </AppShell>
   );
 }
 
