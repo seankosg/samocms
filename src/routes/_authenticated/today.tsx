@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ChevronDown, ChevronRight, HardHat, Loader2, ShieldAlert } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { projectQuery, useProject } from "@/lib/use-project";
 import { SLOT_LABEL, fmtShortDate, isLate, pct1, type Row } from "@/lib/schedule-model";
 import { TC_STAGE_SUB, TC_DISC_LABEL, type TcStage } from "@/lib/tc-model";
 import { TODAY_GROUPS, fmtToday, jeddahToday, safetyFacts, splitToday, todayTc, byTeam, byBldg, type TodayGroupKey } from "@/lib/today-model";
-import { analyzeSafety, type SafetyRisk } from "@/lib/safety.functions";
+import { analyzeSafety, getSafetyReport, type SafetyRisk } from "@/lib/safety.functions";
 import { useAuth } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/today")({
@@ -37,9 +37,20 @@ function TodayPage() {
   const groups = useMemo(() => (today ? splitToday(rows, today) : null), [rows, today]);
   const tc = useMemo(() => (today ? todayTc(tcItems, today) : []), [tcItems, today]);
 
+  const qc = useQueryClient();
+  const saved = useQuery({
+    queryKey: ["safety-report", today],
+    queryFn: () => getSafetyReport({ data: { day: today! } }),
+    enabled: !!today,
+    staleTime: 60_000,
+  });
+
   const safety = useMutation({
     mutationFn: () => analyzeSafety({ data: { day: today!, facts: safetyFacts(groups!, tc, today!) } }),
+    onSuccess: (res) => qc.setQueryData(["safety-report", today], res),
   });
+
+  const report = safety.data ?? saved.data ?? null;
 
   if (!today || !groups) {
     return (
@@ -101,14 +112,14 @@ function TodayPage() {
           {isAdmin && (
             <Button size="sm" disabled={safety.isPending} onClick={() => safety.mutate()}>
               {safety.isPending ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : <AlertTriangle className="mr-1.5 size-3.5" />}
-              {safety.data ? "다시 분석" : "안전 위험 분석"}
+              {report ? "다시 분석" : "안전 위험 분석"}
             </Button>
           )}
         </div>
         <SafetyBlock
-          pending={safety.isPending}
+          pending={safety.isPending || saved.isLoading}
           error={(safety.error as Error | null) ?? null}
-          {...(safety.data ? { risks: safety.data.risks, at: safety.data.generatedAt } : {})}
+          {...(report ? { risks: report.risks, at: report.generatedAt } : {})}
           empty={groups.start.length + groups.ongoing.length + groups.finish.length + tc.length === 0}
           canAnalyze={isAdmin}
         />
