@@ -239,6 +239,8 @@ function Dashboard() {
 
             </tbody>
           </table>
+          </div>
+
         </Card>
         <div className="grid gap-4">
           <RankCard title="건물별 지연" rows={m.bldg} field="bldg" />
