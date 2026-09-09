@@ -373,7 +373,7 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
   });
 
   return (
-    <aside className="fixed bottom-0 right-0 top-14 z-40 flex w-full max-w-[460px] flex-col border-l border-border bg-card shadow-2xl">
+    <aside className="fixed inset-x-0 bottom-0 z-40 flex h-[85vh] flex-col rounded-t-xl border-t border-border bg-card shadow-2xl lg:inset-x-auto lg:bottom-0 lg:right-0 lg:top-14 lg:h-auto lg:w-full lg:max-w-[460px] lg:rounded-none lg:border-l lg:border-t-0">
       {/* 헤더 */}
       <div className="border-b border-border px-4 py-3" style={{ background: `${STATUS_COLOR[node.st]}0f` }}>
         <div className="flex items-start justify-between gap-2">
