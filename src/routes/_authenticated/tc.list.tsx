@@ -85,13 +85,19 @@ function TcList() {
   const setDateCol = (k: string, v: DateFilterValue | undefined) => setDates((o) => {
     const next = { ...o }; if (v) next[k] = v; else delete next[k]; return next;
   });
-  const clearAll = () => { setMulti({}); setTexts({}); setDates({}); setQ(""); setOnly("전체"); setCellF(null); };
+  const clearAll = () => { setMulti({}); setTexts({}); setDates({}); setQ(""); setOnly("전체"); setCellF(null); setOrDates(null); };
   const activeCount =
     Object.values(multi).filter((v) => v && v.length).length +
-    Object.values(texts).filter(Boolean).length + Object.keys(dates).length + (cellF ? 1 : 0);
+    Object.values(texts).filter(Boolean).length + Object.keys(dates).length + (cellF ? 1 : 0) + (orDates ? 1 : 0);
 
   const CELL_LABEL: Record<string, string> = { done: "완료", remain: "잔여", late: "지연", pass: "Pass", fail: "Fail" };
   const cellChip = cellF ? `${cellF.stage ? `${cellF.stage} ` : ""}${CELL_LABEL[cellF.cell] ?? cellF.cell}` : "";
+  const FIELD_LABEL: Record<string, string> = Object.fromEntries(
+    TC_STAGES.flatMap((s) => [[String(PLAN[s]), `${s} 계획`], [String(ACT[s]), `${s} 실적`]]),
+  );
+  const orChip = orDates
+    ? `${orDates.fields.map((f) => FIELD_LABEL[f] ?? f).join(" / ")} ${orDates.range.from ?? ""}~${orDates.range.to ?? ""}`
+    : "";
 
   /** exclude: 해당 컬럼 필터를 제외하고 판정 (facet 크로스 필터링용) */
   const passes = (r: TcItem, exclude?: string) => {
