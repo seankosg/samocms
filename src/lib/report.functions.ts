@@ -5,7 +5,24 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const Input = z.object({
   base: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   facts: z.string().min(1).max(12000),
+  /** true면 저장된 요약을 무시하고 다시 생성 */
+  force: z.boolean().optional(),
 });
+
+/** 저장된 기준일 Executive Summary 조회 */
+export const getExecSummary = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ base: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("exec_summaries")
+      .select("base, summary, generated_at")
+      .eq("base", data.base)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) return null;
+    return { summary: row.summary as string, generatedAt: row.generated_at as string };
+  });
 
 /** 기준일 현황 수치를 바탕으로 한국어 Executive Summary 생성 */
 export const generateExecSummary = createServerFn({ method: "POST" })
