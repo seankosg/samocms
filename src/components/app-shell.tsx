@@ -49,8 +49,8 @@ const NAV = [
   { group: "시운전 (T&C)", items: [
     { to: "/tc/mech", label: "MECH T&C", icon: Wrench },
     { to: "/tc/elec", label: "ELEC T&C", icon: Zap },
-    { to: "/tc/list", label: "T&C List", icon: ListChecks },
     { to: "/tc/progress", label: "T&C Progress", icon: TrendingUp },
+    { to: "/tc/list", label: "T&C List", icon: ListChecks },
   ] },
   { group: "데이터", items: [{ to: "/upload", label: "업로드", icon: UploadCloud }] },
 ] as const;
