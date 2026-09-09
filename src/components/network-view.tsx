@@ -358,12 +358,12 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
   const dday = node.e ? dayDur(base, node.e) : null;
   const dur = node.s && node.e ? dayDur(node.s, node.e) + 1 : null;
   const elapsed = node.s && node.e ? Math.max(0, Math.min(dur ?? 0, dayDur(node.s, base) + 1)) : null;
-  const filtered = list.filter((r) =>
-    (!fDept || r.dept === fDept) && (!fBldg || r.bldg === fBldg) &&
-    (!fStatus || (fStatus === "delay" && r.pl != null && r.pc != null && r.pc < r.pl) || (fStatus === "ahead" && r.pl != null && r.pc != null && r.pc > r.pl))
+  const deptBldgFiltered = list.filter((r) => (!fDept || r.dept === fDept) && (!fBldg || r.bldg === fBldg));
+  const filtered = deptBldgFiltered.filter((r) =>
+    !fStatus || (fStatus === "delay" && r.pl != null && r.pc != null && r.pc < r.pl) || (fStatus === "ahead" && r.pl != null && r.pc != null && r.pc > r.pl)
   );
-  const lateRows = filtered.filter((r) => r.pl != null && r.pc != null && r.pc < r.pl);
-  const aheadRows = filtered.filter((r) => r.pl != null && r.pc != null && r.pc > r.pl);
+  const lateRows = deptBldgFiltered.filter((r) => r.pl != null && r.pc != null && r.pc < r.pl);
+  const aheadRows = deptBldgFiltered.filter((r) => r.pl != null && r.pc != null && r.pc > r.pl);
   const preds = edges.filter((e) => e.b === node.id);
   const succs = edges.filter((e) => e.a === node.id);
   const sorted = [...filtered].sort((a, b) => {
