@@ -48,20 +48,50 @@ function TodayPage() {
   }
 
   const teamOf = (slot: string) => SLOT_LABEL[slot] ?? slot;
-  const kpiCards = [
-    { label: "금일 신규 착수", v: groups.start.length, team: byTeam(groups.start).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(groups.start) },
-    { label: "금일 지속 진행", v: groups.ongoing.length, team: byTeam(groups.ongoing).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(groups.ongoing) },
-    { label: "금일 종결", v: groups.finish.length, team: byTeam(groups.finish).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(groups.finish) },
-    { label: "금일 T&C 계획", v: tc.length, team: byTeam(tc).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(tc) },
+  const allRows = [...new Map([...groups.start, ...groups.ongoing, ...groups.finish].map((r) => [r.id, r])).values()];
+  const kpiCards: { key: FocusCard; label: string; desc: string; v: number; team: { label: string; v: number }[]; bldg: { label: string; v: number }[]; tone: string }[] = [
+    { key: "all", label: "금일 전체 작업", desc: "착수 · 진행 · 종결 합계", v: allRows.length, team: byTeam(allRows).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(allRows), tone: "text-foreground" },
+    { key: "start", label: "금일 신규 착수", desc: "시작일 = 오늘", v: groups.start.length, team: byTeam(groups.start).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(groups.start), tone: "text-primary" },
+    { key: "ongoing", label: "금일 지속 진행", desc: "진행 중", v: groups.ongoing.length, team: byTeam(groups.ongoing).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(groups.ongoing), tone: "text-foreground" },
+    { key: "finish", label: "금일 종결", desc: "종료일 = 오늘", v: groups.finish.length, team: byTeam(groups.finish).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(groups.finish), tone: "text-emerald-600" },
+    { key: "tc", label: "금일 T&C 계획", desc: "당일 계획 단계", v: tc.length, team: byTeam(tc).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(tc), tone: "text-sky-600" },
   ];
+
+  const matchRow = (r: Row) => !focus || !focus.val || (focus.by === "team" ? teamOf(r.dept) === focus.val : (r.bldg ?? "(미지정)") === focus.val);
+  const matchTc = (t: (typeof tc)[number]) =>
+    !focus || !focus.val || (focus.by === "team" ? teamOf(t.item.discipline) === focus.val : (t.item.bldg ?? "(미지정)") === focus.val);
+
+  const shownGroups = TODAY_GROUPS.filter((g) => !focus || focus.card === "all" || focus.card === g.key);
+  const showActivities = !focus || focus.card !== "tc";
+  const showTc = !focus || focus.card === "tc";
+  const shownTc = tc.filter(matchTc);
 
   return (
     <AppShell title="오늘의 주요 작업" desc={`${fmtToday(today)} · 사우디아라비아 제다 현지(UTC+3) 기준 · 기준일 설정과 무관`}>
-      <div className="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-4">
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
         {kpiCards.map((c) => (
-          <KpiCard key={c.label} label={c.label} value={c.v} team={c.team} bldg={c.bldg} />
+          <KpiCard
+            key={c.key}
+            label={c.label}
+            desc={c.desc}
+            tone={c.tone}
+            value={c.v}
+            team={c.team}
+            bldg={c.bldg}
+            active={focus?.card === c.key ? focus : null}
+            onPick={(by, val) => setFocus((f) => (f && f.card === c.key && f.by === by && f.val === val ? null : { card: c.key, by, val }))}
+          />
         ))}
       </div>
+
+      {focus && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-xs">
+          <span className="font-semibold text-primary">드릴다운</span>
+          <span className="rounded bg-background px-2 py-0.5 font-medium">{kpiCards.find((c) => c.key === focus.card)?.label}</span>
+          {focus.val && <span className="rounded bg-background px-2 py-0.5 font-medium">{focus.by === "team" ? "팀" : "건물"} · {focus.val}</span>}
+          <Button size="sm" variant="ghost" className="ml-auto h-7 px-2 text-xs" onClick={() => setFocus(null)}>필터 해제</Button>
+        </div>
+      )}
 
       <section className="mb-5">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -82,66 +112,102 @@ function TodayPage() {
         />
       </section>
 
-      <section className="mb-5">
-        <h2 className="mb-2 flex items-center gap-2 text-sm font-bold"><HardHat className="size-4 text-primary" />Today's Activities</h2>
-        <div className="space-y-3">
-          {TODAY_GROUPS.map((g) => (
-            <ActivityGroup key={g.key} gkey={g.key} label={g.label} desc={g.desc} rows={groups[g.key]} />
-          ))}
-        </div>
-      </section>
+      {showActivities && (
+        <section id="today-activities" className="mb-5">
+          <h2 className="mb-2 flex items-center gap-2 text-sm font-bold"><HardHat className="size-4 text-primary" />Today's Activities</h2>
+          <div className="space-y-3">
+            {shownGroups.map((g) => (
+              <ActivityGroup key={g.key} gkey={g.key} label={g.label} desc={g.desc} rows={groups[g.key].filter(matchRow)} />
+            ))}
+          </div>
+        </section>
+      )}
 
-      <section className="mb-5">
-        <h2 className="mb-2 text-sm font-bold">Today's T&amp;C</h2>
-        <TcBlock list={tc} />
-      </section>
+      {showTc && (
+        <section id="today-tc" className="mb-5">
+          <h2 className="mb-2 text-sm font-bold">Today's T&amp;C</h2>
+          <TcBlock list={shownTc} />
+        </section>
+      )}
 
      </AppShell>
   );
 }
 
-function KpiCard({ label, value, team, bldg }: { label: string; value: number; team: { label: string; v: number }[]; bldg: { label: string; v: number }[] }) {
+type FocusCard = "all" | TodayGroupKey | "tc";
+type Focus = { card: FocusCard; by: "team" | "bldg"; val: string | null };
+
+function KpiCard({ label, desc, tone, value, team, bldg, active, onPick }: {
+  label: string; desc: string; tone: string; value: number;
+  team: { label: string; v: number }[]; bldg: { label: string; v: number }[];
+  active: Focus | null; onPick: (by: "team" | "bldg", val: string | null) => void;
+}) {
   const [tab, setTab] = useState<"team" | "bldg">("team");
   const items = tab === "team" ? team : bldg;
   return (
-    <div className={card}>
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
-      <div className="mt-1 flex items-end gap-3">
-        <p className="text-2xl font-bold tabular-nums">{value.toLocaleString()}</p>
-        <div className="ml-auto flex gap-0.5 rounded-md bg-muted p-0.5">
-          <button
-            type="button"
-            onClick={() => setTab("team")}
-            className={`rounded px-2 py-0.5 text-[11px] font-semibold transition ${tab === "team" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            팀별
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab("bldg")}
-            className={`rounded px-2 py-0.5 text-[11px] font-semibold transition ${tab === "bldg" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            건물별
-          </button>
+    <div className={`${card} flex min-h-[190px] flex-col ${active ? "border-primary ring-1 ring-primary/40" : ""}`}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-bold">{label}</p>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">{desc}</p>
+        </div>
+        <div className="flex shrink-0 gap-0.5 rounded-md bg-muted p-0.5">
+          {(["team", "bldg"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              className={`rounded px-2 py-1 text-xs font-semibold transition ${tab === t ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {t === "team" ? "팀별" : "건물별"}
+            </button>
+          ))}
         </div>
       </div>
-      {items.length > 0 && (
-        <div className="mt-2 max-h-24 overflow-auto border-t border-border/60 pt-1.5">
-          <table className="w-full text-[11px]">
-            <tbody>
-              {items.map((x) => (
-                <tr key={x.label} className="border-b border-border/30 last:border-0">
-                  <td className="py-0.5 text-muted-foreground">{x.label}</td>
-                  <td className="py-0.5 text-right font-semibold tabular-nums">{x.v}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="mt-2 flex flex-1 items-stretch gap-3">
+        <button
+          type="button"
+          onClick={() => onPick(tab, null)}
+          className={`flex w-[38%] shrink-0 flex-col justify-center rounded-md px-2 py-1 text-left transition hover:bg-accent ${active && !active.val ? "bg-accent" : ""}`}
+          title="전체 항목 보기"
+        >
+          <span className={`text-4xl font-bold leading-none tabular-nums ${tone}`}>{value.toLocaleString()}</span>
+          <span className="mt-1 text-xs text-muted-foreground">건 · 클릭 시 목록</span>
+        </button>
+        <div className="min-w-0 flex-1 border-l border-border/60 pl-3">
+          {items.length === 0 ? (
+            <p className="text-xs text-muted-foreground">세부 항목 없음</p>
+          ) : (
+            <div className="max-h-[124px] overflow-auto pr-1">
+              <table className="w-full text-xs">
+                <tbody>
+                  {items.map((x) => {
+                    const on = active?.by === tab && active.val === x.label;
+                    return (
+                      <tr key={x.label} className="border-b border-border/30 last:border-0">
+                        <td colSpan={2} className="p-0">
+                          <button
+                            type="button"
+                            onClick={() => onPick(tab, x.label)}
+                            className={`flex w-full items-center justify-between gap-2 rounded px-1.5 py-1 text-left transition hover:bg-accent ${on ? "bg-accent font-semibold" : ""}`}
+                          >
+                            <span className="truncate text-muted-foreground">{x.label}</span>
+                            <span className="shrink-0 font-semibold tabular-nums">{x.v}</span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
+
 
 function ActivityGroup({ gkey, label, desc, rows }: { gkey: TodayGroupKey; label: string; desc: string; rows: Row[] }) {
   const [open, setOpen] = useState(true);
