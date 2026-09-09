@@ -87,9 +87,8 @@ function TodayPage() {
         </div>
         <SafetyBlock
           pending={safety.isPending}
-          error={safety.error as Error | null}
-          risks={safety.data?.risks}
-          at={safety.data?.generatedAt}
+          error={(safety.error as Error | null) ?? null}
+          {...(safety.data ? { risks: safety.data.risks, at: safety.data.generatedAt } : {})}
           empty={groups.start.length + groups.ongoing.length + groups.finish.length + tc.length === 0}
         />
       </section>
