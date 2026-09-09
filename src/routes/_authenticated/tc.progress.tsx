@@ -45,9 +45,9 @@ function TcProgressPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
 
-  const [unit, setUnit] = useState<Unit>(search.unit === "qty" ? "qty" : "count");
+  const [unit, setUnit] = useState<Unit>(search.unit === "count" ? "count" : "qty");
   const [bucket, setBucket] = useState<Bucket>(
-    search.bucket === "day" || search.bucket === "month" ? search.bucket : "week",
+    search.bucket === "week" || search.bucket === "month" ? search.bucket : "day",
   );
   const [stages, setStages] = useState<TcStage[]>(() => {
     const from = (search.stages ?? "").split(",").filter((s) => TC_STAGES.includes(s as TcStage)) as TcStage[];
