@@ -133,7 +133,7 @@ function TcProgressPage() {
     <AppShell title="T&C Progress" desc="단계별 계획 대비 실적 S-Curve와 Progress Matrix">
       <div className="space-y-4">
         {/* Toolbar */}
-        <div className="sticky top-0 z-30 flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card p-3 text-xs shadow-sm">
+        <div className="sticky top-14 z-30 flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card p-3 text-xs shadow-sm">
           <Seg label="집계" options={[["count", "건수"], ["qty", "수량"]]} value={unit}
             onChange={(v) => { setUnit(v as Unit); sync({ unit: v }); }} />
           <Seg label="구간" options={[["day", "일"], ["week", "주"], ["month", "월"]]} value={bucket}
