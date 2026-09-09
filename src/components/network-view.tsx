@@ -381,7 +381,7 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
   return (
     <aside className="fixed inset-x-0 bottom-0 z-40 flex h-[85vh] flex-col rounded-t-xl border-t border-border bg-card shadow-2xl lg:inset-x-auto lg:bottom-0 lg:right-0 lg:top-14 lg:h-auto lg:w-full lg:max-w-[460px] lg:rounded-none lg:border-l lg:border-t-0">
       {/* 헤더 */}
-      <div className="border-b border-border px-4 py-3" style={{ background: `${STATUS_COLOR[node.st]}0f` }}>
+      <div className="border-b border-border px-4 py-3" style={{ background: `${STATUS_COLOR[badgeSt]}0f` }}>
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="truncate text-[10.5px] font-bold uppercase tracking-wide text-muted-foreground">
@@ -391,8 +391,8 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
             {node.sub && <p className="truncate text-[11.5px] text-muted-foreground">협력사 {node.sub}</p>}
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
-            <span className="rounded-full px-2 py-0.5 text-[11px] font-bold text-white" style={{ background: STATUS_COLOR[node.st] }}>
-              {STATUS_LABEL[node.st] ?? "—"}
+            <span className="rounded-full px-2 py-0.5 text-[11px] font-bold text-white" style={{ background: STATUS_COLOR[badgeSt] }}>
+              {STATUS_LABEL[badgeSt] ?? "—"}
             </span>
             <button type="button" aria-label="닫기" onClick={onClose} className="rounded p-1 hover:bg-accent"><X className="size-4" /></button>
           </div>
