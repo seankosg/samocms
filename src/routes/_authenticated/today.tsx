@@ -47,21 +47,19 @@ function TodayPage() {
     );
   }
 
-  const counts = [
-    { label: "금일 신규 착수", v: groups.start.length },
-    { label: "금일 지속 진행", v: groups.ongoing.length },
-    { label: "금일 종결", v: groups.finish.length },
-    { label: "금일 T&C 계획", v: tc.length },
+  const teamOf = (slot: string) => SLOT_LABEL[slot] ?? slot;
+  const kpiCards = [
+    { label: "금일 신규 착수", v: groups.start.length, team: byTeam(groups.start).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(groups.start) },
+    { label: "금일 지속 진행", v: groups.ongoing.length, team: byTeam(groups.ongoing).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(groups.ongoing) },
+    { label: "금일 종결", v: groups.finish.length, team: byTeam(groups.finish).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(groups.finish) },
+    { label: "금일 T&C 계획", v: tc.length, team: byTeam(tc).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(tc) },
   ];
 
   return (
     <AppShell title="오늘의 주요 작업" desc={`${fmtToday(today)} · 카타르 현지(UTC+3) 기준 · 기준일 설정과 무관`}>
-      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {counts.map((c) => (
-          <div key={c.label} className={card}>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{c.label}</p>
-            <p className="mt-1 text-2xl font-bold tabular-nums">{c.v.toLocaleString()}</p>
-          </div>
+      <div className="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-4">
+        {kpiCards.map((c) => (
+          <KpiCard key={c.label} label={c.label} value={c.v} team={c.team} bldg={c.bldg} />
         ))}
       </div>
 
