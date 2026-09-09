@@ -51,7 +51,26 @@ export function todayTc(items: TcItem[], today: string): TodayTc[] {
   return out;
 }
 
-/** AI 안전 분석에 전달할 작업 요약 텍스트 */
+/** 팀(dept/discipline)별 건수 집계 */
+export function byTeam(items: { dept: string }[] | { item: { discipline: string } }[]): { label: string; v: number }[] {
+  const map = new Map<string, number>();
+  items.forEach((x) => {
+    const t = "dept" in x ? x.dept : x.item.discipline;
+    map.set(t, (map.get(t) ?? 0) + 1);
+  });
+  return [...map.entries()].sort((a, b) => b[1] - a[1]).map(([label, v]) => ({ label, v }));
+}
+
+/** 건물별 건수 집계 */
+export function byBldg(items: { bldg: string | null }[] | { item: { bldg: string | null } }[]): { label: string; v: number }[] {
+  const map = new Map<string, number>();
+  items.forEach((x) => {
+    const b = "bldg" in x ? x.bldg : x.item.bldg;
+    const k = b ?? "(미지정)";
+    map.set(k, (map.get(k) ?? 0) + 1);
+  });
+  return [...map.entries()].sort((a, b) => b[1] - a[1]).map(([label, v]) => ({ label, v }));
+}
 export function safetyFacts(groups: Record<TodayGroupKey, Row[]>, tc: TodayTc[], today: string) {
   const line = (r: Row, tag: string) =>
     `${tag}|${r.dept}|${flat(r.bldg) || "-"}|${flat(r.room) || "-"}|${r.act}|협력사:${flat(r.sub) || "-"}|수량:${r.done ?? "-"}/${r.tot ?? "-"}${r.unit ? r.unit : ""}|실적:${r.pc == null ? "-" : Math.round(r.pc * 100) + "%"}`;
