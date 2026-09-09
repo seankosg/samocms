@@ -96,7 +96,7 @@ export const analyzeSafety = createServerFn({ method: "POST" })
     }
 
     const generatedAt = new Date().toISOString();
-    await context.supabase
+    await supabaseAdmin
       .from("safety_reports")
       .upsert({ day: data.day, risks, generated_at: generatedAt, created_by: context.userId }, { onConflict: "day" });
 
