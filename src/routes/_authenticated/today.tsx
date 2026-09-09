@@ -220,14 +220,14 @@ function TcBlock({ list }: { list: ReturnType<typeof todayTc> }) {
   );
 }
 
-function SafetyBlock({ pending, error, risks, at, empty }: { pending: boolean; error: Error | null; risks?: SafetyRisk[]; at?: string; empty: boolean }) {
+function SafetyBlock({ pending, error, risks, at, empty, canAnalyze }: { pending: boolean; error: Error | null; risks?: SafetyRisk[]; at?: string; empty: boolean; canAnalyze: boolean }) {
   if (pending) return <div className={card}><p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="size-3.5 animate-spin" />당일 작업을 분석하는 중입니다…</p></div>;
   if (error) return <div className={`${card} border-destructive/40`}><p className="text-xs text-destructive">{error.message}</p></div>;
   if (!risks) {
     return (
       <div className={card}>
         <p className="text-xs text-muted-foreground">
-          {empty ? "금일 해당하는 작업이 없어 분석할 대상이 없습니다." : "‘안전 위험 분석’ 버튼을 누르면 금일 공정·시운전 작업 중 안전 주의가 필요한 High Risk 작업을 선별합니다."}
+          {empty ? "금일 해당하는 작업이 없어 분석할 대상이 없습니다." : canAnalyze ? "‘안전 위험 분석’ 버튼을 누르면 금일 공정·시운전 작업 중 안전 주의가 필요한 High Risk 작업을 선별합니다." : "안전 위험 분석은 관리자 권한이 필요합니다. 관리자에게 문의하세요."}
         </p>
       </div>
     );
