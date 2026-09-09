@@ -153,10 +153,10 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b border-border bg-card">
         <div className="flex h-14 items-center gap-2 px-2 sm:gap-3 sm:px-3 lg:px-4">
-          <Button size="icon" variant="ghost" aria-label="사이드바 토글" className="lg:hidden" onClick={() => setMobileOpen(true)}>
+          <Button size="icon" variant="ghost" aria-label="사이드바 토글" className="md:hidden" onClick={() => setMobileOpen(true)}>
             <Menu />
           </Button>
-          <Button size="icon" variant="ghost" aria-label="사이드바 토글" className="hidden lg:inline-flex" onClick={() => setOpen((v) => !v)}>
+          <Button size="icon" variant="ghost" aria-label="사이드바 토글" className="hidden md:inline-flex" onClick={() => setOpen((v) => !v)}>
             {open ? <ChevronLeft /> : <PanelLeft />}
           </Button>
           <Link to="/dashboard" className="flex min-w-0 items-center gap-2">
@@ -199,7 +199,7 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
       </Sheet>
 
       <div className="flex">
-        <aside className={`${open ? "w-[212px]" : "w-[62px]"} sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 overflow-y-auto border-r border-border bg-card transition-all lg:block`}>
+        <aside className={`${open ? "w-[212px]" : "w-[62px]"} sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 overflow-y-auto border-r border-border bg-card transition-all md:block`}>
           <div className="border-b border-border p-2">{userBadge(open)}</div>
           {navList(open)}
         </aside>
