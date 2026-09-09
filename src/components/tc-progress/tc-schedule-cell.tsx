@@ -40,6 +40,7 @@ function CellBase({ plan, actual, isFuture, isToday, width, onPlanClick, onActua
       ) : (
         <>
           <div className="flex items-center gap-1">
+            <span className="w-2 shrink-0 text-[9px] font-bold text-muted-foreground/70" title="Plan">P</span>
             <button
               type="button"
               disabled={!onPlanClick || plan === 0}
@@ -51,6 +52,7 @@ function CellBase({ plan, actual, isFuture, isToday, width, onPlanClick, onActua
             <Bar v={plan} max={max} className="bg-schedule-plan" />
           </div>
           <div className="flex items-center gap-1">
+            <span className="w-2 shrink-0 text-[9px] font-bold text-muted-foreground/70" title="Actual">A</span>
             <button
               type="button"
               disabled={!onActualClick || isFuture || actual === 0}

@@ -58,7 +58,8 @@ function TcProgressPage() {
     return from.length ? from : ["bldg"];
   });
   const [disc, setDisc] = useState(search.disc ?? "전체");
-  const [from, setFrom] = useState(search.from ?? addDays(base, -60));
+  const DEFAULT_FROM = "2026-09-06";
+  const [from, setFrom] = useState(search.from ?? DEFAULT_FROM);
   const [to, setTo] = useState(search.to ?? addDays(base, 60));
 
   const sync = (patch: Partial<Search>) => {
