@@ -56,7 +56,7 @@ function TodayPage() {
   ];
 
   return (
-    <AppShell title="오늘의 주요 작업" desc={`${fmtToday(today)} · 카타르 현지(UTC+3) 기준 · 기준일 설정과 무관`}>
+    <AppShell title="오늘의 주요 작업" desc={`${fmtToday(today)} · 사우디아라비아 제다 현지(UTC+3) 기준 · 기준일 설정과 무관`}>
       <div className="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-4">
         {kpiCards.map((c) => (
           <KpiCard key={c.label} label={c.label} value={c.v} team={c.team} bldg={c.bldg} />
