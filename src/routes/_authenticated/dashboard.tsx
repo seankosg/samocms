@@ -460,7 +460,7 @@ function TrendCard() {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-md border border-border bg-card p-4 shadow-sm">
+    <div className="min-w-0 rounded-md border border-border bg-card p-4 shadow-sm">
       <p className="mb-2 text-xs font-bold text-muted-foreground">{title}</p>
       {children}
     </div>
