@@ -71,6 +71,7 @@ export const analyzeSafety = createServerFn({ method: "POST" })
             sub: String(r["sub"] ?? "-"),
             hazard: String(r["hazard"] ?? ""),
             action: String(r["action"] ?? ""),
+            hazardType: Array.isArray(r["hazardType"]) ? (r["hazardType"] as unknown[]).map(String).filter(Boolean).slice(0, 3) : [],
           }))
           .filter((r) => r.title && r.title !== "-")
           .slice(0, 12);
