@@ -41,7 +41,7 @@ function TodayPage() {
 
   if (!today || !groups) {
     return (
-      <AppShell title="오늘의 주요 작업" desc="카타르 현지 날짜 기준">
+      <AppShell title="오늘의 주요 작업" desc="사우디아라비아 제다 현지 날짜 기준">
         <div className={card}>날짜를 확인하는 중…</div>
       </AppShell>
     );
