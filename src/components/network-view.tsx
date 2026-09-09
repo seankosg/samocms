@@ -425,9 +425,9 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
           <div className="flex flex-wrap items-center gap-1">
             <span className="mr-0.5 w-7 shrink-0 text-[10.5px] font-bold text-muted-foreground">상태</span>
             {[
-              { v: "", label: "전체", n: list.length },
-              { v: "delay", label: "지연", n: list.filter((r) => r.pl != null && r.pc != null && r.pc < r.pl).length, color: STATUS_COLOR["delay"] },
-              { v: "ahead", label: "선행", n: list.filter((r) => r.pl != null && r.pc != null && r.pc > r.pl).length, color: STATUS_COLOR["done"] },
+              { v: "", label: "전체", n: deptBldgFiltered.length },
+              { v: "delay", label: "지연", n: lateRows.length, color: STATUS_COLOR["delay"] },
+              { v: "ahead", label: "선행", n: aheadRows.length, color: STATUS_COLOR["done"] },
             ].map((opt) => (
               <button key={opt.v || "__all"} type="button" onClick={() => setFStatus(opt.v as "" | "delay" | "ahead")}
                 className={`rounded-full border px-2 py-0.5 text-[10.5px] font-bold ${fStatus === opt.v ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background text-muted-foreground hover:bg-accent"}`}>
