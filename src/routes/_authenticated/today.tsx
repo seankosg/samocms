@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { projectQuery, useProject } from "@/lib/use-project";
 import { SLOT_LABEL, fmtShortDate, isLate, pct1, type Row } from "@/lib/schedule-model";
 import { TC_STAGE_SUB, TC_DISC_LABEL, type TcStage } from "@/lib/tc-model";
-import { TODAY_GROUPS, fmtToday, qatarToday, safetyFacts, splitToday, todayTc, type TodayGroupKey } from "@/lib/today-model";
+import { TODAY_GROUPS, fmtToday, qatarToday, safetyFacts, splitToday, todayTc, byTeam, byBldg, type TodayGroupKey } from "@/lib/today-model";
 import { analyzeSafety, type SafetyRisk } from "@/lib/safety.functions";
 import { useAuth } from "@/lib/use-auth";
 
@@ -47,21 +47,19 @@ function TodayPage() {
     );
   }
 
-  const counts = [
-    { label: "금일 신규 착수", v: groups.start.length },
-    { label: "금일 지속 진행", v: groups.ongoing.length },
-    { label: "금일 종결", v: groups.finish.length },
-    { label: "금일 T&C 계획", v: tc.length },
+  const teamOf = (slot: string) => SLOT_LABEL[slot] ?? slot;
+  const kpiCards = [
+    { label: "금일 신규 착수", v: groups.start.length, team: byTeam(groups.start).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(groups.start) },
+    { label: "금일 지속 진행", v: groups.ongoing.length, team: byTeam(groups.ongoing).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(groups.ongoing) },
+    { label: "금일 종결", v: groups.finish.length, team: byTeam(groups.finish).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(groups.finish) },
+    { label: "금일 T&C 계획", v: tc.length, team: byTeam(tc).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(tc) },
   ];
 
   return (
     <AppShell title="오늘의 주요 작업" desc={`${fmtToday(today)} · 카타르 현지(UTC+3) 기준 · 기준일 설정과 무관`}>
-      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {counts.map((c) => (
-          <div key={c.label} className={card}>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{c.label}</p>
-            <p className="mt-1 text-2xl font-bold tabular-nums">{c.v.toLocaleString()}</p>
-          </div>
+      <div className="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-4">
+        {kpiCards.map((c) => (
+          <KpiCard key={c.label} label={c.label} value={c.v} team={c.team} bldg={c.bldg} />
         ))}
       </div>
 
@@ -99,6 +97,49 @@ function TodayPage() {
       </section>
 
      </AppShell>
+  );
+}
+
+function KpiCard({ label, value, team, bldg }: { label: string; value: number; team: { label: string; v: number }[]; bldg: { label: string; v: number }[] }) {
+  const [tab, setTab] = useState<"team" | "bldg">("team");
+  const items = tab === "team" ? team : bldg;
+  return (
+    <div className={card}>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <div className="mt-1 flex items-end gap-3">
+        <p className="text-2xl font-bold tabular-nums">{value.toLocaleString()}</p>
+        <div className="ml-auto flex gap-0.5 rounded-md bg-muted p-0.5">
+          <button
+            type="button"
+            onClick={() => setTab("team")}
+            className={`rounded px-2 py-0.5 text-[11px] font-semibold transition ${tab === "team" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            팀별
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("bldg")}
+            className={`rounded px-2 py-0.5 text-[11px] font-semibold transition ${tab === "bldg" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            건물별
+          </button>
+        </div>
+      </div>
+      {items.length > 0 && (
+        <div className="mt-2 max-h-24 overflow-auto border-t border-border/60 pt-1.5">
+          <table className="w-full text-[11px]">
+            <tbody>
+              {items.map((x) => (
+                <tr key={x.label} className="border-b border-border/30 last:border-0">
+                  <td className="py-0.5 text-muted-foreground">{x.label}</td>
+                  <td className="py-0.5 text-right font-semibold tabular-nums">{x.v}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   );
 }
 
