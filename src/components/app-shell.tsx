@@ -245,7 +245,7 @@ function BaseSetting({ base, batches, onApply, saving, canWrite }: { base: strin
           </button>
         </PopoverTrigger>
         <CalendarDays className="size-3.5 text-muted-foreground" />
-        <span className="text-muted-foreground">기준일</span>
+        <span className="hidden text-muted-foreground sm:inline">기준일</span>
         <strong className="text-foreground">{base.replace(/-/g, ".")}</strong>
       </div>
       <PopoverContent align="end" className="w-[320px] p-3 text-xs">
