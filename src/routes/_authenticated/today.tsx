@@ -188,7 +188,7 @@ function TcBlock({ list }: { list: ReturnType<typeof todayTc> }) {
                       <td className="whitespace-nowrap px-2 py-1.5">
                         <Link
                           to="/tc/list"
-                          search={{ disc: t.item.discipline, bldg: t.item.bldg ?? undefined, item: t.item.item ?? undefined, stage: st }}
+                          search={{ disc: t.item.discipline, stage: st, ...(t.item.bldg ? { bldg: t.item.bldg } : {}), ...(t.item.item ? { item: t.item.item } : {}) }}
                           className="hover:underline"
                         >
                           {t.item.bldg ?? "—"}
