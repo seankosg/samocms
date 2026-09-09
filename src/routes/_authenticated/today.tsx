@@ -94,6 +94,7 @@ function TodayPage() {
           error={(safety.error as Error | null) ?? null}
           {...(safety.data ? { risks: safety.data.risks, at: safety.data.generatedAt } : {})}
           empty={groups.start.length + groups.ongoing.length + groups.finish.length + tc.length === 0}
+          canAnalyze={isAdmin}
         />
       </section>
     </AppShell>
