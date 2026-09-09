@@ -9,6 +9,7 @@ import { SLOT_LABEL, fmtShortDate, isLate, pct1, type Row } from "@/lib/schedule
 import { TC_STAGE_SUB, TC_DISC_LABEL, type TcStage } from "@/lib/tc-model";
 import { TODAY_GROUPS, fmtToday, qatarToday, safetyFacts, splitToday, todayTc, type TodayGroupKey } from "@/lib/today-model";
 import { analyzeSafety, type SafetyRisk } from "@/lib/safety.functions";
+import { useAuth } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/today")({
   head: () => ({ meta: [
