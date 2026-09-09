@@ -495,6 +495,7 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-semibold leading-snug">{r.no ? `${r.no} · ` : ""}{r.act}</p>
                     {late && <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: STATUS_COLOR["delay"] }}>-{pct1(g)}%p</span>}
+                    {ahead && <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: STATUS_COLOR["done"] }}>+{pct1(Math.abs(g))}%p</span>}
                   </div>
                   <p className="mt-1 text-[11px] text-muted-foreground">
                     {[r.bldg, r.room, r.sub].filter(Boolean).join(" · ") || "-"}{r.ms ? ` · ${r.ms} ${MSDEF[r.ms] ?? ""}` : ""}
