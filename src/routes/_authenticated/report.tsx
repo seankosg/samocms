@@ -128,12 +128,26 @@ function ReportPage() {
         <section className="avoid-break mt-3 overflow-hidden rounded-md border border-slate-300 bg-white">
           <div className="flex items-center gap-2 border-b border-slate-300 bg-[#1e3a5f] px-3 py-1.5">
             <span className="text-[11px] font-bold tracking-[0.14em] text-white">EXECUTIVE SUMMARY</span>
-            <span className="ml-auto text-[9px] text-slate-300">기준일 {base} · AI 분석</span>
+            <span className="ml-auto text-[9px] text-slate-300">
+              기준일 {base} · AI 분석{(regen.data ?? ai.data) ? ` · 작성 ${new Date((regen.data ?? ai.data)!.generatedAt).toLocaleString("ko-KR")}` : ""}
+            </span>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => regen.mutate()}
+                disabled={regen.isPending}
+                className="no-print rounded border border-white/40 px-1.5 py-0.5 text-[9px] font-semibold text-white disabled:opacity-50"
+              >
+                {regen.isPending ? "생성 중…" : "요약 다시 생성"}
+              </button>
+            )}
           </div>
           <div className="px-3 py-2.5">
-            {ai.isLoading && <p className="text-[10px] text-slate-500">AI가 기준일 현황을 분석해 요약을 작성하는 중입니다…</p>}
-            {ai.isError && <p className="text-[10px] text-red-700">AI 요약을 생성하지 못했습니다: {(ai.error as Error).message}</p>}
-            {ai.data && (
+            {(ai.isLoading || regen.isPending) && <p className="text-[10px] text-slate-500">AI가 기준일 현황을 분석해 요약을 작성하는 중입니다…</p>}
+            {(ai.isError || regen.isError) && (
+              <p className="text-[10px] text-red-700">AI 요약을 생성하지 못했습니다: {((regen.error ?? ai.error) as Error).message}</p>
+            )}
+            {ai.data && !regen.isPending && (
               <div className="space-y-2">
                 {parseSummary(ai.data.summary).map((b, i) => (
                   <div key={i} className="flex gap-2">
