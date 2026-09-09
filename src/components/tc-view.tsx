@@ -61,7 +61,7 @@ export function TcView({ discipline, items, manual, base }: { discipline: string
 
   return (
     <div className="space-y-4">
-      <section className="grid gap-3 sm:grid-cols-3 xl:grid-cols-6">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         {TC_STAGES.map((s) => (
           <div key={s} className="rounded-md border border-border bg-card p-3 shadow-sm">
             <p className="text-xs font-bold">{s}</p>
