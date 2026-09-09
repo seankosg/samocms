@@ -178,6 +178,11 @@ function TcList() {
               <X className="size-3.5" />{cellChip}
             </Button>
           )}
+          {orDates && (
+            <Button size="sm" variant="secondary" onClick={() => setOrDates(null)}>
+              <X className="size-3.5" />{orChip}
+            </Button>
+          )}
           {activeCount > 0 && (
             <Button size="sm" variant="outline" onClick={clearAll}><X className="size-3.5" />필터 {activeCount}개 해제</Button>
           )}

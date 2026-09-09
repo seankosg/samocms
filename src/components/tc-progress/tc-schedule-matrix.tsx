@@ -39,6 +39,15 @@ function NumCell({ width, children, className, borderLeft, borderRight, title }:
   );
 }
 
+function DrillNum({ value, onClick, className, title }: {
+  value: number; onClick?: (() => void) | undefined; className?: string; title?: string;
+}) {
+  if (!onClick || value === 0) return <span className={className} title={title}>{value}</span>;
+  return (
+    <button type="button" onClick={onClick} title={title} className={cn("hover:underline", className)}>{value}</button>
+  );
+}
+
 function TotalDoneCells({ total, done, bold }: { total: number; done: number; bold?: boolean }) {
   const pct = total > 0 ? (done / total) * 100 : null;
   const remain = total - done;
@@ -52,15 +61,22 @@ function TotalDoneCells({ total, done, bold }: { total: number; done: number; bo
   );
 }
 
-function PlanActualCells({ plan, actual, asOfLabel, bold }: { plan: number; actual: number; asOfLabel: string; bold?: boolean }) {
+function PlanActualCells({ plan, actual, asOfLabel, bold, onPlanClick, onActualClick }: {
+  plan: number; actual: number; asOfLabel: string; bold?: boolean;
+  onPlanClick?: (() => void) | undefined; onActualClick?: (() => void) | undefined;
+}) {
   const pct = plan > 0 ? (actual / plan) * 100 : null;
   const diff = actual - plan;
   const accent = pct === null ? "" : pct < 100 ? "text-schedule-short" : pct > 100 ? "text-schedule-over" : "";
   const diffAccent = diff < 0 ? "text-schedule-short" : diff > 0 ? "text-schedule-over" : "text-muted-foreground";
   return (
     <>
-      <NumCell width={W_NUM} borderLeft title={`${asOfLabel} 까지 계획`}>{plan}</NumCell>
-      <NumCell width={W_NUM} title={`${asOfLabel} 까지 실적`} className={cn(bold && "font-semibold", accent)}>{actual}</NumCell>
+      <NumCell width={W_NUM} borderLeft title={`${asOfLabel} 까지 계획`}>
+        <DrillNum value={plan} onClick={onPlanClick} title={`${asOfLabel} 까지 계획 항목 보기`} />
+      </NumCell>
+      <NumCell width={W_NUM} title={`${asOfLabel} 까지 실적`} className={cn(bold && "font-semibold", accent)}>
+        <DrillNum value={actual} onClick={onActualClick} title={`${asOfLabel} 까지 실적 항목 보기`} />
+      </NumCell>
       <NumCell width={W_PCT} className={cn("text-[10px]", accent)}>{pct === null ? "—" : `${pct.toFixed(0)}%`}</NumCell>
       <NumCell width={W_NUM} borderRight className={cn(diffAccent, bold && "font-semibold")}>{diff > 0 ? `+${diff}` : diff}</NumCell>
     </>
