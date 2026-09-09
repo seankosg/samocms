@@ -209,7 +209,7 @@ function TcProgressPage() {
             <TcPlanVsActualCard scurve={scurve} stages={stages} bucket={bucket} unit={unit} totals={totals} base={base} />
             <TcScheduleMatrix
               data={matrix} bucket={bucket} stages={stages} base={base} asOfLabel={base}
-              onCellClick={onCellClick} onRowClick={onRowClick}
+              onCellClick={onCellClick} onRowClick={onRowClick} onCumClick={onCumClick}
             />
           </>
         )}
