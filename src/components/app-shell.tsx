@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
-  AlertTriangle, BarChart3, CalendarClock, TrendingUp, CalendarDays, ChevronLeft, Download, HardHat, ListChecks,
+  AlertTriangle, BarChart3, CalendarClock, TrendingUp, CalendarDays, ChevronLeft, Download, FileText, HardHat, ListChecks,
   LogOut, Network, PanelLeft, Settings, Sparkles, Table2, UploadCloud, Users, Wrench, Zap,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
