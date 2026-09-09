@@ -307,6 +307,27 @@ export type Database = {
         }
         Relationships: []
       }
+      safety_reports: {
+        Row: {
+          created_by: string | null
+          day: string
+          generated_at: string
+          risks: Json
+        }
+        Insert: {
+          created_by?: string | null
+          day: string
+          generated_at?: string
+          risks?: Json
+        }
+        Update: {
+          created_by?: string | null
+          day?: string
+          generated_at?: string
+          risks?: Json
+        }
+        Relationships: []
+      }
       tc_daily_progress: {
         Row: {
           actual_count: number
