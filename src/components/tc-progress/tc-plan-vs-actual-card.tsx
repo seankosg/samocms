@@ -1,7 +1,7 @@
 // Plan vs Actual S-Curve (QAIL SnagPlanVsActualCard 이식)
 import { useMemo } from "react";
 import {
-  Bar, CartesianGrid, ComposedChart, Legend, Line, ReferenceLine,
+  Bar, CartesianGrid, Cell, ComposedChart, Legend, Line, ReferenceLine,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import { cn } from "@/lib/utils";
@@ -143,13 +143,11 @@ export function TcPlanVsActualCard({
             <Tooltip contentStyle={{ fontSize: 11, borderRadius: 6 }} />
             <ReferenceLine y={0} stroke="currentColor" opacity={0.4} />
             {baseLabel && <ReferenceLine x={baseLabel} stroke="hsl(0,72%,51%)" strokeDasharray="4 3" />}
-            <Bar dataKey="variance" name="차이" isAnimationActive={false}
-              fill="hsl(160,60%,42%)"
-              shape={(props: { x?: number; y?: number; width?: number; height?: number; value?: number }) => {
-                const { x = 0, y = 0, width = 0, height = 0, value = 0 } = props;
-                return <rect x={x} y={y} width={width} height={height} fill={value >= 0 ? "hsl(160,60%,42%)" : "hsl(0,72%,51%)"} />;
-              }}
-            />
+            <Bar dataKey="variance" name="차이" isAnimationActive={false}>
+              {rows.map((r, i) => (
+                <Cell key={i} fill={Number(r["variance"] ?? 0) >= 0 ? "hsl(160,60%,42%)" : "hsl(0,72%,51%)"} />
+              ))}
+            </Bar>
           </ComposedChart>
         </ResponsiveContainer>
       </div>
