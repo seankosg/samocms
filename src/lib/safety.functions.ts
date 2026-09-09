@@ -5,6 +5,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const Input = z.object({
   day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   facts: z.string().min(1).max(12000),
+  /** true면 기존 저장 결과를 무시하고 다시 생성 (관리자 "다시 분석") */
+  force: z.boolean().optional(),
 });
 
 export type SafetyRisk = {
