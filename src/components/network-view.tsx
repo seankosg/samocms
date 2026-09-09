@@ -350,6 +350,7 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
   const list = rows.filter((r) => node.rowIds.includes(r.id));
   const [fDept, setFDept] = useState("");
   const [fBldg, setFBldg] = useState("");
+  const [fStatus, setFStatus] = useState<"" | "delay" | "ahead">("");
   const deptOpts = useMemo(() => [...new Set(list.map((r) => r.dept).filter(Boolean))].sort() as string[], [list]);
   const bldgOpts = useMemo(() => [...new Set(list.map((r) => r.bldg).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "ko")) as string[], [list]);
   const gap = node.pl != null && node.pc != null ? node.pl - node.pc : null;
@@ -357,8 +358,12 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
   const dday = node.e ? dayDur(base, node.e) : null;
   const dur = node.s && node.e ? dayDur(node.s, node.e) + 1 : null;
   const elapsed = node.s && node.e ? Math.max(0, Math.min(dur ?? 0, dayDur(node.s, base) + 1)) : null;
-  const filtered = list.filter((r) => (!fDept || r.dept === fDept) && (!fBldg || r.bldg === fBldg));
+  const filtered = list.filter((r) =>
+    (!fDept || r.dept === fDept) && (!fBldg || r.bldg === fBldg) &&
+    (!fStatus || (fStatus === "delay" && r.pl != null && r.pc != null && r.pc < r.pl) || (fStatus === "ahead" && r.pl != null && r.pc != null && r.pc > r.pl))
+  );
   const lateRows = filtered.filter((r) => r.pl != null && r.pc != null && r.pc < r.pl);
+  const aheadRows = filtered.filter((r) => r.pl != null && r.pc != null && r.pc > r.pl);
   const preds = edges.filter((e) => e.b === node.id);
   const succs = edges.filter((e) => e.a === node.id);
   const sorted = [...filtered].sort((a, b) => {
@@ -416,6 +421,20 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
               ))}
             </div>
           ))}
+          {/* 진행 상태 탭 */}
+          <div className="flex flex-wrap items-center gap-1">
+            <span className="mr-0.5 w-7 shrink-0 text-[10.5px] font-bold text-muted-foreground">상태</span>
+            {[
+              { v: "", label: "전체", n: list.length },
+              { v: "delay", label: "지연", n: list.filter((r) => r.pl != null && r.pc != null && r.pc < r.pl).length, color: STATUS_COLOR["delay"] },
+              { v: "ahead", label: "선행", n: list.filter((r) => r.pl != null && r.pc != null && r.pc > r.pl).length, color: STATUS_COLOR["done"] },
+            ].map((opt) => (
+              <button key={opt.v || "__all"} type="button" onClick={() => setFStatus(opt.v as "" | "delay" | "ahead")}
+                className={`rounded-full border px-2 py-0.5 text-[10.5px] font-bold ${fStatus === opt.v ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background text-muted-foreground hover:bg-accent"}`}>
+                {opt.label}<span className="ml-1 tabular-nums opacity-70">{opt.n}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* 일정 */}
@@ -458,20 +477,25 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
 
         {/* 세부작업 */}
         <section>
-          <h3 className="mb-1.5 flex items-center justify-between text-[11px] font-bold text-muted-foreground">
+          <h3 className="mb-1.5 flex items-center justify-between gap-2 text-[11px] font-bold text-muted-foreground">
             <span>세부작업 {filtered.length}{filtered.length !== list.length ? ` / ${list.length}` : ""}건</span>
-            {lateRows.length > 0 && <span style={{ color: STATUS_COLOR["delay"] }}>지연 {lateRows.length}건 우선 표시</span>}
+            <span className="flex gap-2">
+              {lateRows.length > 0 && <span style={{ color: STATUS_COLOR["delay"] }}>지연 {lateRows.length}</span>}
+              {aheadRows.length > 0 && <span style={{ color: STATUS_COLOR["done"] }}>선행 {aheadRows.length}</span>}
+            </span>
           </h3>
           <ul className="space-y-2">
             {sorted.map((r) => {
               const g = r.pl != null && r.pc != null ? r.pl - r.pc : null;
               const late = g != null && g > 0;
+              const ahead = g != null && g < 0;
               return (
                 <li key={r.id} className="rounded-md border p-2.5 text-xs"
-                  style={late ? { borderColor: `${STATUS_COLOR["delay"]}66`, background: `${STATUS_COLOR["delay"]}0a` } : undefined}>
+                  style={late ? { borderColor: `${STATUS_COLOR["delay"]}66`, background: `${STATUS_COLOR["delay"]}0a` } : ahead ? { borderColor: `${STATUS_COLOR["done"]}66`, background: `${STATUS_COLOR["done"]}0a` } : undefined}>
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-semibold leading-snug">{r.no ? `${r.no} · ` : ""}{r.act}</p>
                     {late && <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: STATUS_COLOR["delay"] }}>-{pct1(g)}%p</span>}
+                    {ahead && <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: STATUS_COLOR["done"] }}>+{pct1(Math.abs(g))}%p</span>}
                   </div>
                   <p className="mt-1 text-[11px] text-muted-foreground">
                     {[r.bldg, r.room, r.sub].filter(Boolean).join(" · ") || "-"}{r.ms ? ` · ${r.ms} ${MSDEF[r.ms] ?? ""}` : ""}
