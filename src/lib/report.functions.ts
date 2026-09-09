@@ -28,7 +28,18 @@ export const getExecSummary = createServerFn({ method: "GET" })
 export const generateExecSummary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => Input.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    if (!data.force) {
+      const { data: exist } = await supabaseAdmin
+        .from("exec_summaries")
+        .select("summary, generated_at")
+        .eq("base", data.base)
+        .maybeSingle();
+      if (exist) return { summary: exist.summary as string, generatedAt: exist.generated_at as string };
+    }
+
     const key = process.env["LOVABLE_API_KEY"];
     if (!key) throw new Error("AI 키가 설정되어 있지 않습니다.");
 
