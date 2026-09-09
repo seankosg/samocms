@@ -60,7 +60,7 @@ function TcProgressPage() {
   const [disc, setDisc] = useState(search.disc ?? "전체");
   const DEFAULT_FROM = "2026-09-06";
   const [from, setFrom] = useState(search.from ?? DEFAULT_FROM);
-  const [to, setTo] = useState(search.to ?? addDays(base, 60));
+  const [to, setTo] = useState(search.to ?? "2026-09-30");
 
   const sync = (patch: Partial<Search>) => {
     void navigate({
