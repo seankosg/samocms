@@ -235,14 +235,23 @@ function SafetyBlock({ pending, error, risks, at, empty }: { pending: boolean; e
         {risks.map((r, i) => {
           const high = r.level === "High";
           return (
-            <div key={i} className={`rounded-lg border p-4 ${high ? "border-destructive/50 bg-destructive/5" : "border-amber-500/50 bg-amber-500/5"}`}>
-              <div className="mb-1.5 flex items-center gap-2">
-                <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${high ? "bg-destructive text-destructive-foreground" : "bg-amber-500 text-white"}`}>{r.level}</span>
-                <strong className="text-sm">{r.title}</strong>
+            <div key={i} className={`flex gap-3 rounded-lg border p-4 ${high ? "border-destructive/50 bg-destructive/5" : "border-amber-500/50 bg-amber-500/5"}`}>
+              {r.hazardType.length > 0 && (
+                <div className="flex w-16 shrink-0 flex-col items-start gap-1 border-r border-border/60 pr-3">
+                  {r.hazardType.map((t) => (
+                    <span key={t} className={`whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-semibold ${hazardTypeClass(t)}`}>{t}</span>
+                  ))}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="mb-1.5 flex items-center gap-2">
+                  <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${high ? "bg-destructive text-destructive-foreground" : "bg-amber-500 text-white"}`}>{r.level}</span>
+                  <strong className="text-sm">{r.title}</strong>
+                </div>
+                <p className="mb-2 text-[11px] text-muted-foreground">{r.bldg} · {r.sub}</p>
+                <p className="text-xs leading-relaxed"><b className={high ? "text-destructive" : "text-amber-700"}>위험 요인</b> {r.hazard}</p>
+                <p className="mt-1 text-xs leading-relaxed"><b className="text-foreground">권고 조치</b> {r.action}</p>
               </div>
-              <p className="mb-2 text-[11px] text-muted-foreground">{r.bldg} · {r.sub}</p>
-              <p className="text-xs leading-relaxed"><b className={high ? "text-destructive" : "text-amber-700"}>위험 요인</b> {r.hazard}</p>
-              <p className="mt-1 text-xs leading-relaxed"><b className="text-foreground">권고 조치</b> {r.action}</p>
             </div>
           );
         })}
@@ -250,4 +259,20 @@ function SafetyBlock({ pending, error, risks, at, empty }: { pending: boolean; e
       {at && <p className="mt-2 text-[11px] text-muted-foreground">AI 분석 · {new Date(at).toLocaleString("ko-KR")}</p>}
     </div>
   );
+}
+
+/** 위험 유형별 뱃지 색상 */
+function hazardTypeClass(t: string): string {
+  if (t.includes("낙하") || t.includes("추락")) return "bg-sky-600/15 text-sky-700 dark:text-sky-300";
+  if (t.includes("전도")) return "bg-violet-600/15 text-violet-700 dark:text-violet-300";
+  if (t.includes("붕괴")) return "bg-stone-600/15 text-stone-700 dark:text-stone-300";
+  if (t.includes("비래")) return "bg-sky-800/15 text-sky-800 dark:text-sky-200";
+  if (t.includes("감전")) return "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300";
+  if (t.includes("화재") || t.includes("폭발")) return "bg-red-600/15 text-red-700 dark:text-red-300";
+  if (t.includes("질식") || t.includes("밀폐")) return "bg-purple-600/15 text-purple-700 dark:text-purple-300";
+  if (t.includes("협착")) return "bg-orange-600/15 text-orange-700 dark:text-orange-300";
+  if (t.includes("기계") || t.includes("장비")) return "bg-slate-600/15 text-slate-700 dark:text-slate-300";
+  if (t.includes("감김") || t.includes("절단")) return "bg-rose-600/15 text-rose-700 dark:text-rose-300";
+  if (t.includes("화학")) return "bg-emerald-600/15 text-emerald-700 dark:text-emerald-300";
+  return "bg-muted text-muted-foreground";
 }
