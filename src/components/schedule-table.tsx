@@ -203,8 +203,9 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
         <table className="raw-table w-full min-w-[1980px] border-collapse text-left text-xs">
           <thead className="sticky top-0 z-10 bg-secondary text-secondary-foreground">
             <tr>
-              {COLS.map((c) => (
-                <th key={c.label} className="whitespace-nowrap border-b border-r border-border px-3 py-2.5 font-bold">
+              {COLS.map((c, i) => (
+                <th key={c.label} className={`whitespace-nowrap border-b border-r border-border px-3 py-2.5 font-bold ${i === 0 ? "sticky left-0 z-20 bg-secondary" : ""}`}>
+
                   <span className="inline-flex items-center gap-1">
                     {c.key ? (
                       <button className="inline-flex items-center gap-1" onClick={() => setSortKey(c.key)}>
@@ -240,8 +241,9 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
                 />
               );
               return (
-                <tr key={r.id} className={`border-b border-border ${st === "delay" ? "bg-destructive/5" : ""}`}>
-                  <td className="whitespace-nowrap border-r border-border px-3 py-2 font-medium">{r.no ?? "-"}</td>
+                <tr key={r.id} className={`border-b border-border ${st === "delay" ? "bg-destructive/5" : "bg-card"}`}>
+                  <td className="sticky left-0 z-10 whitespace-nowrap border-r border-border bg-inherit px-3 py-2 font-medium">{r.no ?? "-"}</td>
+
                   <td className="px-3 py-2">{SLOT_LABEL[r.dept] ?? r.dept}</td>
                   <td className="px-3 py-2">{cell(r.bldg, "building", "text")}</td>
                   <td className="px-3 py-2">{cell(r.room, "room", "text")}</td>
