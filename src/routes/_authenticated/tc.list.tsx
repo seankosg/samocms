@@ -166,10 +166,11 @@ function TcList() {
     <AppShell title="T&C List" desc={`기준일 ${fmtDate(base)} · ${rows.length.toLocaleString()} / ${tcItems.length.toLocaleString()}건`}>
       <section className="rounded-md border border-border bg-card shadow-sm">
         <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
-          <div className="relative min-w-[220px] flex-1">
+          <div className="relative w-full min-w-[200px] sm:w-auto sm:flex-1">
             <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="장비 · 건물 · 공급사 검색" className="h-9 pl-9" />
           </div>
+
           <select aria-label="상태" value={only} onChange={(e) => setOnly(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-xs">
             <option>전체</option><option>지연</option><option>Fail</option>
           </select>
