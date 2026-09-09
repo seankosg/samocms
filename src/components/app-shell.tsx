@@ -40,6 +40,7 @@ const NAV = [
     { to: "/dashboard", label: "대시보드", icon: BarChart3 },
     { to: "/today", label: "오늘의 주요 작업", icon: CalendarClock },
     { to: "/network", label: "네트워크", icon: Network },
+    { to: "/report", label: "Progress Report", icon: FileText },
   ] },
   { group: "공정", items: [
     { to: "/delays", label: "지연 리스트", icon: AlertTriangle },
@@ -49,7 +50,6 @@ const NAV = [
     { to: "/tc/mech", label: "MECH T&C", icon: Wrench },
     { to: "/tc/elec", label: "ELEC T&C", icon: Zap },
     { to: "/tc/list", label: "T&C List", icon: ListChecks },
-    { to: "/report", label: "T&C Report", icon: FileText },
     { to: "/tc/progress", label: "T&C Progress", icon: TrendingUp },
   ] },
   { group: "데이터", items: [{ to: "/upload", label: "업로드", icon: UploadCloud }] },
