@@ -73,12 +73,18 @@ function ReportPage() {
     return l.join("\n");
   }, [m, tc]);
 
+  const qc = useQueryClient();
+  const { isAdmin } = useAuth();
   const ai = useQuery({
-    queryKey: ["exec-summary", base, m.total, m.late],
+    queryKey: ["exec-summary", base],
     queryFn: () => generateExecSummary({ data: { base, facts } }),
-    staleTime: 10 * 60_000,
+    staleTime: Infinity,
     retry: false,
     enabled: withSummary,
+  });
+  const regen = useMutation({
+    mutationFn: () => generateExecSummary({ data: { base, facts, force: true } }),
+    onSuccess: (res) => qc.setQueryData(["exec-summary", base], res),
   });
 
   const printed = useRef(false);
