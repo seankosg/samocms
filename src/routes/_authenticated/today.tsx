@@ -100,6 +100,49 @@ function TodayPage() {
   );
 }
 
+function KpiCard({ label, value, team, bldg }: { label: string; value: number; team: { label: string; v: number }[]; bldg: { label: string; v: number }[] }) {
+  const [tab, setTab] = useState<"team" | "bldg">("team");
+  const items = tab === "team" ? team : bldg;
+  return (
+    <div className={card}>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <div className="mt-1 flex items-end gap-3">
+        <p className="text-2xl font-bold tabular-nums">{value.toLocaleString()}</p>
+        <div className="ml-auto flex gap-0.5 rounded-md bg-muted p-0.5">
+          <button
+            type="button"
+            onClick={() => setTab("team")}
+            className={`rounded px-2 py-0.5 text-[11px] font-semibold transition ${tab === "team" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            팀별
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("bldg")}
+            className={`rounded px-2 py-0.5 text-[11px] font-semibold transition ${tab === "bldg" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            건물별
+          </button>
+        </div>
+      </div>
+      {items.length > 0 && (
+        <div className="mt-2 max-h-24 overflow-auto border-t border-border/60 pt-1.5">
+          <table className="w-full text-[11px]">
+            <tbody>
+              {items.map((x) => (
+                <tr key={x.label} className="border-b border-border/30 last:border-0">
+                  <td className="py-0.5 text-muted-foreground">{x.label}</td>
+                  <td className="py-0.5 text-right font-semibold tabular-nums">{x.v}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ActivityGroup({ gkey, label, desc, rows }: { gkey: TodayGroupKey; label: string; desc: string; rows: Row[] }) {
   const [open, setOpen] = useState(true);
   const tone = gkey === "start" ? "text-primary" : gkey === "finish" ? "text-emerald-600" : "text-foreground";
