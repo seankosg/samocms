@@ -2,9 +2,9 @@ import type { Row } from "./schedule-model";
 import { flat } from "./schedule-model";
 import { TC_STAGES, type TcItem, type TcStage, stageDone } from "./tc-model";
 
-/** 카타르 현지(UTC+3) 기준 오늘 날짜 yyyy-mm-dd */
-export const qatarToday = (d: Date = new Date()) =>
-  new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Qatar", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+/** 사우디아라비아 제다 현지(UTC+3) 기준 오늘 날짜 yyyy-mm-dd */
+export const jeddahToday = (d: Date = new Date()) =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Riyadh", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 
 const WD = ["일", "월", "화", "수", "목", "금", "토"];
 export const fmtToday = (day: string) => {

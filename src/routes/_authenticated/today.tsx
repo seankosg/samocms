@@ -7,14 +7,14 @@ import { Button } from "@/components/ui/button";
 import { projectQuery, useProject } from "@/lib/use-project";
 import { SLOT_LABEL, fmtShortDate, isLate, pct1, type Row } from "@/lib/schedule-model";
 import { TC_STAGE_SUB, TC_DISC_LABEL, type TcStage } from "@/lib/tc-model";
-import { TODAY_GROUPS, fmtToday, qatarToday, safetyFacts, splitToday, todayTc, byTeam, byBldg, type TodayGroupKey } from "@/lib/today-model";
+import { TODAY_GROUPS, fmtToday, jeddahToday, safetyFacts, splitToday, todayTc, byTeam, byBldg, type TodayGroupKey } from "@/lib/today-model";
 import { analyzeSafety, type SafetyRisk } from "@/lib/safety.functions";
 import { useAuth } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/today")({
   head: () => ({ meta: [
     { title: "오늘의 주요 작업 | HMMME 통합 공정 관리" },
-    { name: "description", content: "카타르 현지 날짜 기준 금일 착수·진행·종결 공정과 T&C 계획, AI 안전 위험 작업을 한 화면에서 확인합니다." },
+    { name: "description", content: "사우디아라비아 제다 현지 날짜 기준 금일 착수·진행·종결 공정과 T&C 계획, AI 안전 위험 작업을 한 화면에서 확인합니다." },
     { property: "og:title", content: "HMMME 오늘의 주요 작업" },
     { property: "og:description", content: "금일 신규 착수·지속 진행·종결 공정, 당일 T&C 계획, High Risk 안전 작업." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
@@ -30,7 +30,7 @@ function TodayPage() {
   const { rows, tcItems } = useProject();
   const { isAdmin } = useAuth();
   const [today, setToday] = useState<string | null>(null);
-  useEffect(() => setToday(qatarToday()), []);
+  useEffect(() => setToday(jeddahToday()), []);
 
   const groups = useMemo(() => (today ? splitToday(rows, today) : null), [rows, today]);
   const tc = useMemo(() => (today ? todayTc(tcItems, today) : []), [tcItems, today]);
@@ -41,7 +41,7 @@ function TodayPage() {
 
   if (!today || !groups) {
     return (
-      <AppShell title="오늘의 주요 작업" desc="카타르 현지 날짜 기준">
+      <AppShell title="오늘의 주요 작업" desc="사우디아라비아 제다 현지 날짜 기준">
         <div className={card}>날짜를 확인하는 중…</div>
       </AppShell>
     );
@@ -56,7 +56,7 @@ function TodayPage() {
   ];
 
   return (
-    <AppShell title="오늘의 주요 작업" desc={`${fmtToday(today)} · 카타르 현지(UTC+3) 기준 · 기준일 설정과 무관`}>
+    <AppShell title="오늘의 주요 작업" desc={`${fmtToday(today)} · 사우디아라비아 제다 현지(UTC+3) 기준 · 기준일 설정과 무관`}>
       <div className="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-4">
         {kpiCards.map((c) => (
           <KpiCard key={c.label} label={c.label} value={c.v} team={c.team} bldg={c.bldg} />
