@@ -488,9 +488,10 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
             {sorted.map((r) => {
               const g = r.pl != null && r.pc != null ? r.pl - r.pc : null;
               const late = g != null && g > 0;
+              const ahead = g != null && g < 0;
               return (
                 <li key={r.id} className="rounded-md border p-2.5 text-xs"
-                  style={late ? { borderColor: `${STATUS_COLOR["delay"]}66`, background: `${STATUS_COLOR["delay"]}0a` } : undefined}>
+                  style={late ? { borderColor: `${STATUS_COLOR["delay"]}66`, background: `${STATUS_COLOR["delay"]}0a` } : ahead ? { borderColor: `${STATUS_COLOR["done"]}66`, background: `${STATUS_COLOR["done"]}0a` } : undefined}>
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-semibold leading-snug">{r.no ? `${r.no} · ` : ""}{r.act}</p>
                     {late && <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: STATUS_COLOR["delay"] }}>-{pct1(g)}%p</span>}
