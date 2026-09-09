@@ -252,6 +252,8 @@ export function TcScheduleMatrix({
                         isFuture={vc.index > todayBucketIdx}
                         isToday={vc.index === todayBucketIdx}
                         width={cellWidth}
+                        onPlanClick={onCellClick ? () => onCellClick(row, c.bucket, null, "planned") : undefined}
+                        onActualClick={onCellClick ? () => onCellClick(row, c.bucket, null, "actual") : undefined}
                       />
                     );
                   })}
