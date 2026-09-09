@@ -31,8 +31,12 @@ function TodayPage() {
   const { isAdmin } = useAuth();
   const [today, setToday] = useState<string | null>(null);
   const [focus, setFocus] = useState<Focus | null>(null);
-  useEffect(() => setToday(jeddahToday()), []);
-
+  // 제다 현지 자정(00:01) 롤오버 자동 감지 — 날짜가 바뀌면 화면·분석을 새 날짜로 갱신
+  useEffect(() => {
+    setToday(jeddahToday());
+    const t = setInterval(() => setToday((prev) => (prev === jeddahToday() ? prev : jeddahToday())), 30_000);
+    return () => clearInterval(t);
+  }, []);
 
   const groups = useMemo(() => (today ? splitToday(rows, today) : null), [rows, today]);
   const tc = useMemo(() => (today ? todayTc(tcItems, today) : []), [tcItems, today]);
@@ -46,9 +50,19 @@ function TodayPage() {
   });
 
   const safety = useMutation({
-    mutationFn: () => analyzeSafety({ data: { day: today!, facts: safetyFacts(groups!, tc, today!) } }),
+    mutationFn: (force: boolean) => analyzeSafety({ data: { day: today!, facts: safetyFacts(groups!, tc, today!), force } }),
     onSuccess: (res) => qc.setQueryData(["safety-report", today], res),
   });
+
+  // 당일 저장된 분석이 없으면 자동 생성 (하루 1회, 사용자 조작 불필요)
+  const autoRef = useRef<string | null>(null);
+  const hasWork = !!groups && groups.start.length + groups.ongoing.length + groups.finish.length + tc.length > 0;
+  useEffect(() => {
+    if (!today || !saved.isSuccess || saved.data || !hasWork) return;
+    if (autoRef.current === today || safety.isPending) return;
+    autoRef.current = today;
+    safety.mutate(false);
+  }, [today, saved.isSuccess, saved.data, hasWork, safety]);
 
   const report = safety.data ?? saved.data ?? null;
 
