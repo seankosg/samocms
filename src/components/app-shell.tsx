@@ -5,13 +5,16 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
   AlertTriangle, BarChart3, CalendarClock, TrendingUp, CalendarDays, ChevronLeft, Download, FileText, HardHat, ListChecks,
-  LogOut, Network, PanelLeft, Settings, Sparkles, Table2, UploadCloud, Users, Wrench, Zap,
+  LogOut, Menu, MoreVertical, Network, PanelLeft, Settings, Sparkles, Table2, UploadCloud, Users, Wrench, Zap,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ROLE_LABEL, useAuth } from "@/lib/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+
 import { autoBaseline, useProject } from "@/lib/use-project";
 import { setBaselineDate } from "@/lib/project.functions";
 import { SLOT_LABEL } from "@/lib/schedule-model";
@@ -59,6 +62,8 @@ const ADMIN_NAV = { group: "관리", items: [{ to: "/users", label: "사용자 �
 
 export function AppShell({ title, desc, actions, children }: { title: string; desc?: string; actions?: ReactNode; children: ReactNode }) {
   const [open, setOpen] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   const { rows, base, batches, tcItems } = useProject();
   const { profile, role, isAdmin, canWrite } = useAuth();
   const navigate = useNavigate();
