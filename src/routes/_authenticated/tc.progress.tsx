@@ -145,7 +145,7 @@ function TcProgressPage() {
     <AppShell title="T&C Progress" desc="단계별 계획 대비 실적 S-Curve와 Progress Matrix">
       <div className="space-y-4">
         {/* Toolbar */}
-        <div className="sticky top-14 z-30 flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card p-3 text-xs shadow-sm">
+        <div className="sticky top-14 z-30 flex flex-wrap items-end gap-2 overflow-x-auto rounded-lg border border-border bg-card p-2.5 text-xs shadow-sm sm:gap-3 sm:p-3">
           <Seg label="집계" options={[["count", "건수"], ["qty", "수량"]]} value={unit}
             onChange={(v) => { setUnit(v as Unit); sync({ unit: v }); }} />
           <Seg label="구간" options={[["day", "일"], ["week", "주"], ["month", "월"]]} value={bucket}
@@ -163,12 +163,13 @@ function TcProgressPage() {
           <div>
             <div className="mb-1 text-[10px] uppercase text-muted-foreground">기간</div>
             <div className="flex items-center gap-1">
-              <Input type="date" className="h-8 w-[140px]" value={from}
+              <Input type="date" className="h-8 w-[130px] sm:w-[140px]" value={from}
                 onChange={(e) => { setFrom(e.target.value); sync({ from: e.target.value }); }} />
               <span className="text-muted-foreground">~</span>
-              <Input type="date" className="h-8 w-[140px]" value={to}
+              <Input type="date" className="h-8 w-[130px] sm:w-[140px]" value={to}
                 onChange={(e) => { setTo(e.target.value); sync({ to: e.target.value }); }} />
             </div>
+
           </div>
           <div>
             <div className="mb-1 text-[10px] uppercase text-muted-foreground">단계</div>
@@ -192,8 +193,9 @@ function TcProgressPage() {
               ))}
             </div>
           </div>
-          <Button variant="outline" size="sm" className="ml-auto h-8"
+          <Button variant="outline" size="sm" className="h-8 sm:ml-auto"
             onClick={() => { setFrom(addDays(base, -60)); setTo(addDays(base, 60)); sync({ from: addDays(base, -60), to: addDays(base, 60) }); }}>
+
             기준일 ±60일
           </Button>
         </div>

@@ -219,7 +219,9 @@ function Dashboard() {
 
       <section className="mt-6 grid gap-4 xl:grid-cols-[1.1fr_1fr]">
         <Card title="부서별 진도">
-          <table className="w-full text-left text-xs">
+          <div className="-mx-1 overflow-x-auto px-1">
+          <table className="w-full min-w-[420px] text-left text-xs">
+
             <thead className="border-b text-muted-foreground">
               <tr><th className="py-2">공종</th><th className="text-right">활동</th><th className="text-right">계획</th><th className="text-right">실적</th><th className="text-right">차이</th><th className="text-right">지연</th></tr>
             </thead>
@@ -237,6 +239,8 @@ function Dashboard() {
 
             </tbody>
           </table>
+          </div>
+
         </Card>
         <div className="grid gap-4">
           <RankCard title="건물별 지연" rows={m.bldg} field="bldg" />
@@ -456,7 +460,7 @@ function TrendCard() {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-md border border-border bg-card p-4 shadow-sm">
+    <div className="min-w-0 rounded-md border border-border bg-card p-4 shadow-sm">
       <p className="mb-2 text-xs font-bold text-muted-foreground">{title}</p>
       {children}
     </div>

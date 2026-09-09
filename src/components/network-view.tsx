@@ -99,10 +99,10 @@ export function NetworkView({ rows, search, onChange, base }: { rows: Row[]; sea
       <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2">
         <span className="text-[11.5px] font-bold text-muted-foreground">가로 시간축</span>
         <button type="button" aria-label="축소" disabled={search.zoom <= ZMIN + 1e-9} onClick={() => setZoom(search.zoom - ZSTEP)}
-          className="size-[26px] rounded border border-input bg-background text-[15px] font-bold text-primary disabled:opacity-35">−</button>
+          className="size-8 sm:size-[26px] rounded border border-input bg-background text-[15px] font-bold text-primary disabled:opacity-35">−</button>
         <span className="w-[46px] text-center text-[12.5px] font-bold tabular-nums text-primary">{Math.round(search.zoom * 100)}%</span>
         <button type="button" aria-label="확대" disabled={search.zoom >= ZMAX - 1e-9} onClick={() => setZoom(search.zoom + ZSTEP)}
-          className="size-[26px] rounded border border-input bg-background text-[15px] font-bold text-primary disabled:opacity-35">+</button>
+          className="size-8 sm:size-[26px] rounded border border-input bg-background text-[15px] font-bold text-primary disabled:opacity-35">+</button>
         <button type="button" onClick={() => setZoom(1)} className="rounded border border-input bg-background px-2 py-1 text-[11.5px] font-bold">100%</button>
         <button type="button" onClick={() => setZoom(((wrapRef.current?.clientWidth ?? 1200) - 24) / 1560)}
           className="rounded border border-input bg-background px-2 py-1 text-[11.5px] font-bold">화면맞춤</button>
@@ -373,7 +373,7 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
   });
 
   return (
-    <aside className="fixed bottom-0 right-0 top-14 z-40 flex w-full max-w-[460px] flex-col border-l border-border bg-card shadow-2xl">
+    <aside className="fixed inset-x-0 bottom-0 z-40 flex h-[85vh] flex-col rounded-t-xl border-t border-border bg-card shadow-2xl lg:inset-x-auto lg:bottom-0 lg:right-0 lg:top-14 lg:h-auto lg:w-full lg:max-w-[460px] lg:rounded-none lg:border-l lg:border-t-0">
       {/* 헤더 */}
       <div className="border-b border-border px-4 py-3" style={{ background: `${STATUS_COLOR[node.st]}0f` }}>
         <div className="flex items-start justify-between gap-2">
