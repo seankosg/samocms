@@ -5,13 +5,41 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const Input = z.object({
   base: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   facts: z.string().min(1).max(12000),
+  /** true면 저장된 요약을 무시하고 다시 생성 */
+  force: z.boolean().optional(),
 });
+
+/** 저장된 기준일 Executive Summary 조회 */
+export const getExecSummary = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ base: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("exec_summaries")
+      .select("base, summary, generated_at")
+      .eq("base", data.base)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) return null;
+    return { summary: row.summary as string, generatedAt: row.generated_at as string };
+  });
 
 /** 기준일 현황 수치를 바탕으로 한국어 Executive Summary 생성 */
 export const generateExecSummary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => Input.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    if (!data.force) {
+      const { data: exist } = await supabaseAdmin
+        .from("exec_summaries")
+        .select("summary, generated_at")
+        .eq("base", data.base)
+        .maybeSingle();
+      if (exist) return { summary: exist.summary as string, generatedAt: exist.generated_at as string };
+    }
+
     const key = process.env["LOVABLE_API_KEY"];
     if (!key) throw new Error("AI 키가 설정되어 있지 않습니다.");
 
@@ -44,5 +72,11 @@ export const generateExecSummary = createServerFn({ method: "POST" })
     const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     const text = json.choices?.[0]?.message?.content?.trim() ?? "";
     if (!text) throw new Error("AI 요약 결과가 비어 있습니다.");
-    return { summary: text, generatedAt: new Date().toISOString() };
+
+    const generatedAt = new Date().toISOString();
+    await supabaseAdmin
+      .from("exec_summaries")
+      .upsert({ base: data.base, summary: text, generated_at: generatedAt, created_by: context.userId }, { onConflict: "base" });
+
+    return { summary: text, generatedAt };
   });

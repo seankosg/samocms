@@ -5,6 +5,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const Input = z.object({
   day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   facts: z.string().min(1).max(12000),
+  /** true면 기존 저장 결과를 무시하고 다시 생성 (관리자 "다시 분석") */
+  force: z.boolean().optional(),
 });
 
 export type SafetyRisk = {
@@ -31,6 +33,19 @@ export const analyzeSafety = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    if (!data.force) {
+      const { data: exist } = await supabaseAdmin
+        .from("safety_reports")
+        .select("day, risks, generated_at")
+        .eq("day", data.day)
+        .maybeSingle();
+      if (exist) {
+        return { day: exist.day, risks: (exist.risks as unknown as SafetyRisk[]) ?? [], generatedAt: exist.generated_at };
+      }
+    }
+
     const key = process.env["LOVABLE_API_KEY"];
     if (!key) throw new Error("AI 키가 설정되어 있지 않습니다.");
 
@@ -81,7 +96,7 @@ export const analyzeSafety = createServerFn({ method: "POST" })
     }
 
     const generatedAt = new Date().toISOString();
-    await context.supabase
+    await supabaseAdmin
       .from("safety_reports")
       .upsert({ day: data.day, risks, generated_at: generatedAt, created_by: context.userId }, { onConflict: "day" });
 

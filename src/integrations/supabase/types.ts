@@ -238,6 +238,27 @@ export type Database = {
         }
         Relationships: []
       }
+      exec_summaries: {
+        Row: {
+          base: string
+          created_by: string | null
+          generated_at: string
+          summary: string
+        }
+        Insert: {
+          base: string
+          created_by?: string | null
+          generated_at?: string
+          summary: string
+        }
+        Update: {
+          base?: string
+          created_by?: string | null
+          generated_at?: string
+          summary?: string
+        }
+        Relationships: []
+      }
       import_batches: {
         Row: {
           created_at: string

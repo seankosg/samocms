@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ChevronDown, ChevronRight, HardHat, Loader2, ShieldAlert } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
@@ -31,8 +31,12 @@ function TodayPage() {
   const { isAdmin } = useAuth();
   const [today, setToday] = useState<string | null>(null);
   const [focus, setFocus] = useState<Focus | null>(null);
-  useEffect(() => setToday(jeddahToday()), []);
-
+  // 제다 현지 자정(00:01) 롤오버 자동 감지 — 날짜가 바뀌면 화면·분석을 새 날짜로 갱신
+  useEffect(() => {
+    setToday(jeddahToday());
+    const t = setInterval(() => setToday((prev) => (prev === jeddahToday() ? prev : jeddahToday())), 30_000);
+    return () => clearInterval(t);
+  }, []);
 
   const groups = useMemo(() => (today ? splitToday(rows, today) : null), [rows, today]);
   const tc = useMemo(() => (today ? todayTc(tcItems, today) : []), [tcItems, today]);
@@ -46,9 +50,19 @@ function TodayPage() {
   });
 
   const safety = useMutation({
-    mutationFn: () => analyzeSafety({ data: { day: today!, facts: safetyFacts(groups!, tc, today!) } }),
+    mutationFn: (force: boolean) => analyzeSafety({ data: { day: today!, facts: safetyFacts(groups!, tc, today!), force } }),
     onSuccess: (res) => qc.setQueryData(["safety-report", today], res),
   });
+
+  // 당일 저장된 분석이 없으면 자동 생성 (하루 1회, 사용자 조작 불필요)
+  const autoRef = useRef<string | null>(null);
+  const hasWork = !!groups && groups.start.length + groups.ongoing.length + groups.finish.length + tc.length > 0;
+  useEffect(() => {
+    if (!today || !saved.isSuccess || saved.data || !hasWork) return;
+    if (autoRef.current === today || safety.isPending) return;
+    autoRef.current = today;
+    safety.mutate(false);
+  }, [today, saved.isSuccess, saved.data, hasWork, safety]);
 
   const report = safety.data ?? saved.data ?? null;
 
@@ -110,7 +124,7 @@ function TodayPage() {
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 text-sm font-bold"><ShieldAlert className="size-4 text-destructive" />Safety Focused Activities</h2>
           {isAdmin && (
-            <Button size="sm" disabled={safety.isPending} onClick={() => safety.mutate()}>
+            <Button size="sm" disabled={safety.isPending} onClick={() => safety.mutate(true)}>
               {safety.isPending ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : <AlertTriangle className="mr-1.5 size-3.5" />}
               {report ? "다시 분석" : "안전 위험 분석"}
             </Button>
@@ -349,7 +363,7 @@ function SafetyBlock({ pending, error, risks, at, empty, canAnalyze }: { pending
     return (
       <div className={card}>
         <p className="text-xs text-muted-foreground">
-          {empty ? "금일 해당하는 작업이 없어 분석할 대상이 없습니다." : canAnalyze ? "‘안전 위험 분석’ 버튼을 누르면 금일 공정·시운전 작업 중 안전 주의가 필요한 High Risk 작업을 선별합니다." : "안전 위험 분석은 관리자 권한이 필요합니다. 관리자에게 문의하세요."}
+          {empty ? "금일 해당하는 작업이 없어 분석할 대상이 없습니다." : "금일 안전 위험 분석을 준비하는 중입니다. 잠시 후 자동으로 표시됩니다."}
         </p>
       </div>
     );

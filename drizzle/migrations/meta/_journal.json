@@ -50,6 +50,13 @@
       "when": 1788956709015,
       "tag": "0006_create_safety_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788957358533,
+      "tag": "0007_create_exec_summaries",
+      "breakpoints": true
     }
   ]
 }
