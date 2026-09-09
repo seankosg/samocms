@@ -49,6 +49,7 @@ const NAV = [
     { to: "/tc/mech", label: "MECH T&C", icon: Wrench },
     { to: "/tc/elec", label: "ELEC T&C", icon: Zap },
     { to: "/tc/list", label: "T&C List", icon: ListChecks },
+    { to: "/report", label: "T&C Report", icon: FileText },
     { to: "/tc/progress", label: "T&C Progress", icon: TrendingUp },
   ] },
   { group: "데이터", items: [{ to: "/upload", label: "업로드", icon: UploadCloud }] },
