@@ -111,12 +111,12 @@ function ActivityGroup({ gkey, label, desc, rows }: { gkey: TodayGroupKey; label
         rows.length === 0 ? (
           <p className="border-t border-border px-4 py-4 text-xs text-muted-foreground">해당 항목이 없습니다.</p>
         ) : (
-          <div className="overflow-x-auto border-t border-border">
+          <div className="max-h-[60vh] overflow-auto border-t border-border">
             <table className="w-full min-w-[1000px] text-xs">
-              <thead className="bg-muted/60 text-[11px] uppercase text-muted-foreground">
+              <thead className="text-[11px] uppercase text-muted-foreground">
                 <tr>
                   {["공종", "건물", "Room", "Activity", "MS", "협력사", "수량", "계획%", "실적%", "시작", "종료", "상태"].map((h) => (
-                    <th key={h} className="whitespace-nowrap border-b border-border px-2 py-1.5 text-left font-semibold">{h}</th>
+                    <th key={h} className="sticky top-0 z-10 whitespace-nowrap border-b border-border bg-muted px-2 py-1.5 text-left font-semibold">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -172,12 +172,12 @@ function TcBlock({ list }: { list: ReturnType<typeof todayTc> }) {
               <span className="text-[11px] text-muted-foreground">{TC_STAGE_SUB[st]}</span>
               <span className="ml-auto rounded bg-accent px-2 py-0.5 text-xs font-bold tabular-nums">{items.length}</span>
             </div>
-            <div className="overflow-x-auto">
+            <div className="max-h-[60vh] overflow-auto">
               <table className="w-full min-w-[820px] text-xs">
-                <thead className="bg-muted/60 text-[11px] uppercase text-muted-foreground">
+                <thead className="text-[11px] uppercase text-muted-foreground">
                   <tr>
                     {["공종", "건물", "Group", "Item", "Equipment", "수량", "공급사", "상태"].map((h) => (
-                      <th key={h} className="whitespace-nowrap border-b border-border px-2 py-1.5 text-left font-semibold">{h}</th>
+                      <th key={h} className="sticky top-0 z-10 whitespace-nowrap border-b border-border bg-muted px-2 py-1.5 text-left font-semibold">{h}</th>
                     ))}
                   </tr>
                 </thead>

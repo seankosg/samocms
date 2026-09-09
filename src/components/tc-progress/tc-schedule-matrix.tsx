@@ -134,8 +134,8 @@ export function TcScheduleMatrix({
             <HeaderNum width={W_NUM}>완료</HeaderNum>
             <HeaderNum width={W_PCT}>%</HeaderNum>
             <HeaderNum width={W_NUM}>잔여</HeaderNum>
-            <HeaderNum width={W_NUM} borderLeft title={`${asOfLabel} 까지 계획`}>계획</HeaderNum>
-            <HeaderNum width={W_NUM}>실적</HeaderNum>
+            <HeaderNum width={W_NUM} borderLeft title={`${asOfLabel} 까지 계획(Plan)`}>P</HeaderNum>
+            <HeaderNum width={W_NUM} title={`${asOfLabel} 까지 실적(Actual)`}>A</HeaderNum>
             <HeaderNum width={W_PCT}>%</HeaderNum>
             <HeaderNum width={W_NUM} borderRight>차이</HeaderNum>
           </div>
