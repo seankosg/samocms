@@ -204,7 +204,7 @@ function Dashboard() {
                 <span>평균 {x.pc == null ? "—" : `${pct1(x.pc)}%`}</span>
                 <span className={x.late ? "font-bold text-destructive" : ""}>지연 <Drill to="/delays" search={{ ms: x.key }}>{x.late}</Drill></span>
                 {x.over > 0 && <span className="font-bold text-destructive">초과 {x.over}</span>}
-                {x.dd != null && <span className={x.dd < 0 ? "font-bold text-destructive" : x.dd <= 14 ? "font-bold text-chart-3" : ""}>D{x.dd >= 0 ? "-" : "+"}{Math.abs(x.dd)}</span>}
+                {x.dd != null && x.pc != null && x.pc < 0.995 && <span className={x.dd < 0 ? "font-bold text-destructive" : x.dd <= 14 ? "font-bold text-chart-3" : ""}>D{x.dd >= 0 ? "-" : "+"}{Math.abs(x.dd)}</span>}
               </div>
               <div className="mt-2 border-t border-border pt-1.5 text-[11px]">
                 <MsRow label="계획" n={x.plan} p={x.total ? x.plan / x.total : 0} search={{ ms: x.key, duebyBase: true }} />
