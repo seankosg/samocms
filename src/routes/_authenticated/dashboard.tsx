@@ -307,7 +307,7 @@ function ReportButton({ base }: { base: string }) {
 
 const TC_CARDS = [
   { k: "T1" as TcStage | "Status", t: "T1", s: "Internal T&C" },
-  { k: "Report" as TcStage | "Status", t: "Report", s: "검사 보고서" },
+  { k: "Response" as TcStage | "Status", t: "Response", s: "코멘트 대응" },
   { k: "T2" as TcStage | "Status", t: "T2", s: "Consultant Inspection" },
   { k: "Status" as TcStage | "Status", t: "Status", s: "T2 판정 (Pass / Fail)" },
 ];
