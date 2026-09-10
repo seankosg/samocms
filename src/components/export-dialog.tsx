@@ -26,15 +26,13 @@ function downloadBlob(blob: Blob, filename: string) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-function bookOf(recs: Record<string, unknown>[], sheetName: string) {
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(recs), sheetName);
-  return wb;
-}
+/** 문서 제목(파일명/시트 상단 제목) 규칙 */
+const docTitle = (base: string, docLabel?: string, group?: string) =>
+  [docLabel ?? base, group].filter(Boolean).join(" - ");
 
 /** QAIL Snag Raw Data 내보내기의 Output 섹션 UI를 이식한 공통 내보내기 다이얼로그 */
 export function ExportDialog({
-  open, onOpenChange, title, getRows, fileBase, sheetName,
+  open, onOpenChange, title, getRows, fileBase, sheetName, docLabel, subtitle, extraSheets,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -42,7 +40,18 @@ export function ExportDialog({
   getRows: () => ExportRow[];
   fileBase: string;
   sheetName: string;
+  /** 시트 상단 제목에 쓸 문서명 (기본: fileBase) */
+  docLabel?: string;
+  /** 시트 상단 부제 (기준일 등) */
+  subtitle?: string;
+  /** 단일 파일 모드에서 함께 저장할 추가 시트 */
+  extraSheets?: () => ExtraSheet[];
 }) {
+  const bookOf = (recs: Record<string, unknown>[], group?: string) => {
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, styledSheet(recs, { title: docTitle(fileBase, docLabel, group), subtitle }), sheetName);
+    return wb;
+  };
   const [mode, setMode] = useState<"single" | "per-subcon">("single");
   const [busy, setBusy] = useState(false);
 
