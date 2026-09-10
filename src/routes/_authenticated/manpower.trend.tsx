@@ -168,6 +168,8 @@ function TrendPage() {
         </div>
       </section>
 
+      <MonthlyShiftChart cards={filtered} />
+
       <h2 className="mb-2 text-sm font-bold">{DIM_LABEL[dim]} 연인원</h2>
       <section className="overflow-x-auto rounded-md border border-border">
         <table className="w-full min-w-[420px] text-xs">
