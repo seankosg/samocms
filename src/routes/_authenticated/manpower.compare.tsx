@@ -14,8 +14,12 @@ import { MP, RESULT_LABEL } from "@/lib/manpower-i18n";
 
 const search = z.object({
   day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  cmpFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   result: z.enum(["ALL", "MATCH", "DIFF", "HDEC ONLY", "NOT COUNTED"]).optional(),
 });
+
+/** 차트 기본 기간: 기준일 포함 최근 14일 */
+const chartFrom = (day: string, from?: string) => from ?? addDays(day, -13);
 
 export const Route = createFileRoute("/_authenticated/manpower/compare")({
   head: () => ({ meta: [
