@@ -214,7 +214,6 @@ function TrendPage() {
         </table>
       </section>
     </AppShell>
-    </AdminGate>
   );
 }
 
