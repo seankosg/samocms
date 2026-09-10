@@ -33,6 +33,7 @@ function buildMatrix(
   source: Source,
   mode: "company" | "location",
   allLocations: string[],
+  allCompanies: string[],
 ) {
   const rows = new Map<string, Map<string, MatrixCell>>();
   const colSet = new Set<string>();
@@ -51,16 +52,17 @@ function buildMatrix(
   });
   // 장소는 마스터 전체를 항상 표시 (값이 없어도 행/열로 노출)
   const sortedLocs = [...allLocations].sort((a, b) => a.localeCompare(b));
+  const sortedComps = [...allCompanies].sort((a, b) => a.localeCompare(b));
   if (mode === "company") {
-    // 열(장소)을 전체 장소로 채움
+    // 행=전체 활성 협력사, 열=전체 활성 장소 (값이 없어도 모두 표시)
     sortedLocs.forEach((loc) => colSet.add(loc));
-    return { rows, cols: [...colSet].sort((a, b) => a.localeCompare(b)) };
+    sortedComps.forEach((co) => { if (!rows.has(co)) rows.set(co, new Map()); });
+    return { rows: new Map([...rows.entries()].sort((a, b) => a[0].localeCompare(b[0]))), cols: [...colSet].sort((a, b) => a.localeCompare(b)) };
   }
-  // location 모드: 행(장소)을 전체 장소로 채움 — 빈 행도 포함
-  sortedLocs.forEach((loc) => {
-    if (!rows.has(loc)) rows.set(loc, new Map());
-  });
-  return { rows, cols: [...colSet].sort((a, b) => a.localeCompare(b)) };
+  // location 모드: 행=전체 장소, 열=전체 협력사
+  sortedLocs.forEach((loc) => { if (!rows.has(loc)) rows.set(loc, new Map()); });
+  sortedComps.forEach((co) => colSet.add(co));
+  return { rows: new Map([...rows.entries()].sort((a, b) => a[0].localeCompare(b[0]))), cols: [...colSet].sort((a, b) => a.localeCompare(b)) };
 }
 import { MP, TRADE_LABEL } from "@/lib/manpower-i18n";
 
@@ -88,14 +90,10 @@ function ManpowerPage() {
   const source: Source = s.src ?? "SUB";
   const { cards, companies, locations, settings, cutoff } = useManpower(day, day);
   const { isAdmin } = useAuth();
-  const [q, setQ] = useState("");
   const [matrixMode, setMatrixMode] = useState<"company" | "location">("company");
 
   const dayCards = useMemo(() => cards.filter((c) => c.report_date === day), [cards, day]);
-  const shown = useMemo(
-    () => dayCards.filter((c) => c.source === source && (!q || `${c.company} ${c.location}`.toLowerCase().includes(q.toLowerCase()))),
-    [dayCards, source, q],
-  );
+  const shown = useMemo(() => dayCards.filter((c) => c.source === source), [dayCards, source]);
   const daily = useMemo(() => toDaily(shown), [shown]);
   const totals = useMemo(() => tradeTotals(shown, source), [shown, source]);
   const comp = useMemo(() => compliance(dayCards, companies, day, cutoff), [dayCards, companies, day, cutoff]);
@@ -103,7 +101,11 @@ function ManpowerPage() {
     () => locations.filter((l) => l.is_active).map((l) => l.name).sort((a, b) => a.localeCompare(b)),
     [locations],
   );
-  const matrix = useMemo(() => buildMatrix(shown, source, matrixMode, allLocNames), [shown, source, matrixMode, allLocNames]);
+  const allCompNames = useMemo(
+    () => companies.filter((c) => c.is_active).map((c) => c.name).sort((a, b) => a.localeCompare(b)),
+    [companies],
+  );
+  const matrix = useMemo(() => buildMatrix(shown, source, matrixMode, allLocNames, allCompNames), [shown, source, matrixMode, allLocNames, allCompNames]);
   const locs = useMemo(() => [...new Set(shown.map((c) => c.location))].sort(), [shown]);
   const mismatches = shown.filter(cardMismatch);
 
@@ -150,38 +152,40 @@ function ManpowerPage() {
         </p>
       )}
 
-      <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="협력사·장소 검색" className="mb-3 h-8 max-w-xs text-xs" />
-
-      <section className="mb-6 overflow-x-auto rounded-md border border-border">
-        <table className="w-full min-w-[900px] text-xs">
+      <section className="mb-6 overflow-x-auto rounded-lg border border-border shadow-sm">
+        <table className="w-full min-w-[900px] border-collapse text-xs tabular-nums">
           <caption className="sr-only">협력사별 출면 집계</caption>
-          <thead className="bg-muted/60">
-            <tr className="[&>th]:border-b [&>th]:border-border [&>th]:px-2 [&>th]:py-2 [&>th]:text-right [&>th:first-child]:text-left">
+          <thead>
+            <tr className="bg-primary/10 [&>th]:border-b-2 [&>th]:border-primary/30 [&>th]:px-3 [&>th]:py-2.5 [&>th]:text-right [&>th]:text-[11px] [&>th]:font-bold [&>th]:uppercase [&>th]:tracking-wide [&>th]:text-primary [&>th:first-child]:text-left">
               <th scope="col">{MP.company}</th>
-              <th scope="col">{MP.day}</th><th scope="col">{MP.ot}</th><th scope="col">{MP.night}</th>
+              <th scope="col" className="text-sky-700 dark:text-sky-300">{MP.day}</th>
+              <th scope="col" className="text-amber-700 dark:text-amber-300">{MP.ot}</th>
+              <th scope="col" className="text-indigo-700 dark:text-indigo-300">{MP.night}</th>
               {TRADES.map((t) => <th key={t} scope="col">{TRADE_LABEL[t]}</th>)}
               <th scope="col">{MP.total}</th><th scope="col" className="!text-left">{MP.firstSubmit}</th>
             </tr>
           </thead>
           <tbody>
-            {daily.sort((a, b) => b.total - a.total).map((d) => (
-              <tr key={d.company} className="[&>td]:border-b [&>td]:border-border/60 [&>td]:px-2 [&>td]:py-1.5 [&>td]:text-right [&>td:first-child]:text-left">
-                <td className="font-medium">{d.company}</td>
-                <td>{d.day_total || ""}</td><td>{d.ot_total || ""}</td><td>{d.night_total || ""}</td>
+            {daily.sort((a, b) => b.total - a.total).map((d, i) => (
+              <tr key={d.company} className={`transition-colors hover:bg-primary/5 ${i % 2 ? "bg-muted/30" : ""} [&>td]:border-b [&>td]:border-border/50 [&>td]:px-3 [&>td]:py-2 [&>td]:text-right [&>td:first-child]:text-left`}>
+                <td className="font-semibold">{d.company}</td>
+                <td className="font-medium text-sky-700 dark:text-sky-300">{d.day_total || <span className="text-muted-foreground/30">–</span>}</td>
+                <td className="font-medium text-amber-700 dark:text-amber-300">{d.ot_total || <span className="text-muted-foreground/30">–</span>}</td>
+                <td className="font-medium text-indigo-700 dark:text-indigo-300">{d.night_total || <span className="text-muted-foreground/30">–</span>}</td>
                 {TRADES.map((t) => <td key={t} className="text-muted-foreground">{d[t] || ""}</td>)}
-                <td className="font-bold">{d.total.toLocaleString()}</td>
+                <td className="bg-primary/5 text-sm font-extrabold">{d.total.toLocaleString()}</td>
                 <td className="!text-left text-muted-foreground">{d.first_submitted_at ? riyadhTime(d.first_submitted_at) : "—"}</td>
               </tr>
             ))}
             {!daily.length && <tr><td colSpan={12} className="p-6 text-center text-muted-foreground">해당 일자의 보고가 없습니다.</td></tr>}
             {daily.length > 0 && (
-              <tr className="bg-muted/40 font-bold [&>td]:px-2 [&>td]:py-2 [&>td]:text-right [&>td:first-child]:text-left">
+              <tr className="bg-primary/10 font-bold [&>td]:border-t-2 [&>td]:border-primary/30 [&>td]:px-3 [&>td]:py-2.5 [&>td]:text-right [&>td:first-child]:text-left">
                 <td>합계</td>
-                <td>{daily.reduce((a, d) => a + d.day_total, 0)}</td>
-                <td>{daily.reduce((a, d) => a + d.ot_total, 0)}</td>
-                <td>{daily.reduce((a, d) => a + d.night_total, 0)}</td>
+                <td className="text-sky-700 dark:text-sky-300">{daily.reduce((a, d) => a + d.day_total, 0)}</td>
+                <td className="text-amber-700 dark:text-amber-300">{daily.reduce((a, d) => a + d.ot_total, 0)}</td>
+                <td className="text-indigo-700 dark:text-indigo-300">{daily.reduce((a, d) => a + d.night_total, 0)}</td>
                 {TRADES.map((t) => <td key={t}>{totals[t]}</td>)}
-                <td>{totals.total.toLocaleString()}</td><td />
+                <td className="text-sm font-extrabold">{totals.total.toLocaleString()}</td><td />
               </tr>
             )}
           </tbody>
@@ -194,39 +198,59 @@ function ManpowerPage() {
           <TabsList className="h-8"><TabsTrigger value="company" className="text-xs">협력사별</TabsTrigger><TabsTrigger value="location" className="text-xs">장소별</TabsTrigger></TabsList>
         </Tabs>
       </div>
-      <section className="overflow-x-auto rounded-md border border-border">
-        <table className="w-full text-xs" style={{ minWidth: 200 + matrix.cols.length * 3 * 64 }}>
+      <section className="overflow-x-auto rounded-lg border border-border shadow-sm">
+        <table className="w-full border-collapse text-xs tabular-nums" style={{ minWidth: 200 + matrix.cols.length * 3 * 64 }}>
           <caption className="sr-only">{matrixMode === "company" ? "협력사별 장소·조별 배치 인원" : "장소별 협력사·조별 배치 인원"}</caption>
-          <thead className="bg-muted/60">
-            <tr className="[&>th]:border-b [&>th]:border-border [&>th]:px-2 [&>th]:py-1.5 [&>th]:text-center">
-              <th scope="col" rowSpan={2} className="sticky left-0 bg-muted/60 !text-left">{matrixMode === "company" ? MP.company : MP.location}</th>
-              {matrix.cols.map((col) => <th key={col} scope="colgroup" colSpan={3} className="whitespace-nowrap border-l border-border">{col}</th>)}
-              <th scope="col" rowSpan={2} className="border-l border-border">{MP.total}</th>
+          <thead>
+            <tr className="bg-primary/10 [&>th]:border-b [&>th]:border-primary/20 [&>th]:px-2 [&>th]:py-2 [&>th]:text-center [&>th]:font-bold [&>th]:text-primary">
+              <th scope="col" rowSpan={2} className="sticky left-0 z-10 min-w-[120px] bg-primary/10 !text-left shadow-[2px_0_0_0_hsl(var(--border))]">{matrixMode === "company" ? MP.company : MP.location}</th>
+              {matrix.cols.map((col) => <th key={col} scope="colgroup" colSpan={3} className="whitespace-nowrap border-l-2 border-primary/20">{col}</th>)}
+              <th scope="col" rowSpan={2} className="border-l-2 border-primary/30 bg-primary/15">{MP.total}</th>
             </tr>
-            <tr className="[&>th]:border-b [&>th]:border-border [&>th]:px-2 [&>th]:py-1 [&>th]:text-right [&>th]:font-normal [&>th]:text-muted-foreground">
+            <tr className="bg-muted/50 [&>th]:border-b-2 [&>th]:border-primary/30 [&>th]:px-2 [&>th]:py-1.5 [&>th]:text-right [&>th]:text-[11px] [&>th]:font-semibold">
               {matrix.cols.map((col) =>
                 MATRIX_SHIFTS.map((sh, i) => (
-                  <th key={`${col}-${sh}`} scope="col" className={i === 0 ? "border-l border-border" : ""}>{MATRIX_SHIFT_LABEL[sh]}</th>
+                  <th key={`${col}-${sh}`} scope="col" className={`${i === 0 ? "border-l-2 border-primary/20" : ""} ${sh === "Day Shift" ? "text-sky-700 dark:text-sky-300" : sh === "Overtime" ? "text-amber-700 dark:text-amber-300" : "text-indigo-700 dark:text-indigo-300"}`}>{MATRIX_SHIFT_LABEL[sh]}</th>
                 )),
               )}
             </tr>
           </thead>
           <tbody>
-            {[...matrix.rows.entries()].map(([rowKey, row]) => (
-              <tr key={rowKey} className="[&>td]:border-b [&>td]:border-border/60 [&>td]:px-2 [&>td]:py-1.5 [&>td]:text-right [&>td:first-child]:text-left">
-                <td className="sticky left-0 bg-card font-medium">{rowKey}</td>
-                {matrix.cols.map((col) => {
-                  const cell = row.get(col);
-                  return MATRIX_SHIFTS.map((sh, i) => (
-                    <td key={`${col}-${sh}`} className={i === 0 ? "border-l border-border/60" : ""}>
-                      {cell?.byShift[sh] || <span className="text-muted-foreground/40">·</span>}
-                    </td>
-                  ));
-                })}
-                <td className="border-l border-border/60 font-bold">{[...row.values()].reduce((a, c) => a + c.total, 0)}</td>
-              </tr>
-            ))}
+            {[...matrix.rows.entries()].map(([rowKey, row], ri) => {
+              const rowTotal = [...row.values()].reduce((a, c) => a + c.total, 0);
+              return (
+                <tr key={rowKey} className={`transition-colors hover:bg-primary/5 ${ri % 2 ? "bg-muted/20" : ""} [&>td]:border-b [&>td]:border-border/50 [&>td]:px-2 [&>td]:py-1.5 [&>td]:text-right [&>td:first-child]:text-left`}>
+                  <td className={`sticky left-0 z-10 font-semibold shadow-[2px_0_0_0_hsl(var(--border))] ${ri % 2 ? "bg-muted/40" : "bg-card"}`}>{rowKey}</td>
+                  {matrix.cols.map((col) => {
+                    const cell = row.get(col);
+                    return MATRIX_SHIFTS.map((sh, i) => {
+                      const v = cell?.byShift[sh] ?? 0;
+                      return (
+                        <td key={`${col}-${sh}`} className={`${i === 0 ? "border-l-2 border-border/60" : ""} ${v ? `font-medium ${sh === "Day Shift" ? "text-sky-700 dark:text-sky-300" : sh === "Overtime" ? "text-amber-700 dark:text-amber-300" : "text-indigo-700 dark:text-indigo-300"}` : ""}`}>
+                          {v || <span className="text-muted-foreground/30">–</span>}
+                        </td>
+                      );
+                    });
+                  })}
+                  <td className={`border-l-2 border-primary/20 font-bold ${rowTotal ? "bg-primary/5 text-sm" : "text-muted-foreground/40"}`}>{rowTotal || "–"}</td>
+                </tr>
+              );
+            })}
             {!matrix.rows.size && <tr><td colSpan={matrix.cols.length * 3 + 2} className="p-6 text-center text-muted-foreground">표시할 자료가 없습니다.</td></tr>}
+            {matrix.rows.size > 0 && (
+              <tr className="bg-primary/10 font-bold [&>td]:border-t-2 [&>td]:border-primary/30 [&>td]:px-2 [&>td]:py-2 [&>td]:text-right [&>td:first-child]:text-left">
+                <td className="sticky left-0 z-10 bg-primary/10 shadow-[2px_0_0_0_hsl(var(--border))]">합계</td>
+                {matrix.cols.map((col) =>
+                  MATRIX_SHIFTS.map((sh, i) => {
+                    const v = [...matrix.rows.values()].reduce((a, row) => a + (row.get(col)?.byShift[sh] ?? 0), 0);
+                    return <td key={`${col}-${sh}`} className={i === 0 ? "border-l-2 border-primary/20" : ""}>{v || ""}</td>;
+                  }),
+                )}
+                <td className="border-l-2 border-primary/30 bg-primary/15 text-sm font-extrabold">
+                  {[...matrix.rows.values()].reduce((a, row) => a + [...row.values()].reduce((b, c) => b + c.total, 0), 0).toLocaleString()}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </section>
