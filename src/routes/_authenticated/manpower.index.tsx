@@ -101,7 +101,11 @@ function ManpowerPage() {
     () => locations.filter((l) => l.is_active).map((l) => l.name).sort((a, b) => a.localeCompare(b)),
     [locations],
   );
-  const matrix = useMemo(() => buildMatrix(shown, source, matrixMode, allLocNames), [shown, source, matrixMode, allLocNames]);
+  const allCompNames = useMemo(
+    () => companies.filter((c) => c.is_active).map((c) => c.name).sort((a, b) => a.localeCompare(b)),
+    [companies],
+  );
+  const matrix = useMemo(() => buildMatrix(shown, source, matrixMode, allLocNames, allCompNames), [shown, source, matrixMode, allLocNames, allCompNames]);
   const locs = useMemo(() => [...new Set(shown.map((c) => c.location))].sort(), [shown]);
   const mismatches = shown.filter(cardMismatch);
 
