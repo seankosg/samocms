@@ -32,7 +32,20 @@ export const getManpower = createServerFn({ method: "GET" })
       // 오늘 발송된 미보고 알림 로그 (봇이 mode='reminder' 로 기록, warnings 에 {date, missing[], ...})
       c.from("manpower_ingest_log").select("warnings").eq("mode", "reminder").filter("warnings->>date", "eq", data.to),
     ]);
-    const err = cards.error ?? compare.error ?? companies.error ?? locations.error ?? calendar.error ?? plan.error ?? settings.error ?? log.error ?? lastEntry.error;
+    const [cards, compare, companies, locations, calendar, plan, settings, log, lastEntry, reminders] = await Promise.all([
+      c.from("v_manpower_cards").select("*").gte("report_date", data.from).lte("report_date", data.to),
+      c.from("v_manpower_compare").select("*").gte("report_date", data.from).lte("report_date", data.to),
+      c.from("manpower_companies").select("*").order("sort_order"),
+      c.from("manpower_locations").select("*").order("sort_order"),
+      c.from("manpower_calendar").select("*").gte("day", data.from).lte("day", data.to),
+      c.from("manpower_plan").select("company, plan_date, granularity, planned_total").gte("plan_date", data.from).lte("plan_date", data.to),
+      c.from("app_settings").select("*"),
+      c.from("manpower_ingest_log").select("*").order("received_at", { ascending: false }).limit(5),
+      c.from("manpower_entries").select("synced_at").order("synced_at", { ascending: false }).limit(1),
+      // 오늘 발송된 미보고 알림 로그 (봇이 mode='reminder' 로 기록, warnings 에 {date, missing[], ...})
+      c.from("manpower_ingest_log").select("warnings").eq("mode", "reminder").filter("warnings->>date", "eq", data.to),
+    ]);
+    const err = cards.error ?? compare.error ?? companies.error ?? locations.error ?? calendar.error ?? plan.error ?? settings.error ?? log.error ?? lastEntry.error ?? reminders.error;
     if (err) throw new Error(err.message);
     const settingMap: Record<string, string> = {};
     (settings.data ?? []).forEach((s: { key: string; value: string | null }) => {
