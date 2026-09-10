@@ -91,14 +91,14 @@ export function ExportDialog({
           const JSZip = (await import("jszip")).default;
           const zip = new JSZip();
           for (const [k, recs] of groups) {
-            const buf = XLSX.write(bookOf(recs, sheetName), { bookType: "xlsx", type: "array" }) as ArrayBuffer;
+            const buf = XLSX.write(bookOf(recs, k), { bookType: "xlsx", type: "array" }) as ArrayBuffer;
             zip.file(`${fileBase}_${sanitize(k)}.xlsx`, buf);
           }
           downloadBlob(await zip.generateAsync({ type: "blob" }), `${fileBase}_협력사별_${stamp}.zip`);
           toast.success(`${groups.size}개 협력사 → ZIP 다운로드`, { id });
         } else {
           for (const [k, recs] of groups) {
-            XLSX.writeFile(bookOf(recs, sheetName), `${fileBase}_${sanitize(k)}_${stamp}.xlsx`);
+            XLSX.writeFile(bookOf(recs, k), `${fileBase}_${sanitize(k)}_${stamp}.xlsx`);
             await new Promise((r) => setTimeout(r, 0));
           }
           toast.success(`${groups.size}개 파일 다운로드`, { id });
