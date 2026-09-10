@@ -94,6 +94,7 @@ function TrendPage() {
   const quick = (n: number) => navigate({ search: (p) => ({ ...p, mpFrom: addDays(riyadhToday(), -(n - 1)), mpTo: riyadhToday() }), replace: true });
 
   return (
+    <AdminGate title="출면 추이">
     <AppShell
       title={MP.trend}
       desc={`${from} ~ ${to} · 근무일 ${workDays.length}일 · 연인원 ${sum.toLocaleString()}명`}

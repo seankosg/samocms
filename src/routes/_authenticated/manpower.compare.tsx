@@ -69,6 +69,7 @@ function ComparePage() {
   const setResult = (v: string) => navigate({ search: (p) => ({ ...p, result: v as never }), replace: true });
 
   return (
+    <AdminGate title="검증 대조">
     <AppShell
       title={MP.compare}
       desc={`${fmtDay(day)} · 대조 ${rows.length}건 · 일치율 ${Math.round(stats.matchRate * 100)}%`}
