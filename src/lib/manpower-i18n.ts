@@ -6,7 +6,7 @@ export const MP = {
   daily: "출면 현황",
   compare: "검증 대조",
   trend: "추이",
-  members: "봇 사용자",
+  members: "출면기록 관리자 설정",
   sub: "협력사 보고",
   hdec: "HDEC 재집계",
   company: "협력사",

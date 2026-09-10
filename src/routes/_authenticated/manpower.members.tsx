@@ -73,7 +73,7 @@ function MembersPage() {
   });
 
   return (
-    <AdminGate title="출면 봇 사용자">
+    <AdminGate title="출면기록 관리자 설정">
     <AppShell
       title={MP.members}
       desc={`등록 ${members.length}명 · 사용중 ${members.filter((m) => m.is_active).length}명`}

@@ -54,8 +54,8 @@ function MastersPage() {
   }, [usage]);
 
   return (
-    <AdminGate title="출면 마스터">
-      <AppShell title="출면 마스터" desc={`협력사 ${companies.length}곳 · 장소 ${locations.length}곳 · 별칭 ${aliases.length}건`}>
+    <AdminGate title="출면 업체 장소 관리 설정">
+      <AppShell title="출면 업체 장소 관리 설정" desc={`협력사 ${companies.length}곳 · 장소 ${locations.length}곳 · 별칭 ${aliases.length}건`}>
         <Tabs defaultValue="company">
           <TabsList className="mb-3">
             <TabsTrigger value="company">회사</TabsTrigger>
