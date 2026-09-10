@@ -153,7 +153,7 @@ function TrendPage() {
           일자별 출면 인원 <span className="text-xs font-normal text-muted-foreground">막대: 일일기록(좌축) · 선: 누계기록(우축)</span>
         </h2>
         <div className="w-full overflow-x-auto">
-          <ComposedChart width={chartWidth} height={chartHeight} data={chart} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+          <ComposedChart width={chartWidth} height={chartHeight} data={chart} margin={{ top: 8, right: 12, left: 0, bottom: 0 }} barGap="-100%">
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
             <XAxis dataKey="day" tick={{ fontSize: 11 }} interval={days.length > 60 ? 2 : 0} angle={days.length > 20 ? -45 : 0} textAnchor={days.length > 20 ? "end" : "middle"} height={days.length > 20 ? 52 : 30} />
             <YAxis yAxisId="daily" tick={{ fontSize: 11 }} domain={[0, Math.ceil((dailyMax * 1.1) / 10) * 10]} allowDecimals={false} />
