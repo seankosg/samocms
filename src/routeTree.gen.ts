@@ -30,6 +30,7 @@ import { Route as AuthenticatedTcElecRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedTcListRouteImport } from './routes/_authenticated/tc.list'
 import { Route as AuthenticatedTcMechRouteImport } from './routes/_authenticated/tc.mech'
 import { Route as AuthenticatedTcProgressRouteImport } from './routes/_authenticated/tc.progress'
+import { Route as ApiPublicManpowerSyncRouteImport } from './routes/api/public/manpower-sync'
 import { Route as ApiPublicVersionRouteImport } from './routes/api/public/version'
 
 const IndexRoute = IndexRouteImport.update({
@@ -141,6 +142,11 @@ const AuthenticatedTcProgressRoute = AuthenticatedTcProgressRouteImport.update({
   path: '/tc/progress',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicManpowerSyncRoute = ApiPublicManpowerSyncRouteImport.update({
+  id: '/api/public/manpower-sync',
+  path: '/api/public/manpower-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicVersionRoute = ApiPublicVersionRouteImport.update({
   id: '/api/public/version',
   path: '/api/public/version',
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/tc/list': typeof AuthenticatedTcListRoute
   '/tc/mech': typeof AuthenticatedTcMechRoute
   '/tc/progress': typeof AuthenticatedTcProgressRoute
+  '/api/public/manpower-sync': typeof ApiPublicManpowerSyncRoute
   '/api/public/version': typeof ApiPublicVersionRoute
   '/manpower/': typeof AuthenticatedManpowerIndexRoute
 }
@@ -190,6 +197,7 @@ export interface FileRoutesByTo {
   '/tc/list': typeof AuthenticatedTcListRoute
   '/tc/mech': typeof AuthenticatedTcMechRoute
   '/tc/progress': typeof AuthenticatedTcProgressRoute
+  '/api/public/manpower-sync': typeof ApiPublicManpowerSyncRoute
   '/api/public/version': typeof ApiPublicVersionRoute
   '/manpower': typeof AuthenticatedManpowerIndexRoute
 }
@@ -215,6 +223,7 @@ export interface FileRoutesById {
   '/_authenticated/tc/list': typeof AuthenticatedTcListRoute
   '/_authenticated/tc/mech': typeof AuthenticatedTcMechRoute
   '/_authenticated/tc/progress': typeof AuthenticatedTcProgressRoute
+  '/api/public/manpower-sync': typeof ApiPublicManpowerSyncRoute
   '/api/public/version': typeof ApiPublicVersionRoute
   '/_authenticated/manpower/': typeof AuthenticatedManpowerIndexRoute
 }
@@ -240,6 +249,7 @@ export interface FileRouteTypes {
     | '/tc/list'
     | '/tc/mech'
     | '/tc/progress'
+    | '/api/public/manpower-sync'
     | '/api/public/version'
     | '/manpower/'
   fileRoutesByTo: FileRoutesByTo
@@ -263,6 +273,7 @@ export interface FileRouteTypes {
     | '/tc/list'
     | '/tc/mech'
     | '/tc/progress'
+    | '/api/public/manpower-sync'
     | '/api/public/version'
     | '/manpower'
   id:
@@ -287,6 +298,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tc/list'
     | '/_authenticated/tc/mech'
     | '/_authenticated/tc/progress'
+    | '/api/public/manpower-sync'
     | '/api/public/version'
     | '/_authenticated/manpower/'
   fileRoutesById: FileRoutesById
@@ -295,6 +307,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicManpowerSyncRoute: typeof ApiPublicManpowerSyncRoute
   ApiPublicVersionRoute: typeof ApiPublicVersionRoute
 }
 
@@ -447,6 +460,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTcProgressRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/manpower-sync': {
+      id: '/api/public/manpower-sync'
+      path: '/api/public/manpower-sync'
+      fullPath: '/api/public/manpower-sync'
+      preLoaderRoute: typeof ApiPublicManpowerSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/version': {
       id: '/api/public/version'
       path: '/api/public/version'
@@ -506,6 +526,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicManpowerSyncRoute: ApiPublicManpowerSyncRoute,
   ApiPublicVersionRoute: ApiPublicVersionRoute,
 }
 export const routeTree = rootRouteImport

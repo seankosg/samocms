@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import * as XLSX from "xlsx";
@@ -168,6 +168,8 @@ function TrendPage() {
         </div>
       </section>
 
+      <MonthlyShiftChart cards={filtered} />
+
       <h2 className="mb-2 text-sm font-bold">{DIM_LABEL[dim]} 연인원</h2>
       <section className="overflow-x-auto rounded-md border border-border">
         <table className="w-full min-w-[420px] text-xs">
@@ -194,5 +196,62 @@ function TrendPage() {
       </section>
     </AppShell>
     </AdminGate>
+  );
+}
+
+/** 협력사별 월간 주간·연장·야간 인원 추이 (협력사 보고 기준) */
+function MonthlyShiftChart({ cards }: { cards: MpCard[] }) {
+  const [company, setCompany] = useState("전체");
+  const sub = useMemo(() => cards.filter((c) => c.source === "SUB"), [cards]);
+  const companyList = useMemo(() => [...new Set(sub.map((c) => c.company))].sort(), [sub]);
+  const picked = companyList.includes(company) ? company : "전체";
+
+  const data = useMemo(() => {
+    const m = new Map<string, { month: string; 주간: number; 연장: number; 야간: number; 계: number }>();
+    sub.filter((c) => picked === "전체" || c.company === picked).forEach((c) => {
+      const month = c.report_date.slice(0, 7);
+      let row = m.get(month);
+      if (!row) { row = { month, 주간: 0, 연장: 0, 야간: 0, 계: 0 }; m.set(month, row); }
+      if (c.shift === "Day Shift") row.주간 += c.subtotal;
+      else if (c.shift === "Overtime") row.연장 += c.subtotal;
+      else if (c.shift === "Night Shift") row.야간 += c.subtotal;
+      row.계 += c.subtotal;
+    });
+    return [...m.values()].sort((a, b) => a.month.localeCompare(b.month));
+  }, [sub, picked]);
+
+  const max = Math.max(1, ...data.map((r) => r.계));
+  const width = Math.max(560, data.length * 110);
+  const height = max > 8000 ? 460 : max > 3000 ? 400 : 340;
+
+  return (
+    <section className="mb-6 rounded-md border border-border bg-card p-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-bold">
+          협력사별 월간 조별 인원 <span className="text-xs font-normal text-muted-foreground">누적 막대: 주간·연장·야간 (협력사 보고 기준)</span>
+        </h2>
+      </div>
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {["전체", ...companyList].map((c) => (
+          <Button key={c} size="sm" variant={picked === c ? "default" : "outline"} className="h-7 text-xs" onClick={() => setCompany(c)}>{c}</Button>
+        ))}
+      </div>
+      {data.length ? (
+        <div className="w-full overflow-x-auto">
+          <ComposedChart width={width} height={height} data={data} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+            <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} domain={[0, Math.ceil((max * 1.1) / 10) * 10]} allowDecimals={false} />
+            <Tooltip contentStyle={{ fontSize: 12 }} />
+            <Legend wrapperStyle={{ fontSize: 12 }} />
+            <Bar dataKey="주간" stackId="s" fill="var(--chart-1)" maxBarSize={72} />
+            <Bar dataKey="연장" stackId="s" fill="var(--chart-3)" maxBarSize={72} />
+            <Bar dataKey="야간" stackId="s" fill="var(--chart-4)" radius={[2, 2, 0, 0]} maxBarSize={72} />
+          </ComposedChart>
+        </div>
+      ) : (
+        <p className="p-6 text-center text-xs text-muted-foreground">기간 내 보고가 없습니다.</p>
+      )}
+    </section>
   );
 }

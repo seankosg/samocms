@@ -12,6 +12,10 @@ export const manpowerRangeQuery = (from: string, to: string) =>
     queryKey: ["manpower", from, to],
     queryFn: () => getManpower({ data: { from, to } }),
     staleTime: 60_000,
+    // 시트 자동 동기화 결과를 화면에 자동 반영 (5분 주기 + 화면 복귀 시)
+    refetchInterval: 5 * 60_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
   });
 
 /** 최근 N일 기본 범위 (제다 현지 기준) */
