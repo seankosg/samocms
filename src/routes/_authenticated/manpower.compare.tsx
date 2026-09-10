@@ -84,6 +84,10 @@ function ComparePage() {
       desc={`${fmtDay(day)} · 대조 ${rows.length}건 · 일치율 ${Math.round(stats.matchRate * 100)}%`}
       actions={
         <>
+          <Input type="date" aria-label="차트 시작일" value={from} max={day}
+            onChange={(e) => navigate({ search: (p) => ({ ...p, cmpFrom: e.target.value }), replace: true })}
+            className="h-8 w-[150px] text-xs" />
+          <span className="text-xs text-muted-foreground">~</span>
           <Input type="date" aria-label="보고일" value={day} onChange={(e) => navigate({ search: (p) => ({ ...p, day: e.target.value }), replace: true })} className="h-8 w-[150px] text-xs" />
           <Button size="sm" variant="outline" onClick={exportXlsx}><Download className="size-3.5" />엑셀</Button>
         </>
