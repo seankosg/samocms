@@ -15,8 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { manpowerMastersQuery, useManpowerMasters, type AliasRow, type MasterRow } from "@/lib/use-manpower";
 import {
   saveManpowerMaster, setManpowerMasterActive, setManpowerMasterOrder, deleteManpowerMaster,
-  saveManpowerAlias, deleteManpowerAlias, renameManpowerMaster,
+  saveManpowerAlias, deleteManpowerAlias, renameManpowerMaster, saveManpowerSettings,
 } from "@/lib/manpower.functions";
+import { MP } from "@/lib/manpower-i18n";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/_authenticated/manpower/masters")({
   head: () => ({ meta: [
