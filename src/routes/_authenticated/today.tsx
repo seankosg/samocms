@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ChevronDown, ChevronRight, HardHat, Loader2, ShieldAlert } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronRight, HardHat, Languages, Loader2, ShieldAlert } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { projectQuery, useProject } from "@/lib/use-project";
 import { SLOT_LABEL, fmtShortDate, isLate, pct1, type Row } from "@/lib/schedule-model";
 import { TC_STAGE_SUB, TC_DISC_LABEL, type TcStage } from "@/lib/tc-model";
 import { TODAY_GROUPS, fmtToday, jeddahToday, safetyFacts, splitToday, todayTc, byTeam, byBldg, type TodayGroupKey } from "@/lib/today-model";
+import { T, SLOT_LABEL_EN, TC_STAGE_SUB_EN, fmtTodayEn, type Lang } from "@/lib/today-i18n";
 import { analyzeSafety, getSafetyReport, type SafetyRisk } from "@/lib/safety.functions";
 import { useAuth } from "@/lib/use-auth";
 
@@ -29,13 +30,15 @@ const card = "rounded-lg border border-border bg-card p-4";
 function TodayPage() {
   const { rows, tcItems } = useProject();
   const { isAdmin } = useAuth();
+  const [lang, setLang] = useState<Lang>("ko");
+  const t = T[lang];
   const [today, setToday] = useState<string | null>(null);
   const [focus, setFocus] = useState<Focus | null>(null);
   // 제다 현지 자정(00:01) 롤오버 자동 감지 — 날짜가 바뀌면 화면·분석을 새 날짜로 갱신
   useEffect(() => {
     setToday(jeddahToday());
-    const t = setInterval(() => setToday((prev) => (prev === jeddahToday() ? prev : jeddahToday())), 30_000);
-    return () => clearInterval(t);
+    const iv = setInterval(() => setToday((prev) => (prev === jeddahToday() ? prev : jeddahToday())), 30_000);
+    return () => clearInterval(iv);
   }, []);
 
   const groups = useMemo(() => (today ? splitToday(rows, today) : null), [rows, today]);
@@ -43,50 +46,68 @@ function TodayPage() {
 
   const qc = useQueryClient();
   const saved = useQuery({
-    queryKey: ["safety-report", today],
-    queryFn: () => getSafetyReport({ data: { day: today! } }),
+    queryKey: ["safety-report", today, lang],
+    queryFn: () => getSafetyReport({ data: { day: today!, lang } }),
     enabled: !!today,
     staleTime: 60_000,
   });
 
   const safety = useMutation({
-    mutationFn: (force: boolean) => analyzeSafety({ data: { day: today!, facts: safetyFacts(groups!, tc, today!), force } }),
-    onSuccess: (res) => qc.setQueryData(["safety-report", today], res),
+    mutationFn: (force: boolean) => analyzeSafety({ data: { day: today!, facts: safetyFacts(groups!, tc, today!), force, lang } }),
+    onSuccess: (res) => qc.setQueryData(["safety-report", today, res.lang], res),
   });
 
-  // 당일 저장된 분석이 없으면 자동 생성 (하루 1회, 사용자 조작 불필요)
+  // 당일 저장된 분석이 없으면 자동 생성 (언어별 1회, 사용자 조작 불필요)
   const autoRef = useRef<string | null>(null);
   const hasWork = !!groups && groups.start.length + groups.ongoing.length + groups.finish.length + tc.length > 0;
   useEffect(() => {
     if (!today || !saved.isSuccess || saved.data || !hasWork) return;
-    if (autoRef.current === today || safety.isPending) return;
-    autoRef.current = today;
+    const k = `${today}:${lang}`;
+    if (autoRef.current === k || safety.isPending) return;
+    autoRef.current = k;
     safety.mutate(false);
-  }, [today, saved.isSuccess, saved.data, hasWork, safety]);
+  }, [today, lang, saved.isSuccess, saved.data, hasWork, safety]);
 
-  const report = safety.data ?? saved.data ?? null;
+  const report = (safety.data?.lang === lang ? safety.data : null) ?? saved.data ?? null;
+
+  const toggle = (
+    <div className="flex shrink-0 gap-0.5 rounded-md bg-muted p-0.5">
+      {(["ko", "en"] as const).map((l) => (
+        <button
+          key={l}
+          type="button"
+          onClick={() => setLang(l)}
+          className={`flex items-center gap-1 rounded px-2.5 py-1 text-xs font-semibold transition ${lang === l ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          {l === "ko" ? <Languages className="size-3.5" /> : null}
+          {l === "ko" ? "한국어" : "ENG"}
+        </button>
+      ))}
+    </div>
+  );
 
   if (!today || !groups) {
     return (
-      <AppShell title="오늘의 주요 작업" desc="사우디아라비아 제다 현지 날짜 기준">
-        <div className={card}>날짜를 확인하는 중…</div>
+      <AppShell title={t.pageTitle} desc={t.pageDesc}>
+        <div className={card}>{t.loadingDate}</div>
       </AppShell>
     );
   }
 
-  const teamOf = (slot: string) => SLOT_LABEL[slot] ?? slot;
+  const teamOf = (slot: string) => (lang === "en" ? SLOT_LABEL_EN[slot] ?? slot : SLOT_LABEL[slot] ?? slot);
+  const bldgOf = (b: string | null | undefined) => (b == null || b === "(미지정)" ? t.unassigned : b);
   const allRows = [...new Map([...groups.start, ...groups.ongoing, ...groups.finish].map((r) => [r.id, r])).values()];
   const kpiCards: { key: FocusCard; label: string; desc: string; v: number; team: { label: string; v: number }[]; bldg: { label: string; v: number }[]; tone: string }[] = [
-    { key: "all", label: "금일 전체 작업", desc: "착수 · 진행 · 종결 합계", v: allRows.length, team: byTeam(allRows).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(allRows), tone: "text-foreground" },
-    { key: "start", label: "금일 신규 착수", desc: "시작일 = 오늘", v: groups.start.length, team: byTeam(groups.start).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(groups.start), tone: "text-primary" },
-    { key: "ongoing", label: "금일 지속 진행", desc: "진행 중", v: groups.ongoing.length, team: byTeam(groups.ongoing).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(groups.ongoing), tone: "text-foreground" },
-    { key: "finish", label: "금일 종결", desc: "종료일 = 오늘", v: groups.finish.length, team: byTeam(groups.finish).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(groups.finish), tone: "text-emerald-600" },
-    { key: "tc", label: "금일 T&C 계획", desc: "당일 계획 단계", v: tc.length, team: byTeam(tc).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(tc), tone: "text-sky-600" },
+    { key: "all", label: t.cards.all[0], desc: t.cards.all[1], v: allRows.length, team: byTeam(allRows).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(allRows).map((x) => ({ ...x, label: bldgOf(x.label) })), tone: "text-foreground" },
+    { key: "start", label: t.cards.start[0], desc: t.cards.start[1], v: groups.start.length, team: byTeam(groups.start).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(groups.start).map((x) => ({ ...x, label: bldgOf(x.label) })), tone: "text-primary" },
+    { key: "ongoing", label: t.cards.ongoing[0], desc: t.cards.ongoing[1], v: groups.ongoing.length, team: byTeam(groups.ongoing).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(groups.ongoing).map((x) => ({ ...x, label: bldgOf(x.label) })), tone: "text-foreground" },
+    { key: "finish", label: t.cards.finish[0], desc: t.cards.finish[1], v: groups.finish.length, team: byTeam(groups.finish).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(groups.finish).map((x) => ({ ...x, label: bldgOf(x.label) })), tone: "text-emerald-600" },
+    { key: "tc", label: t.cards.tc[0], desc: t.cards.tc[1], v: tc.length, team: byTeam(tc).map((x) => ({ ...x, label: teamOf(x.label) })), bldg: byBldg(tc).map((x) => ({ ...x, label: bldgOf(x.label) })), tone: "text-sky-600" },
   ];
 
-  const matchRow = (r: Row) => !focus || !focus.val || (focus.by === "team" ? teamOf(r.dept) === focus.val : (r.bldg ?? "(미지정)") === focus.val);
-  const matchTc = (t: (typeof tc)[number]) =>
-    !focus || !focus.val || (focus.by === "team" ? teamOf(t.item.discipline) === focus.val : (t.item.bldg ?? "(미지정)") === focus.val);
+  const matchRow = (r: Row) => !focus || !focus.val || (focus.by === "team" ? teamOf(r.dept) === focus.val : bldgOf(r.bldg) === focus.val);
+  const matchTc = (x: (typeof tc)[number]) =>
+    !focus || !focus.val || (focus.by === "team" ? teamOf(x.item.discipline) === focus.val : bldgOf(x.item.bldg) === focus.val);
 
   const shownGroups = TODAY_GROUPS.filter((g) => !focus || focus.card === "all" || focus.card === g.key);
   const showActivities = !focus || focus.card !== "tc";
@@ -94,7 +115,8 @@ function TodayPage() {
   const shownTc = tc.filter(matchTc);
 
   return (
-    <AppShell title="오늘의 주요 작업" desc={`${fmtToday(today)} · 사우디아라비아 제다 현지(UTC+3) 기준 · 기준일 설정과 무관`}>
+    <AppShell title={t.pageTitle} desc={`${lang === "en" ? fmtTodayEn(today) : fmtToday(today)} · ${t.pageDesc}`}>
+      <div className="mb-3 flex justify-end">{toggle}</div>
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
         {kpiCards.map((c) => (
           <KpiCard
@@ -105,6 +127,7 @@ function TodayPage() {
             value={c.v}
             team={c.team}
             bldg={c.bldg}
+            lang={lang}
             active={focus?.card === c.key ? focus : null}
             onPick={(by, val) => setFocus((f) => (f && f.card === c.key && f.by === by && f.val === val ? null : { card: c.key, by, val }))}
           />
@@ -113,38 +136,45 @@ function TodayPage() {
 
       {focus && (
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-xs">
-          <span className="font-semibold text-primary">드릴다운</span>
+          <span className="font-semibold text-primary">{t.drill}</span>
           <span className="rounded bg-background px-2 py-0.5 font-medium">{kpiCards.find((c) => c.key === focus.card)?.label}</span>
-          {focus.val && <span className="rounded bg-background px-2 py-0.5 font-medium">{focus.by === "team" ? "팀" : "건물"} · {focus.val}</span>}
-          <Button size="sm" variant="ghost" className="ml-auto h-7 px-2 text-xs" onClick={() => setFocus(null)}>필터 해제</Button>
+          {focus.val && <span className="rounded bg-background px-2 py-0.5 font-medium">{focus.by === "team" ? t.team : t.bldg} · {focus.val}</span>}
+          <Button size="sm" variant="ghost" className="ml-auto h-7 px-2 text-xs" onClick={() => setFocus(null)}>{t.clearFilter}</Button>
         </div>
       )}
 
       <section className="mb-5">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="flex items-center gap-2 text-sm font-bold"><ShieldAlert className="size-4 text-destructive" />Safety Focused Activities</h2>
+          <h2 className="flex items-center gap-2 text-sm font-bold"><ShieldAlert className="size-4 text-destructive" />{t.safety}</h2>
           {isAdmin && (
             <Button size="sm" disabled={safety.isPending} onClick={() => safety.mutate(true)}>
               {safety.isPending ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : <AlertTriangle className="mr-1.5 size-3.5" />}
-              {report ? "다시 분석" : "안전 위험 분석"}
+              {report ? t.reanalyze : t.analyze}
             </Button>
           )}
         </div>
         <SafetyBlock
+          lang={lang}
           pending={safety.isPending || saved.isLoading}
           error={(safety.error as Error | null) ?? null}
-          {...(report ? { risks: report.risks, at: report.generatedAt } : {})}
+          {...(report ? { risks: report.risks, at: report.generatedAt ?? undefined } : {})}
           empty={groups.start.length + groups.ongoing.length + groups.finish.length + tc.length === 0}
-          canAnalyze={isAdmin}
         />
       </section>
 
       {showActivities && (
         <section id="today-activities" className="mb-5">
-          <h2 className="mb-2 flex items-center gap-2 text-sm font-bold"><HardHat className="size-4 text-primary" />Today's Activities</h2>
+          <h2 className="mb-2 flex items-center gap-2 text-sm font-bold"><HardHat className="size-4 text-primary" />{t.activities}</h2>
           <div className="space-y-3">
             {shownGroups.map((g) => (
-              <ActivityGroup key={g.key} gkey={g.key} label={g.label} desc={g.desc} rows={groups[g.key].filter(matchRow)} />
+              <ActivityGroup
+                key={g.key}
+                gkey={g.key}
+                lang={lang}
+                label={t.groups[g.key][0]}
+                desc={t.groups[g.key][1]}
+                rows={groups[g.key].filter(matchRow)}
+              />
             ))}
           </div>
         </section>
@@ -152,8 +182,8 @@ function TodayPage() {
 
       {showTc && (
         <section id="today-tc" className="mb-5">
-          <h2 className="mb-2 text-sm font-bold">Today's T&amp;C</h2>
-          <TcBlock list={shownTc} />
+          <h2 className="mb-2 text-sm font-bold">{t.tcSection}</h2>
+          <TcBlock list={shownTc} lang={lang} />
         </section>
       )}
 
@@ -164,11 +194,12 @@ function TodayPage() {
 type FocusCard = "all" | TodayGroupKey | "tc";
 type Focus = { card: FocusCard; by: "team" | "bldg"; val: string | null };
 
-function KpiCard({ label, desc, tone, value, team, bldg, active, onPick }: {
+function KpiCard({ label, desc, tone, value, team, bldg, active, onPick, lang }: {
   label: string; desc: string; tone: string; value: number;
   team: { label: string; v: number }[]; bldg: { label: string; v: number }[];
-  active: Focus | null; onPick: (by: "team" | "bldg", val: string | null) => void;
+  active: Focus | null; onPick: (by: "team" | "bldg", val: string | null) => void; lang: Lang;
 }) {
+  const t = T[lang];
   const [tab, setTab] = useState<"team" | "bldg">("team");
   const items = tab === "team" ? team : bldg;
   return (
@@ -179,14 +210,14 @@ function KpiCard({ label, desc, tone, value, team, bldg, active, onPick }: {
           <p className="mt-0.5 truncate text-xs text-muted-foreground">{desc}</p>
         </div>
         <div className="flex shrink-0 gap-0.5 rounded-md bg-muted p-0.5">
-          {(["team", "bldg"] as const).map((t) => (
+          {(["team", "bldg"] as const).map((k) => (
             <button
-              key={t}
+              key={k}
               type="button"
-              onClick={() => setTab(t)}
-              className={`rounded px-2 py-1 text-xs font-semibold transition ${tab === t ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() => setTab(k)}
+              className={`rounded px-2 py-1 text-xs font-semibold transition ${tab === k ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
             >
-              {t === "team" ? "팀별" : "건물별"}
+              {k === "team" ? t.tabTeam : t.tabBldg}
             </button>
           ))}
         </div>
@@ -196,14 +227,13 @@ function KpiCard({ label, desc, tone, value, team, bldg, active, onPick }: {
           type="button"
           onClick={() => onPick(tab, null)}
           className={`flex w-[38%] shrink-0 flex-col justify-center rounded-md px-2 py-1 text-left transition hover:bg-accent ${active && !active.val ? "bg-accent" : ""}`}
-          title="전체 항목 보기"
         >
           <span className={`text-4xl font-bold leading-none tabular-nums ${tone}`}>{value.toLocaleString()}</span>
-          <span className="mt-1 text-xs text-muted-foreground">건 · 클릭 시 목록</span>
+          <span className="mt-1 text-xs text-muted-foreground">{t.unitClick}</span>
         </button>
         <div className="min-w-0 flex-1 border-l border-border/60 pl-3">
           {items.length === 0 ? (
-            <p className="text-xs text-muted-foreground">세부 항목 없음</p>
+            <p className="text-xs text-muted-foreground">{t.noDetail}</p>
           ) : (
             <div className="max-h-[124px] overflow-auto pr-1">
               <table className="w-full text-xs">
@@ -236,7 +266,8 @@ function KpiCard({ label, desc, tone, value, team, bldg, active, onPick }: {
 }
 
 
-function ActivityGroup({ gkey, label, desc, rows }: { gkey: TodayGroupKey; label: string; desc: string; rows: Row[] }) {
+function ActivityGroup({ gkey, label, desc, rows, lang }: { gkey: TodayGroupKey; label: string; desc: string; rows: Row[]; lang: Lang }) {
+  const t = T[lang];
   const [open, setOpen] = useState(true);
   const tone = gkey === "start" ? "text-primary" : gkey === "finish" ? "text-emerald-600" : "text-foreground";
   return (
@@ -249,13 +280,13 @@ function ActivityGroup({ gkey, label, desc, rows }: { gkey: TodayGroupKey; label
       </button>
       {open && (
         rows.length === 0 ? (
-          <p className="border-t border-border px-4 py-4 text-xs text-muted-foreground">해당 항목이 없습니다.</p>
+          <p className="border-t border-border px-4 py-4 text-xs text-muted-foreground">{t.noRows}</p>
         ) : (
           <div className="max-h-[60vh] overflow-auto border-t border-border">
             <table className="w-full min-w-[1000px] text-xs">
               <thead className="text-[11px] uppercase text-muted-foreground">
                 <tr>
-                  {["공종", "건물", "Room", "Activity", "MS", "협력사", "수량", "계획%", "실적%", "시작", "종료", "상태"].map((h) => (
+                  {t.actCols.map((h) => (
                     <th key={h} className="sticky top-0 z-10 whitespace-nowrap border-b border-border bg-muted px-2 py-1.5 text-left font-semibold">{h}</th>
                   ))}
                 </tr>
@@ -263,9 +294,10 @@ function ActivityGroup({ gkey, label, desc, rows }: { gkey: TodayGroupKey; label
               <tbody>
                 {rows.map((r) => {
                   const late = isLate(r);
+                  const slot = lang === "en" ? SLOT_LABEL_EN[r.slot] ?? r.slot : SLOT_LABEL[r.slot] ?? r.slot;
                   return (
                     <tr key={r.id} className={`border-b border-border/60 ${late ? "bg-destructive/5" : ""}`}>
-                      <td className="whitespace-nowrap px-2 py-1.5">{SLOT_LABEL[r.slot] ?? r.slot}</td>
+                      <td className="whitespace-nowrap px-2 py-1.5">{slot}</td>
                       <td className="whitespace-nowrap px-2 py-1.5">{r.bldg ?? "—"}</td>
                       <td className="whitespace-nowrap px-2 py-1.5 text-muted-foreground">{r.room ?? "—"}</td>
                       <td className="max-w-[320px] truncate px-2 py-1.5" title={r.act}>
@@ -283,7 +315,7 @@ function ActivityGroup({ gkey, label, desc, rows }: { gkey: TodayGroupKey; label
                           r.pc != null && r.pc >= 0.995 ? "bg-emerald-500/15 text-emerald-600"
                           : late ? "bg-destructive/15 text-destructive"
                           : r.pc ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
-                          {r.pc != null && r.pc >= 0.995 ? "완료" : late ? "지연" : r.pc ? "진행" : "미착수"}
+                          {r.pc != null && r.pc >= 0.995 ? t.st.done : late ? t.st.late : r.pc ? t.st.wip : t.st.ns}
                         </span>
                       </td>
                     </tr>
@@ -298,50 +330,51 @@ function ActivityGroup({ gkey, label, desc, rows }: { gkey: TodayGroupKey; label
   );
 }
 
-function TcBlock({ list }: { list: ReturnType<typeof todayTc> }) {
-  if (!list.length) return <div className={card}><p className="text-xs text-muted-foreground">금일 계획된 T&amp;C 단계가 없습니다.</p></div>;
-  const stages = [...new Set(list.map((t) => t.stage))] as TcStage[];
+function TcBlock({ list, lang }: { list: ReturnType<typeof todayTc>; lang: Lang }) {
+  const t = T[lang];
+  if (!list.length) return <div className={card}><p className="text-xs text-muted-foreground">{t.noTc}</p></div>;
+  const stages = [...new Set(list.map((x) => x.stage))] as TcStage[];
   return (
     <div className="space-y-3">
       {stages.map((st) => {
-        const items = list.filter((t) => t.stage === st);
+        const items = list.filter((x) => x.stage === st);
         return (
           <div key={st} className="rounded-lg border border-border bg-card">
             <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
               <strong className="text-sm">{st}</strong>
-              <span className="text-[11px] text-muted-foreground">{TC_STAGE_SUB[st]}</span>
+              <span className="text-[11px] text-muted-foreground">{lang === "en" ? TC_STAGE_SUB_EN[st] : TC_STAGE_SUB[st]}</span>
               <span className="ml-auto rounded bg-accent px-2 py-0.5 text-xs font-bold tabular-nums">{items.length}</span>
             </div>
             <div className="max-h-[60vh] overflow-auto">
               <table className="w-full min-w-[820px] text-xs">
                 <thead className="text-[11px] uppercase text-muted-foreground">
                   <tr>
-                    {["공종", "건물", "Group", "Item", "Equipment", "수량", "공급사", "상태"].map((h) => (
+                    {t.tcCols.map((h) => (
                       <th key={h} className="sticky top-0 z-10 whitespace-nowrap border-b border-border bg-muted px-2 py-1.5 text-left font-semibold">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((t) => (
-                    <tr key={`${st}-${t.item.id}`} className="border-b border-border/60">
-                      <td className="whitespace-nowrap px-2 py-1.5">{TC_DISC_LABEL[t.item.discipline] ?? t.item.discipline}</td>
+                  {items.map((x) => (
+                    <tr key={`${st}-${x.item.id}`} className="border-b border-border/60">
+                      <td className="whitespace-nowrap px-2 py-1.5">{TC_DISC_LABEL[x.item.discipline] ?? x.item.discipline}</td>
                       <td className="whitespace-nowrap px-2 py-1.5">
                         <Link
                           to="/tc/list"
-                          search={{ disc: t.item.discipline, stage: st, ...(t.item.bldg ? { bldg: t.item.bldg } : {}), ...(t.item.item ? { item: t.item.item } : {}) }}
+                          search={{ disc: x.item.discipline, stage: st, ...(x.item.bldg ? { bldg: x.item.bldg } : {}), ...(x.item.item ? { item: x.item.item } : {}) }}
                           className="hover:underline"
                         >
-                          {t.item.bldg ?? "—"}
+                          {x.item.bldg ?? "—"}
                         </Link>
                       </td>
-                      <td className="whitespace-nowrap px-2 py-1.5 text-muted-foreground">{t.item.grp ?? "—"}</td>
-                      <td className="max-w-[220px] truncate px-2 py-1.5" title={t.item.item ?? ""}>{t.item.item ?? "—"}</td>
-                      <td className="max-w-[220px] truncate px-2 py-1.5 text-muted-foreground" title={t.item.equip ?? ""}>{t.item.equip ?? "—"}</td>
-                      <td className="whitespace-nowrap px-2 py-1.5 text-right tabular-nums">{t.item.qty}</td>
-                      <td className="max-w-[140px] truncate px-2 py-1.5 text-muted-foreground" title={t.item.supplier ?? ""}>{t.item.supplier ?? "—"}</td>
+                      <td className="whitespace-nowrap px-2 py-1.5 text-muted-foreground">{x.item.grp ?? "—"}</td>
+                      <td className="max-w-[220px] truncate px-2 py-1.5" title={x.item.item ?? ""}>{x.item.item ?? "—"}</td>
+                      <td className="max-w-[220px] truncate px-2 py-1.5 text-muted-foreground" title={x.item.equip ?? ""}>{x.item.equip ?? "—"}</td>
+                      <td className="whitespace-nowrap px-2 py-1.5 text-right tabular-nums">{x.item.qty}</td>
+                      <td className="max-w-[140px] truncate px-2 py-1.5 text-muted-foreground" title={x.item.supplier ?? ""}>{x.item.supplier ?? "—"}</td>
                       <td className="whitespace-nowrap px-2 py-1.5">
-                        <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${t.done ? "bg-emerald-500/15 text-emerald-600" : "bg-amber-500/15 text-amber-700"}`}>
-                          {t.done ? "완료" : "미완료"}
+                        <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${x.done ? "bg-emerald-500/15 text-emerald-600" : "bg-amber-500/15 text-amber-700"}`}>
+                          {x.done ? t.st.done : t.st.incomplete}
                         </span>
                       </td>
                     </tr>
@@ -356,19 +389,18 @@ function TcBlock({ list }: { list: ReturnType<typeof todayTc> }) {
   );
 }
 
-function SafetyBlock({ pending, error, risks, at, empty, canAnalyze }: { pending: boolean; error: Error | null; risks?: SafetyRisk[]; at?: string; empty: boolean; canAnalyze: boolean }) {
-  if (pending) return <div className={card}><p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="size-3.5 animate-spin" />당일 작업을 분석하는 중입니다…</p></div>;
+function SafetyBlock({ pending, error, risks, at, empty, lang }: { pending: boolean; error: Error | null; risks?: SafetyRisk[]; at?: string; empty: boolean; lang: Lang }) {
+  const t = T[lang];
+  if (pending) return <div className={card}><p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="size-3.5 animate-spin" />{t.analyzing}</p></div>;
   if (error) return <div className={`${card} border-destructive/40`}><p className="text-xs text-destructive">{error.message}</p></div>;
   if (!risks) {
     return (
       <div className={card}>
-        <p className="text-xs text-muted-foreground">
-          {empty ? "금일 해당하는 작업이 없어 분석할 대상이 없습니다." : "금일 안전 위험 분석을 준비하는 중입니다. 잠시 후 자동으로 표시됩니다."}
-        </p>
+        <p className="text-xs text-muted-foreground">{empty ? t.noTarget : t.preparing}</p>
       </div>
     );
   }
-  if (!risks.length) return <div className={card}><p className="text-xs text-muted-foreground">특별히 주의가 필요한 고위험 작업이 확인되지 않았습니다.</p></div>;
+  if (!risks.length) return <div className={card}><p className="text-xs text-muted-foreground">{t.noRisk}</p></div>;
   return (
     <div>
       <div className="grid gap-3 lg:grid-cols-2">
@@ -378,8 +410,8 @@ function SafetyBlock({ pending, error, risks, at, empty, canAnalyze }: { pending
             <div key={i} className={`flex gap-3 rounded-lg border p-4 ${high ? "border-destructive/50 bg-destructive/5" : "border-amber-500/50 bg-amber-500/5"}`}>
               {r.hazardType.length > 0 && (
                 <div className="flex w-16 shrink-0 flex-col items-start gap-1 border-r border-border/60 pr-3">
-                  {r.hazardType.map((t) => (
-                    <span key={t} className={`whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-semibold ${hazardTypeClass(t)}`}>{t}</span>
+                  {r.hazardType.map((h) => (
+                    <span key={h} className={`rounded px-1.5 py-0.5 text-[10px] font-semibold leading-tight ${hazardTypeClass(h)}`}>{h}</span>
                   ))}
                 </div>
               )}
@@ -389,30 +421,31 @@ function SafetyBlock({ pending, error, risks, at, empty, canAnalyze }: { pending
                   <strong className="text-sm">{r.title}</strong>
                 </div>
                 <p className="mb-2 text-[11px] text-muted-foreground">{r.bldg} · {r.sub}</p>
-                <p className="text-xs leading-relaxed"><b className={high ? "text-destructive" : "text-amber-700"}>위험 요인</b> {r.hazard}</p>
-                <p className="mt-1 text-xs leading-relaxed"><b className="text-foreground">권고 조치</b> {r.action}</p>
+                <p className="text-xs leading-relaxed"><b className={high ? "text-destructive" : "text-amber-700"}>{t.hazard}</b> {r.hazard}</p>
+                <p className="mt-1 text-xs leading-relaxed"><b className="text-foreground">{t.action}</b> {r.action}</p>
               </div>
             </div>
           );
         })}
       </div>
-      {at && <p className="mt-2 text-[11px] text-muted-foreground">AI 분석 · {new Date(at).toLocaleString("ko-KR")}</p>}
+      {at && <p className="mt-2 text-[11px] text-muted-foreground">{t.aiAt} · {new Date(at).toLocaleString(lang === "en" ? "en-GB" : "ko-KR")}</p>}
     </div>
   );
 }
 
-/** 위험 유형별 뱃지 색상 */
+/** 위험 유형별 뱃지 색상 (한/영 공통) */
 function hazardTypeClass(t: string): string {
-  if (t.includes("낙하") || t.includes("추락")) return "bg-sky-600/15 text-sky-700 dark:text-sky-300";
-  if (t.includes("전도")) return "bg-violet-600/15 text-violet-700 dark:text-violet-300";
-  if (t.includes("붕괴")) return "bg-stone-600/15 text-stone-700 dark:text-stone-300";
-  if (t.includes("비래")) return "bg-sky-800/15 text-sky-800 dark:text-sky-200";
-  if (t.includes("감전")) return "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300";
-  if (t.includes("화재") || t.includes("폭발")) return "bg-red-600/15 text-red-700 dark:text-red-300";
-  if (t.includes("질식") || t.includes("밀폐")) return "bg-purple-600/15 text-purple-700 dark:text-purple-300";
-  if (t.includes("협착")) return "bg-orange-600/15 text-orange-700 dark:text-orange-300";
-  if (t.includes("기계") || t.includes("장비")) return "bg-slate-600/15 text-slate-700 dark:text-slate-300";
-  if (t.includes("감김") || t.includes("절단")) return "bg-rose-600/15 text-rose-700 dark:text-rose-300";
-  if (t.includes("화학")) return "bg-emerald-600/15 text-emerald-700 dark:text-emerald-300";
+  const s = t.toLowerCase();
+  if (t.includes("낙하물") || t.includes("비래") || s.includes("falling object")) return "bg-sky-800/15 text-sky-800 dark:text-sky-200";
+  if (t.includes("낙하") || t.includes("추락") || s.includes("fall")) return "bg-sky-600/15 text-sky-700 dark:text-sky-300";
+  if (t.includes("전도") || s.includes("overturn")) return "bg-violet-600/15 text-violet-700 dark:text-violet-300";
+  if (t.includes("붕괴") || s.includes("collapse")) return "bg-stone-600/15 text-stone-700 dark:text-stone-300";
+  if (t.includes("감전") || s.includes("electric")) return "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300";
+  if (t.includes("화재") || t.includes("폭발") || s.includes("fire") || s.includes("explos")) return "bg-red-600/15 text-red-700 dark:text-red-300";
+  if (t.includes("질식") || t.includes("밀폐") || s.includes("asphyx") || s.includes("confined")) return "bg-purple-600/15 text-purple-700 dark:text-purple-300";
+  if (t.includes("협착") || s.includes("crush") || s.includes("caught")) return "bg-orange-600/15 text-orange-700 dark:text-orange-300";
+  if (t.includes("기계") || t.includes("장비") || s.includes("machinery") || s.includes("equipment")) return "bg-slate-600/15 text-slate-700 dark:text-slate-300";
+  if (t.includes("감김") || t.includes("절단") || s.includes("entangle") || s.includes("cut")) return "bg-rose-600/15 text-rose-700 dark:text-rose-300";
+  if (t.includes("화학") || s.includes("chemical")) return "bg-emerald-600/15 text-emerald-700 dark:text-emerald-300";
   return "bg-muted text-muted-foreground";
 }
