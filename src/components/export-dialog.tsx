@@ -78,7 +78,10 @@ export function ExportDialog({
         for (const ex of extraSheets?.() ?? []) {
           XLSX.utils.book_append_sheet(
             wb,
-            styledAoaSheet(ex.aoa, ex.headerRows ?? 1, { title: ex.title ?? docTitle(fileBase, docLabel), subtitle: ex.subtitle ?? subtitle }),
+            styledAoaSheet(ex.aoa, ex.headerRows ?? 1, {
+              title: ex.title ?? docTitle(fileBase, docLabel), subtitle: ex.subtitle ?? subtitle,
+              merges: ex.merges, freezeCols: ex.freezeCols, minColWidth: ex.minColWidth,
+            }),
             ex.name,
           );
         }
