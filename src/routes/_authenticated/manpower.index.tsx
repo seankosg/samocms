@@ -260,7 +260,8 @@ function ManpowerPage() {
               const rowTotal = [...row.values()].reduce((a, c) => a + c.total, 0);
               return (
                 <tr key={rowKey} className={`transition-colors hover:bg-primary/5 ${ri % 2 ? "bg-muted/20" : ""} [&>td]:border-b [&>td]:border-border/50 [&>td]:px-2 [&>td]:py-1.5 [&>td]:text-right [&>td:first-child]:text-left`}>
-                  <td className={`sticky left-0 z-10 font-semibold shadow-[2px_0_0_0_hsl(var(--border))] ${ri % 2 ? "bg-muted/40" : "bg-card"}`}>{rowKey}</td>
+                  <td className={`sticky left-0 z-10 w-[150px] min-w-[150px] font-semibold shadow-[2px_0_0_0_hsl(var(--border))] ${ri % 2 ? "bg-muted/40" : "bg-card"}`}>{rowKey}</td>
+                  <td className={`sticky left-[150px] z-10 min-w-[72px] border-l-2 border-primary/20 font-bold text-sm ${ri % 2 ? "bg-muted/40" : "bg-card"} ${rowTotal ? "" : "text-muted-foreground/40"}`}>{rowTotal || "–"}</td>
                   {matrix.cols.map((col) => {
                     const cell = row.get(col);
                     return MATRIX_SHIFTS.map((sh, i) => {
@@ -272,7 +273,6 @@ function ManpowerPage() {
                       );
                     });
                   })}
-                  <td className={`border-l-2 border-primary/20 font-bold ${rowTotal ? "bg-primary/5 text-sm" : "text-muted-foreground/40"}`}>{rowTotal || "–"}</td>
                 </tr>
               );
             })}
