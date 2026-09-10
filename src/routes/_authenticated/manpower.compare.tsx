@@ -4,7 +4,7 @@ import { z } from "zod";
 import * as XLSX from "xlsx";
 import { Download } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
-import { AdminGate } from "@/components/manpower/admin-gate";
+
 import { Kpi } from "@/routes/_authenticated/manpower.index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
