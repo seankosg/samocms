@@ -30,7 +30,7 @@ const dispLen = (v: unknown) => {
   return [...s].reduce((n, ch) => n + (/[\u1100-\u11FF\u3000-\u9FFF\uAC00-\uD7AF\uFF00-\uFF60]/.test(ch) ? 2 : 1), 0);
 };
 
-export type SheetOptions = { title?: string; subtitle?: string };
+export type SheetOptions = { title?: string | undefined; subtitle?: string | undefined };
 
 /** 레코드 배열 -> 서식이 적용된 워크시트 */
 export function styledSheet(recs: Record<string, unknown>[], opts: SheetOptions = {}) {
