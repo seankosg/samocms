@@ -12,9 +12,37 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/use-auth";
 import { manpowerRangeQuery, useManpower } from "@/lib/use-manpower";
 import {
-  SHIFTS, TRADES, cardMismatch, compliance, fmtDay, locationMatrix, riyadhToday, riyadhTime,
+  TRADES, cardMismatch, compliance, fmtDay, riyadhToday, riyadhTime,
   toDaily, tradeTotals, type Card as MpCard, type Source,
 } from "@/lib/manpower-model";
+
+/** 매트릭스 인원 합산 대상 직종 (나머지 직종은 제외) */
+const MATRIX_TRADES = ["worker", "electrician", "plumber", "scaffolder"] as const;
+const matrixCount = (c: MpCard) => MATRIX_TRADES.reduce((s, t) => s + Number(c[t] ?? 0), 0);
+const MATRIX_SHIFTS = ["Day Shift", "Overtime", "Night Shift"] as const;
+const MATRIX_SHIFT_LABEL: Record<(typeof MATRIX_SHIFTS)[number], string> = {
+  "Day Shift": "주간", Overtime: "연장", "Night Shift": "야간",
+};
+type MatrixCell = { total: number; byShift: Record<(typeof MATRIX_SHIFTS)[number], number> };
+/** mode=company: 행=협력사·열=장소 / mode=location: 행=장소·열=협력사 */
+function buildMatrix(cards: MpCard[], source: Source, mode: "company" | "location") {
+  const rows = new Map<string, Map<string, MatrixCell>>();
+  const colSet = new Set<string>();
+  cards.filter((c) => c.source === source).forEach((c) => {
+    const n = matrixCount(c);
+    if (!n) return;
+    const [rk, ck] = mode === "company" ? [c.company, c.location] : [c.location, c.company];
+    colSet.add(ck);
+    let row = rows.get(rk);
+    if (!row) { row = new Map(); rows.set(rk, row); }
+    let cell = row.get(ck);
+    if (!cell) { cell = { total: 0, byShift: { "Day Shift": 0, Overtime: 0, "Night Shift": 0 } }; row.set(ck, cell); }
+    const sh = (MATRIX_SHIFTS as readonly string[]).includes(c.shift) ? (c.shift as (typeof MATRIX_SHIFTS)[number]) : "Day Shift";
+    cell.byShift[sh] += n;
+    cell.total += n;
+  });
+  return { rows, cols: [...colSet].sort() };
+}
 import { MP, TRADE_LABEL } from "@/lib/manpower-i18n";
 
 const search = z.object({ day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), src: z.enum(["SUB", "HDEC"]).optional() });
