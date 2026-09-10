@@ -180,9 +180,9 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
           </Button>
           <Link to="/dashboard" className="flex min-w-0 items-center gap-2.5">
             <img src={hyundaiLogo} alt="HYUNDAI Engineering & Construction" className="h-6 lg:h-7 w-auto shrink-0" />
-            <span className="hidden min-w-0 md:block">
-              <strong className="block truncate text-sm leading-tight">HMMME CMS 시스템</strong>
-              <small className="block text-[11px] text-muted-foreground">Integrated Schedule Control</small>
+            <span className="hidden min-w-0 md:flex md:items-baseline md:gap-2">
+              <strong className="truncate text-lg leading-tight">HMMME PROJECT CMS</strong>
+              <small className="truncate text-[9px] text-muted-foreground">Project Completion Management System</small>
             </span>
           </Link>
           <div className="ml-auto flex items-center justify-end gap-2 text-xs">
