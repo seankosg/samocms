@@ -1,5 +1,6 @@
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { getManpower, getManpowerMembers } from "./manpower.functions";
+import { getManpower, getManpowerMembers, getManpowerMasters } from "./manpower.functions";
+
 import {
   makeIsWorkday, riyadhToday, addDays, toDaily,
   type Card, type CompareRow, type CompanyMaster, type LocationMaster, type CalendarDay, type PlanRow,
@@ -44,6 +45,8 @@ export function useManpower(from: string, to: string) {
     daily: toDaily(cards),
     isWorkday: makeIsWorkday(calendar),
     cutoff: data.settings["manpower_cutoff_time"] ?? "09:00",
+    lastReceivedAt: (data as { lastReceivedAt?: string | null }).lastReceivedAt ?? null,
+
   };
 }
 
@@ -59,3 +62,29 @@ export function useManpowerMembers() {
     role: "SUB" | "HDEC"; is_active: boolean; note: string | null;
   }[];
 }
+
+export const manpowerMastersQuery = queryOptions({
+  queryKey: ["manpower-masters"],
+  queryFn: () => getManpowerMasters(),
+  staleTime: 60_000,
+});
+
+export type MasterRow = {
+  name: string; sort_order: number; is_active: boolean; updated_at?: string;
+  short_name?: string | null; discipline?: string | null; contract_no?: string | null;
+  bldg_code?: string | null; zone?: string | null;
+};
+export type AliasRow = { kind: "company" | "location"; alias: string; canonical: string; note: string | null };
+
+export function useManpowerMasters() {
+  const data = useSuspenseQuery(manpowerMastersQuery).data;
+  return {
+    companies: data.companies as unknown as MasterRow[],
+    locations: data.locations as unknown as MasterRow[],
+    aliases: data.aliases as unknown as AliasRow[],
+    usage: data.usage,
+    members: data.members as unknown as { telegram_id: string; name: string; company: string | null; role: string }[],
+    lastEntrySyncedAt: data.lastEntrySyncedAt as string | null,
+  };
+}
+

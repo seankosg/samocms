@@ -292,6 +292,30 @@ export type Database = {
         }
         Relationships: []
       }
+      manpower_aliases: {
+        Row: {
+          alias: string
+          canonical: string
+          created_at: string
+          kind: string
+          note: string | null
+        }
+        Insert: {
+          alias: string
+          canonical: string
+          created_at?: string
+          kind: string
+          note?: string | null
+        }
+        Update: {
+          alias?: string
+          canonical?: string
+          created_at?: string
+          kind?: string
+          note?: string | null
+        }
+        Relationships: []
+      }
       manpower_calendar: {
         Row: {
           day: string
@@ -320,6 +344,7 @@ export type Database = {
           name: string
           short_name: string | null
           sort_order: number
+          updated_at: string
         }
         Insert: {
           active_from?: string | null
@@ -330,6 +355,7 @@ export type Database = {
           name: string
           short_name?: string | null
           sort_order: number
+          updated_at?: string
         }
         Update: {
           active_from?: string | null
@@ -340,6 +366,7 @@ export type Database = {
           name?: string
           short_name?: string | null
           sort_order?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -463,6 +490,7 @@ export type Database = {
           is_active: boolean
           name: string
           sort_order: number
+          updated_at: string
           zone: string | null
         }
         Insert: {
@@ -470,6 +498,7 @@ export type Database = {
           is_active?: boolean
           name: string
           sort_order: number
+          updated_at?: string
           zone?: string | null
         }
         Update: {
@@ -477,6 +506,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           sort_order?: number
+          updated_at?: string
           zone?: string | null
         }
         Relationships: []
@@ -1052,6 +1082,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      manpower_name_usage: {
+        Args: never
+        Returns: {
+          entry_count: number
+          kind: string
+          name: string
+        }[]
       }
       refresh_activity_daily: { Args: { _date: string }; Returns: number }
       refresh_activity_daily_all: { Args: never; Returns: number }
