@@ -75,7 +75,15 @@ export const saveManpowerMember = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("manpower_members")
-      .upsert({ ...data, updated_at: new Date().toISOString() }, { onConflict: "telegram_id" });
+      .upsert({
+        telegram_id: data.telegram_id,
+        name: data.name,
+        company: data.company ?? null,
+        role: data.role,
+        is_active: data.is_active,
+        note: data.note ?? null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "telegram_id" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
