@@ -333,19 +333,25 @@ export type Database = {
           created_by: string | null
           day: string
           generated_at: string
+          generated_at_en: string | null
           risks: Json
+          risks_en: Json | null
         }
         Insert: {
           created_by?: string | null
           day: string
           generated_at?: string
+          generated_at_en?: string | null
           risks?: Json
+          risks_en?: Json | null
         }
         Update: {
           created_by?: string | null
           day?: string
           generated_at?: string
+          generated_at_en?: string | null
           risks?: Json
+          risks_en?: Json | null
         }
         Relationships: []
       }
