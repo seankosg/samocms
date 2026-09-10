@@ -24,6 +24,7 @@ import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedManpowerIndexRouteImport } from './routes/_authenticated/manpower.index'
 import { Route as AuthenticatedManpowerCompareRouteImport } from './routes/_authenticated/manpower.compare'
+import { Route as AuthenticatedManpowerMastersRouteImport } from './routes/_authenticated/manpower.masters'
 import { Route as AuthenticatedManpowerMembersRouteImport } from './routes/_authenticated/manpower.members'
 import { Route as AuthenticatedManpowerTrendRouteImport } from './routes/_authenticated/manpower.trend'
 import { Route as AuthenticatedTcElecRouteImport } from './routes/_authenticated/tc.elec'
@@ -110,6 +111,12 @@ const AuthenticatedManpowerCompareRoute =
     path: '/manpower/compare',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedManpowerMastersRoute =
+  AuthenticatedManpowerMastersRouteImport.update({
+    id: '/manpower/masters',
+    path: '/manpower/masters',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedManpowerMembersRoute =
   AuthenticatedManpowerMembersRouteImport.update({
     id: '/manpower/members',
@@ -167,6 +174,7 @@ export interface FileRoutesByFullPath {
   '/upload': typeof AuthenticatedUploadRoute
   '/users': typeof AuthenticatedUsersRoute
   '/manpower/compare': typeof AuthenticatedManpowerCompareRoute
+  '/manpower/masters': typeof AuthenticatedManpowerMastersRoute
   '/manpower/members': typeof AuthenticatedManpowerMembersRoute
   '/manpower/trend': typeof AuthenticatedManpowerTrendRoute
   '/tc/elec': typeof AuthenticatedTcElecRoute
@@ -191,6 +199,7 @@ export interface FileRoutesByTo {
   '/upload': typeof AuthenticatedUploadRoute
   '/users': typeof AuthenticatedUsersRoute
   '/manpower/compare': typeof AuthenticatedManpowerCompareRoute
+  '/manpower/masters': typeof AuthenticatedManpowerMastersRoute
   '/manpower/members': typeof AuthenticatedManpowerMembersRoute
   '/manpower/trend': typeof AuthenticatedManpowerTrendRoute
   '/tc/elec': typeof AuthenticatedTcElecRoute
@@ -217,6 +226,7 @@ export interface FileRoutesById {
   '/_authenticated/upload': typeof AuthenticatedUploadRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/manpower/compare': typeof AuthenticatedManpowerCompareRoute
+  '/_authenticated/manpower/masters': typeof AuthenticatedManpowerMastersRoute
   '/_authenticated/manpower/members': typeof AuthenticatedManpowerMembersRoute
   '/_authenticated/manpower/trend': typeof AuthenticatedManpowerTrendRoute
   '/_authenticated/tc/elec': typeof AuthenticatedTcElecRoute
@@ -243,6 +253,7 @@ export interface FileRouteTypes {
     | '/upload'
     | '/users'
     | '/manpower/compare'
+    | '/manpower/masters'
     | '/manpower/members'
     | '/manpower/trend'
     | '/tc/elec'
@@ -267,6 +278,7 @@ export interface FileRouteTypes {
     | '/upload'
     | '/users'
     | '/manpower/compare'
+    | '/manpower/masters'
     | '/manpower/members'
     | '/manpower/trend'
     | '/tc/elec'
@@ -292,6 +304,7 @@ export interface FileRouteTypes {
     | '/_authenticated/upload'
     | '/_authenticated/users'
     | '/_authenticated/manpower/compare'
+    | '/_authenticated/manpower/masters'
     | '/_authenticated/manpower/members'
     | '/_authenticated/manpower/trend'
     | '/_authenticated/tc/elec'
@@ -418,6 +431,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedManpowerCompareRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/manpower/masters': {
+      id: '/_authenticated/manpower/masters'
+      path: '/manpower/masters'
+      fullPath: '/manpower/masters'
+      preLoaderRoute: typeof AuthenticatedManpowerMastersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/manpower/members': {
       id: '/_authenticated/manpower/members'
       path: '/manpower/members'
@@ -489,6 +509,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedUploadRoute: typeof AuthenticatedUploadRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedManpowerCompareRoute: typeof AuthenticatedManpowerCompareRoute
+  AuthenticatedManpowerMastersRoute: typeof AuthenticatedManpowerMastersRoute
   AuthenticatedManpowerMembersRoute: typeof AuthenticatedManpowerMembersRoute
   AuthenticatedManpowerTrendRoute: typeof AuthenticatedManpowerTrendRoute
   AuthenticatedTcElecRoute: typeof AuthenticatedTcElecRoute
@@ -510,6 +531,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedUploadRoute: AuthenticatedUploadRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedManpowerCompareRoute: AuthenticatedManpowerCompareRoute,
+  AuthenticatedManpowerMastersRoute: AuthenticatedManpowerMastersRoute,
   AuthenticatedManpowerMembersRoute: AuthenticatedManpowerMembersRoute,
   AuthenticatedManpowerTrendRoute: AuthenticatedManpowerTrendRoute,
   AuthenticatedTcElecRoute: AuthenticatedTcElecRoute,
