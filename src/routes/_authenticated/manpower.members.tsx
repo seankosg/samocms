@@ -44,9 +44,16 @@ const empty: Draft = { telegram_id: "", name: "", company: "", role: "SUB", is_a
 
 function MembersPage() {
   const members = useManpowerMembers();
+  const { companies } = useManpowerMasters();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [draft, setDraft] = useState<Draft | null>(null);
+  const activeCompanies = useMemo(() => companies.filter((c) => c.is_active), [companies]);
+  const legacyCompany =
+    draft && draft.role !== "HDEC" && draft.company && !activeCompanies.some((c) => c.name === draft.company)
+      ? draft.company
+      : null;
+
 
   const shown = useMemo(
     () => members.filter((m) => !q || `${m.name} ${m.company ?? ""} ${m.telegram_id}`.toLowerCase().includes(q.toLowerCase())),
