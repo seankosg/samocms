@@ -160,7 +160,6 @@ function ManpowerPage() {
   }, [daily, totals, matrix, matrixMode, day, source]);
 
   return (
-    <AdminGate title="출면 현황">
     <AppShell
       title={MP.daily}
       desc={`${fmtDay(day)} · ${source === "SUB" ? MP.sub : MP.hdec} · 총 ${totals.total.toLocaleString()}명 · 카드 ${shown.length}건${
