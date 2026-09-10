@@ -17,9 +17,9 @@ import { MP } from "@/lib/manpower-i18n";
 
 export const Route = createFileRoute("/_authenticated/manpower/members")({
   head: () => ({ meta: [
-    { title: "출면 봇 사용자 | HMMME 통합 공정 관리" },
+    { title: "출면기록 관리자 설정 | HMMME 통합 공정 관리" },
     { name: "description", content: "텔레그램 출면 보고 봇을 사용할 수 있는 협력사·HDEC 담당자를 등록하고 관리합니다." },
-    { property: "og:title", content: "HMMME 출면 봇 사용자 관리" },
+    { property: "og:title", content: "HMMME 출면기록 관리자 설정" },
     { property: "og:description", content: "출면 보고 담당자를 등록하고 사용 여부를 관리하세요." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
   ] }),
