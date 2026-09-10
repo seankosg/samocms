@@ -68,6 +68,8 @@ const ADMIN_NAV = [
   { group: "관리", items: [
     { to: "/users", label: "사용자 관리", icon: Users },
     { to: "/manpower/members", label: "출면 봇 사용자", icon: Contact },
+    { to: "/manpower/masters", label: "출면 마스터", icon: Contact },
+
   ] },
 ] as const;
 
