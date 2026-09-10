@@ -9,13 +9,18 @@ import { Kpi } from "@/routes/_authenticated/manpower.index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { manpowerRangeQuery, useManpower } from "@/lib/use-manpower";
-import { RESULT_ORDER, fmtDay, riyadhToday, verificationStats, type CompareRow } from "@/lib/manpower-model";
+import { RESULT_ORDER, addDays, fmtDay, riyadhToday, verificationStats, type CompareRow } from "@/lib/manpower-model";
 import { MP, RESULT_LABEL } from "@/lib/manpower-i18n";
+import { CompareDiffCharts } from "@/components/manpower/compare-diff-charts";
 
 const search = z.object({
   day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  cmpFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   result: z.enum(["ALL", "MATCH", "DIFF", "HDEC ONLY", "NOT COUNTED"]).optional(),
 });
+
+/** 차트 기본 기간: 기준일 포함 최근 14일 */
+const chartFrom = (day: string, from?: string) => from ?? addDays(day, -13);
 
 export const Route = createFileRoute("/_authenticated/manpower/compare")({
   head: () => ({ meta: [
@@ -26,8 +31,11 @@ export const Route = createFileRoute("/_authenticated/manpower/compare")({
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
   ] }),
   validateSearch: (s: unknown) => search.parse(s),
-  loaderDeps: ({ search: s }) => ({ day: s.day ?? riyadhToday() }),
-  loader: ({ context, deps }) => context.queryClient.ensureQueryData(manpowerRangeQuery(deps.day, deps.day)),
+  loaderDeps: ({ search: s }) => {
+    const day = s.day ?? riyadhToday();
+    return { day, from: chartFrom(day, s.cmpFrom) };
+  },
+  loader: ({ context, deps }) => context.queryClient.ensureQueryData(manpowerRangeQuery(deps.from, deps.day)),
   errorComponent: ({ error }) => <div role="alert" className="p-8 text-sm">대조 데이터를 불러오지 못했습니다. {(error as Error).message}</div>,
   component: ComparePage,
 });
@@ -44,7 +52,8 @@ function ComparePage() {
   const navigate = Route.useNavigate();
   const day = s.day ?? riyadhToday();
   const filter = s.result ?? "ALL";
-  const { compare } = useManpower(day, day);
+  const from = chartFrom(day, s.cmpFrom);
+  const { compare } = useManpower(from, day);
   const [q, setQ] = useState("");
 
   const rows = useMemo(() => compare.filter((r) => r.report_date === day), [compare, day]);
@@ -75,6 +84,10 @@ function ComparePage() {
       desc={`${fmtDay(day)} · 대조 ${rows.length}건 · 일치율 ${Math.round(stats.matchRate * 100)}%`}
       actions={
         <>
+          <Input type="date" aria-label="차트 시작일" value={from} max={day}
+            onChange={(e) => navigate({ search: (p) => ({ ...p, cmpFrom: e.target.value }), replace: true })}
+            className="h-8 w-[150px] text-xs" />
+          <span className="text-xs text-muted-foreground">~</span>
           <Input type="date" aria-label="보고일" value={day} onChange={(e) => navigate({ search: (p) => ({ ...p, day: e.target.value }), replace: true })} className="h-8 w-[150px] text-xs" />
           <Button size="sm" variant="outline" onClick={exportXlsx}><Download className="size-3.5" />엑셀</Button>
         </>
@@ -86,6 +99,8 @@ function ComparePage() {
         <Kpi label="평균 절대차" value={stats.avgAbsDiff.toFixed(1)} sub="차이가 난 카드 기준" />
         <Kpi label={MP.hdecOnly} value={String(stats.hdecOnly)} sub="보고 없이 현장에서 확인" tone={stats.hdecOnly ? "warn" : "ok"} />
       </div>
+
+      <CompareDiffCharts rows={compare} day={day} />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         {(["ALL", "DIFF", "HDEC ONLY", "NOT COUNTED", "MATCH"] as const).map((v) => (
