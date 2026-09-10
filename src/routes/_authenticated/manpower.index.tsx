@@ -86,7 +86,7 @@ function ManpowerPage() {
   const navigate = Route.useNavigate();
   const day = s.day ?? riyadhToday();
   const source: Source = s.src ?? "SUB";
-  const { cards, companies, settings, cutoff } = useManpower(day, day);
+  const { cards, companies, locations, settings, cutoff } = useManpower(day, day);
   const { isAdmin } = useAuth();
   const [q, setQ] = useState("");
   const [matrixMode, setMatrixMode] = useState<"company" | "location">("company");
