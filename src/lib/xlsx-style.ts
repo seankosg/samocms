@@ -30,7 +30,16 @@ const dispLen = (v: unknown) => {
   return [...s].reduce((n, ch) => n + (/[\u1100-\u11FF\u3000-\u9FFF\uAC00-\uD7AF\uFF00-\uFF60]/.test(ch) ? 2 : 1), 0);
 };
 
-export type SheetOptions = { title?: string | undefined; subtitle?: string | undefined };
+export type SheetOptions = {
+  title?: string | undefined;
+  subtitle?: string | undefined;
+  /** 데이터 영역 기준(0-based, 제목행 제외) 병합 범위 — 2단 헤더 그룹 병합 등 */
+  merges?: { r1: number; c1: number; r2: number; c2: number }[] | undefined;
+  /** 고정(freeze) 열 수 */
+  freezeCols?: number | undefined;
+  /** 컬럼 최소 너비 */
+  minColWidth?: number | undefined;
+};
 
 /** 레코드 배열 -> 서식이 적용된 워크시트 */
 export function styledSheet(recs: Record<string, unknown>[], opts: SheetOptions = {}) {
