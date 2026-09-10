@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import * as XLSX from "xlsx";
+import { styledAoaSheet, styledSheet, XLSXS as XLSX } from "@/lib/xlsx-style";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -8,6 +8,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
 export type ExportRow = { group: string; rec: Record<string, unknown> };
+/** 단일 파일 모드에서 함께 저장할 추가 시트 (매트릭스 등 2차원 표) */
+export type ExtraSheet = { name: string; aoa: unknown[][]; headerRows?: number; title?: string; subtitle?: string };
 
 const ZIP_THRESHOLD = 7;
 
@@ -24,15 +26,13 @@ function downloadBlob(blob: Blob, filename: string) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-function bookOf(recs: Record<string, unknown>[], sheetName: string) {
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(recs), sheetName);
-  return wb;
-}
+/** 문서 제목(파일명/시트 상단 제목) 규칙 */
+const docTitle = (base: string, docLabel?: string, group?: string) =>
+  [docLabel ?? base, group].filter(Boolean).join(" - ");
 
 /** QAIL Snag Raw Data 내보내기의 Output 섹션 UI를 이식한 공통 내보내기 다이얼로그 */
 export function ExportDialog({
-  open, onOpenChange, title, getRows, fileBase, sheetName,
+  open, onOpenChange, title, getRows, fileBase, sheetName, docLabel, subtitle, extraSheets,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -40,7 +40,18 @@ export function ExportDialog({
   getRows: () => ExportRow[];
   fileBase: string;
   sheetName: string;
+  /** 시트 상단 제목에 쓸 문서명 (기본: fileBase) */
+  docLabel?: string;
+  /** 시트 상단 부제 (기준일 등) */
+  subtitle?: string;
+  /** 단일 파일 모드에서 함께 저장할 추가 시트 */
+  extraSheets?: () => ExtraSheet[];
 }) {
+  const bookOf = (recs: Record<string, unknown>[], group?: string) => {
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, styledSheet(recs, { title: docTitle(fileBase, docLabel, group), subtitle }), sheetName);
+    return wb;
+  };
   const [mode, setMode] = useState<"single" | "per-subcon">("single");
   const [busy, setBusy] = useState(false);
 
@@ -59,7 +70,15 @@ export function ExportDialog({
       const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
 
       if (mode === "single") {
-        XLSX.writeFile(bookOf(rows.map((r) => r.rec), sheetName), `${fileBase}_${stamp}.xlsx`);
+        const wb = bookOf(rows.map((r) => r.rec));
+        for (const ex of extraSheets?.() ?? []) {
+          XLSX.utils.book_append_sheet(
+            wb,
+            styledAoaSheet(ex.aoa, ex.headerRows ?? 1, { title: ex.title ?? docTitle(fileBase, docLabel), subtitle: ex.subtitle ?? subtitle }),
+            ex.name,
+          );
+        }
+        XLSX.writeFile(wb, `${fileBase}_${stamp}.xlsx`);
         toast.success(`${rows.length.toLocaleString()}건 내보내기 완료`, { id });
       } else {
         const groups = new Map<string, Record<string, unknown>[]>();
@@ -72,14 +91,14 @@ export function ExportDialog({
           const JSZip = (await import("jszip")).default;
           const zip = new JSZip();
           for (const [k, recs] of groups) {
-            const buf = XLSX.write(bookOf(recs, sheetName), { bookType: "xlsx", type: "array" }) as ArrayBuffer;
+            const buf = XLSX.write(bookOf(recs, k), { bookType: "xlsx", type: "array" }) as ArrayBuffer;
             zip.file(`${fileBase}_${sanitize(k)}.xlsx`, buf);
           }
           downloadBlob(await zip.generateAsync({ type: "blob" }), `${fileBase}_협력사별_${stamp}.zip`);
           toast.success(`${groups.size}개 협력사 → ZIP 다운로드`, { id });
         } else {
           for (const [k, recs] of groups) {
-            XLSX.writeFile(bookOf(recs, sheetName), `${fileBase}_${sanitize(k)}_${stamp}.xlsx`);
+            XLSX.writeFile(bookOf(recs, k), `${fileBase}_${sanitize(k)}_${stamp}.xlsx`);
             await new Promise((r) => setTimeout(r, 0));
           }
           toast.success(`${groups.size}개 파일 다운로드`, { id });

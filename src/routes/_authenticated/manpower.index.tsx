@@ -1,9 +1,9 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import * as XLSX from "xlsx";
 import { AlertTriangle, Download } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { ExportDialog, type ExportRow, type ExtraSheet } from "@/components/export-dialog";
 import { AdminGate } from "@/components/manpower/admin-gate";
 import { SheetImportDialog } from "@/components/manpower/sheet-import-dialog";
 import { Button } from "@/components/ui/button";
@@ -91,6 +91,7 @@ function ManpowerPage() {
   const { cards, companies, locations, settings, cutoff } = useManpower(day, day);
   const { isAdmin } = useAuth();
   const [matrixMode, setMatrixMode] = useState<"company" | "location">("company");
+  const [exportOpen, setExportOpen] = useState(false);
 
   const dayCards = useMemo(() => cards.filter((c) => c.report_date === day), [cards, day]);
   const shown = useMemo(() => dayCards.filter((c) => c.source === source), [dayCards, source]);
@@ -111,16 +112,55 @@ function ManpowerPage() {
 
   const setDay = (d: string) => navigate({ search: (p) => ({ ...p, day: d }), replace: true });
 
-  const exportXlsx = () => {
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(shown.map((c) => ({
+  const getRows = useCallback((): ExportRow[] => shown.map((c) => ({
+    group: c.company,
+    rec: {
       구분: c.source, 협력사: c.company, 보고일: c.report_date, 장소: c.location, 조: c.shift,
       Staff: c.staff, Safety: c.safety_officer, Operator: c.operator, Worker: c.worker,
       Electrician: c.electrician, Scaffolder: c.scaffolder, Plumber: c.plumber, 소계: c.subtotal,
       보고자: c.reporter_name, 보고시각: c.submitted_at ? riyadhTime(c.submitted_at) : "",
-    }))), "출면카드");
-    XLSX.writeFile(wb, `HMMME_출면_${day.replace(/-/g, "")}.xlsx`);
-  };
+    },
+  })), [shown]);
+
+  /** 단일 파일 모드에 함께 담는 추가 시트: 협력사 집계 + 매트릭스 */
+  const getExtraSheets = useCallback((): ExtraSheet[] => {
+    const sum = <T,>(f: (d: (typeof daily)[number]) => number) => daily.reduce((a, d) => a + f(d), 0) as T;
+    const summary: unknown[][] = [
+      [MP.company, MP.day, MP.ot, MP.night, ...TRADES.map((t) => TRADE_LABEL[t]), MP.total, MP.firstSubmit],
+      ...[...daily].sort((a, b) => b.total - a.total).map((d) => [
+        d.company, d.day_total, d.ot_total, d.night_total, ...TRADES.map((t) => d[t]), d.total,
+        d.first_submitted_at ? riyadhTime(d.first_submitted_at) : "",
+      ]),
+      ["합계", sum<number>((d) => d.day_total), sum<number>((d) => d.ot_total), sum<number>((d) => d.night_total),
+        ...TRADES.map((t) => totals[t]), totals.total, ""],
+    ];
+    const head1: unknown[] = [matrixMode === "company" ? MP.company : MP.location];
+    const head2: unknown[] = [""];
+    matrix.cols.forEach((col) => {
+      head1.push(col, "", "");
+      MATRIX_SHIFTS.forEach((sh) => head2.push(MATRIX_SHIFT_LABEL[sh]));
+    });
+    head1.push("합계"); head2.push("");
+    const body = [...matrix.rows.entries()].map(([rowKey, row]) => {
+      const line: unknown[] = [rowKey];
+      matrix.cols.forEach((col) => MATRIX_SHIFTS.forEach((sh) => line.push(row.get(col)?.byShift[sh] || 0)));
+      line.push([...row.values()].reduce((a, c) => a + c.total, 0));
+      return line;
+    });
+    const totalLine: unknown[] = ["합계"];
+    matrix.cols.forEach((col) => MATRIX_SHIFTS.forEach((sh) =>
+      totalLine.push([...matrix.rows.values()].reduce((a, row) => a + (row.get(col)?.byShift[sh] ?? 0), 0))));
+    totalLine.push([...matrix.rows.values()].reduce((a, row) => a + [...row.values()].reduce((b, c) => b + c.total, 0), 0));
+    return [
+      { name: "협력사집계", aoa: summary, headerRows: 1, title: `출면 현황 - 협력사 집계 (${source === "SUB" ? MP.sub : MP.hdec})`, subtitle: `기준일 ${fmtDay(day)}` },
+      {
+        name: matrixMode === "company" ? "협력사×장소" : "장소×협력사",
+        aoa: [head1, head2, ...body, totalLine], headerRows: 2,
+        title: `출면 현황 - ${matrixMode === "company" ? "협력사 × 장소" : "장소 × 협력사"} (Worker·Elec·Plumb·Scaf)`,
+        subtitle: `기준일 ${fmtDay(day)} · ${source === "SUB" ? MP.sub : MP.hdec}`,
+      },
+    ];
+  }, [daily, totals, matrix, matrixMode, day, source]);
 
   return (
     <AdminGate title="출면 현황">
@@ -130,7 +170,7 @@ function ManpowerPage() {
       actions={
         <>
           <Input type="date" aria-label="보고일" value={day} onChange={(e) => setDay(e.target.value)} className="h-8 w-[150px] text-xs" />
-          <Button size="sm" variant="outline" onClick={exportXlsx}><Download className="size-3.5" />엑셀</Button>
+          <Button size="sm" variant="outline" onClick={() => setExportOpen(true)}><Download className="size-3.5" />엑셀 내보내기</Button>
           {isAdmin && <SheetImportDialog settings={settings} />}
         </>
       }
@@ -254,6 +294,18 @@ function ManpowerPage() {
           </tbody>
         </table>
       </section>
+
+      <ExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        title="출면 현황 내보내기"
+        getRows={getRows}
+        extraSheets={getExtraSheets}
+        fileBase={`HMMME_출면현황_${source}_${day.replace(/-/g, "")}`}
+        sheetName="출면카드"
+        docLabel={`출면 현황 (${source === "SUB" ? MP.sub : MP.hdec})`}
+        subtitle={`기준일 ${fmtDay(day)} · 총 ${totals.total.toLocaleString()}명 · 카드 ${shown.length}건`}
+      />
     </AppShell>
     </AdminGate>
   );
