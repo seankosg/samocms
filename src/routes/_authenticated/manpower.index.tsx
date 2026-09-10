@@ -4,7 +4,7 @@ import { z } from "zod";
 import { AlertTriangle, Download } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { ExportDialog, type ExportRow, type ExtraSheet } from "@/components/export-dialog";
-import { AdminGate } from "@/components/manpower/admin-gate";
+
 import { SheetImportDialog } from "@/components/manpower/sheet-import-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
