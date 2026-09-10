@@ -165,33 +165,45 @@ function ManpowerPage() {
         </table>
       </section>
 
-      <h2 className="mb-2 text-sm font-bold">협력사 × 장소</h2>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-bold">협력사 × 장소 <span className="font-normal text-muted-foreground">(Worker·Elec·Plumb·Scaf 합계)</span></h2>
+        <Tabs value={matrixMode} onValueChange={(v) => setMatrixMode(v as "company" | "location")}>
+          <TabsList className="h-8"><TabsTrigger value="company" className="text-xs">협력사별</TabsTrigger><TabsTrigger value="location" className="text-xs">장소별</TabsTrigger></TabsList>
+        </Tabs>
+      </div>
       <section className="overflow-x-auto rounded-md border border-border">
-        <table className="w-full text-xs" style={{ minWidth: 200 + locs.length * 78 }}>
-          <caption className="sr-only">협력사와 장소별 배치 인원</caption>
+        <table className="w-full text-xs" style={{ minWidth: 200 + matrix.cols.length * 3 * 64 }}>
+          <caption className="sr-only">{matrixMode === "company" ? "협력사별 장소·조별 배치 인원" : "장소별 협력사·조별 배치 인원"}</caption>
           <thead className="bg-muted/60">
-            <tr className="[&>th]:border-b [&>th]:border-border [&>th]:px-2 [&>th]:py-2 [&>th]:text-right [&>th:first-child]:text-left">
-              <th scope="col" className="sticky left-0 bg-muted/60">{MP.company}</th>
-              {locs.map((l) => <th key={l} scope="col" className="whitespace-nowrap">{l}</th>)}
-              <th scope="col">{MP.total}</th>
+            <tr className="[&>th]:border-b [&>th]:border-border [&>th]:px-2 [&>th]:py-1.5 [&>th]:text-center">
+              <th scope="col" rowSpan={2} className="sticky left-0 bg-muted/60 !text-left">{matrixMode === "company" ? MP.company : MP.location}</th>
+              {matrix.cols.map((col) => <th key={col} scope="colgroup" colSpan={3} className="whitespace-nowrap border-l border-border">{col}</th>)}
+              <th scope="col" rowSpan={2} className="border-l border-border">{MP.total}</th>
+            </tr>
+            <tr className="[&>th]:border-b [&>th]:border-border [&>th]:px-2 [&>th]:py-1 [&>th]:text-right [&>th]:font-normal [&>th]:text-muted-foreground">
+              {matrix.cols.map((col) =>
+                MATRIX_SHIFTS.map((sh, i) => (
+                  <th key={`${col}-${sh}`} scope="col" className={i === 0 ? "border-l border-border" : ""}>{MATRIX_SHIFT_LABEL[sh]}</th>
+                )),
+              )}
             </tr>
           </thead>
           <tbody>
-            {[...matrix.entries()].map(([company, row]) => (
-              <tr key={company} className="[&>td]:border-b [&>td]:border-border/60 [&>td]:px-2 [&>td]:py-1.5 [&>td]:text-right [&>td:first-child]:text-left">
-                <td className="sticky left-0 bg-card font-medium">{company}</td>
-                {locs.map((l) => {
-                  const cell = row.get(l);
-                  return (
-                    <td key={l} title={cell ? SHIFTS.map((sh) => `${sh}: ${cell[sh] ?? 0}`).join(" / ") : undefined}>
-                      {cell?.total || <span className="text-muted-foreground/40">·</span>}
+            {[...matrix.rows.entries()].map(([rowKey, row]) => (
+              <tr key={rowKey} className="[&>td]:border-b [&>td]:border-border/60 [&>td]:px-2 [&>td]:py-1.5 [&>td]:text-right [&>td:first-child]:text-left">
+                <td className="sticky left-0 bg-card font-medium">{rowKey}</td>
+                {matrix.cols.map((col) => {
+                  const cell = row.get(col);
+                  return MATRIX_SHIFTS.map((sh, i) => (
+                    <td key={`${col}-${sh}`} className={i === 0 ? "border-l border-border/60" : ""}>
+                      {cell?.byShift[sh] || <span className="text-muted-foreground/40">·</span>}
                     </td>
-                  );
+                  ));
                 })}
-                <td className="font-bold">{[...row.values()].reduce((a, c) => a + c.total, 0)}</td>
+                <td className="border-l border-border/60 font-bold">{[...row.values()].reduce((a, c) => a + c.total, 0)}</td>
               </tr>
             ))}
-            {!matrix.size && <tr><td colSpan={locs.length + 2} className="p-6 text-center text-muted-foreground">표시할 자료가 없습니다.</td></tr>}
+            {!matrix.rows.size && <tr><td colSpan={matrix.cols.length * 3 + 2} className="p-6 text-center text-muted-foreground">표시할 자료가 없습니다.</td></tr>}
           </tbody>
         </table>
       </section>
