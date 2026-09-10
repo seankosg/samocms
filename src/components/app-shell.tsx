@@ -56,6 +56,9 @@ const NAV = [
     { to: "/tc/progress", label: "T&C Progress", icon: TrendingUp },
     { to: "/tc/list", label: "T&C List", icon: ListChecks },
   ] },
+] as const;
+
+const DATA_NAV = [
   { group: "데이터", items: [{ to: "/upload", label: "업로드", icon: UploadCloud }] },
 ] as const;
 
@@ -110,7 +113,7 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
     XLSX.writeFile(wb, `HMMME_통합_공정_${base.replace(/-/g, "")}.xlsx`);
   };
 
-  const groups = [...NAV, ...(isAdmin ? ADMIN_NAV : [])];
+  const groups = [...NAV, ...(isAdmin ? ADMIN_NAV : []), ...DATA_NAV];
 
   const userBadge = (expanded: boolean) => (
     <div className="flex items-center gap-2 rounded-md bg-accent/40 px-2 py-1.5">
