@@ -294,6 +294,18 @@ function ManpowerPage() {
           </tbody>
         </table>
       </section>
+
+      <ExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        title="출면 현황 내보내기"
+        getRows={getRows}
+        extraSheets={getExtraSheets}
+        fileBase={`HMMME_출면현황_${source}_${day.replace(/-/g, "")}`}
+        sheetName="출면카드"
+        docLabel={`출면 현황 (${source === "SUB" ? MP.sub : MP.hdec})`}
+        subtitle={`기준일 ${fmtDay(day)} · 총 ${totals.total.toLocaleString()}명 · 카드 ${shown.length}건`}
+      />
     </AppShell>
     </AdminGate>
   );
