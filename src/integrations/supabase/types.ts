@@ -292,6 +292,30 @@ export type Database = {
         }
         Relationships: []
       }
+      manpower_aliases: {
+        Row: {
+          alias: string
+          canonical: string
+          created_at: string
+          kind: string
+          note: string | null
+        }
+        Insert: {
+          alias: string
+          canonical: string
+          created_at?: string
+          kind: string
+          note?: string | null
+        }
+        Update: {
+          alias?: string
+          canonical?: string
+          created_at?: string
+          kind?: string
+          note?: string | null
+        }
+        Relationships: []
+      }
       manpower_calendar: {
         Row: {
           day: string
@@ -1058,6 +1082,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      manpower_name_usage: {
+        Args: never
+        Returns: {
+          entry_count: number
+          kind: string
+          name: string
+        }[]
       }
       refresh_activity_daily: { Args: { _date: string }; Returns: number }
       refresh_activity_daily_all: { Args: never; Returns: number }

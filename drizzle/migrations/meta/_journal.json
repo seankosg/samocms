@@ -78,6 +78,13 @@
       "when": 1789036974721,
       "tag": "0010_manpower_masters",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1789037001350,
+      "tag": "0011_manpower_aliases",
+      "breakpoints": true
     }
   ]
 }
