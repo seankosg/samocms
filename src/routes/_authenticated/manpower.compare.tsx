@@ -142,6 +142,5 @@ function ComparePage() {
         </table>
       </section>
     </AppShell>
-    </AdminGate>
   );
 }
