@@ -128,19 +128,9 @@ function ManpowerPage() {
     },
   })), [shown]);
 
-  /** 단일 파일 모드에 함께 담는 추가 시트: 협력사 집계 + 매트릭스 */
-  const getExtraSheets = useCallback((): ExtraSheet[] => {
-    const sum = <T,>(f: (d: (typeof daily)[number]) => number) => daily.reduce((a, d) => a + f(d), 0) as T;
-    const summary: unknown[][] = [
-      [MP.company, MP.day, MP.ot, MP.night, ...TRADES.map((t) => TRADE_LABEL[t]), MP.total, MP.firstSubmit],
-      ...[...daily].sort((a, b) => b.total - a.total).map((d) => [
-        d.company, d.day_total, d.ot_total, d.night_total, ...TRADES.map((t) => d[t]), d.total,
-        d.first_submitted_at ? riyadhTime(d.first_submitted_at) : "",
-      ]),
-      ["합계", sum<number>((d) => d.day_total), sum<number>((d) => d.ot_total), sum<number>((d) => d.night_total),
-        ...TRADES.map((t) => totals[t]), totals.total, ""],
-    ];
-    const head1: unknown[] = [matrixMode === "company" ? MP.company : MP.location, "합계"];
+  /** 매트릭스 1개 시트 (2단 헤더 + 그룹 병합 + 합계행) */
+  const matrixSheet = useCallback((): ExtraSheet => {
+    const head1: unknown[] = [matrixMode === "company" ? MP.company : MP.location, MP.total];
     const head2: unknown[] = ["", ""];
     matrix.cols.forEach((col) => {
       head1.push(col, "", "");
@@ -154,16 +144,48 @@ function ManpowerPage() {
     const totalLine: unknown[] = ["합계", [...matrix.rows.values()].reduce((a, row) => a + [...row.values()].reduce((b, c) => b + c.total, 0), 0)];
     matrix.cols.forEach((col) => MATRIX_SHIFTS.forEach((sh) =>
       totalLine.push([...matrix.rows.values()].reduce((a, row) => a + (row.get(col)?.byShift[sh] ?? 0), 0))));
+    // 1단 헤더: 행 라벨/합계는 세로 병합, 각 열 그룹은 가로 3칸 병합
+    const merges = [
+      { r1: 0, c1: 0, r2: 1, c2: 0 },
+      { r1: 0, c1: 1, r2: 1, c2: 1 },
+      ...matrix.cols.map((_, i) => ({ r1: 0, c1: 2 + i * 3, r2: 0, c2: 4 + i * 3 })),
+    ];
+    return {
+      name: matrixMode === "company" ? "협력사×장소" : "장소×협력사",
+      aoa: [head1, head2, ...body, totalLine], headerRows: 2, merges, freezeCols: 2, minColWidth: 9,
+      title: `출면 현황 - ${matrixMode === "company" ? "협력사 × 장소" : "장소 × 협력사"} (Worker·Elec·Plumb·Scaf)`,
+      subtitle: `기준일 ${fmtDay(day)} · ${source === "SUB" ? MP.sub : MP.hdec}`,
+    };
+  }, [matrix, matrixMode, day, source]);
+
+  /** 매트릭스만 단일 파일로 내려받기 */
+  const exportMatrix = useCallback(async () => {
+    const { styledAoaSheet, XLSXS } = await import("@/lib/xlsx-style");
+    const ex = matrixSheet();
+    const wb = XLSXS.utils.book_new();
+    XLSXS.utils.book_append_sheet(wb, styledAoaSheet(ex.aoa, 2, {
+      title: ex.title, subtitle: ex.subtitle, merges: ex.merges, freezeCols: ex.freezeCols, minColWidth: ex.minColWidth,
+    }), ex.name);
+    XLSXS.writeFile(wb, `출면매트릭스_${day.replace(/-/g, "")}_${source}.xlsx`);
+  }, [matrixSheet, day, source]);
+
+  /** 단일 파일 모드에 함께 담는 추가 시트: 협력사 집계 + 매트릭스 */
+  const getExtraSheets = useCallback((): ExtraSheet[] => {
+    const sum = <T,>(f: (d: (typeof daily)[number]) => number) => daily.reduce((a, d) => a + f(d), 0) as T;
+    const summary: unknown[][] = [
+      [MP.company, MP.day, MP.ot, MP.night, ...TRADES.map((t) => TRADE_LABEL[t]), MP.total, MP.firstSubmit],
+      ...[...daily].sort((a, b) => b.total - a.total).map((d) => [
+        d.company, d.day_total, d.ot_total, d.night_total, ...TRADES.map((t) => d[t]), d.total,
+        d.first_submitted_at ? riyadhTime(d.first_submitted_at) : "",
+      ]),
+      ["합계", sum<number>((d) => d.day_total), sum<number>((d) => d.ot_total), sum<number>((d) => d.night_total),
+        ...TRADES.map((t) => totals[t]), totals.total, ""],
+    ];
     return [
       { name: "협력사집계", aoa: summary, headerRows: 1, title: `출면 현황 - 협력사 집계 (${source === "SUB" ? MP.sub : MP.hdec})`, subtitle: `기준일 ${fmtDay(day)}` },
-      {
-        name: matrixMode === "company" ? "협력사×장소" : "장소×협력사",
-        aoa: [head1, head2, ...body, totalLine], headerRows: 2,
-        title: `출면 현황 - ${matrixMode === "company" ? "협력사 × 장소" : "장소 × 협력사"} (Worker·Elec·Plumb·Scaf)`,
-        subtitle: `기준일 ${fmtDay(day)} · ${source === "SUB" ? MP.sub : MP.hdec}`,
-      },
+      matrixSheet(),
     ];
-  }, [daily, totals, matrix, matrixMode, day, source]);
+  }, [daily, totals, matrixSheet, day, source]);
 
   return (
     <AppShell
@@ -243,11 +265,14 @@ function ManpowerPage() {
         </table>
       </section>
 
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+      <div className="mb-2 flex flex-wrap items-center gap-2">
         <h2 className="text-sm font-bold">협력사 × 장소 <span className="font-normal text-muted-foreground">(Worker·Elec·Plumb·Scaf 합계)</span></h2>
         <Tabs value={matrixMode} onValueChange={(v) => setMatrixMode(v as "company" | "location")}>
           <TabsList className="h-8"><TabsTrigger value="company" className="text-xs">협력사별</TabsTrigger><TabsTrigger value="location" className="text-xs">장소별</TabsTrigger></TabsList>
         </Tabs>
+        <Button size="sm" variant="outline" className="ml-auto" onClick={() => void exportMatrix()}>
+          <Download className="size-3.5" />매트릭스 엑셀
+        </Button>
       </div>
       <section className="overflow-x-auto rounded-lg border border-border shadow-sm">
         <table className="w-full border-collapse text-xs tabular-nums" style={{ minWidth: 200 + matrix.cols.length * 3 * 64 }}>

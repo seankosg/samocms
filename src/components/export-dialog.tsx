@@ -9,7 +9,11 @@ import { Label } from "@/components/ui/label";
 
 export type ExportRow = { group: string; rec: Record<string, unknown> };
 /** 단일 파일 모드에서 함께 저장할 추가 시트 (매트릭스 등 2차원 표) */
-export type ExtraSheet = { name: string; aoa: unknown[][]; headerRows?: number; title?: string; subtitle?: string };
+export type ExtraSheet = {
+  name: string; aoa: unknown[][]; headerRows?: number; title?: string; subtitle?: string;
+  merges?: { r1: number; c1: number; r2: number; c2: number }[];
+  freezeCols?: number; minColWidth?: number;
+};
 
 const ZIP_THRESHOLD = 7;
 
@@ -74,7 +78,10 @@ export function ExportDialog({
         for (const ex of extraSheets?.() ?? []) {
           XLSX.utils.book_append_sheet(
             wb,
-            styledAoaSheet(ex.aoa, ex.headerRows ?? 1, { title: ex.title ?? docTitle(fileBase, docLabel), subtitle: ex.subtitle ?? subtitle }),
+            styledAoaSheet(ex.aoa, ex.headerRows ?? 1, {
+              title: ex.title ?? docTitle(fileBase, docLabel), subtitle: ex.subtitle ?? subtitle,
+              merges: ex.merges, freezeCols: ex.freezeCols, minColWidth: ex.minColWidth,
+            }),
             ex.name,
           );
         }
