@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Eye, FileText, Printer } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { ManpowerKpiCard } from "@/components/manpower/manpower-kpi-card";
 import { useAuth } from "@/lib/use-auth";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -187,6 +188,11 @@ function Dashboard() {
           </div>
         </section>
       )}
+
+      <section className="mt-6">
+        <h2 className="mb-2 text-sm font-bold">출면 현황</h2>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><ManpowerKpiCard /></div>
+      </section>
 
       <section className="mt-6">
         <h2 className="mb-2 text-sm font-bold">마일스톤 현황</h2>

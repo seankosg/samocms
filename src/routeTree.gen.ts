@@ -22,6 +22,10 @@ import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedTodayReportRouteImport } from './routes/_authenticated/today-report'
 import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
+import { Route as AuthenticatedManpowerIndexRouteImport } from './routes/_authenticated/manpower.index'
+import { Route as AuthenticatedManpowerCompareRouteImport } from './routes/_authenticated/manpower.compare'
+import { Route as AuthenticatedManpowerMembersRouteImport } from './routes/_authenticated/manpower.members'
+import { Route as AuthenticatedManpowerTrendRouteImport } from './routes/_authenticated/manpower.trend'
 import { Route as AuthenticatedTcElecRouteImport } from './routes/_authenticated/tc.elec'
 import { Route as AuthenticatedTcListRouteImport } from './routes/_authenticated/tc.list'
 import { Route as AuthenticatedTcMechRouteImport } from './routes/_authenticated/tc.mech'
@@ -93,6 +97,30 @@ const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedManpowerIndexRoute =
+  AuthenticatedManpowerIndexRouteImport.update({
+    id: '/manpower/',
+    path: '/manpower/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedManpowerCompareRoute =
+  AuthenticatedManpowerCompareRouteImport.update({
+    id: '/manpower/compare',
+    path: '/manpower/compare',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedManpowerMembersRoute =
+  AuthenticatedManpowerMembersRouteImport.update({
+    id: '/manpower/members',
+    path: '/manpower/members',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedManpowerTrendRoute =
+  AuthenticatedManpowerTrendRouteImport.update({
+    id: '/manpower/trend',
+    path: '/manpower/trend',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedTcElecRoute = AuthenticatedTcElecRouteImport.update({
   id: '/tc/elec',
   path: '/tc/elec',
@@ -132,11 +160,15 @@ export interface FileRoutesByFullPath {
   '/today-report': typeof AuthenticatedTodayReportRoute
   '/upload': typeof AuthenticatedUploadRoute
   '/users': typeof AuthenticatedUsersRoute
+  '/manpower/compare': typeof AuthenticatedManpowerCompareRoute
+  '/manpower/members': typeof AuthenticatedManpowerMembersRoute
+  '/manpower/trend': typeof AuthenticatedManpowerTrendRoute
   '/tc/elec': typeof AuthenticatedTcElecRoute
   '/tc/list': typeof AuthenticatedTcListRoute
   '/tc/mech': typeof AuthenticatedTcMechRoute
   '/tc/progress': typeof AuthenticatedTcProgressRoute
   '/api/public/version': typeof ApiPublicVersionRoute
+  '/manpower/': typeof AuthenticatedManpowerIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -151,11 +183,15 @@ export interface FileRoutesByTo {
   '/today-report': typeof AuthenticatedTodayReportRoute
   '/upload': typeof AuthenticatedUploadRoute
   '/users': typeof AuthenticatedUsersRoute
+  '/manpower/compare': typeof AuthenticatedManpowerCompareRoute
+  '/manpower/members': typeof AuthenticatedManpowerMembersRoute
+  '/manpower/trend': typeof AuthenticatedManpowerTrendRoute
   '/tc/elec': typeof AuthenticatedTcElecRoute
   '/tc/list': typeof AuthenticatedTcListRoute
   '/tc/mech': typeof AuthenticatedTcMechRoute
   '/tc/progress': typeof AuthenticatedTcProgressRoute
   '/api/public/version': typeof ApiPublicVersionRoute
+  '/manpower': typeof AuthenticatedManpowerIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -172,11 +208,15 @@ export interface FileRoutesById {
   '/_authenticated/today-report': typeof AuthenticatedTodayReportRoute
   '/_authenticated/upload': typeof AuthenticatedUploadRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
+  '/_authenticated/manpower/compare': typeof AuthenticatedManpowerCompareRoute
+  '/_authenticated/manpower/members': typeof AuthenticatedManpowerMembersRoute
+  '/_authenticated/manpower/trend': typeof AuthenticatedManpowerTrendRoute
   '/_authenticated/tc/elec': typeof AuthenticatedTcElecRoute
   '/_authenticated/tc/list': typeof AuthenticatedTcListRoute
   '/_authenticated/tc/mech': typeof AuthenticatedTcMechRoute
   '/_authenticated/tc/progress': typeof AuthenticatedTcProgressRoute
   '/api/public/version': typeof ApiPublicVersionRoute
+  '/_authenticated/manpower/': typeof AuthenticatedManpowerIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -193,11 +233,15 @@ export interface FileRouteTypes {
     | '/today-report'
     | '/upload'
     | '/users'
+    | '/manpower/compare'
+    | '/manpower/members'
+    | '/manpower/trend'
     | '/tc/elec'
     | '/tc/list'
     | '/tc/mech'
     | '/tc/progress'
     | '/api/public/version'
+    | '/manpower/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -212,11 +256,15 @@ export interface FileRouteTypes {
     | '/today-report'
     | '/upload'
     | '/users'
+    | '/manpower/compare'
+    | '/manpower/members'
+    | '/manpower/trend'
     | '/tc/elec'
     | '/tc/list'
     | '/tc/mech'
     | '/tc/progress'
     | '/api/public/version'
+    | '/manpower'
   id:
     | '__root__'
     | '/'
@@ -232,11 +280,15 @@ export interface FileRouteTypes {
     | '/_authenticated/today-report'
     | '/_authenticated/upload'
     | '/_authenticated/users'
+    | '/_authenticated/manpower/compare'
+    | '/_authenticated/manpower/members'
+    | '/_authenticated/manpower/trend'
     | '/_authenticated/tc/elec'
     | '/_authenticated/tc/list'
     | '/_authenticated/tc/mech'
     | '/_authenticated/tc/progress'
     | '/api/public/version'
+    | '/_authenticated/manpower/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -339,6 +391,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/manpower/': {
+      id: '/_authenticated/manpower/'
+      path: '/manpower'
+      fullPath: '/manpower/'
+      preLoaderRoute: typeof AuthenticatedManpowerIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/manpower/compare': {
+      id: '/_authenticated/manpower/compare'
+      path: '/manpower/compare'
+      fullPath: '/manpower/compare'
+      preLoaderRoute: typeof AuthenticatedManpowerCompareRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/manpower/members': {
+      id: '/_authenticated/manpower/members'
+      path: '/manpower/members'
+      fullPath: '/manpower/members'
+      preLoaderRoute: typeof AuthenticatedManpowerMembersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/manpower/trend': {
+      id: '/_authenticated/manpower/trend'
+      path: '/manpower/trend'
+      fullPath: '/manpower/trend'
+      preLoaderRoute: typeof AuthenticatedManpowerTrendRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/tc/elec': {
       id: '/_authenticated/tc/elec'
       path: '/tc/elec'
@@ -388,10 +468,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTodayReportRoute: typeof AuthenticatedTodayReportRoute
   AuthenticatedUploadRoute: typeof AuthenticatedUploadRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
+  AuthenticatedManpowerCompareRoute: typeof AuthenticatedManpowerCompareRoute
+  AuthenticatedManpowerMembersRoute: typeof AuthenticatedManpowerMembersRoute
+  AuthenticatedManpowerTrendRoute: typeof AuthenticatedManpowerTrendRoute
   AuthenticatedTcElecRoute: typeof AuthenticatedTcElecRoute
   AuthenticatedTcListRoute: typeof AuthenticatedTcListRoute
   AuthenticatedTcMechRoute: typeof AuthenticatedTcMechRoute
   AuthenticatedTcProgressRoute: typeof AuthenticatedTcProgressRoute
+  AuthenticatedManpowerIndexRoute: typeof AuthenticatedManpowerIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -405,10 +489,14 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTodayReportRoute: AuthenticatedTodayReportRoute,
   AuthenticatedUploadRoute: AuthenticatedUploadRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
+  AuthenticatedManpowerCompareRoute: AuthenticatedManpowerCompareRoute,
+  AuthenticatedManpowerMembersRoute: AuthenticatedManpowerMembersRoute,
+  AuthenticatedManpowerTrendRoute: AuthenticatedManpowerTrendRoute,
   AuthenticatedTcElecRoute: AuthenticatedTcElecRoute,
   AuthenticatedTcListRoute: AuthenticatedTcListRoute,
   AuthenticatedTcMechRoute: AuthenticatedTcMechRoute,
   AuthenticatedTcProgressRoute: AuthenticatedTcProgressRoute,
+  AuthenticatedManpowerIndexRoute: AuthenticatedManpowerIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
