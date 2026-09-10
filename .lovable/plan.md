@@ -74,3 +74,4 @@ Telegram 봇이 협력사 일일 출면과 HDEC 재집계를 앱 데이터베이
 - 차트는 `ManpowerLineChart` 공용 컴포넌트 하나(series·모드 props)로 만들어 2단계에서 재사용. 기존 `ui/chart.tsx`·`export-dialog`·`column-filter` 재사용, 표는 모바일 가로 스크롤·헤더 고정.
 - 문구는 `src/lib/manpower-i18n.ts` 에 ko 사전으로 모아 두어 다음 단계에서 en 만 추가하면 되게 합니다.
 - 각 route 에 고유 `head()` 메타 지정.
+- 구글 시트 가져오기: `standard_connectors--connect` 로 Google Sheets 커넥터를 프로젝트에 연결하고, 서버 함수 `previewSheetImport` / `applySheetImport` (`requireSupabaseAuth` + `has_role(admin)` 검사) 에서 커넥터 게이트웨이(`/v4/spreadsheets/{id}/values:batchGet`)로 두 탭을 읽습니다. 게이트웨이 호출·비밀값은 서버 전용이며 브라우저로 나가지 않습니다. 파싱·정규화는 `src/lib/manpower-sheet.ts` 순수 함수로 분리하고, 저장은 `(source, sheet_row)` upsert 로 봇과 동일 경로를 씁니다. 시트 주소·탭 이름은 `app_settings` 키로 보관.
