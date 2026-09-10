@@ -90,14 +90,10 @@ function ManpowerPage() {
   const source: Source = s.src ?? "SUB";
   const { cards, companies, locations, settings, cutoff } = useManpower(day, day);
   const { isAdmin } = useAuth();
-  const [q, setQ] = useState("");
   const [matrixMode, setMatrixMode] = useState<"company" | "location">("company");
 
   const dayCards = useMemo(() => cards.filter((c) => c.report_date === day), [cards, day]);
-  const shown = useMemo(
-    () => dayCards.filter((c) => c.source === source && (!q || `${c.company} ${c.location}`.toLowerCase().includes(q.toLowerCase()))),
-    [dayCards, source, q],
-  );
+  const shown = useMemo(() => dayCards.filter((c) => c.source === source), [dayCards, source]);
   const daily = useMemo(() => toDaily(shown), [shown]);
   const totals = useMemo(() => tradeTotals(shown, source), [shown, source]);
   const comp = useMemo(() => compliance(dayCards, companies, day, cutoff), [dayCards, companies, day, cutoff]);
