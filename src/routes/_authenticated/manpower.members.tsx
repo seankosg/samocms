@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { manpowerMembersQuery, useManpowerMembers } from "@/lib/use-manpower";
+import { manpowerMembersQuery, manpowerMastersQuery, useManpowerMembers, useManpowerMasters } from "@/lib/use-manpower";
 import { saveManpowerMember, setManpowerMemberActive } from "@/lib/manpower.functions";
 import { MP } from "@/lib/manpower-i18n";
 
@@ -25,7 +25,11 @@ export const Route = createFileRoute("/_authenticated/manpower/members")({
   ] }),
   loader: async ({ context }) => {
     try {
-      return await context.queryClient.ensureQueryData(manpowerMembersQuery);
+      const [members] = await Promise.all([
+        context.queryClient.ensureQueryData(manpowerMembersQuery),
+        context.queryClient.ensureQueryData(manpowerMastersQuery),
+      ]);
+      return members;
     } catch {
       throw redirect({ to: "/manpower" });
     }
@@ -33,6 +37,7 @@ export const Route = createFileRoute("/_authenticated/manpower/members")({
   errorComponent: ({ error }) => <div role="alert" className="p-8 text-sm">사용자 목록을 불러오지 못했습니다. {(error as Error).message}</div>,
   component: MembersPage,
 });
+
 
 type Draft = { telegram_id: string; name: string; company: string; role: "SUB" | "HDEC"; is_active: boolean; note: string };
 const empty: Draft = { telegram_id: "", name: "", company: "", role: "SUB", is_active: true, note: "" };
