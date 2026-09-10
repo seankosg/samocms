@@ -19,7 +19,7 @@ export const getManpower = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ from: dateStr, to: dateStr }).parse(d))
   .handler(async ({ data, context }) => {
     const c = context.supabase;
-    const [cards, compare, companies, locations, calendar, plan, settings, log, lastEntry] = await Promise.all([
+    const [cards, compare, companies, locations, calendar, plan, settings, log, lastEntry, reminders] = await Promise.all([
       c.from("v_manpower_cards").select("*").gte("report_date", data.from).lte("report_date", data.to),
       c.from("v_manpower_compare").select("*").gte("report_date", data.from).lte("report_date", data.to),
       c.from("manpower_companies").select("*").order("sort_order"),
@@ -29,8 +29,10 @@ export const getManpower = createServerFn({ method: "GET" })
       c.from("app_settings").select("*"),
       c.from("manpower_ingest_log").select("*").order("received_at", { ascending: false }).limit(5),
       c.from("manpower_entries").select("synced_at").order("synced_at", { ascending: false }).limit(1),
+      // 오늘 발송된 미보고 알림 로그 (봇이 mode='reminder' 로 기록, warnings 에 {date, missing[], ...})
+      c.from("manpower_ingest_log").select("warnings").eq("mode", "reminder").filter("warnings->>date", "eq", data.to),
     ]);
-    const err = cards.error ?? compare.error ?? companies.error ?? locations.error ?? calendar.error ?? plan.error ?? settings.error ?? log.error ?? lastEntry.error;
+    const err = cards.error ?? compare.error ?? companies.error ?? locations.error ?? calendar.error ?? plan.error ?? settings.error ?? log.error ?? lastEntry.error ?? reminders.error;
     if (err) throw new Error(err.message);
     const settingMap: Record<string, string> = {};
     (settings.data ?? []).forEach((s: { key: string; value: string | null }) => {
@@ -50,6 +52,9 @@ export const getManpower = createServerFn({ method: "GET" })
       settings: settingMap,
       ingestLog: log.data ?? [],
       lastReceivedAt: candidates.at(-1) ?? null,
+      reminderLog: (reminders.data ?? [])
+        .map((r: { warnings: unknown }) => r.warnings)
+        .filter((w): w is { missing?: string[] } => !!w && typeof w === "object"),
     };
   });
 
@@ -142,16 +147,21 @@ export const getManpowerMasters = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const c = context.supabase;
-    const [companies, locations, aliases, usage, members, lastEntry] = await Promise.all([
+    const [companies, locations, aliases, usage, members, lastEntry, settings] = await Promise.all([
       c.from("manpower_companies").select("*").order("sort_order"),
       c.from("manpower_locations").select("*").order("sort_order"),
       c.from("manpower_aliases").select("*").order("kind").order("alias"),
       c.rpc("manpower_name_usage"),
       c.from("manpower_members").select("telegram_id, name, company, role"),
       c.from("manpower_entries").select("synced_at").order("synced_at", { ascending: false }).limit(1),
+      c.from("app_settings").select("key, value").like("key", "manpower_%"),
     ]);
-    const err = companies.error ?? locations.error ?? aliases.error ?? usage.error ?? members.error ?? lastEntry.error;
+    const err = companies.error ?? locations.error ?? aliases.error ?? usage.error ?? members.error ?? lastEntry.error ?? settings.error;
     if (err) throw new Error(err.message);
+    const settingMap: Record<string, string> = {};
+    (settings.data ?? []).forEach((s: { key: string; value: string | null }) => {
+      if (s.value) settingMap[s.key] = s.value;
+    });
     return {
       companies: companies.data ?? [],
       locations: locations.data ?? [],
@@ -159,7 +169,43 @@ export const getManpowerMasters = createServerFn({ method: "GET" })
       usage: (usage.data ?? []) as { kind: string; name: string; entry_count: number }[],
       members: members.data ?? [],
       lastEntrySyncedAt: lastEntry.data?.[0]?.synced_at ?? null,
+      settings: settingMap,
     };
+  });
+
+const hmTime = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+/** 출면 알림·마감 설정 저장 — 관리자 전용, app_settings upsert */
+export const saveManpowerSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        reminderEnabled: z.boolean(),
+        remindTimes: z
+          .string()
+          .max(200)
+          .refine(
+            (v) => v.split(",").map((t) => t.trim()).filter(Boolean).every((t) => hmTime.test(t)),
+            "알림 시각은 HH:mm 형식을 쉼표로 구분해 입력하세요. 예: 09:00,11:00",
+          )
+          .refine((v) => v.split(",").some((t) => t.trim()), "알림 시각을 한 개 이상 입력하세요."),
+        cutoffTime: z.string().regex(hmTime, "보고 마감은 HH:mm 형식으로 입력하세요."),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as Ctx);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const now = new Date().toISOString();
+    const rows = [
+      { key: "manpower_reminder_enabled", value: data.reminderEnabled ? "true" : "false" },
+      { key: "manpower_remind_times", value: data.remindTimes.split(",").map((t) => t.trim()).filter(Boolean).join(",") },
+      { key: "manpower_cutoff_time", value: data.cutoffTime },
+    ].map((r) => ({ ...r, updated_at: now }));
+    const { error } = await supabaseAdmin.from("app_settings").upsert(rows as never);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 const masterSchema = z.object({

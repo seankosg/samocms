@@ -88,7 +88,13 @@ function ManpowerPage() {
   const navigate = Route.useNavigate();
   const day = s.day ?? riyadhToday();
   const source: Source = s.src ?? "SUB";
-  const { cards, companies, locations, settings, cutoff, lastReceivedAt } = useManpower(day, day);
+  const { cards, companies, locations, settings, cutoff, lastReceivedAt, reminderLog } = useManpower(day, day);
+  /** 오늘 미보고 알림이 발송된 횟수 (협력사별) */
+  const reminderCount = useMemo(() => {
+    const m = new Map<string, number>();
+    reminderLog.forEach((r) => (r.missing ?? []).forEach((co) => m.set(co, (m.get(co) ?? 0) + 1)));
+    return m;
+  }, [reminderLog]);
   const { isAdmin } = useAuth();
   const [matrixMode, setMatrixMode] = useState<"company" | "location">("company");
   const [exportOpen, setExportOpen] = useState(false);
@@ -182,7 +188,13 @@ function ManpowerPage() {
         <Kpi label={MP.headcount} value={totals.total.toLocaleString()} sub={`${MP.day} ${daily.reduce((a, d) => a + d.day_total, 0)} · ${MP.ot} ${daily.reduce((a, d) => a + d.ot_total, 0)} · ${MP.night} ${daily.reduce((a, d) => a + d.night_total, 0)}`} />
         <Kpi label="보고 협력사" value={`${new Set(shown.map((c) => c.company)).size} / ${companies.filter((c) => c.is_active).length}`} sub={`장소 ${locs.length}곳`} />
         <Kpi label={MP.compliance} value={`${Math.round(comp.rate * 100)}%`} sub={`마감 ${cutoff} 이전 ${comp.n}/${comp.total}개사`} />
-        <Kpi label={MP.notReported} value={String(comp.missing.length)} sub={comp.missing.slice(0, 3).join(", ") || "없음"} tone={comp.missing.length ? "warn" : "ok"} />
+        <Kpi label={MP.notReported} value={String(comp.missing.length)} tone={comp.missing.length ? "warn" : "ok"}
+          sub={comp.missing.length
+            ? comp.missing.slice(0, 3).map((co) => {
+                const n = reminderCount.get(co) ?? 0;
+                return n > 0 ? `${co} (${MP.reminderSent} ${n}회)` : co;
+              }).join(", ")
+            : "없음"} />
       </div>
 
       {mismatches.length > 0 && (
@@ -259,7 +271,14 @@ function ManpowerPage() {
               const rowTotal = [...row.values()].reduce((a, c) => a + c.total, 0);
               return (
                 <tr key={rowKey} className={`transition-colors hover:bg-primary/5 ${ri % 2 ? "bg-muted/20" : ""} [&>td]:border-b [&>td]:border-border/50 [&>td]:px-2 [&>td]:py-1.5 [&>td]:text-right [&>td:first-child]:text-left`}>
-                  <td className={`sticky left-0 z-10 w-[150px] min-w-[150px] font-semibold shadow-[2px_0_0_0_hsl(var(--border))] ${ri % 2 ? "bg-muted/40" : "bg-card"}`}>{rowKey}</td>
+                  <td className={`sticky left-0 z-10 w-[150px] min-w-[150px] font-semibold shadow-[2px_0_0_0_hsl(var(--border))] ${ri % 2 ? "bg-muted/40" : "bg-card"}`}>
+                    {rowKey}
+                    {matrixMode === "company" && source === "SUB" && comp.missing.includes(rowKey) && (
+                      <span className="ml-1.5 inline-block rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
+                        {MP.notReported}{(reminderCount.get(rowKey) ?? 0) > 0 ? ` · ${MP.reminderSent} ${reminderCount.get(rowKey)}회` : ""}
+                      </span>
+                    )}
+                  </td>
                   <td className={`sticky left-[150px] z-10 min-w-[72px] border-l-2 border-primary/20 font-bold text-sm ${ri % 2 ? "bg-muted/40" : "bg-card"} ${rowTotal ? "" : "text-muted-foreground/40"}`}>{rowTotal || "–"}</td>
                   {matrix.cols.map((col) => {
                     const cell = row.get(col);
