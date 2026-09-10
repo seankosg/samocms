@@ -243,9 +243,9 @@ function ManpowerPage() {
           <caption className="sr-only">{matrixMode === "company" ? "협력사별 장소·조별 배치 인원" : "장소별 협력사·조별 배치 인원"}</caption>
           <thead>
             <tr className="bg-primary/10 [&>th]:border-b [&>th]:border-primary/20 [&>th]:px-2 [&>th]:py-2 [&>th]:text-center [&>th]:font-bold [&>th]:text-primary">
-              <th scope="col" rowSpan={2} className="sticky left-0 z-10 min-w-[120px] bg-primary/10 !text-left shadow-[2px_0_0_0_hsl(var(--border))]">{matrixMode === "company" ? MP.company : MP.location}</th>
+              <th scope="col" rowSpan={2} className="sticky left-0 z-10 w-[150px] min-w-[150px] bg-primary/10 !text-left shadow-[2px_0_0_0_hsl(var(--border))]">{matrixMode === "company" ? MP.company : MP.location}</th>
+              <th scope="col" rowSpan={2} className="sticky left-[150px] z-10 min-w-[72px] whitespace-nowrap border-l-2 border-primary/30 bg-primary/15 text-sm">{MP.total}</th>
               {matrix.cols.map((col) => <th key={col} scope="colgroup" colSpan={3} className="whitespace-nowrap border-l-2 border-primary/20">{col}</th>)}
-              <th scope="col" rowSpan={2} className="border-l-2 border-primary/30 bg-primary/15">{MP.total}</th>
             </tr>
             <tr className="bg-muted/50 [&>th]:border-b-2 [&>th]:border-primary/30 [&>th]:px-2 [&>th]:py-1.5 [&>th]:text-right [&>th]:text-[11px] [&>th]:font-semibold">
               {matrix.cols.map((col) =>
