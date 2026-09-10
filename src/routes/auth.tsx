@@ -52,9 +52,9 @@ function AuthPage() {
       <form onSubmit={submit} className="w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-sm">
         <div className="mb-5 flex items-center gap-2.5">
           <img src={hyundaiLogo} alt="HYUNDAI Engineering & Construction" className="h-7 w-auto" />
-          <div>
-            <h1 className="text-base font-bold leading-tight">HMMME CMS 시스템</h1>
-            <p className="text-[11px] text-muted-foreground">현장 직원 전용 시스템</p>
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-lg font-bold leading-tight">HMMME PROJECT CMS</h1>
+            <p className="text-[9px] text-muted-foreground">Project Completion Management System</p>
           </div>
         </div>
         <div className="space-y-3">
