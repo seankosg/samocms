@@ -21,7 +21,7 @@ type Search = { unit?: string; bucket?: string; stages?: string; group?: string;
 
 export const Route = createFileRoute("/_authenticated/tc/progress")({
   head: () => ({ meta: [
-    { title: "T&C Progress | HMMME 통합 공정 관리" },
+    { title: "T&C Progress | HMMME CMS 시스템" },
     { name: "description", content: "T&C 단계별 계획 대비 실적 S-Curve와 그룹별 Progress Matrix를 확인합니다." },
     { property: "og:title", content: "HMMME T&C Progress" },
     { property: "og:description", content: "시운전 단계별 계획·실적 누계와 매트릭스 분석." },

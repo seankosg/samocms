@@ -20,7 +20,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/manpower/masters")({
   head: () => ({ meta: [
-    { title: "출면 업체 장소 관리 설정 | HMMME 통합 공정 관리" },
+    { title: "출면 업체 장소 관리 설정 | HMMME CMS 시스템" },
     { name: "description", content: "출면 보고에 쓰이는 협력사·장소 목록과 옛 이름 별칭을 관리합니다." },
     { property: "og:title", content: "HMMME 출면 업체 장소 관리 설정" },
     { property: "og:description", content: "협력사·장소 목록과 별칭을 한곳에서 관리하세요." },

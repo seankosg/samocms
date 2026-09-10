@@ -20,7 +20,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/tc/list")({
   head: () => ({ meta: [
-    { title: "T&C List | HMMME 통합 공정 관리" },
+    { title: "T&C List | HMMME CMS 시스템" },
     { name: "description", content: "시운전 전 항목의 단계별 계획일·실적일·잔여 수량을 한 표에서 확인하고 내보냅니다." },
     { property: "og:title", content: "HMMME T&C List" },
     { property: "og:description", content: "장비별 시운전 단계 계획과 실적 상세." },
