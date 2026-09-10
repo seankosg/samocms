@@ -70,7 +70,15 @@ export function ExportDialog({
       const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
 
       if (mode === "single") {
-        XLSX.writeFile(bookOf(rows.map((r) => r.rec), sheetName), `${fileBase}_${stamp}.xlsx`);
+        const wb = bookOf(rows.map((r) => r.rec));
+        for (const ex of extraSheets?.() ?? []) {
+          XLSX.utils.book_append_sheet(
+            wb,
+            styledAoaSheet(ex.aoa, ex.headerRows ?? 1, { title: ex.title ?? docTitle(fileBase, docLabel), subtitle: ex.subtitle ?? subtitle }),
+            ex.name,
+          );
+        }
+        XLSX.writeFile(wb, `${fileBase}_${stamp}.xlsx`);
         toast.success(`${rows.length.toLocaleString()}건 내보내기 완료`, { id });
       } else {
         const groups = new Map<string, Record<string, unknown>[]>();
