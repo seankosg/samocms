@@ -140,30 +140,11 @@ function ManpowerPage() {
       ["합계", sum<number>((d) => d.day_total), sum<number>((d) => d.ot_total), sum<number>((d) => d.night_total),
         ...TRADES.map((t) => totals[t]), totals.total, ""],
     ];
-    const head1: unknown[] = [matrixMode === "company" ? MP.company : MP.location, "합계"];
-    const head2: unknown[] = ["", ""];
-    matrix.cols.forEach((col) => {
-      head1.push(col, "", "");
-      MATRIX_SHIFTS.forEach((sh) => head2.push(MATRIX_SHIFT_LABEL[sh]));
-    });
-    const body = [...matrix.rows.entries()].map(([rowKey, row]) => {
-      const line: unknown[] = [rowKey, [...row.values()].reduce((a, c) => a + c.total, 0)];
-      matrix.cols.forEach((col) => MATRIX_SHIFTS.forEach((sh) => line.push(row.get(col)?.byShift[sh] || 0)));
-      return line;
-    });
-    const totalLine: unknown[] = ["합계", [...matrix.rows.values()].reduce((a, row) => a + [...row.values()].reduce((b, c) => b + c.total, 0), 0)];
-    matrix.cols.forEach((col) => MATRIX_SHIFTS.forEach((sh) =>
-      totalLine.push([...matrix.rows.values()].reduce((a, row) => a + (row.get(col)?.byShift[sh] ?? 0), 0))));
     return [
       { name: "협력사집계", aoa: summary, headerRows: 1, title: `출면 현황 - 협력사 집계 (${source === "SUB" ? MP.sub : MP.hdec})`, subtitle: `기준일 ${fmtDay(day)}` },
-      {
-        name: matrixMode === "company" ? "협력사×장소" : "장소×협력사",
-        aoa: [head1, head2, ...body, totalLine], headerRows: 2,
-        title: `출면 현황 - ${matrixMode === "company" ? "협력사 × 장소" : "장소 × 협력사"} (Worker·Elec·Plumb·Scaf)`,
-        subtitle: `기준일 ${fmtDay(day)} · ${source === "SUB" ? MP.sub : MP.hdec}`,
-      },
+      matrixSheet(),
     ];
-  }, [daily, totals, matrix, matrixMode, day, source]);
+  }, [daily, totals, matrixSheet, day, source]);
 
   return (
     <AppShell
