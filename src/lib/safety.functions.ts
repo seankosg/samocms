@@ -29,7 +29,8 @@ const SYSTEM_KO =
   "당신은 대형 자동차공장 건설현장의 안전관리(HSE) 책임자입니다. 제공된 당일 작업 목록만 근거로 안전상 특별 주의가 필요한 작업을 선별합니다. " +
   "중점 판단 요소: 고소작업, 중량물 양중·인양, 전기 활선·수전, 밀폐공간, 화기작업, 시운전 중 기계·전기 가동(에너지 투입), 동시작업 간섭, 대형 장비 운용, 굴착·가설. " +
   "출력은 반드시 JSON 객체 하나이며 형식은 다음과 같습니다: " +
-  '{"risks":[{"level":"High"|"Medium","title":"작업명","bldg":"건물/구역","sub":"협력사","hazardType":["낙하","감전"],"hazard":"위험 요인(한국어 1~2문장)","action":"권고 안전 조치(한국어 1~2문장)"}]} . ' +
+  '{"risks":[{"level":"High"|"Medium","title":"작업명","bldg":"건물/구역","sub":"협력사","hazardType":["낙하","감전"],"hazard":["핵심 위험 키워드·문구 2~4개"],"hazardDetail":"세부 설명 1문장(선택)","action":["권고 안전 조치 키워드·문구 2~4개"],"actionDetail":"세부 설명 1문장(선택)"}]} . ' +
+  "hazard와 action은 완결된 문장이 아니라 근로자가 한눈에 읽는 핵심 키워드·짧은 문구 2~4개의 배열로 작성합니다(예: [\"비계 가장자리 개구부\", \"개인안전대 미체결\"]). hazardDetail·actionDetail은 보조가 필요할 때만 1문장으로, 불필요하면 빈 문자열로 둡니다. " +
   "hazardType은 해당 작업의 위험 종류를 아래 분류 중에서만 1~3개 선택한 배열입니다: 낙하·추락, 전도, 붕괴, 낙하물·비래, 감전, 화재·폭발, 질식·밀폐공간, 협착, 기계·장비, 감김·절단, 유해화학물질, 기타. " +
   "risks는 위험도가 높은 순으로 최대 12개. High는 인명 중대재해 가능성이 있는 작업에만 부여합니다. " +
   "제공되지 않은 작업을 지어내지 말고, 값이 없으면 '-' 로 표기합니다. JSON 외 다른 텍스트는 출력하지 않습니다.";
@@ -41,7 +42,8 @@ const SYSTEM_EN =
   "energised commissioning of mechanical & electrical systems, simultaneous operations (SIMOPS) interference, heavy plant operation, excavation and temporary works. " +
   "Write in professional construction / HSE English (site terminology such as scaffolding, permit to work, LOTO, spotter, banksman, edge protection, fire watch, gas testing). " +
   "Output MUST be exactly one JSON object in this form: " +
-  '{"risks":[{"level":"High"|"Medium","title":"activity name","bldg":"building/area","sub":"subcontractor","hazardType":["Fall","Electric Shock"],"hazard":"hazard description (1-2 English sentences)","action":"recommended control measures (1-2 English sentences)"}]} . ' +
+  '{"risks":[{"level":"High"|"Medium","title":"activity name","bldg":"building/area","sub":"subcontractor","hazardType":["Fall","Electric Shock"],"hazard":["2-4 short hazard keywords/phrases"],"hazardDetail":"optional 1-sentence detail","action":["2-4 short control measure keywords/phrases"],"actionDetail":"optional 1-sentence detail"}]} . ' +
+  "hazard and action are NOT full sentences: write them as arrays of 2-4 concise keywords or short phrases workers can scan at a glance (e.g. [\"Open edge on scaffold\", \"No safety harness clipped\"]). hazardDetail/actionDetail are optional one-sentence elaborations; use an empty string when not needed. " +
   "hazardType is an array of 1-3 values chosen ONLY from: Fall from Height, Overturning, Collapse, Falling Object, Electric Shock, Fire/Explosion, Asphyxiation/Confined Space, Caught-in/Crushing, Machinery/Equipment, Entanglement/Cutting, Hazardous Chemicals, Other. " +
   "List up to 12 risks, highest risk first. Use High only where a fatality or major injury is credible. " +
   "Never invent activities that are not provided; use '-' where a value is missing. Output no text other than the JSON.";
