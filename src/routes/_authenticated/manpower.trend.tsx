@@ -13,9 +13,9 @@ import { dateRange, movingAverage, riyadhToday, addDays, totalsByDate } from "@/
 import { MP } from "@/lib/manpower-i18n";
 
 const search = z.object({
-  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  company: z.string().optional(),
+  mpFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  mpTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  mpCompany: z.string().optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/manpower/trend")({
@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/manpower/trend")({
   validateSearch: (s: unknown) => search.parse(s),
   loaderDeps: ({ search: s }) => {
     const d = defaultRange();
-    return { from: s.from ?? d.from, to: s.to ?? d.to };
+    return { from: s.mpFrom ?? d.from, to: s.mpTo ?? d.to };
   },
   loader: ({ context, deps }) => context.queryClient.ensureQueryData(manpowerRangeQuery(deps.from, deps.to)),
   errorComponent: ({ error }) => <div role="alert" className="p-8 text-sm">추이 데이터를 불러오지 못했습니다. {(error as Error).message}</div>,
@@ -40,10 +40,10 @@ function TrendPage() {
   const s = Route.useSearch();
   const navigate = Route.useNavigate();
   const def = defaultRange();
-  const from = s.from ?? def.from;
-  const to = s.to ?? def.to;
+  const from = s.mpFrom ?? def.from;
+  const to = s.mpTo ?? def.to;
   const { cards, daily, isWorkday, plan } = useManpower(from, to);
-  const [company, setCompany] = useState(s.company ?? "전체");
+  const [company, setCompany] = useState(s.mpCompany ?? "전체");
 
   const companies = useMemo(() => [...new Set(cards.map((c) => c.company))].sort(), [cards]);
   const filtered = useMemo(() => daily.filter((d) => company === "전체" || d.company === company), [daily, company]);
@@ -89,8 +89,8 @@ function TrendPage() {
     XLSX.writeFile(wb, `HMMME_출면추이_${from.replace(/-/g, "")}_${to.replace(/-/g, "")}.xlsx`);
   };
 
-  const setRange = (k: "from" | "to", v: string) => navigate({ search: (p) => ({ ...p, [k]: v }), replace: true });
-  const quick = (n: number) => navigate({ search: (p) => ({ ...p, from: addDays(riyadhToday(), -(n - 1)), to: riyadhToday() }), replace: true });
+  const setRange = (k: "from" | "to", v: string) => navigate({ search: (p) => ({ ...p, [k === "from" ? "mpFrom" : "mpTo"]: v }), replace: true });
+  const quick = (n: number) => navigate({ search: (p) => ({ ...p, mpFrom: addDays(riyadhToday(), -(n - 1)), mpTo: riyadhToday() }), replace: true });
 
   return (
     <AppShell
@@ -115,7 +115,7 @@ function TrendPage() {
       <div className="mb-3 flex flex-wrap gap-1.5">
         {["전체", ...companies].map((c) => (
           <Button key={c} size="sm" variant={company === c ? "default" : "outline"} className="h-7 text-xs"
-            onClick={() => { setCompany(c); navigate({ search: (p) => ({ ...p, company: c }), replace: true }); }}>{c}</Button>
+            onClick={() => { setCompany(c); navigate({ search: (p) => ({ ...p, mpCompany: c }), replace: true }); }}>{c}</Button>
         ))}
       </div>
 
