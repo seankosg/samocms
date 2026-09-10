@@ -123,3 +123,236 @@ export const importManpowerSheet = createServerFn({ method: "POST" })
       sheetId, subTab: data.subTab, hdecTab: data.hdecTab, apply: data.apply, mode: "manual-sheet",
     });
   });
+
+/* ─────────────── 출면 마스터 (회사·장소·별칭) ─────────────── */
+
+const kindSchema = z.enum(["company", "location"]);
+type Kind = z.infer<typeof kindSchema>;
+const tableOf = (k: Kind) => (k === "company" ? "manpower_companies" : "manpower_locations");
+
+/** 마스터 화면 데이터 — 회사·장소·별칭 + 기록 수 + 회원 소속 */
+export const getManpowerMasters = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const c = context.supabase;
+    const [companies, locations, aliases, usage, members, lastEntry] = await Promise.all([
+      c.from("manpower_companies").select("*").order("sort_order"),
+      c.from("manpower_locations").select("*").order("sort_order"),
+      c.from("manpower_aliases").select("*").order("kind").order("alias"),
+      c.rpc("manpower_name_usage"),
+      c.from("manpower_members").select("telegram_id, name, company, role"),
+      c.from("manpower_entries").select("synced_at").order("synced_at", { ascending: false }).limit(1),
+    ]);
+    const err = companies.error ?? locations.error ?? aliases.error ?? usage.error ?? members.error ?? lastEntry.error;
+    if (err) throw new Error(err.message);
+    return {
+      companies: companies.data ?? [],
+      locations: locations.data ?? [],
+      aliases: aliases.data ?? [],
+      usage: (usage.data ?? []) as { kind: string; name: string; entry_count: number }[],
+      members: members.data ?? [],
+      lastEntrySyncedAt: lastEntry.data?.[0]?.synced_at ?? null,
+    };
+  });
+
+const masterSchema = z.object({
+  kind: kindSchema,
+  name: z.string().min(1).max(80),
+  sort_order: z.number().int().min(0).max(100000),
+  is_active: z.boolean().default(true),
+  short_name: z.string().max(40).nullable().optional(),
+  discipline: z.string().max(40).nullable().optional(),
+  contract_no: z.string().max(80).nullable().optional(),
+  bldg_code: z.string().max(40).nullable().optional(),
+  zone: z.string().max(40).nullable().optional(),
+  isNew: z.boolean().default(false),
+});
+
+/** 회사·장소 추가/수정 (이름은 신규일 때만 결정, 관리자 전용) */
+export const saveManpowerMaster = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => masterSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const name = data.name.trim();
+    if (!name) throw new Error("이름을 입력해 주세요.");
+    const table = tableOf(data.kind);
+
+    const { data: found, error: findErr } = await supabaseAdmin.from(table).select("name").eq("name", name).maybeSingle();
+    if (findErr) throw new Error(findErr.message);
+    if (data.isNew && found) throw new Error("같은 이름이 이미 등록되어 있습니다.");
+    if (!data.isNew && !found) throw new Error("등록되지 않은 이름입니다.");
+
+    const row: Record<string, unknown> = {
+      name, sort_order: data.sort_order, is_active: data.is_active, updated_at: new Date().toISOString(),
+    };
+    if (data.kind === "company") {
+      row["short_name"] = data.short_name || null;
+      row["discipline"] = data.discipline || null;
+      row["contract_no"] = data.contract_no || null;
+    } else {
+      row["bldg_code"] = data.bldg_code || null;
+      row["zone"] = data.zone || null;
+    }
+    const { error } = await supabaseAdmin.from(table).upsert(row, { onConflict: "name" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** 순서만 갱신 (관리자 전용) */
+export const setManpowerMasterOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ kind: kindSchema, items: z.array(z.object({ name: z.string().min(1), sort_order: z.number().int().min(0) })).min(1).max(200) }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const now = new Date().toISOString();
+    for (const it of data.items) {
+      const { error } = await supabaseAdmin.from(tableOf(data.kind))
+        .update({ sort_order: it.sort_order, updated_at: now }).eq("name", it.name);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+/** 활성/비활성 토글 (관리자 전용) */
+export const setManpowerMasterActive = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ kind: kindSchema, name: z.string().min(1), is_active: z.boolean() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from(tableOf(data.kind))
+      .update({ is_active: data.is_active, updated_at: new Date().toISOString() }).eq("name", data.name);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+async function countEntries(admin: any, kind: Kind, name: string) {
+  const col = kind === "company" ? "company" : "location";
+  const { count, error } = await admin.from("manpower_entries").select("*", { count: "exact", head: true }).eq(col, name);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+/** 삭제 — 기록 0건이고 별칭·회원이 쓰지 않을 때만 (관리자 전용) */
+export const deleteManpowerMaster = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ kind: kindSchema, name: z.string().min(1) }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const n = await countEntries(supabaseAdmin, data.kind, data.name);
+    if (n > 0) throw new Error(`기록 ${n}건이 있어 삭제할 수 없습니다 — 비활성 처리하거나 별칭으로 합치세요.`);
+
+    const { data: al, error: alErr } = await supabaseAdmin.from("manpower_aliases")
+      .select("alias").eq("kind", data.kind).eq("canonical", data.name);
+    if (alErr) throw new Error(alErr.message);
+    if ((al ?? []).length) throw new Error("이 이름을 정식 이름으로 쓰는 별칭이 있어 삭제할 수 없습니다.");
+
+    if (data.kind === "company") {
+      const { data: mem, error: memErr } = await supabaseAdmin.from("manpower_members").select("telegram_id").eq("company", data.name);
+      if (memErr) throw new Error(memErr.message);
+      if ((mem ?? []).length) throw new Error("이 회사를 소속으로 쓰는 봇 사용자가 있어 삭제할 수 없습니다.");
+    }
+
+    const { error } = await supabaseAdmin.from(tableOf(data.kind)).delete().eq("name", data.name);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+async function assertAliasRules(admin: any, kind: Kind, alias: string, canonical: string) {
+  if (alias === canonical) throw new Error("별칭과 정식 이름이 같을 수 없습니다.");
+  const table = tableOf(kind);
+  const { data: canon, error: cErr } = await admin.from(table).select("name").eq("name", canonical).maybeSingle();
+  if (cErr) throw new Error(cErr.message);
+  if (!canon) throw new Error("정식 이름이 마스터에 없습니다.");
+
+  const { data: act, error: aErr } = await admin.from(table).select("name, is_active").eq("name", alias).maybeSingle();
+  if (aErr) throw new Error(aErr.message);
+  if (act?.is_active) throw new Error("활성 마스터 이름은 별칭으로 등록할 수 없습니다.");
+
+  const { data: chain, error: chErr } = await admin.from("manpower_aliases").select("alias").eq("kind", kind).eq("alias", canonical).maybeSingle();
+  if (chErr) throw new Error(chErr.message);
+  if (chain) throw new Error("별칭의 별칭은 만들 수 없습니다.");
+}
+
+/** 별칭 등록 (관리자 전용) */
+export const saveManpowerAlias = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    kind: kindSchema, alias: z.string().min(1).max(80), canonical: z.string().min(1).max(80), note: z.string().max(300).nullable().optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const alias = data.alias.trim();
+    const canonical = data.canonical.trim();
+    await assertAliasRules(supabaseAdmin, data.kind, alias, canonical);
+    const { error } = await supabaseAdmin.from("manpower_aliases")
+      .upsert({ kind: data.kind, alias, canonical, note: data.note || null }, { onConflict: "kind,alias" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** 별칭 삭제 (관리자 전용) */
+export const deleteManpowerAlias = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ kind: kindSchema, alias: z.string().min(1) }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("manpower_aliases").delete().eq("kind", data.kind).eq("alias", data.alias);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** 이름 변경 마법사 — 새 이름 추가 → 옛 이름 별칭 등록 → 옛 이름 비활성 → 회원 소속 갱신 */
+export const renameManpowerMaster = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    kind: kindSchema, oldName: z.string().min(1).max(80), newName: z.string().min(1).max(80),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const oldName = data.oldName.trim();
+    const newName = data.newName.trim();
+    if (oldName === newName) throw new Error("새 이름이 기존 이름과 같습니다.");
+    const table = tableOf(data.kind);
+    const now = new Date().toISOString();
+
+    const { data: oldRow, error: oErr } = await supabaseAdmin.from(table).select("*").eq("name", oldName).maybeSingle();
+    if (oErr) throw new Error(oErr.message);
+    if (!oldRow) throw new Error("기존 이름을 찾을 수 없습니다.");
+
+    const base: Record<string, unknown> = { name: newName, sort_order: oldRow.sort_order, is_active: true, updated_at: now };
+    if (data.kind === "company") {
+      base["short_name"] = oldRow.short_name ?? null;
+      base["discipline"] = oldRow.discipline ?? null;
+      base["contract_no"] = oldRow.contract_no ?? null;
+    } else {
+      base["bldg_code"] = oldRow.bldg_code ?? null;
+      base["zone"] = oldRow.zone ?? null;
+    }
+    const { error: insErr } = await supabaseAdmin.from(table).upsert(base, { onConflict: "name" });
+    if (insErr) throw new Error(insErr.message);
+
+    const { error: offErr } = await supabaseAdmin.from(table).update({ is_active: false, updated_at: now }).eq("name", oldName);
+    if (offErr) throw new Error(offErr.message);
+
+    await assertAliasRules(supabaseAdmin, data.kind, oldName, newName);
+    const { error: alErr } = await supabaseAdmin.from("manpower_aliases")
+      .upsert({ kind: data.kind, alias: oldName, canonical: newName, note: "이름 변경" }, { onConflict: "kind,alias" });
+    if (alErr) throw new Error(alErr.message);
+
+    if (data.kind === "company") {
+      const { error: memErr } = await supabaseAdmin.from("manpower_members")
+        .update({ company: newName, updated_at: now }).eq("company", oldName);
+      if (memErr) throw new Error(memErr.message);
+    }
+    return { ok: true };
+  });
+
