@@ -178,10 +178,10 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
           <Button size="icon" variant="ghost" aria-label="사이드바 토글" className="hidden md:inline-flex" onClick={() => setOpen((v) => !v)}>
             {open ? <ChevronLeft /> : <PanelLeft />}
           </Button>
-          <Link to="/dashboard" className="flex min-w-0 items-center gap-2">
-            <span className="grid size-8 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground"><HardHat className="size-4" /></span>
+          <Link to="/dashboard" className="flex min-w-0 items-center gap-2.5">
+            <img src={hyundaiLogo} alt="HYUNDAI Engineering & Construction" className="h-6 lg:h-7 w-auto shrink-0" />
             <span className="hidden min-w-0 md:block">
-              <strong className="block truncate text-sm leading-tight">HMMME 통합 공정 관리</strong>
+              <strong className="block truncate text-sm leading-tight">HMMME CMS 시스템</strong>
               <small className="block text-[11px] text-muted-foreground">Integrated Schedule Control</small>
             </span>
           </Link>
