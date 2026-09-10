@@ -21,6 +21,7 @@ import { setBaselineDate } from "@/lib/project.functions";
 import { SLOT_LABEL } from "@/lib/schedule-model";
 import { currentBuildId, forceFreshAppLoad } from "@/hooks/use-version-check";
 import { UpdateAvailableBanner } from "@/components/update-available-banner";
+import hyundaiLogo from "@/assets/hyundai-logo.png";
 
 function NewVersionButton() {
   const buildId = currentBuildId();
