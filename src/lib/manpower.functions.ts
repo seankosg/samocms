@@ -29,6 +29,8 @@ export const getManpower = createServerFn({ method: "GET" })
       c.from("app_settings").select("*"),
       c.from("manpower_ingest_log").select("*").order("received_at", { ascending: false }).limit(5),
       c.from("manpower_entries").select("synced_at").order("synced_at", { ascending: false }).limit(1),
+      // 오늘 발송된 미보고 알림 로그 (봇이 mode='reminder' 로 기록, warnings 에 {date, missing[], ...})
+      c.from("manpower_ingest_log").select("warnings").eq("mode", "reminder").filter("warnings->>date", "eq", data.to),
     ]);
     const err = cards.error ?? compare.error ?? companies.error ?? locations.error ?? calendar.error ?? plan.error ?? settings.error ?? log.error ?? lastEntry.error;
     if (err) throw new Error(err.message);
