@@ -22,6 +22,7 @@ import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedTodayReportRouteImport } from './routes/_authenticated/today-report'
 import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
+import { Route as AuthenticatedManpowerIndexRouteImport } from './routes/_authenticated/manpower.index'
 import { Route as AuthenticatedTcElecRouteImport } from './routes/_authenticated/tc.elec'
 import { Route as AuthenticatedTcListRouteImport } from './routes/_authenticated/tc.list'
 import { Route as AuthenticatedTcMechRouteImport } from './routes/_authenticated/tc.mech'
@@ -93,6 +94,12 @@ const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedManpowerIndexRoute =
+  AuthenticatedManpowerIndexRouteImport.update({
+    id: '/manpower/',
+    path: '/manpower/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedTcElecRoute = AuthenticatedTcElecRouteImport.update({
   id: '/tc/elec',
   path: '/tc/elec',
@@ -137,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/tc/mech': typeof AuthenticatedTcMechRoute
   '/tc/progress': typeof AuthenticatedTcProgressRoute
   '/api/public/version': typeof ApiPublicVersionRoute
+  '/manpower/': typeof AuthenticatedManpowerIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -156,6 +164,7 @@ export interface FileRoutesByTo {
   '/tc/mech': typeof AuthenticatedTcMechRoute
   '/tc/progress': typeof AuthenticatedTcProgressRoute
   '/api/public/version': typeof ApiPublicVersionRoute
+  '/manpower': typeof AuthenticatedManpowerIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -177,6 +186,7 @@ export interface FileRoutesById {
   '/_authenticated/tc/mech': typeof AuthenticatedTcMechRoute
   '/_authenticated/tc/progress': typeof AuthenticatedTcProgressRoute
   '/api/public/version': typeof ApiPublicVersionRoute
+  '/_authenticated/manpower/': typeof AuthenticatedManpowerIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/tc/mech'
     | '/tc/progress'
     | '/api/public/version'
+    | '/manpower/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/tc/mech'
     | '/tc/progress'
     | '/api/public/version'
+    | '/manpower'
   id:
     | '__root__'
     | '/'
@@ -237,6 +249,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tc/mech'
     | '/_authenticated/tc/progress'
     | '/api/public/version'
+    | '/_authenticated/manpower/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -339,6 +352,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/manpower/': {
+      id: '/_authenticated/manpower/'
+      path: '/manpower'
+      fullPath: '/manpower/'
+      preLoaderRoute: typeof AuthenticatedManpowerIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/tc/elec': {
       id: '/_authenticated/tc/elec'
       path: '/tc/elec'
@@ -392,6 +412,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTcListRoute: typeof AuthenticatedTcListRoute
   AuthenticatedTcMechRoute: typeof AuthenticatedTcMechRoute
   AuthenticatedTcProgressRoute: typeof AuthenticatedTcProgressRoute
+  AuthenticatedManpowerIndexRoute: typeof AuthenticatedManpowerIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -409,6 +430,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTcListRoute: AuthenticatedTcListRoute,
   AuthenticatedTcMechRoute: AuthenticatedTcMechRoute,
   AuthenticatedTcProgressRoute: AuthenticatedTcProgressRoute,
+  AuthenticatedManpowerIndexRoute: AuthenticatedManpowerIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
