@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
-  AlertTriangle, BarChart3, CalendarClock, TrendingUp, CalendarDays, ChevronLeft, Download, FileText, HardHat, ListChecks,
+  AlertTriangle, BarChart3, CalendarClock, TrendingUp, CalendarDays, ChevronLeft, Download, FileText, ListChecks,
   LogOut, Menu, MoreVertical, Network, PanelLeft, Settings, Sparkles, Table2, UploadCloud, Users, Wrench, Zap,
   UserCheck, GitCompare, LineChart, Contact,
 } from "lucide-react";
