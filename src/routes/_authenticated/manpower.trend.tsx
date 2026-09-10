@@ -244,9 +244,9 @@ function MonthlyShiftChart({ cards }: { cards: MpCard[] }) {
             <YAxis tick={{ fontSize: 11 }} domain={[0, Math.ceil((max * 1.1) / 10) * 10]} allowDecimals={false} />
             <Tooltip contentStyle={{ fontSize: 12 }} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar dataKey="주간" stackId="s" fill="var(--chart-1)" />
-            <Bar dataKey="연장" stackId="s" fill="var(--chart-3)" />
-            <Bar dataKey="야간" stackId="s" fill="var(--chart-4)" radius={[2, 2, 0, 0]} />
+            <Bar dataKey="주간" stackId="s" fill="var(--chart-1)" maxBarSize={72} />
+            <Bar dataKey="연장" stackId="s" fill="var(--chart-3)" maxBarSize={72} />
+            <Bar dataKey="야간" stackId="s" fill="var(--chart-4)" radius={[2, 2, 0, 0]} maxBarSize={72} />
           </ComposedChart>
         </div>
       ) : (
