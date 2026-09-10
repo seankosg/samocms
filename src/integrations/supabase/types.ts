@@ -320,6 +320,7 @@ export type Database = {
           name: string
           short_name: string | null
           sort_order: number
+          updated_at: string
         }
         Insert: {
           active_from?: string | null
@@ -330,6 +331,7 @@ export type Database = {
           name: string
           short_name?: string | null
           sort_order: number
+          updated_at?: string
         }
         Update: {
           active_from?: string | null
@@ -340,6 +342,7 @@ export type Database = {
           name?: string
           short_name?: string | null
           sort_order?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -463,6 +466,7 @@ export type Database = {
           is_active: boolean
           name: string
           sort_order: number
+          updated_at: string
           zone: string | null
         }
         Insert: {
@@ -470,6 +474,7 @@ export type Database = {
           is_active?: boolean
           name: string
           sort_order: number
+          updated_at?: string
           zone?: string | null
         }
         Update: {
@@ -477,6 +482,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           sort_order?: number
+          updated_at?: string
           zone?: string | null
         }
         Relationships: []
