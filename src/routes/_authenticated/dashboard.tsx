@@ -15,7 +15,7 @@ import { stageProgress, tcPct, TC_DISC_LABEL, type TcStage } from "@/lib/tc-mode
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [
-    { title: "대시보드 | HMMME CMS 시스템" },
+    { title: "대시보드 | HMMME PROJECT CMS" },
     { name: "description", content: "공정 계획 대비 실적, 지연 현황, 마일스톤과 MEP 시운전 진도를 한 화면에서 확인합니다." },
     { property: "og:title", content: "HMMME 통합 공정 대시보드" },
     { property: "og:description", content: "공종별 진도, 지연 리스크, M1~M8 마일스톤 현황." },

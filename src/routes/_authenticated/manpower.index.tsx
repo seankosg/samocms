@@ -70,7 +70,7 @@ const search = z.object({ day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(
 
 export const Route = createFileRoute("/_authenticated/manpower/")({
   head: () => ({ meta: [
-    { title: "출면 현황 | HMMME CMS 시스템" },
+    { title: "출면 현황 | HMMME PROJECT CMS" },
     { name: "description", content: "협력사 텔레그램 보고와 HDEC 재집계를 일자별로 확인하는 출면(Daily Manpower) 현황 화면입니다." },
     { property: "og:title", content: "HMMME 출면 현황" },
     { property: "og:description", content: "일자별 협력사·장소·직종 출면 인원을 확인하세요." },

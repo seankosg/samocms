@@ -6,7 +6,7 @@ import { fmtDate } from "@/lib/schedule-model";
 
 export const Route = createFileRoute("/_authenticated/tc/mech")({
   head: () => ({ meta: [
-    { title: "MECH T&C | HMMME CMS 시스템" },
+    { title: "MECH T&C | HMMME PROJECT CMS" },
     { name: "description", content: "기계 시운전 T0·T1·Report·RFI·T2·Response 단계별 완료와 지연을 건물별로 확인합니다." },
     { property: "og:title", content: "HMMME MECH 시운전 현황" },
     { property: "og:description", content: "기계 T&C 단계별 진도와 Pass/Fail 현황." },

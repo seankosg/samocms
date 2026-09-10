@@ -8,7 +8,7 @@ import { searchKey, toInitial, validateListSearch } from "@/lib/list-search";
 
 export const Route = createFileRoute("/_authenticated/delays")({
   head: () => ({ meta: [
-    { title: "지연 리스트 | HMMME CMS 시스템" },
+    { title: "지연 리스트 | HMMME PROJECT CMS" },
     { name: "description", content: "계획 대비 실적이 미달한 지연 활동만 모아 공종·건물·협력사별로 확인합니다." },
     { property: "og:title", content: "HMMME 지연 리스트" },
     { property: "og:description", content: "지연 활동과 계획 대비 격차를 확인하세요." },
