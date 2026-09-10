@@ -19,7 +19,7 @@ import { dayDiff, fmtDate, SLOTS, SLOT_LABEL } from "@/lib/schedule-model";
 
 export const Route = createFileRoute("/_authenticated/upload")({
   head: () => ({ meta: [
-    { title: "데이터 업로드 | HMMME CMS 시스템" },
+    { title: "데이터 업로드 | HMMME PROJECT CMS" },
     { name: "description", content: "공정표와 시운전 워크북을 올리면 공종별 데이터가 최신 파일로 교체됩니다." },
     { property: "og:title", content: "HMMME 공정 데이터 업로드" },
     { property: "og:description", content: "Arch · Elec · Mech · Int · Permit · T&C 워크북 업로드." },

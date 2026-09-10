@@ -13,7 +13,7 @@ import { ROLE_LABEL, useAuth } from "@/lib/use-auth";
 export const Route = createFileRoute("/_authenticated/users")({
   head: () => ({
     meta: [
-      { title: "CMS 사용자 관리 | HMMME CMS 시스템" },
+      { title: "CMS 사용자 관리 | HMMME PROJECT CMS" },
       { name: "description", content: "계정 생성·권한 변경·담당 공종 배정·비밀번호 초기화를 관리합니다." },
       { property: "og:title", content: "CMS 사용자 관리" },
       { property: "og:description", content: "관리자 전용 계정 및 권한 관리 화면." },

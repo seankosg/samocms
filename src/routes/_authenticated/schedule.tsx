@@ -7,7 +7,7 @@ import { searchKey, toInitial, validateListSearch } from "@/lib/list-search";
 
 export const Route = createFileRoute("/_authenticated/schedule")({
   head: () => ({ meta: [
-    { title: "공정리스트 | HMMME CMS 시스템" },
+    { title: "공정리스트 | HMMME PROJECT CMS" },
     { name: "description", content: "통합공정표 전체 활동을 검색·필터·정렬하고 Excel로 내보냅니다." },
     { property: "og:title", content: "HMMME 공정리스트" },
     { property: "og:description", content: "공종·건물·마일스톤·협력사별 공정 원천 데이터." },

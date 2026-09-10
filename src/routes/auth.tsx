@@ -13,9 +13,9 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "로그인 | HMMME CMS 시스템" },
-      { name: "description", content: "현장 직원 아이디와 비밀번호로 HMMME CMS 시스템에 로그인합니다." },
-      { property: "og:title", content: "HMMME CMS 시스템 로그인" },
+      { title: "로그인 | HMMME PROJECT CMS" },
+      { name: "description", content: "현장 직원 아이디와 비밀번호로 HMMME PROJECT CMS에 로그인합니다." },
+      { property: "og:title", content: "HMMME PROJECT CMS 로그인" },
       { property: "og:description", content: "아이디 기반 로그인으로 공정 현황을 확인하세요." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -52,9 +52,9 @@ function AuthPage() {
       <form onSubmit={submit} className="w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-sm">
         <div className="mb-5 flex items-center gap-2.5">
           <img src={hyundaiLogo} alt="HYUNDAI Engineering & Construction" className="h-7 w-auto" />
-          <div>
-            <h1 className="text-base font-bold leading-tight">HMMME CMS 시스템</h1>
-            <p className="text-[11px] text-muted-foreground">현장 직원 전용 시스템</p>
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-lg font-bold leading-tight">HMMME PROJECT CMS</h1>
+            <p className="text-[9px] text-muted-foreground">Project Completion Management System</p>
           </div>
         </div>
         <div className="space-y-3">

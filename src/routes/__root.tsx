@@ -78,10 +78,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "HMMME CMS 시스템" },
+      { title: "HMMME PROJECT CMS" },
       { name: "description", content: "HMMME 프로젝트 통합 공정 현황과 원천 데이터를 관리합니다." },
       { name: "author", content: "HMMME PROJECT" },
-      { property: "og:title", content: "HMMME CMS 시스템" },
+      { property: "og:title", content: "HMMME PROJECT CMS" },
       { property: "og:description", content: "공종별 진척과 리스크를 한눈에 확인하세요." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

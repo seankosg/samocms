@@ -24,7 +24,7 @@ const chartFrom = (day: string, from?: string) => from ?? addDays(day, -13);
 
 export const Route = createFileRoute("/_authenticated/manpower/compare")({
   head: () => ({ meta: [
-    { title: "출면 검증 대조 | HMMME CMS 시스템" },
+    { title: "출면 검증 대조 | HMMME PROJECT CMS" },
     { name: "description", content: "협력사 보고 인원과 HDEC 현장 재집계 인원을 장소·조 단위로 대조해 차이를 확인합니다." },
     { property: "og:title", content: "HMMME 출면 검증 대조" },
     { property: "og:description", content: "보고와 재집계의 차이를 한눈에 확인하세요." },
