@@ -64,6 +64,13 @@
       "when": 1789010811164,
       "tag": "0008_safety_reports_add_english",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789028196891,
+      "tag": "0009_create_manpower",
+      "breakpoints": true
     }
   ]
 }
