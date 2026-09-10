@@ -81,6 +81,43 @@ function MastersPage() {
   );
 }
 
+/** 미보고 알림 설정 — 봇이 읽는 app_settings 값 (관리자 전용) */
+function ReminderCard({ settings, onDone }: { settings: Record<string, string>; onDone: () => void }) {
+  const [enabled, setEnabled] = useState(settings["manpower_reminder_enabled"] === "true");
+  const [times, setTimes] = useState(settings["manpower_remind_times"] ?? "09:00,11:00");
+  const [cutoff, setCutoff] = useState(settings["manpower_cutoff_time"] ?? "09:00");
+
+  const save = useMutation({
+    mutationFn: () => saveManpowerSettings({ data: { reminderEnabled: enabled, remindTimes: times, cutoffTime: cutoff } }),
+    onSuccess: () => { onDone(); toast.success("알림 설정이 저장되었습니다"); },
+    onError: (e: Error) => toast.error("저장 실패", { description: e.message }),
+  });
+
+  return (
+    <Card className="mb-4">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">{MP.reminderSettings}</CardTitle>
+        <CardDescription className="text-xs leading-relaxed">{MP.reminderGuide}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-wrap items-end gap-4">
+        <div className="flex items-center gap-2">
+          <Switch id="reminder-enabled" checked={enabled} onCheckedChange={setEnabled} />
+          <Label htmlFor="reminder-enabled" className="text-xs">{MP.reminderEnabled}</Label>
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="remind-times" className="text-xs">{MP.remindTimes} (HH:mm, 쉼표 구분)</Label>
+          <Input id="remind-times" value={times} onChange={(e) => setTimes(e.target.value)} className="h-8 w-40 text-xs" placeholder="09:00,11:00" />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="cutoff-time" className="text-xs">{MP.cutoffTime}</Label>
+          <Input id="cutoff-time" value={cutoff} onChange={(e) => setCutoff(e.target.value)} className="h-8 w-24 text-xs" placeholder="09:00" />
+        </div>
+        <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>저장</Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 type Draft = MasterRow & { isNew: boolean };
 
 function MasterTab({ kind, rows, count, aliases, members, onDone }: {
