@@ -56,6 +56,11 @@ const NAV = [
     { to: "/tc/progress", label: "T&C Progress", icon: TrendingUp },
     { to: "/tc/list", label: "T&C List", icon: ListChecks },
   ] },
+  { group: "Daily Manpower 관리", items: [
+    { to: "/manpower", label: "출면 현황", icon: UserCheck },
+    { to: "/manpower/trend", label: "출면 추이", icon: LineChart },
+    { to: "/manpower/compare", label: "검증 대조", icon: GitCompare },
+  ] },
 ] as const;
 
 const DATA_NAV = [
@@ -63,11 +68,6 @@ const DATA_NAV = [
 ] as const;
 
 const ADMIN_NAV = [
-  { group: "Daily Manpower 관리", items: [
-    { to: "/manpower", label: "출면 현황", icon: UserCheck },
-    { to: "/manpower/trend", label: "출면 추이", icon: LineChart },
-    { to: "/manpower/compare", label: "검증 대조", icon: GitCompare },
-  ] },
   { group: "관리", items: [
     { to: "/users", label: "CMS 사용자 관리", icon: Users },
     { to: "/manpower/members", label: "출면기록 관리자 설정", icon: Contact },
