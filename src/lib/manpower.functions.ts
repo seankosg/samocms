@@ -19,7 +19,7 @@ export const getManpower = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ from: dateStr, to: dateStr }).parse(d))
   .handler(async ({ data, context }) => {
     const c = context.supabase;
-    const [cards, compare, companies, locations, calendar, plan, settings, log] = await Promise.all([
+    const [cards, compare, companies, locations, calendar, plan, settings, log, lastEntry] = await Promise.all([
       c.from("v_manpower_cards").select("*").gte("report_date", data.from).lte("report_date", data.to),
       c.from("v_manpower_compare").select("*").gte("report_date", data.from).lte("report_date", data.to),
       c.from("manpower_companies").select("*").order("sort_order"),
@@ -28,13 +28,18 @@ export const getManpower = createServerFn({ method: "GET" })
       c.from("manpower_plan").select("company, plan_date, granularity, planned_total").gte("plan_date", data.from).lte("plan_date", data.to),
       c.from("app_settings").select("*"),
       c.from("manpower_ingest_log").select("*").order("received_at", { ascending: false }).limit(5),
+      c.from("manpower_entries").select("synced_at").order("synced_at", { ascending: false }).limit(1),
     ]);
-    const err = cards.error ?? compare.error ?? companies.error ?? locations.error ?? calendar.error ?? plan.error ?? settings.error ?? log.error;
+    const err = cards.error ?? compare.error ?? companies.error ?? locations.error ?? calendar.error ?? plan.error ?? settings.error ?? log.error ?? lastEntry.error;
     if (err) throw new Error(err.message);
     const settingMap: Record<string, string> = {};
     (settings.data ?? []).forEach((s: { key: string; value: string | null }) => {
       if (s.value) settingMap[s.key] = s.value;
     });
+    // 「마지막 수신」 = 시트 동기화 시각과 기록 저장 시각 중 더 최근 값
+    const candidates = [settingMap["manpower_last_sync_at"], lastEntry.data?.[0]?.synced_at as string | undefined]
+      .filter((v): v is string => !!v)
+      .sort();
     return {
       cards: cards.data ?? [],
       compare: compare.data ?? [],
@@ -44,8 +49,10 @@ export const getManpower = createServerFn({ method: "GET" })
       plan: plan.data ?? [],
       settings: settingMap,
       ingestLog: log.data ?? [],
+      lastReceivedAt: candidates.at(-1) ?? null,
     };
   });
+
 
 /** 봇 사용자(회원) 목록 — 관리자 화면용 */
 export const getManpowerMembers = createServerFn({ method: "GET" })
