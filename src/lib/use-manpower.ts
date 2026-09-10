@@ -45,6 +45,8 @@ export function useManpower(from: string, to: string) {
     daily: toDaily(cards),
     isWorkday: makeIsWorkday(calendar),
     cutoff: data.settings["manpower_cutoff_time"] ?? "09:00",
+    lastReceivedAt: (data as { lastReceivedAt?: string | null }).lastReceivedAt ?? null,
+
   };
 }
 
