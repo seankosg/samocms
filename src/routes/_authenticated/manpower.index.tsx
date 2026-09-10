@@ -70,6 +70,7 @@ function ManpowerPage() {
   const { cards, companies, settings, cutoff } = useManpower(day, day);
   const { isAdmin } = useAuth();
   const [q, setQ] = useState("");
+  const [matrixMode, setMatrixMode] = useState<"company" | "location">("company");
 
   const dayCards = useMemo(() => cards.filter((c) => c.report_date === day), [cards, day]);
   const shown = useMemo(
@@ -79,7 +80,7 @@ function ManpowerPage() {
   const daily = useMemo(() => toDaily(shown), [shown]);
   const totals = useMemo(() => tradeTotals(shown, source), [shown, source]);
   const comp = useMemo(() => compliance(dayCards, companies, day, cutoff), [dayCards, companies, day, cutoff]);
-  const matrix = useMemo(() => locationMatrix(shown, source), [shown, source]);
+  const matrix = useMemo(() => buildMatrix(shown, source, matrixMode), [shown, source, matrixMode]);
   const locs = useMemo(() => [...new Set(shown.map((c) => c.location))].sort(), [shown]);
   const mismatches = shown.filter(cardMismatch);
 
