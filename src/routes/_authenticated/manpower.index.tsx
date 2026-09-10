@@ -163,7 +163,10 @@ function ManpowerPage() {
     <AdminGate title="출면 현황">
     <AppShell
       title={MP.daily}
-      desc={`${fmtDay(day)} · ${source === "SUB" ? MP.sub : MP.hdec} · 총 ${totals.total.toLocaleString()}명 · 카드 ${shown.length}건`}
+      desc={`${fmtDay(day)} · ${source === "SUB" ? MP.sub : MP.hdec} · 총 ${totals.total.toLocaleString()}명 · 카드 ${shown.length}건${
+        lastReceivedAt ? ` · 마지막 수신 ${new Date(lastReceivedAt).toLocaleString("ko-KR", { timeZone: "Asia/Riyadh", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}` : ""
+      }`}
+
       actions={
         <>
           <Input type="date" aria-label="보고일" value={day} onChange={(e) => setDay(e.target.value)} className="h-8 w-[150px] text-xs" />
