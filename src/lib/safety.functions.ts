@@ -2,14 +2,18 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+const Lang = z.enum(["ko", "en"]);
+
 const Input = z.object({
   day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   facts: z.string().min(1).max(12000),
   /** true면 기존 저장 결과를 무시하고 다시 생성 (관리자 "다시 분석") */
   force: z.boolean().optional(),
   /** 출력 언어 (ko: 한국어, en: 건설 영어) */
-  lang: z.enum(["ko", "en"]).optional(),
+  lang: Lang.optional(),
 });
+
+export type SafetyLang = "ko" | "en";
 
 export type SafetyRisk = {
   level: "High" | "Medium";
@@ -21,7 +25,7 @@ export type SafetyRisk = {
   hazardType: string[];
 };
 
-const SYSTEM =
+const SYSTEM_KO =
   "당신은 대형 자동차공장 건설현장의 안전관리(HSE) 책임자입니다. 제공된 당일 작업 목록만 근거로 안전상 특별 주의가 필요한 작업을 선별합니다. " +
   "중점 판단 요소: 고소작업, 중량물 양중·인양, 전기 활선·수전, 밀폐공간, 화기작업, 시운전 중 기계·전기 가동(에너지 투입), 동시작업 간섭, 대형 장비 운용, 굴착·가설. " +
   "출력은 반드시 JSON 객체 하나이며 형식은 다음과 같습니다: " +
@@ -30,21 +34,38 @@ const SYSTEM =
   "risks는 위험도가 높은 순으로 최대 12개. High는 인명 중대재해 가능성이 있는 작업에만 부여합니다. " +
   "제공되지 않은 작업을 지어내지 말고, 값이 없으면 '-' 로 표기합니다. JSON 외 다른 텍스트는 출력하지 않습니다.";
 
+const SYSTEM_EN =
+  "You are the HSE (Health, Safety & Environment) manager of a large automotive plant construction site. " +
+  "Using ONLY the provided list of today's activities, select the works that require special safety attention. " +
+  "Key judgement factors: work at height, heavy lifting / rigging, live electrical work & energisation, confined space entry, hot work, " +
+  "energised commissioning of mechanical & electrical systems, simultaneous operations (SIMOPS) interference, heavy plant operation, excavation and temporary works. " +
+  "Write in professional construction / HSE English (site terminology such as scaffolding, permit to work, LOTO, spotter, banksman, edge protection, fire watch, gas testing). " +
+  "Output MUST be exactly one JSON object in this form: " +
+  '{"risks":[{"level":"High"|"Medium","title":"activity name","bldg":"building/area","sub":"subcontractor","hazardType":["Fall","Electric Shock"],"hazard":"hazard description (1-2 English sentences)","action":"recommended control measures (1-2 English sentences)"}]} . ' +
+  "hazardType is an array of 1-3 values chosen ONLY from: Fall from Height, Overturning, Collapse, Falling Object, Electric Shock, Fire/Explosion, Asphyxiation/Confined Space, Caught-in/Crushing, Machinery/Equipment, Entanglement/Cutting, Hazardous Chemicals, Other. " +
+  "List up to 12 risks, highest risk first. Use High only where a fatality or major injury is credible. " +
+  "Never invent activities that are not provided; use '-' where a value is missing. Output no text other than the JSON.";
+
+const col = (lang: SafetyLang) => (lang === "en" ? { risks: "risks_en", at: "generated_at_en" } : { risks: "risks", at: "generated_at" });
+
 /** 당일 작업 목록 기반 High Risk 안전 작업 선별 */
 export const analyzeSafety = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const lang: SafetyLang = data.lang ?? "ko";
+    const c = col(lang);
 
     if (!data.force) {
       const { data: exist } = await supabaseAdmin
         .from("safety_reports")
-        .select("day, risks, generated_at")
+        .select("day, risks, generated_at, risks_en, generated_at_en")
         .eq("day", data.day)
         .maybeSingle();
-      if (exist) {
-        return { day: exist.day, risks: (exist.risks as unknown as SafetyRisk[]) ?? [], generatedAt: exist.generated_at };
+      const row = exist as Record<string, unknown> | null;
+      if (row && row[c.risks]) {
+        return { day: data.day, lang, risks: (row[c.risks] as unknown as SafetyRisk[]) ?? [], generatedAt: (row[c.at] as string | null) ?? null };
       }
     }
 
@@ -57,8 +78,14 @@ export const analyzeSafety = createServerFn({ method: "POST" })
       body: JSON.stringify({
         model: "google/gemini-3.8-flash",
         messages: [
-          { role: "system", content: SYSTEM },
-          { role: "user", content: `당일 작업 목록 (json 형식으로 응답):\n${data.facts}` },
+          { role: "system", content: lang === "en" ? SYSTEM_EN : SYSTEM_KO },
+          {
+            role: "user",
+            content:
+              lang === "en"
+                ? `Today's activity list (respond in JSON):\n${data.facts}`
+                : `당일 작업 목록 (json 형식으로 응답):\n${data.facts}`,
+          },
         ],
         response_format: { type: "json_object" },
       }),
@@ -100,22 +127,30 @@ export const analyzeSafety = createServerFn({ method: "POST" })
     const generatedAt = new Date().toISOString();
     await supabaseAdmin
       .from("safety_reports")
-      .upsert({ day: data.day, risks, generated_at: generatedAt, created_by: context.userId }, { onConflict: "day" });
+      .upsert(
+        { day: data.day, [c.risks]: risks, [c.at]: generatedAt, created_by: context.userId } as never,
+        { onConflict: "day" },
+      );
 
-    return { day: data.day, risks, generatedAt };
+    return { day: data.day, lang, risks, generatedAt };
   });
 
 /** 저장된 당일 안전 위험 분석 결과 조회 */
 export const getSafetyReport = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(d))
+  .inputValidator((d: unknown) =>
+    z.object({ day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), lang: Lang.optional() }).parse(d),
+  )
   .handler(async ({ data, context }) => {
+    const lang: SafetyLang = data.lang ?? "ko";
+    const c = col(lang);
     const { data: row, error } = await context.supabase
       .from("safety_reports")
-      .select("day, risks, generated_at")
+      .select("day, risks, generated_at, risks_en, generated_at_en")
       .eq("day", data.day)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!row) return null;
-    return { day: row.day, risks: (row.risks as unknown as SafetyRisk[]) ?? [], generatedAt: row.generated_at };
+    const r = row as Record<string, unknown> | null;
+    if (!r || !r[c.risks]) return null;
+    return { day: data.day, lang, risks: (r[c.risks] as unknown as SafetyRisk[]) ?? [], generatedAt: (r[c.at] as string | null) ?? null };
   });
