@@ -99,7 +99,11 @@ function ManpowerPage() {
   const daily = useMemo(() => toDaily(shown), [shown]);
   const totals = useMemo(() => tradeTotals(shown, source), [shown, source]);
   const comp = useMemo(() => compliance(dayCards, companies, day, cutoff), [dayCards, companies, day, cutoff]);
-  const matrix = useMemo(() => buildMatrix(shown, source, matrixMode), [shown, source, matrixMode]);
+  const allLocNames = useMemo(
+    () => locations.filter((l) => l.is_active).map((l) => l.name).sort((a, b) => a.localeCompare(b)),
+    [locations],
+  );
+  const matrix = useMemo(() => buildMatrix(shown, source, matrixMode, allLocNames), [shown, source, matrixMode, allLocNames]);
   const locs = useMemo(() => [...new Set(shown.map((c) => c.location))].sort(), [shown]);
   const mismatches = shown.filter(cardMismatch);
 
