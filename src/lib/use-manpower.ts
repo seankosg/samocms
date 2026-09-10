@@ -1,5 +1,6 @@
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { getManpower, getManpowerMembers } from "./manpower.functions";
+import { getManpower, getManpowerMembers, getManpowerMasters } from "./manpower.functions";
+
 import {
   makeIsWorkday, riyadhToday, addDays, toDaily,
   type Card, type CompareRow, type CompanyMaster, type LocationMaster, type CalendarDay, type PlanRow,
