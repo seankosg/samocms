@@ -24,8 +24,16 @@ const MATRIX_SHIFT_LABEL: Record<(typeof MATRIX_SHIFTS)[number], string> = {
   "Day Shift": "주간", Overtime: "연장", "Night Shift": "야간",
 };
 type MatrixCell = { total: number; byShift: Record<(typeof MATRIX_SHIFTS)[number], number> };
-/** mode=company: 행=협력사·열=장소 / mode=location: 행=장소·열=협력사 */
-function buildMatrix(cards: MpCard[], source: Source, mode: "company" | "location") {
+/**
+ * mode=company: 행=협력사·열=장소 / mode=location: 행=장소·열=협력사
+ * 장소는 값 유무와 상관없이 앱에 등록된 모든 활성 장소를 표시하고 이름 오름차순 정렬.
+ */
+function buildMatrix(
+  cards: MpCard[],
+  source: Source,
+  mode: "company" | "location",
+  allLocations: string[],
+) {
   const rows = new Map<string, Map<string, MatrixCell>>();
   const colSet = new Set<string>();
   cards.filter((c) => c.source === source).forEach((c) => {
@@ -41,7 +49,18 @@ function buildMatrix(cards: MpCard[], source: Source, mode: "company" | "locatio
     cell.byShift[sh] += n;
     cell.total += n;
   });
-  return { rows, cols: [...colSet].sort() };
+  // 장소는 마스터 전체를 항상 표시 (값이 없어도 행/열로 노출)
+  const sortedLocs = [...allLocations].sort((a, b) => a.localeCompare(b));
+  if (mode === "company") {
+    // 열(장소)을 전체 장소로 채움
+    sortedLocs.forEach((loc) => colSet.add(loc));
+    return { rows, cols: [...colSet].sort((a, b) => a.localeCompare(b)) };
+  }
+  // location 모드: 행(장소)을 전체 장소로 채움 — 빈 행도 포함
+  sortedLocs.forEach((loc) => {
+    if (!rows.has(loc)) rows.set(loc, new Map());
+  });
+  return { rows, cols: [...colSet].sort((a, b) => a.localeCompare(b)) };
 }
 import { MP, TRADE_LABEL } from "@/lib/manpower-i18n";
 
