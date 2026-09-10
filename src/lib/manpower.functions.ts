@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { parseSheet, diffAgainstExisting, sheetIdFrom, type SheetEntry } from "./manpower-sheet";
+import { sheetIdFrom } from "./manpower-sheet";
 
 type Ctx = { supabase: any; userId: string };
 
@@ -103,24 +103,6 @@ export const setManpowerMemberActive = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-const GATEWAY = "https://connector-gateway.lovable.dev/google_sheets/v4";
-
-async function readTab(sheetId: string, tab: string) {
-  const key = process.env["LOVABLE_API_KEY"];
-  const conn = process.env["GOOGLE_SHEETS_API_KEY"];
-  if (!key || !conn) throw new Error("구글 시트 연결이 설정되지 않았습니다.");
-  const res = await fetch(`${GATEWAY}/spreadsheets/${sheetId}/values/${tab}!A1:R2000`, {
-    headers: { Authorization: `Bearer ${key}`, "X-Connection-Api-Key": conn },
-  });
-  if (!res.ok) {
-    const body = await res.text();
-    console.error(`Sheets read failed [${res.status}]: ${body}`);
-    throw new Error(`구글 시트를 읽지 못했습니다 [${res.status}] ${body.slice(0, 300)}`);
-  }
-  const json = (await res.json()) as { values?: unknown[][] };
-  return json.values;
-}
-
 const importSchema = z.object({
   sheet: z.string().min(10).max(200),
   subTab: z.string().min(1).max(80).default("Submissions"),
@@ -136,45 +118,8 @@ export const importManpowerSheet = createServerFn({ method: "POST" })
     await assertAdmin(context as never);
     const sheetId = sheetIdFrom(data.sheet);
     if (!sheetId) throw new Error("구글 시트 주소를 확인해 주세요.");
-
-    const [subValues, hdecValues] = await Promise.all([readTab(sheetId, data.subTab), readTab(sheetId, data.hdecTab)]);
-    const sub = parseSheet(subValues, "SUB");
-    const hdec = parseSheet(hdecValues, "HDEC");
-    const rows: SheetEntry[] = [...sub.rows, ...hdec.rows];
-    const errors = [
-      ...sub.errors.map((e) => ({ ...e, tab: data.subTab })),
-      ...hdec.errors.map((e) => ({ ...e, tab: data.hdecTab })),
-    ];
-
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: existing, error: exErr } = await supabaseAdmin
-      .from("manpower_entries")
-      .select("source, sheet_row, submission_id, status, subtotal, company, report_date");
-    if (exErr) throw new Error(exErr.message);
-    const summary = diffAgainstExisting(rows, (existing ?? []) as never);
-
-    if (!data.apply) {
-      return { preview: true, rows: rows.length, ...summary, errors, sheetId, sample: rows.slice(0, 20) };
-    }
-
-    let upserted = 0;
-    for (let i = 0; i < rows.length; i += 500) {
-      const chunk = rows.slice(i, i + 500).map((r) => ({ ...r, synced_at: new Date().toISOString() }));
-      const { error } = await supabaseAdmin.from("manpower_entries").upsert(chunk, { onConflict: "source,sheet_row" });
-      if (error) throw new Error(error.message);
-      upserted += chunk.length;
-    }
-    await supabaseAdmin.from("manpower_ingest_log").insert({
-      mode: "manual-sheet",
-      rows_in: rows.length,
-      rows_upserted: upserted,
-      warnings: errors.length ? errors : null,
-      ok: true,
+    const { syncManpowerFromSheet } = await import("./manpower-sync.server");
+    return syncManpowerFromSheet({
+      sheetId, subTab: data.subTab, hdecTab: data.hdecTab, apply: data.apply, mode: "manual-sheet",
     });
-    await supabaseAdmin.from("app_settings").upsert([
-      { key: "manpower_sheet_id", value: sheetId, updated_at: new Date().toISOString() },
-      { key: "manpower_sheet_sub_tab", value: data.subTab, updated_at: new Date().toISOString() },
-      { key: "manpower_sheet_hdec_tab", value: data.hdecTab, updated_at: new Date().toISOString() },
-    ]);
-    return { preview: false, rows: rows.length, ...summary, upserted, errors, sheetId };
   });
