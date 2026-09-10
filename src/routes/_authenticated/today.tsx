@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ChevronDown, ChevronRight, HardHat, Languages, Loader2, ShieldAlert } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronRight, FileText, HardHat, Languages, Loader2, ShieldAlert } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { projectQuery, useProject } from "@/lib/use-project";
@@ -116,7 +116,15 @@ function TodayPage() {
 
   return (
     <AppShell title={t.pageTitle} desc={`${lang === "en" ? fmtTodayEn(today) : fmtToday(today)} · ${t.pageDesc}`}>
-      <div className="mb-3 flex justify-end">{toggle}</div>
+      <div className="mb-3 flex flex-wrap items-center justify-end gap-2">
+        {toggle}
+        <Button size="sm" variant="outline" asChild>
+          <Link to="/today-report" search={{ lang }} target="_blank">
+            <FileText className="mr-1.5 size-3.5" />
+            {lang === "en" ? "Safety Report (A4)" : "안전 리포트 (A4)"}
+          </Link>
+        </Button>
+      </div>
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
         {kpiCards.map((c) => (
           <KpiCard

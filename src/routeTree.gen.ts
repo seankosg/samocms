@@ -19,6 +19,7 @@ import { Route as AuthenticatedRawDataRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedReportRouteImport } from './routes/_authenticated/report'
 import { Route as AuthenticatedScheduleRouteImport } from './routes/_authenticated/schedule'
 import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
+import { Route as AuthenticatedTodayReportRouteImport } from './routes/_authenticated/today-report'
 import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedTcElecRouteImport } from './routes/_authenticated/tc.elec'
@@ -76,6 +77,12 @@ const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
   path: '/today',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTodayReportRoute =
+  AuthenticatedTodayReportRouteImport.update({
+    id: '/today-report',
+    path: '/today-report',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedUploadRoute = AuthenticatedUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
@@ -122,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/report': typeof AuthenticatedReportRoute
   '/schedule': typeof AuthenticatedScheduleRoute
   '/today': typeof AuthenticatedTodayRoute
+  '/today-report': typeof AuthenticatedTodayReportRoute
   '/upload': typeof AuthenticatedUploadRoute
   '/users': typeof AuthenticatedUsersRoute
   '/tc/elec': typeof AuthenticatedTcElecRoute
@@ -140,6 +148,7 @@ export interface FileRoutesByTo {
   '/report': typeof AuthenticatedReportRoute
   '/schedule': typeof AuthenticatedScheduleRoute
   '/today': typeof AuthenticatedTodayRoute
+  '/today-report': typeof AuthenticatedTodayReportRoute
   '/upload': typeof AuthenticatedUploadRoute
   '/users': typeof AuthenticatedUsersRoute
   '/tc/elec': typeof AuthenticatedTcElecRoute
@@ -160,6 +169,7 @@ export interface FileRoutesById {
   '/_authenticated/report': typeof AuthenticatedReportRoute
   '/_authenticated/schedule': typeof AuthenticatedScheduleRoute
   '/_authenticated/today': typeof AuthenticatedTodayRoute
+  '/_authenticated/today-report': typeof AuthenticatedTodayReportRoute
   '/_authenticated/upload': typeof AuthenticatedUploadRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/tc/elec': typeof AuthenticatedTcElecRoute
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
     | '/report'
     | '/schedule'
     | '/today'
+    | '/today-report'
     | '/upload'
     | '/users'
     | '/tc/elec'
@@ -198,6 +209,7 @@ export interface FileRouteTypes {
     | '/report'
     | '/schedule'
     | '/today'
+    | '/today-report'
     | '/upload'
     | '/users'
     | '/tc/elec'
@@ -217,6 +229,7 @@ export interface FileRouteTypes {
     | '/_authenticated/report'
     | '/_authenticated/schedule'
     | '/_authenticated/today'
+    | '/_authenticated/today-report'
     | '/_authenticated/upload'
     | '/_authenticated/users'
     | '/_authenticated/tc/elec'
@@ -305,6 +318,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTodayRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/today-report': {
+      id: '/_authenticated/today-report'
+      path: '/today-report'
+      fullPath: '/today-report'
+      preLoaderRoute: typeof AuthenticatedTodayReportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/upload': {
       id: '/_authenticated/upload'
       path: '/upload'
@@ -365,6 +385,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportRoute: typeof AuthenticatedReportRoute
   AuthenticatedScheduleRoute: typeof AuthenticatedScheduleRoute
   AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
+  AuthenticatedTodayReportRoute: typeof AuthenticatedTodayReportRoute
   AuthenticatedUploadRoute: typeof AuthenticatedUploadRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedTcElecRoute: typeof AuthenticatedTcElecRoute
@@ -381,6 +402,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportRoute: AuthenticatedReportRoute,
   AuthenticatedScheduleRoute: AuthenticatedScheduleRoute,
   AuthenticatedTodayRoute: AuthenticatedTodayRoute,
+  AuthenticatedTodayReportRoute: AuthenticatedTodayReportRoute,
   AuthenticatedUploadRoute: AuthenticatedUploadRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedTcElecRoute: AuthenticatedTcElecRoute,
