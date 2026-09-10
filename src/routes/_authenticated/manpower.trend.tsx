@@ -1,28 +1,34 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import * as XLSX from "xlsx";
 import { Download } from "lucide-react";
-import { CartesianGrid, ComposedChart, Bar, Line, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
+import { CartesianGrid, ComposedChart, Bar, Line, Tooltip, XAxis, YAxis, Legend } from "recharts";
 import { AppShell } from "@/components/app-shell";
 import { AdminGate } from "@/components/manpower/admin-gate";
 import { Kpi } from "@/routes/_authenticated/manpower.index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { manpowerRangeQuery, useManpower, defaultRange } from "@/lib/use-manpower";
-import { dateRange, movingAverage, riyadhToday, addDays, totalsByDate } from "@/lib/manpower-model";
+import { dateRange, riyadhToday, addDays, type Card as MpCard } from "@/lib/manpower-model";
 import { MP } from "@/lib/manpower-i18n";
+
+const DIMS = ["team", "building", "company"] as const;
+type Dim = (typeof DIMS)[number];
+const DIM_LABEL: Record<Dim, string> = { team: "팀별", building: "건물별", company: "협력사별" };
 
 const search = z.object({
   mpFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   mpTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  mpCompany: z.string().optional(),
+  mpDim: z.enum(DIMS).optional(),
+  mpVal: z.string().optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/manpower/trend")({
   head: () => ({ meta: [
     { title: "출면 추이 | HMMME 통합 공정 관리" },
-    { name: "description", content: "기간별 출면 인원 추이와 근무일 기준 7일 이동평균, 협력사별 투입 비중을 확인합니다." },
+    { name: "description", content: "팀·건물·협력사별 출면 인원의 일일 기록과 누계 추이를 확인합니다." },
     { property: "og:title", content: "HMMME 출면 추이" },
     { property: "og:description", content: "기간별 인력 투입 흐름을 확인하세요." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
@@ -43,50 +49,66 @@ function TrendPage() {
   const def = defaultRange();
   const from = s.mpFrom ?? def.from;
   const to = s.mpTo ?? def.to;
-  const { cards, daily, isWorkday, plan } = useManpower(from, to);
-  const [company, setCompany] = useState(s.mpCompany ?? "전체");
+  const dim: Dim = s.mpDim ?? "team";
+  const value = s.mpVal ?? "전체";
+  const { cards, companies, locations, isWorkday } = useManpower(from, to);
 
-  const companies = useMemo(() => [...new Set(cards.map((c) => c.company))].sort(), [cards]);
-  const filtered = useMemo(() => daily.filter((d) => company === "전체" || d.company === company), [daily, company]);
+  /** 카드 → 선택 축의 그룹명 */
+  const keyOf = useMemo(() => {
+    const team = new Map(companies.map((c) => [c.name, c.discipline || "미지정"]));
+    const bldg = new Map(locations.map((l) => [l.name, l.bldg_code || l.name]));
+    return (c: MpCard) =>
+      dim === "team" ? (team.get(c.company) ?? "미지정")
+      : dim === "building" ? (bldg.get(c.location) ?? c.location)
+      : c.company;
+  }, [dim, companies, locations]);
+
+  const groups = useMemo(() => [...new Set(cards.map(keyOf))].sort(), [cards, keyOf]);
+  const active = groups.includes(value) ? value : "전체";
+  const filtered = useMemo(() => cards.filter((c) => active === "전체" || keyOf(c) === active), [cards, keyOf, active]);
+
   const days = useMemo(() => dateRange(from, to), [from, to]);
-
-  const subTotals = useMemo(() => totalsByDate(filtered, "SUB"), [filtered]);
-  const hdecTotals = useMemo(() => totalsByDate(filtered, "HDEC"), [filtered]);
-  const ma = useMemo(() => movingAverage(days, subTotals, isWorkday, 7), [days, subTotals, isWorkday]);
-  const planByDate = useMemo(() => {
+  const byDate = (src: "SUB" | "HDEC") => {
     const m = new Map<string, number>();
-    plan.filter((p) => company === "전체" || p.company === company)
-      .forEach((p) => m.set(p.plan_date, (m.get(p.plan_date) ?? 0) + p.planned_total));
+    filtered.filter((c) => c.source === src).forEach((c) => m.set(c.report_date, (m.get(c.report_date) ?? 0) + c.subtotal));
     return m;
-  }, [plan, company]);
+  };
+  const subTotals = useMemo(() => byDate("SUB"), [filtered]);
+  const hdecTotals = useMemo(() => byDate("HDEC"), [filtered]);
 
-  const chart = days.map((d, i) => ({
-    day: d.slice(5),
-    보고: subTotals.get(d) ?? 0,
-    재집계: hdecTotals.get(d) ?? 0,
-    "7일 이동평균": ma[i] == null ? null : Math.round(ma[i]! * 10) / 10,
-    계획: planByDate.get(d) ?? null,
-    휴무: isWorkday(d) ? 0 : 1,
-  }));
+  let cs = 0, ch = 0;
+  const chart = days.map((d) => {
+    const rep = subTotals.get(d) ?? 0;
+    const ver = hdecTotals.get(d) ?? 0;
+    cs += rep; ch += ver;
+    return { day: d.slice(5), 보고: rep, 재집계: ver, "누계 보고": cs, "누계 재집계": ch };
+  });
+
+  // 차트 크기: X축(일수)·Y축(최대값)에 따라 가변 — 영역 폭은 고정, 내부만 스크롤
+  const dailyMax = Math.max(1, ...chart.map((r) => Math.max(r.보고, r.재집계)));
+  const cumMax = Math.max(1, cs, ch);
+  const chartWidth = Math.max(640, days.length * (days.length > 45 ? 26 : 44));
+  const chartHeight = dailyMax > 800 ? 520 : dailyMax > 400 ? 460 : dailyMax > 150 ? 400 : 340;
 
   const workDays = days.filter(isWorkday);
-  const sum = workDays.reduce((a, d) => a + (subTotals.get(d) ?? 0), 0);
+  const sum = cs;
   const avg = workDays.length ? sum / workDays.length : 0;
   const peakDay = days.reduce((best, d) => ((subTotals.get(d) ?? 0) > (subTotals.get(best) ?? 0) ? d : best), days[0] ?? from);
 
-  const byCompany = useMemo(() => {
+  const byGroup = useMemo(() => {
     const m = new Map<string, number>();
-    daily.filter((d) => d.source === "SUB").forEach((d) => m.set(d.company, (m.get(d.company) ?? 0) + d.total));
+    cards.filter((c) => c.source === "SUB").forEach((c) => m.set(keyOf(c), (m.get(keyOf(c)) ?? 0) + c.subtotal));
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
-  }, [daily]);
+  }, [cards, keyOf]);
+  const groupSum = byGroup.reduce((a, x) => a + x[1], 0);
 
   const exportXlsx = () => {
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(days.map((d, i) => ({
-      일자: d, 근무일: isWorkday(d) ? "Y" : "N", 협력사보고: subTotals.get(d) ?? 0,
-      HDEC재집계: hdecTotals.get(d) ?? 0, "7일이동평균": ma[i], 계획: planByDate.get(d) ?? null,
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(chart.map((r, i) => ({
+      일자: days[i], 근무일: isWorkday(days[i]!) ? "Y" : "N",
+      보고: r.보고, 재집계: r.재집계, "누계 보고": r["누계 보고"], "누계 재집계": r["누계 재집계"],
     }))), "출면추이");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(byCompany.map(([c, v]) => ({ 협력사: c, 연인원: v }))), "협력사별");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(byGroup.map(([c, v]) => ({ [DIM_LABEL[dim]]: c, 연인원: v }))), DIM_LABEL[dim]);
     XLSX.writeFile(wb, `HMMME_출면추이_${from.replace(/-/g, "")}_${to.replace(/-/g, "")}.xlsx`);
   };
 
@@ -100,6 +122,11 @@ function TrendPage() {
       desc={`${from} ~ ${to} · 근무일 ${workDays.length}일 · 연인원 ${sum.toLocaleString()}명`}
       actions={
         <>
+          <Tabs value={dim} onValueChange={(v) => navigate({ search: (p) => ({ ...p, mpDim: v as Dim, mpVal: "전체" }), replace: true })}>
+            <TabsList className="h-8">
+              {DIMS.map((d) => <TabsTrigger key={d} value={d} className="h-6 px-2.5 text-xs">{DIM_LABEL[d]}</TabsTrigger>)}
+            </TabsList>
+          </Tabs>
           {[7, 30, 90].map((n) => <Button key={n} size="sm" variant="outline" className="h-8 text-xs" onClick={() => quick(n)}>{n}일</Button>)}
           <Input type="date" aria-label="시작일" value={from} onChange={(e) => setRange("from", e.target.value)} className="h-8 w-[140px] text-xs" />
           <Input type="date" aria-label="종료일" value={to} onChange={(e) => setRange("to", e.target.value)} className="h-8 w-[140px] text-xs" />
@@ -108,58 +135,60 @@ function TrendPage() {
       }
     >
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="연인원" value={sum.toLocaleString()} sub="근무일 합계" />
+        <Kpi label="연인원" value={sum.toLocaleString()} sub={`${DIM_LABEL[dim]} · ${active}`} />
         <Kpi label="근무일 평균" value={avg.toFixed(1)} sub={`${workDays.length}일 기준`} />
         <Kpi label="최대 투입일" value={String(subTotals.get(peakDay) ?? 0)} sub={peakDay} />
-        <Kpi label="참여 협력사" value={String(byCompany.length)} sub={byCompany[0] ? `최다 ${byCompany[0][0]}` : ""} />
+        <Kpi label={DIM_LABEL[dim].replace("별", " 수")} value={String(byGroup.length)} sub={byGroup[0] ? `최다 ${byGroup[0][0]}` : ""} />
       </div>
 
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {["전체", ...companies].map((c) => (
-          <Button key={c} size="sm" variant={company === c ? "default" : "outline"} className="h-7 text-xs"
-            onClick={() => { setCompany(c); navigate({ search: (p) => ({ ...p, mpCompany: c }), replace: true }); }}>{c}</Button>
+        {["전체", ...groups].map((c) => (
+          <Button key={c} size="sm" variant={active === c ? "default" : "outline"} className="h-7 text-xs"
+            onClick={() => navigate({ search: (p) => ({ ...p, mpVal: c }), replace: true })}>{c}</Button>
         ))}
       </div>
 
       <section className="mb-6 rounded-md border border-border bg-card p-3">
-        <h2 className="mb-2 text-sm font-bold">일자별 출면 인원</h2>
-        <div className="h-[340px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={chart} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis dataKey="day" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip contentStyle={{ fontSize: 12 }} />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="보고" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} />
-              <Bar dataKey="재집계" fill="hsl(var(--muted-foreground))" radius={[2, 2, 0, 0]} />
-              <Line type="monotone" dataKey="7일 이동평균" stroke="hsl(var(--destructive))" dot={false} strokeWidth={2} connectNulls />
-              <Line type="monotone" dataKey="계획" stroke="hsl(var(--chart-2, 200 80% 45%))" dot={false} strokeDasharray="5 4" connectNulls />
-            </ComposedChart>
-          </ResponsiveContainer>
+        <h2 className="mb-2 text-sm font-bold">
+          일자별 출면 인원 <span className="text-xs font-normal text-muted-foreground">막대: 일일기록(좌축) · 선: 누계기록(우축)</span>
+        </h2>
+        <div className="w-full overflow-x-auto">
+          <ComposedChart width={chartWidth} height={chartHeight} data={chart} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+            <XAxis dataKey="day" tick={{ fontSize: 11 }} interval={days.length > 60 ? 2 : 0} angle={days.length > 20 ? -45 : 0} textAnchor={days.length > 20 ? "end" : "middle"} height={days.length > 20 ? 52 : 30} />
+            <YAxis yAxisId="daily" tick={{ fontSize: 11 }} domain={[0, Math.ceil((dailyMax * 1.1) / 10) * 10]} allowDecimals={false} />
+            <YAxis yAxisId="cum" orientation="right" tick={{ fontSize: 11 }} domain={[0, Math.ceil((cumMax * 1.05) / 10) * 10]} allowDecimals={false} />
+            <Tooltip contentStyle={{ fontSize: 12 }} />
+            <Legend wrapperStyle={{ fontSize: 12 }} />
+            <Bar yAxisId="daily" dataKey="보고" fill="var(--chart-1)" radius={[2, 2, 0, 0]} />
+            <Bar yAxisId="daily" dataKey="재집계" fill="var(--chart-4)" radius={[2, 2, 0, 0]} />
+            <Line yAxisId="cum" type="monotone" dataKey="누계 보고" stroke="var(--chart-1)" dot={false} strokeWidth={2} />
+            <Line yAxisId="cum" type="monotone" dataKey="누계 재집계" stroke="var(--chart-4)" dot={false} strokeWidth={2} strokeDasharray="5 4" />
+          </ComposedChart>
         </div>
       </section>
 
-      <h2 className="mb-2 text-sm font-bold">협력사별 연인원</h2>
+      <h2 className="mb-2 text-sm font-bold">{DIM_LABEL[dim]} 연인원</h2>
       <section className="overflow-x-auto rounded-md border border-border">
         <table className="w-full min-w-[420px] text-xs">
-          <caption className="sr-only">협력사별 기간 연인원</caption>
+          <caption className="sr-only">{DIM_LABEL[dim]} 기간 연인원</caption>
           <thead className="bg-muted/60">
             <tr className="[&>th]:border-b [&>th]:border-border [&>th]:px-2 [&>th]:py-2 [&>th]:text-left">
-              <th scope="col">{MP.company}</th><th scope="col" className="!text-right">연인원</th>
+              <th scope="col">{DIM_LABEL[dim].replace("별", "")}</th><th scope="col" className="!text-right">연인원</th>
               <th scope="col" className="!text-right">비중</th><th scope="col" className="!text-right">근무일 평균</th>
             </tr>
           </thead>
           <tbody>
-            {byCompany.map(([c, v]) => (
-              <tr key={c} className="[&>td]:border-b [&>td]:border-border/60 [&>td]:px-2 [&>td]:py-1.5">
+            {byGroup.map(([c, v]) => (
+              <tr key={c} className={`cursor-pointer [&>td]:border-b [&>td]:border-border/60 [&>td]:px-2 [&>td]:py-1.5 ${active === c ? "bg-primary/10" : "hover:bg-muted/40"}`}
+                onClick={() => navigate({ search: (p) => ({ ...p, mpVal: active === c ? "전체" : c }), replace: true })}>
                 <td className="font-medium">{c}</td>
                 <td className="text-right font-bold">{v.toLocaleString()}</td>
-                <td className="text-right text-muted-foreground">{sum ? `${((v / byCompany.reduce((a, x) => a + x[1], 0)) * 100).toFixed(1)}%` : "—"}</td>
+                <td className="text-right text-muted-foreground">{groupSum ? `${((v / groupSum) * 100).toFixed(1)}%` : "—"}</td>
                 <td className="text-right text-muted-foreground">{workDays.length ? (v / workDays.length).toFixed(1) : "—"}</td>
               </tr>
             ))}
-            {!byCompany.length && <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">기간 내 보고가 없습니다.</td></tr>}
+            {!byGroup.length && <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">기간 내 보고가 없습니다.</td></tr>}
           </tbody>
         </table>
       </section>
