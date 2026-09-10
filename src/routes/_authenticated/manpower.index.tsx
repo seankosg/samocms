@@ -198,39 +198,59 @@ function ManpowerPage() {
           <TabsList className="h-8"><TabsTrigger value="company" className="text-xs">협력사별</TabsTrigger><TabsTrigger value="location" className="text-xs">장소별</TabsTrigger></TabsList>
         </Tabs>
       </div>
-      <section className="overflow-x-auto rounded-md border border-border">
-        <table className="w-full text-xs" style={{ minWidth: 200 + matrix.cols.length * 3 * 64 }}>
+      <section className="overflow-x-auto rounded-lg border border-border shadow-sm">
+        <table className="w-full border-collapse text-xs tabular-nums" style={{ minWidth: 200 + matrix.cols.length * 3 * 64 }}>
           <caption className="sr-only">{matrixMode === "company" ? "협력사별 장소·조별 배치 인원" : "장소별 협력사·조별 배치 인원"}</caption>
-          <thead className="bg-muted/60">
-            <tr className="[&>th]:border-b [&>th]:border-border [&>th]:px-2 [&>th]:py-1.5 [&>th]:text-center">
-              <th scope="col" rowSpan={2} className="sticky left-0 bg-muted/60 !text-left">{matrixMode === "company" ? MP.company : MP.location}</th>
-              {matrix.cols.map((col) => <th key={col} scope="colgroup" colSpan={3} className="whitespace-nowrap border-l border-border">{col}</th>)}
-              <th scope="col" rowSpan={2} className="border-l border-border">{MP.total}</th>
+          <thead>
+            <tr className="bg-primary/10 [&>th]:border-b [&>th]:border-primary/20 [&>th]:px-2 [&>th]:py-2 [&>th]:text-center [&>th]:font-bold [&>th]:text-primary">
+              <th scope="col" rowSpan={2} className="sticky left-0 z-10 min-w-[120px] bg-primary/10 !text-left shadow-[2px_0_0_0_hsl(var(--border))]">{matrixMode === "company" ? MP.company : MP.location}</th>
+              {matrix.cols.map((col) => <th key={col} scope="colgroup" colSpan={3} className="whitespace-nowrap border-l-2 border-primary/20">{col}</th>)}
+              <th scope="col" rowSpan={2} className="border-l-2 border-primary/30 bg-primary/15">{MP.total}</th>
             </tr>
-            <tr className="[&>th]:border-b [&>th]:border-border [&>th]:px-2 [&>th]:py-1 [&>th]:text-right [&>th]:font-normal [&>th]:text-muted-foreground">
+            <tr className="bg-muted/50 [&>th]:border-b-2 [&>th]:border-primary/30 [&>th]:px-2 [&>th]:py-1.5 [&>th]:text-right [&>th]:text-[11px] [&>th]:font-semibold">
               {matrix.cols.map((col) =>
                 MATRIX_SHIFTS.map((sh, i) => (
-                  <th key={`${col}-${sh}`} scope="col" className={i === 0 ? "border-l border-border" : ""}>{MATRIX_SHIFT_LABEL[sh]}</th>
+                  <th key={`${col}-${sh}`} scope="col" className={`${i === 0 ? "border-l-2 border-primary/20" : ""} ${sh === "Day Shift" ? "text-sky-700 dark:text-sky-300" : sh === "Overtime" ? "text-amber-700 dark:text-amber-300" : "text-indigo-700 dark:text-indigo-300"}`}>{MATRIX_SHIFT_LABEL[sh]}</th>
                 )),
               )}
             </tr>
           </thead>
           <tbody>
-            {[...matrix.rows.entries()].map(([rowKey, row]) => (
-              <tr key={rowKey} className="[&>td]:border-b [&>td]:border-border/60 [&>td]:px-2 [&>td]:py-1.5 [&>td]:text-right [&>td:first-child]:text-left">
-                <td className="sticky left-0 bg-card font-medium">{rowKey}</td>
-                {matrix.cols.map((col) => {
-                  const cell = row.get(col);
-                  return MATRIX_SHIFTS.map((sh, i) => (
-                    <td key={`${col}-${sh}`} className={i === 0 ? "border-l border-border/60" : ""}>
-                      {cell?.byShift[sh] || <span className="text-muted-foreground/40">·</span>}
-                    </td>
-                  ));
-                })}
-                <td className="border-l border-border/60 font-bold">{[...row.values()].reduce((a, c) => a + c.total, 0)}</td>
-              </tr>
-            ))}
+            {[...matrix.rows.entries()].map(([rowKey, row], ri) => {
+              const rowTotal = [...row.values()].reduce((a, c) => a + c.total, 0);
+              return (
+                <tr key={rowKey} className={`transition-colors hover:bg-primary/5 ${ri % 2 ? "bg-muted/20" : ""} [&>td]:border-b [&>td]:border-border/50 [&>td]:px-2 [&>td]:py-1.5 [&>td]:text-right [&>td:first-child]:text-left`}>
+                  <td className={`sticky left-0 z-10 font-semibold shadow-[2px_0_0_0_hsl(var(--border))] ${ri % 2 ? "bg-muted/40" : "bg-card"}`}>{rowKey}</td>
+                  {matrix.cols.map((col) => {
+                    const cell = row.get(col);
+                    return MATRIX_SHIFTS.map((sh, i) => {
+                      const v = cell?.byShift[sh] ?? 0;
+                      return (
+                        <td key={`${col}-${sh}`} className={`${i === 0 ? "border-l-2 border-border/60" : ""} ${v ? `font-medium ${sh === "Day Shift" ? "text-sky-700 dark:text-sky-300" : sh === "Overtime" ? "text-amber-700 dark:text-amber-300" : "text-indigo-700 dark:text-indigo-300"}` : ""}`}>
+                          {v || <span className="text-muted-foreground/30">–</span>}
+                        </td>
+                      );
+                    });
+                  })}
+                  <td className={`border-l-2 border-primary/20 font-bold ${rowTotal ? "bg-primary/5 text-sm" : "text-muted-foreground/40"}`}>{rowTotal || "–"}</td>
+                </tr>
+              );
+            })}
             {!matrix.rows.size && <tr><td colSpan={matrix.cols.length * 3 + 2} className="p-6 text-center text-muted-foreground">표시할 자료가 없습니다.</td></tr>}
+            {matrix.rows.size > 0 && (
+              <tr className="bg-primary/10 font-bold [&>td]:border-t-2 [&>td]:border-primary/30 [&>td]:px-2 [&>td]:py-2 [&>td]:text-right [&>td:first-child]:text-left">
+                <td className="sticky left-0 z-10 bg-primary/10 shadow-[2px_0_0_0_hsl(var(--border))]">합계</td>
+                {matrix.cols.map((col) =>
+                  MATRIX_SHIFTS.map((sh, i) => {
+                    const v = [...matrix.rows.values()].reduce((a, row) => a + (row.get(col)?.byShift[sh] ?? 0), 0);
+                    return <td key={`${col}-${sh}`} className={i === 0 ? "border-l-2 border-primary/20" : ""}>{v || ""}</td>;
+                  }),
+                )}
+                <td className="border-l-2 border-primary/30 bg-primary/15 text-sm font-extrabold">
+                  {[...matrix.rows.values()].reduce((a, row) => a + [...row.values()].reduce((b, c) => b + c.total, 0), 0).toLocaleString()}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </section>
