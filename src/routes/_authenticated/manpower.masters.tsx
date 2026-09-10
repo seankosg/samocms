@@ -20,9 +20,9 @@ import {
 
 export const Route = createFileRoute("/_authenticated/manpower/masters")({
   head: () => ({ meta: [
-    { title: "출면 마스터 | HMMME 통합 공정 관리" },
+    { title: "출면 업체 장소 관리 설정 | HMMME 통합 공정 관리" },
     { name: "description", content: "출면 보고에 쓰이는 협력사·장소 목록과 옛 이름 별칭을 관리합니다." },
-    { property: "og:title", content: "HMMME 출면 마스터 관리" },
+    { property: "og:title", content: "HMMME 출면 업체 장소 관리 설정" },
     { property: "og:description", content: "협력사·장소 목록과 별칭을 한곳에서 관리하세요." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
   ] }),
@@ -54,8 +54,8 @@ function MastersPage() {
   }, [usage]);
 
   return (
-    <AdminGate title="출면 마스터">
-      <AppShell title="출면 마스터" desc={`협력사 ${companies.length}곳 · 장소 ${locations.length}곳 · 별칭 ${aliases.length}건`}>
+    <AdminGate title="출면 업체 장소 관리 설정">
+      <AppShell title="출면 업체 장소 관리 설정" desc={`협력사 ${companies.length}곳 · 장소 ${locations.length}곳 · 별칭 ${aliases.length}건`}>
         <Tabs defaultValue="company">
           <TabsList className="mb-3">
             <TabsTrigger value="company">회사</TabsTrigger>

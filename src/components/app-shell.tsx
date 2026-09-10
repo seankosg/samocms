@@ -66,9 +66,9 @@ const ADMIN_NAV = [
     { to: "/manpower/trend", label: "출면 추이", icon: LineChart },
   ] },
   { group: "관리", items: [
-    { to: "/users", label: "사용자 관리", icon: Users },
-    { to: "/manpower/members", label: "출면 봇 사용자", icon: Contact },
-    { to: "/manpower/masters", label: "출면 마스터", icon: Contact },
+    { to: "/users", label: "CMS 사용자 관리", icon: Users },
+    { to: "/manpower/members", label: "출면기록 관리자 설정", icon: Contact },
+    { to: "/manpower/masters", label: "출면 업체 장소 관리 설정", icon: Contact },
 
   ] },
 ] as const;
