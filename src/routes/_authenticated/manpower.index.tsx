@@ -188,7 +188,13 @@ function ManpowerPage() {
         <Kpi label={MP.headcount} value={totals.total.toLocaleString()} sub={`${MP.day} ${daily.reduce((a, d) => a + d.day_total, 0)} · ${MP.ot} ${daily.reduce((a, d) => a + d.ot_total, 0)} · ${MP.night} ${daily.reduce((a, d) => a + d.night_total, 0)}`} />
         <Kpi label="보고 협력사" value={`${new Set(shown.map((c) => c.company)).size} / ${companies.filter((c) => c.is_active).length}`} sub={`장소 ${locs.length}곳`} />
         <Kpi label={MP.compliance} value={`${Math.round(comp.rate * 100)}%`} sub={`마감 ${cutoff} 이전 ${comp.n}/${comp.total}개사`} />
-        <Kpi label={MP.notReported} value={String(comp.missing.length)} sub={comp.missing.slice(0, 3).join(", ") || "없음"} tone={comp.missing.length ? "warn" : "ok"} />
+        <Kpi label={MP.notReported} value={String(comp.missing.length)} tone={comp.missing.length ? "warn" : "ok"}
+          sub={comp.missing.length
+            ? comp.missing.slice(0, 3).map((co) => {
+                const n = reminderCount.get(co) ?? 0;
+                return n > 0 ? `${co} (${MP.reminderSent} ${n}회)` : co;
+              }).join(", ")
+            : "없음"} />
       </div>
 
       {mismatches.length > 0 && (
