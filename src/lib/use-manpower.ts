@@ -46,6 +46,7 @@ export function useManpower(from: string, to: string) {
     isWorkday: makeIsWorkday(calendar),
     cutoff: data.settings["manpower_cutoff_time"] ?? "09:00",
     lastReceivedAt: (data as { lastReceivedAt?: string | null }).lastReceivedAt ?? null,
+    reminderLog: ((data as { reminderLog?: { missing?: string[] }[] }).reminderLog ?? []),
 
   };
 }
@@ -85,6 +86,7 @@ export function useManpowerMasters() {
     usage: data.usage,
     members: data.members as unknown as { telegram_id: string; name: string; company: string | null; role: string }[],
     lastEntrySyncedAt: data.lastEntrySyncedAt as string | null,
+    settings: (data as { settings?: Record<string, string> }).settings ?? {},
   };
 }
 

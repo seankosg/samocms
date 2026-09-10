@@ -28,6 +28,13 @@ export const MP = {
   coverage: "검증 커버리지",
   hdecOnly: "미보고 발견",
   headcount: "총원",
+  reminderSettings: "미보고 알림 설정",
+  reminderEnabled: "미보고 알림",
+  remindTimes: "알림 시각",
+  cutoffTime: "보고 마감",
+  reminderGuide:
+    "1차는 알림, 2차부터는 독촉 문구로 발송됩니다. 근무일 달력에 비근무일로 등록된 날에만 보내지 않습니다(현장은 휴일 없음). 최근 10일간 보고가 없는 회사는 휴면으로 보아 경고를 생략하고 직원 목록에만 표시합니다. 담당자가 등록되지 않은 회사는 경고를 보낼 수 없어 직원 목록에 '담당자 미등록'으로 표시됩니다.",
+  reminderSent: "알림 발송",
 } as const;
 
 export const TRADE_LABEL: Record<Trade, string> = {
