@@ -279,16 +279,16 @@ function ManpowerPage() {
             {!matrix.rows.size && <tr><td colSpan={matrix.cols.length * 3 + 2} className="p-6 text-center text-muted-foreground">표시할 자료가 없습니다.</td></tr>}
             {matrix.rows.size > 0 && (
               <tr className="bg-primary/10 font-bold [&>td]:border-t-2 [&>td]:border-primary/30 [&>td]:px-2 [&>td]:py-2 [&>td]:text-right [&>td:first-child]:text-left">
-                <td className="sticky left-0 z-10 bg-primary/10 shadow-[2px_0_0_0_hsl(var(--border))]">합계</td>
+                <td className="sticky left-0 z-10 w-[150px] min-w-[150px] bg-primary/10 shadow-[2px_0_0_0_hsl(var(--border))]">합계</td>
+                <td className="sticky left-[150px] z-10 min-w-[72px] border-l-2 border-primary/30 bg-primary/15 text-sm font-extrabold">
+                  {[...matrix.rows.values()].reduce((a, row) => a + [...row.values()].reduce((b, c) => b + c.total, 0), 0).toLocaleString()}
+                </td>
                 {matrix.cols.map((col) =>
                   MATRIX_SHIFTS.map((sh, i) => {
                     const v = [...matrix.rows.values()].reduce((a, row) => a + (row.get(col)?.byShift[sh] ?? 0), 0);
                     return <td key={`${col}-${sh}`} className={i === 0 ? "border-l-2 border-primary/20" : ""}>{v || ""}</td>;
                   }),
                 )}
-                <td className="border-l-2 border-primary/30 bg-primary/15 text-sm font-extrabold">
-                  {[...matrix.rows.values()].reduce((a, row) => a + [...row.values()].reduce((b, c) => b + c.total, 0), 0).toLocaleString()}
-                </td>
               </tr>
             )}
           </tbody>
