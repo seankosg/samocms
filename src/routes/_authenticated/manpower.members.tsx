@@ -118,13 +118,31 @@ function MembersPage() {
             <div className="space-y-3 text-xs">
               <Field id="tg" label="텔레그램 ID"><Input id="tg" value={draft.telegram_id} onChange={(e) => setDraft({ ...draft, telegram_id: e.target.value })} className="h-8 text-xs" /></Field>
               <Field id="nm" label="이름"><Input id="nm" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} className="h-8 text-xs" /></Field>
-              <Field id="cp" label="협력사"><Input id="cp" value={draft.company} onChange={(e) => setDraft({ ...draft, company: e.target.value })} className="h-8 text-xs" /></Field>
+              <Field id="cp" label="협력사">
+                <Select
+                  value={draft.role === "HDEC" ? "HDEC" : (draft.company || "")}
+                  disabled={draft.role === "HDEC"}
+                  onValueChange={(v) => setDraft({ ...draft, company: v })}
+                >
+                  <SelectTrigger id="cp" className="h-8 text-xs"><SelectValue placeholder="협력사 선택" /></SelectTrigger>
+                  <SelectContent>
+                    {draft.role === "HDEC" && <SelectItem value="HDEC">HDEC</SelectItem>}
+                    {activeCompanies.map((c) => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
+                    {legacyCompany && <SelectItem value={legacyCompany}>{legacyCompany} (마스터에 없음)</SelectItem>}
+                  </SelectContent>
+                </Select>
+                {legacyCompany && (
+                  <p className="text-[11px] text-amber-600">이 협력사 이름은 출면 마스터에 없습니다. 마스터에 먼저 등록하거나 별칭으로 정리하세요.</p>
+                )}
+                <p className="text-[11px] text-muted-foreground">신규 업체는 먼저 「출면 마스터」에 등록해야 목록에 나옵니다.</p>
+              </Field>
               <Field id="rl" label="구분">
-                <Select value={draft.role} onValueChange={(v) => setDraft({ ...draft, role: v as "SUB" | "HDEC" })}>
+                <Select value={draft.role} onValueChange={(v) => setDraft({ ...draft, role: v as "SUB" | "HDEC", company: v === "HDEC" ? "HDEC" : "" })}>
                   <SelectTrigger id="rl" className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent><SelectItem value="SUB">협력사</SelectItem><SelectItem value="HDEC">HDEC</SelectItem></SelectContent>
                 </Select>
               </Field>
+
               <Field id="nt" label="비고"><Input id="nt" value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} className="h-8 text-xs" /></Field>
               <div className="flex items-center gap-2">
                 <Switch id="ac" checked={draft.is_active} onCheckedChange={(v) => setDraft({ ...draft, is_active: v })} />
