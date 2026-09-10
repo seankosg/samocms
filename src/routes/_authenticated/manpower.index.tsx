@@ -4,6 +4,7 @@ import { z } from "zod";
 import * as XLSX from "xlsx";
 import { AlertTriangle, Download } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { AdminGate } from "@/components/manpower/admin-gate";
 import { SheetImportDialog } from "@/components/manpower/sheet-import-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,6 +69,7 @@ function ManpowerPage() {
   };
 
   return (
+    <AdminGate title="출면 현황">
     <AppShell
       title={MP.daily}
       desc={`${fmtDay(day)} · ${source === "SUB" ? MP.sub : MP.hdec} · 총 ${totals.total.toLocaleString()}명 · 카드 ${shown.length}건`}
@@ -165,6 +167,7 @@ function ManpowerPage() {
         </table>
       </section>
     </AppShell>
+    </AdminGate>
   );
 }
 

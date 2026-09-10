@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { AdminGate } from "@/components/manpower/admin-gate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,6 +61,7 @@ function MembersPage() {
   });
 
   return (
+    <AdminGate title="출면 봇 사용자">
     <AppShell
       title={MP.members}
       desc={`등록 ${members.length}명 · 사용중 ${members.filter((m) => m.is_active).length}명`}
@@ -132,6 +134,7 @@ function MembersPage() {
         </DialogContent>
       </Dialog>
     </AppShell>
+    </AdminGate>
   );
 }
 
