@@ -1,9 +1,9 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import * as XLSX from "xlsx";
 import { AlertTriangle, Download } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { ExportDialog, type ExportRow, type ExtraSheet } from "@/components/export-dialog";
 import { AdminGate } from "@/components/manpower/admin-gate";
 import { SheetImportDialog } from "@/components/manpower/sheet-import-dialog";
 import { Button } from "@/components/ui/button";
@@ -91,6 +91,7 @@ function ManpowerPage() {
   const { cards, companies, locations, settings, cutoff } = useManpower(day, day);
   const { isAdmin } = useAuth();
   const [matrixMode, setMatrixMode] = useState<"company" | "location">("company");
+  const [exportOpen, setExportOpen] = useState(false);
 
   const dayCards = useMemo(() => cards.filter((c) => c.report_date === day), [cards, day]);
   const shown = useMemo(() => dayCards.filter((c) => c.source === source), [dayCards, source]);
@@ -169,7 +170,7 @@ function ManpowerPage() {
       actions={
         <>
           <Input type="date" aria-label="보고일" value={day} onChange={(e) => setDay(e.target.value)} className="h-8 w-[150px] text-xs" />
-          <Button size="sm" variant="outline" onClick={exportXlsx}><Download className="size-3.5" />엑셀</Button>
+          <Button size="sm" variant="outline" onClick={() => setExportOpen(true)}><Download className="size-3.5" />엑셀 내보내기</Button>
           {isAdmin && <SheetImportDialog settings={settings} />}
         </>
       }
