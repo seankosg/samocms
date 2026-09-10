@@ -4,7 +4,7 @@ import { z } from "zod";
 import * as XLSX from "xlsx";
 import { Download } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
-import { AdminGate } from "@/components/manpower/admin-gate";
+
 import { Kpi } from "@/routes/_authenticated/manpower.index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,7 +78,6 @@ function ComparePage() {
   const setResult = (v: string) => navigate({ search: (p) => ({ ...p, result: v as never }), replace: true });
 
   return (
-    <AdminGate title="검증 대조">
     <AppShell
       title={MP.compare}
       desc={`${fmtDay(day)} · 대조 ${rows.length}건 · 일치율 ${Math.round(stats.matchRate * 100)}%`}
@@ -143,6 +142,5 @@ function ComparePage() {
         </table>
       </section>
     </AppShell>
-    </AdminGate>
   );
 }

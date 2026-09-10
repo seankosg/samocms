@@ -5,7 +5,7 @@ import * as XLSX from "xlsx";
 import { Download } from "lucide-react";
 import { CartesianGrid, ComposedChart, Bar, Line, Tooltip, XAxis, YAxis, Legend } from "recharts";
 import { AppShell } from "@/components/app-shell";
-import { AdminGate } from "@/components/manpower/admin-gate";
+
 import { Kpi } from "@/routes/_authenticated/manpower.index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -116,7 +116,6 @@ function TrendPage() {
   const quick = (n: number) => navigate({ search: (p) => ({ ...p, mpFrom: addDays(riyadhToday(), -(n - 1)), mpTo: riyadhToday() }), replace: true });
 
   return (
-    <AdminGate title="출면 추이">
     <AppShell
       title={MP.trend}
       desc={`${from} ~ ${to} · 근무일 ${workDays.length}일 · 연인원 ${sum.toLocaleString()}명`}
@@ -215,7 +214,6 @@ function TrendPage() {
         </table>
       </section>
     </AppShell>
-    </AdminGate>
   );
 }
 

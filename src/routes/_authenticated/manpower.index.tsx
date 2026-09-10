@@ -4,7 +4,7 @@ import { z } from "zod";
 import { AlertTriangle, Download } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { ExportDialog, type ExportRow, type ExtraSheet } from "@/components/export-dialog";
-import { AdminGate } from "@/components/manpower/admin-gate";
+
 import { SheetImportDialog } from "@/components/manpower/sheet-import-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -160,7 +160,6 @@ function ManpowerPage() {
   }, [daily, totals, matrix, matrixMode, day, source]);
 
   return (
-    <AdminGate title="출면 현황">
     <AppShell
       title={MP.daily}
       desc={`${fmtDay(day)} · ${source === "SUB" ? MP.sub : MP.hdec} · 총 ${totals.total.toLocaleString()}명 · 카드 ${shown.length}건${
@@ -307,7 +306,6 @@ function ManpowerPage() {
         subtitle={`기준일 ${fmtDay(day)} · 총 ${totals.total.toLocaleString()}명 · 카드 ${shown.length}건`}
       />
     </AppShell>
-    </AdminGate>
   );
 }
 
