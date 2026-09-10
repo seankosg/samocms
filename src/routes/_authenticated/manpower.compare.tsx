@@ -52,7 +52,8 @@ function ComparePage() {
   const navigate = Route.useNavigate();
   const day = s.day ?? riyadhToday();
   const filter = s.result ?? "ALL";
-  const { compare } = useManpower(day, day);
+  const from = chartFrom(day, s.cmpFrom);
+  const { compare } = useManpower(from, day);
   const [q, setQ] = useState("");
 
   const rows = useMemo(() => compare.filter((r) => r.report_date === day), [compare, day]);
