@@ -157,7 +157,7 @@ function TodayPage() {
           lang={lang}
           pending={safety.isPending || saved.isLoading}
           error={(safety.error as Error | null) ?? null}
-          {...(report ? { risks: report.risks, at: report.generatedAt ?? undefined } : {})}
+          {...(report ? { risks: report.risks, ...(report.generatedAt ? { at: report.generatedAt } : {}) } : {})}
           empty={groups.start.length + groups.ongoing.length + groups.finish.length + tc.length === 0}
         />
       </section>
