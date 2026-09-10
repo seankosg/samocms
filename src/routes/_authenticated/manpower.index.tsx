@@ -33,6 +33,7 @@ function buildMatrix(
   source: Source,
   mode: "company" | "location",
   allLocations: string[],
+  allCompanies: string[],
 ) {
   const rows = new Map<string, Map<string, MatrixCell>>();
   const colSet = new Set<string>();
@@ -51,16 +52,17 @@ function buildMatrix(
   });
   // 장소는 마스터 전체를 항상 표시 (값이 없어도 행/열로 노출)
   const sortedLocs = [...allLocations].sort((a, b) => a.localeCompare(b));
+  const sortedComps = [...allCompanies].sort((a, b) => a.localeCompare(b));
   if (mode === "company") {
-    // 열(장소)을 전체 장소로 채움
+    // 행=전체 활성 협력사, 열=전체 활성 장소 (값이 없어도 모두 표시)
     sortedLocs.forEach((loc) => colSet.add(loc));
-    return { rows, cols: [...colSet].sort((a, b) => a.localeCompare(b)) };
+    sortedComps.forEach((co) => { if (!rows.has(co)) rows.set(co, new Map()); });
+    return { rows: new Map([...rows.entries()].sort((a, b) => a[0].localeCompare(b[0]))), cols: [...colSet].sort((a, b) => a.localeCompare(b)) };
   }
-  // location 모드: 행(장소)을 전체 장소로 채움 — 빈 행도 포함
-  sortedLocs.forEach((loc) => {
-    if (!rows.has(loc)) rows.set(loc, new Map());
-  });
-  return { rows, cols: [...colSet].sort((a, b) => a.localeCompare(b)) };
+  // location 모드: 행=전체 장소, 열=전체 협력사
+  sortedLocs.forEach((loc) => { if (!rows.has(loc)) rows.set(loc, new Map()); });
+  sortedComps.forEach((co) => colSet.add(co));
+  return { rows: new Map([...rows.entries()].sort((a, b) => a[0].localeCompare(b[0]))), cols: [...colSet].sort((a, b) => a.localeCompare(b)) };
 }
 import { MP, TRADE_LABEL } from "@/lib/manpower-i18n";
 
