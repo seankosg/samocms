@@ -197,12 +197,17 @@ export const saveManpowerSettings = createServerFn({ method: "POST" })
         remindTimes: z
           .string()
           .max(200)
+          .transform((v) => normalizeTimes(v))
+          .refine((list) => list.length > 0, "알림 시각을 한 개 이상 입력하세요.")
           .refine(
-            (v) => v.split(",").map((t) => t.trim()).filter(Boolean).every((t) => hmTime.test(t)),
+            (list) => list.every((t) => hmTime.test(t)),
             "알림 시각은 HH:mm 형식을 쉼표로 구분해 입력하세요. 예: 09:00,11:00",
           )
-          .refine((v) => v.split(",").some((t) => t.trim()), "알림 시각을 한 개 이상 입력하세요."),
-        cutoffTime: z.string().regex(hmTime, "보고 마감은 HH:mm 형식으로 입력하세요."),
+          .transform((list) => list.join(",")),
+        cutoffTime: z
+          .string()
+          .transform((v) => normalizeTimes(v)[0] ?? "")
+          .refine((t) => hmTime.test(t), "보고 마감은 HH:mm 형식으로 입력하세요."),
       })
       .parse(d),
   )
@@ -212,7 +217,7 @@ export const saveManpowerSettings = createServerFn({ method: "POST" })
     const now = new Date().toISOString();
     const rows = [
       { key: "manpower_reminder_enabled", value: data.reminderEnabled ? "true" : "false" },
-      { key: "manpower_remind_times", value: data.remindTimes.split(",").map((t) => t.trim()).filter(Boolean).join(",") },
+      { key: "manpower_remind_times", value: data.remindTimes },
       { key: "manpower_cutoff_time", value: data.cutoffTime },
     ].map((r) => ({ ...r, updated_at: now }));
     const { error } = await supabaseAdmin.from("app_settings").upsert(rows as never);
