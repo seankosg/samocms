@@ -56,6 +56,9 @@ const NAV = [
     { to: "/tc/progress", label: "T&C Progress", icon: TrendingUp },
     { to: "/tc/list", label: "T&C List", icon: ListChecks },
   ] },
+] as const;
+
+const DATA_NAV = [
   { group: "데이터", items: [{ to: "/upload", label: "업로드", icon: UploadCloud }] },
 ] as const;
 
