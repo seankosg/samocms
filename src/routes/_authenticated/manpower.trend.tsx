@@ -160,7 +160,7 @@ function TrendPage() {
             <YAxis yAxisId="cum" orientation="right" tick={{ fontSize: 11 }} domain={[0, Math.ceil((cumMax * 1.05) / 10) * 10]} allowDecimals={false} />
             <Tooltip contentStyle={{ fontSize: 12 }} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar yAxisId="daily" dataKey="재집계" isAnimationActive={false} shape={(props: { x?: number; y?: number; width?: number; height?: number; payload?: Record<string, unknown> }) => {
+            <Bar yAxisId="daily" dataKey="재집계" fill="#9ca3af" isAnimationActive={false} shape={(props: { x?: number; y?: number; width?: number; height?: number; payload?: Record<string, unknown> }) => {
               const { x = 0, y = 0, width = 0, height = 0, payload } = props;
               const sub = Number(payload?.["보고"] ?? 0); const hdec = Number(payload?.["재집계"] ?? 0);
               const diffH = hdec > sub && hdec > 0 ? (height * (hdec - sub)) / hdec : 0;
@@ -171,7 +171,7 @@ function TrendPage() {
                 </g>
               );
             }} />
-            <Bar yAxisId="daily" dataKey="보고" isAnimationActive={false} shape={(props: { x?: number; y?: number; width?: number; height?: number; payload?: Record<string, unknown> }) => {
+            <Bar yAxisId="daily" dataKey="보고" fill="#2563eb" isAnimationActive={false} shape={(props: { x?: number; y?: number; width?: number; height?: number; payload?: Record<string, unknown> }) => {
               const { x = 0, y = 0, width = 0, height = 0, payload } = props;
               const sub = Number(payload?.["보고"] ?? 0); const hdec = Number(payload?.["재집계"] ?? 0);
               const diffH = sub > hdec && sub > 0 ? (height * (sub - hdec)) / sub : 0;
