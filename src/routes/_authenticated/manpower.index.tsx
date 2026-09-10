@@ -265,11 +265,14 @@ function ManpowerPage() {
         </table>
       </section>
 
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+      <div className="mb-2 flex flex-wrap items-center gap-2">
         <h2 className="text-sm font-bold">협력사 × 장소 <span className="font-normal text-muted-foreground">(Worker·Elec·Plumb·Scaf 합계)</span></h2>
         <Tabs value={matrixMode} onValueChange={(v) => setMatrixMode(v as "company" | "location")}>
           <TabsList className="h-8"><TabsTrigger value="company" className="text-xs">협력사별</TabsTrigger><TabsTrigger value="location" className="text-xs">장소별</TabsTrigger></TabsList>
         </Tabs>
+        <Button size="sm" variant="outline" className="ml-auto" onClick={() => void exportMatrix()}>
+          <Download className="size-3.5" />매트릭스 엑셀
+        </Button>
       </div>
       <section className="overflow-x-auto rounded-lg border border-border shadow-sm">
         <table className="w-full border-collapse text-xs tabular-nums" style={{ minWidth: 200 + matrix.cols.length * 3 * 64 }}>
