@@ -14,7 +14,7 @@ import { useAuth } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/today")({
   head: () => ({ meta: [
-    { title: "오늘의 주요 작업 | HMMME 통합 공정 관리" },
+    { title: "오늘의 주요 작업 | HMMME CMS 시스템" },
     { name: "description", content: "사우디아라비아 제다 현지 날짜 기준 금일 착수·진행·종결 공정과 T&C 계획, AI 안전 위험 작업을 한 화면에서 확인합니다." },
     { property: "og:title", content: "HMMME 오늘의 주요 작업" },
     { property: "og:description", content: "금일 신규 착수·지속 진행·종결 공정, 당일 T&C 계획, High Risk 안전 작업." },

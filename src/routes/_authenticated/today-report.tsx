@@ -12,7 +12,7 @@ import { getSafetyReport } from "@/lib/safety.functions";
 
 export const Route = createFileRoute("/_authenticated/today-report")({
   head: () => ({ meta: [
-    { title: "일일 안전 리포트 | HMMME 통합 공정 관리" },
+    { title: "일일 안전 리포트 | HMMME CMS 시스템" },
     { name: "description", content: "제다 현지 날짜 기준 금일 작업 요약과 High Risk 안전 작업을 담은 A4 1장 근로자 배포용 안전 리포트." },
     { property: "og:title", content: "HMMME 일일 안전 리포트" },
     { property: "og:description", content: "금일 작업 요약 · High Risk 작업 · 안전 조치 · 근로자 배포용 A4 1장" },

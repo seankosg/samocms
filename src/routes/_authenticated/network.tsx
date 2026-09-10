@@ -8,7 +8,7 @@ const toNum = (v: unknown, d: number) => (Number.isFinite(Number(v)) && v !== ""
 
 export const Route = createFileRoute("/_authenticated/network")({
   head: () => ({ meta: [
-    { title: "네트워크 | HMMME 통합 공정 관리" },
+    { title: "네트워크 | HMMME CMS 시스템" },
     { name: "description", content: "선후행 관계를 시간축 네트워크로 보고 마일스톤·건물·지연 기준으로 공정 흐름을 추적합니다." },
     { property: "og:title", content: "HMMME 공정 네트워크" },
     { property: "og:description", content: "선후행 체인과 지연 흐름을 시각적으로 확인하세요." },

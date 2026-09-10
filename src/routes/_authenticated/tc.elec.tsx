@@ -6,7 +6,7 @@ import { fmtDate } from "@/lib/schedule-model";
 
 export const Route = createFileRoute("/_authenticated/tc/elec")({
   head: () => ({ meta: [
-    { title: "ELEC T&C | HMMME 통합 공정 관리" },
+    { title: "ELEC T&C | HMMME CMS 시스템" },
     { name: "description", content: "전기 시운전 단계별 완료·잔여·지연과 Pass/Fail 현황을 건물별로 확인합니다." },
     { property: "og:title", content: "HMMME ELEC 시운전 현황" },
     { property: "og:description", content: "전기 T&C 단계별 진도와 검사 결과." },

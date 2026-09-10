@@ -27,7 +27,7 @@ const search = z.object({
 
 export const Route = createFileRoute("/_authenticated/manpower/trend")({
   head: () => ({ meta: [
-    { title: "출면 추이 | HMMME 통합 공정 관리" },
+    { title: "출면 추이 | HMMME CMS 시스템" },
     { name: "description", content: "팀·건물·협력사별 출면 인원의 일일 기록과 누계 추이를 확인합니다." },
     { property: "og:title", content: "HMMME 출면 추이" },
     { property: "og:description", content: "기간별 인력 투입 흐름을 확인하세요." },
