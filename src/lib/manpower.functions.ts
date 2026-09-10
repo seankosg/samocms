@@ -52,6 +52,9 @@ export const getManpower = createServerFn({ method: "GET" })
       settings: settingMap,
       ingestLog: log.data ?? [],
       lastReceivedAt: candidates.at(-1) ?? null,
+      reminderLog: (reminders.data ?? [])
+        .map((r: { warnings: unknown }) => r.warnings)
+        .filter((w): w is { missing?: string[] } => !!w && typeof w === "object"),
     };
   });
 
