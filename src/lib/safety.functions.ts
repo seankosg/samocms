@@ -20,9 +20,18 @@ export type SafetyRisk = {
   title: string;
   bldg: string;
   sub: string;
-  hazard: string;
-  action: string;
+  /** 핵심 키워드·문구 배열 (구형 저장 데이터는 문자열일 수 있음) */
+  hazard: string | string[];
+  action: string | string[];
+  /** 선택적 세부 설명 1문장 */
+  hazardDetail?: string;
+  actionDetail?: string;
   hazardType: string[];
+};
+
+const toList = (v: unknown): string | string[] => {
+  if (Array.isArray(v)) return (v as unknown[]).map(String).filter(Boolean).slice(0, 4);
+  return String(v ?? "");
 };
 
 const SYSTEM_KO =
@@ -115,8 +124,10 @@ export const analyzeSafety = createServerFn({ method: "POST" })
             title: String(r["title"] ?? "-"),
             bldg: String(r["bldg"] ?? "-"),
             sub: String(r["sub"] ?? "-"),
-            hazard: String(r["hazard"] ?? ""),
-            action: String(r["action"] ?? ""),
+            hazard: toList(r["hazard"]),
+            action: toList(r["action"]),
+            hazardDetail: String(r["hazardDetail"] ?? ""),
+            actionDetail: String(r["actionDetail"] ?? ""),
             hazardType: Array.isArray(r["hazardType"]) ? (r["hazardType"] as unknown[]).map(String).filter(Boolean).slice(0, 3) : [],
           }))
           .filter((r) => r.title && r.title !== "-")
