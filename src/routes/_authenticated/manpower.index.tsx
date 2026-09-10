@@ -134,23 +134,20 @@ function ManpowerPage() {
       ["합계", sum<number>((d) => d.day_total), sum<number>((d) => d.ot_total), sum<number>((d) => d.night_total),
         ...TRADES.map((t) => totals[t]), totals.total, ""],
     ];
-    const head1: unknown[] = [matrixMode === "company" ? MP.company : MP.location];
-    const head2: unknown[] = [""];
+    const head1: unknown[] = [matrixMode === "company" ? MP.company : MP.location, "합계"];
+    const head2: unknown[] = ["", ""];
     matrix.cols.forEach((col) => {
       head1.push(col, "", "");
       MATRIX_SHIFTS.forEach((sh) => head2.push(MATRIX_SHIFT_LABEL[sh]));
     });
-    head1.push("합계"); head2.push("");
     const body = [...matrix.rows.entries()].map(([rowKey, row]) => {
-      const line: unknown[] = [rowKey];
+      const line: unknown[] = [rowKey, [...row.values()].reduce((a, c) => a + c.total, 0)];
       matrix.cols.forEach((col) => MATRIX_SHIFTS.forEach((sh) => line.push(row.get(col)?.byShift[sh] || 0)));
-      line.push([...row.values()].reduce((a, c) => a + c.total, 0));
       return line;
     });
-    const totalLine: unknown[] = ["합계"];
+    const totalLine: unknown[] = ["합계", [...matrix.rows.values()].reduce((a, row) => a + [...row.values()].reduce((b, c) => b + c.total, 0), 0)];
     matrix.cols.forEach((col) => MATRIX_SHIFTS.forEach((sh) =>
       totalLine.push([...matrix.rows.values()].reduce((a, row) => a + (row.get(col)?.byShift[sh] ?? 0), 0))));
-    totalLine.push([...matrix.rows.values()].reduce((a, row) => a + [...row.values()].reduce((b, c) => b + c.total, 0), 0));
     return [
       { name: "협력사집계", aoa: summary, headerRows: 1, title: `출면 현황 - 협력사 집계 (${source === "SUB" ? MP.sub : MP.hdec})`, subtitle: `기준일 ${fmtDay(day)}` },
       {
@@ -243,9 +240,9 @@ function ManpowerPage() {
           <caption className="sr-only">{matrixMode === "company" ? "협력사별 장소·조별 배치 인원" : "장소별 협력사·조별 배치 인원"}</caption>
           <thead>
             <tr className="bg-primary/10 [&>th]:border-b [&>th]:border-primary/20 [&>th]:px-2 [&>th]:py-2 [&>th]:text-center [&>th]:font-bold [&>th]:text-primary">
-              <th scope="col" rowSpan={2} className="sticky left-0 z-10 min-w-[120px] bg-primary/10 !text-left shadow-[2px_0_0_0_hsl(var(--border))]">{matrixMode === "company" ? MP.company : MP.location}</th>
+              <th scope="col" rowSpan={2} className="sticky left-0 z-10 w-[150px] min-w-[150px] bg-primary/10 !text-left shadow-[2px_0_0_0_hsl(var(--border))]">{matrixMode === "company" ? MP.company : MP.location}</th>
+              <th scope="col" rowSpan={2} className="sticky left-[150px] z-10 min-w-[72px] whitespace-nowrap border-l-2 border-primary/30 bg-primary/15 text-sm">{MP.total}</th>
               {matrix.cols.map((col) => <th key={col} scope="colgroup" colSpan={3} className="whitespace-nowrap border-l-2 border-primary/20">{col}</th>)}
-              <th scope="col" rowSpan={2} className="border-l-2 border-primary/30 bg-primary/15">{MP.total}</th>
             </tr>
             <tr className="bg-muted/50 [&>th]:border-b-2 [&>th]:border-primary/30 [&>th]:px-2 [&>th]:py-1.5 [&>th]:text-right [&>th]:text-[11px] [&>th]:font-semibold">
               {matrix.cols.map((col) =>
@@ -260,7 +257,8 @@ function ManpowerPage() {
               const rowTotal = [...row.values()].reduce((a, c) => a + c.total, 0);
               return (
                 <tr key={rowKey} className={`transition-colors hover:bg-primary/5 ${ri % 2 ? "bg-muted/20" : ""} [&>td]:border-b [&>td]:border-border/50 [&>td]:px-2 [&>td]:py-1.5 [&>td]:text-right [&>td:first-child]:text-left`}>
-                  <td className={`sticky left-0 z-10 font-semibold shadow-[2px_0_0_0_hsl(var(--border))] ${ri % 2 ? "bg-muted/40" : "bg-card"}`}>{rowKey}</td>
+                  <td className={`sticky left-0 z-10 w-[150px] min-w-[150px] font-semibold shadow-[2px_0_0_0_hsl(var(--border))] ${ri % 2 ? "bg-muted/40" : "bg-card"}`}>{rowKey}</td>
+                  <td className={`sticky left-[150px] z-10 min-w-[72px] border-l-2 border-primary/20 font-bold text-sm ${ri % 2 ? "bg-muted/40" : "bg-card"} ${rowTotal ? "" : "text-muted-foreground/40"}`}>{rowTotal || "–"}</td>
                   {matrix.cols.map((col) => {
                     const cell = row.get(col);
                     return MATRIX_SHIFTS.map((sh, i) => {
@@ -272,23 +270,22 @@ function ManpowerPage() {
                       );
                     });
                   })}
-                  <td className={`border-l-2 border-primary/20 font-bold ${rowTotal ? "bg-primary/5 text-sm" : "text-muted-foreground/40"}`}>{rowTotal || "–"}</td>
                 </tr>
               );
             })}
             {!matrix.rows.size && <tr><td colSpan={matrix.cols.length * 3 + 2} className="p-6 text-center text-muted-foreground">표시할 자료가 없습니다.</td></tr>}
             {matrix.rows.size > 0 && (
               <tr className="bg-primary/10 font-bold [&>td]:border-t-2 [&>td]:border-primary/30 [&>td]:px-2 [&>td]:py-2 [&>td]:text-right [&>td:first-child]:text-left">
-                <td className="sticky left-0 z-10 bg-primary/10 shadow-[2px_0_0_0_hsl(var(--border))]">합계</td>
+                <td className="sticky left-0 z-10 w-[150px] min-w-[150px] bg-primary/10 shadow-[2px_0_0_0_hsl(var(--border))]">합계</td>
+                <td className="sticky left-[150px] z-10 min-w-[72px] border-l-2 border-primary/30 bg-primary/15 text-sm font-extrabold">
+                  {[...matrix.rows.values()].reduce((a, row) => a + [...row.values()].reduce((b, c) => b + c.total, 0), 0).toLocaleString()}
+                </td>
                 {matrix.cols.map((col) =>
                   MATRIX_SHIFTS.map((sh, i) => {
                     const v = [...matrix.rows.values()].reduce((a, row) => a + (row.get(col)?.byShift[sh] ?? 0), 0);
                     return <td key={`${col}-${sh}`} className={i === 0 ? "border-l-2 border-primary/20" : ""}>{v || ""}</td>;
                   }),
                 )}
-                <td className="border-l-2 border-primary/30 bg-primary/15 text-sm font-extrabold">
-                  {[...matrix.rows.values()].reduce((a, row) => a + [...row.values()].reduce((b, c) => b + c.total, 0), 0).toLocaleString()}
-                </td>
               </tr>
             )}
           </tbody>
