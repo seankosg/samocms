@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import * as XLSX from "xlsx";
+import { styledAoaSheet, styledSheet, XLSXS as XLSX } from "@/lib/xlsx-style";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
