@@ -13,9 +13,9 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "로그인 | HMMME 통합 공정 관리" },
-      { name: "description", content: "현장 직원 아이디와 비밀번호로 통합 공정 관리 시스템에 로그인합니다." },
-      { property: "og:title", content: "HMMME 통합 공정 관리 로그인" },
+      { title: "로그인 | HMMME CMS 시스템" },
+      { name: "description", content: "현장 직원 아이디와 비밀번호로 HMMME CMS 시스템에 로그인합니다." },
+      { property: "og:title", content: "HMMME CMS 시스템 로그인" },
       { property: "og:description", content: "아이디 기반 로그인으로 공정 현황을 확인하세요." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
