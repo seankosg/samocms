@@ -60,10 +60,10 @@ const NAV = [
 ] as const;
 
 const ADMIN_NAV = [
-  { group: "출면 Manpower", items: [
+  { group: "Daily Manpower 관리", items: [
     { to: "/manpower", label: "출면 현황", icon: UserCheck },
-    { to: "/manpower/compare", label: "검증 대조", icon: GitCompare },
     { to: "/manpower/trend", label: "출면 추이", icon: LineChart },
+    { to: "/manpower/compare", label: "검증 대조", icon: GitCompare },
   ] },
   { group: "관리", items: [
     { to: "/users", label: "CMS 사용자 관리", icon: Users },
