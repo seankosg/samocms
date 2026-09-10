@@ -6,6 +6,7 @@ import * as XLSX from "xlsx";
 import {
   AlertTriangle, BarChart3, CalendarClock, TrendingUp, CalendarDays, ChevronLeft, Download, FileText, HardHat, ListChecks,
   LogOut, Menu, MoreVertical, Network, PanelLeft, Settings, Sparkles, Table2, UploadCloud, Users, Wrench, Zap,
+  UserCheck, GitCompare, LineChart, Contact,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ROLE_LABEL, useAuth } from "@/lib/use-auth";
@@ -55,10 +56,18 @@ const NAV = [
     { to: "/tc/progress", label: "T&C Progress", icon: TrendingUp },
     { to: "/tc/list", label: "T&C List", icon: ListChecks },
   ] },
+  { group: "출면 Manpower", items: [
+    { to: "/manpower", label: "출면 현황", icon: UserCheck },
+    { to: "/manpower/compare", label: "검증 대조", icon: GitCompare },
+    { to: "/manpower/trend", label: "출면 추이", icon: LineChart },
+  ] },
   { group: "데이터", items: [{ to: "/upload", label: "업로드", icon: UploadCloud }] },
 ] as const;
 
-const ADMIN_NAV = { group: "관리", items: [{ to: "/users", label: "사용자 관리", icon: Users }] } as const;
+const ADMIN_NAV = { group: "관리", items: [
+  { to: "/users", label: "사용자 관리", icon: Users },
+  { to: "/manpower/members", label: "출면 봇 사용자", icon: Contact },
+] } as const;
 
 export function AppShell({ title, desc, actions, children }: { title: string; desc?: string; actions?: ReactNode; children: ReactNode }) {
   const [open, setOpen] = useState(true);
