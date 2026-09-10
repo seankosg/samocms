@@ -100,6 +100,8 @@ function ComparePage() {
         <Kpi label={MP.hdecOnly} value={String(stats.hdecOnly)} sub="보고 없이 현장에서 확인" tone={stats.hdecOnly ? "warn" : "ok"} />
       </div>
 
+      <CompareDiffCharts rows={compare} day={day} />
+
       <div className="mb-3 flex flex-wrap items-center gap-2">
         {(["ALL", "DIFF", "HDEC ONLY", "NOT COUNTED", "MATCH"] as const).map((v) => (
           <Button key={v} size="sm" variant={filter === v ? "default" : "outline"} onClick={() => setResult(v)} className="h-7 text-xs">
