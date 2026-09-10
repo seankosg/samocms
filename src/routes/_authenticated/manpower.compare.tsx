@@ -31,8 +31,11 @@ export const Route = createFileRoute("/_authenticated/manpower/compare")({
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
   ] }),
   validateSearch: (s: unknown) => search.parse(s),
-  loaderDeps: ({ search: s }) => ({ day: s.day ?? riyadhToday() }),
-  loader: ({ context, deps }) => context.queryClient.ensureQueryData(manpowerRangeQuery(deps.day, deps.day)),
+  loaderDeps: ({ search: s }) => {
+    const day = s.day ?? riyadhToday();
+    return { day, from: chartFrom(day, s.cmpFrom) };
+  },
+  loader: ({ context, deps }) => context.queryClient.ensureQueryData(manpowerRangeQuery(deps.from, deps.day)),
   errorComponent: ({ error }) => <div role="alert" className="p-8 text-sm">대조 데이터를 불러오지 못했습니다. {(error as Error).message}</div>,
   component: ComparePage,
 });
