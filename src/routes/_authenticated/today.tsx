@@ -429,8 +429,16 @@ function SafetyBlock({ pending, error, risks, at, empty, lang }: { pending: bool
                   <strong className="text-sm">{r.title}</strong>
                 </div>
                 <p className="mb-2 text-[11px] text-muted-foreground">{r.bldg} · {r.sub}</p>
-                <p className="text-xs leading-relaxed"><b className={high ? "text-destructive" : "text-amber-700"}>{t.hazard}</b> {r.hazard}</p>
-                <p className="mt-1 text-xs leading-relaxed"><b className="text-foreground">{t.action}</b> {r.action}</p>
+                <div className="text-xs leading-relaxed">
+                  <b className={high ? "text-destructive" : "text-amber-700"}>{t.hazard}</b>
+                  <RiskKeywords value={r.hazard} />
+                  {r.hazardDetail ? <p className="mt-0.5 text-[11px] text-muted-foreground">{r.hazardDetail}</p> : null}
+                </div>
+                <div className="mt-1.5 text-xs leading-relaxed">
+                  <b className="text-foreground">{t.action}</b>
+                  <RiskKeywords value={r.action} />
+                  {r.actionDetail ? <p className="mt-0.5 text-[11px] text-muted-foreground">{r.actionDetail}</p> : null}
+                </div>
               </div>
             </div>
           );
@@ -439,6 +447,24 @@ function SafetyBlock({ pending, error, risks, at, empty, lang }: { pending: bool
       {at && <p className="mt-2 text-[11px] text-muted-foreground">{t.aiAt} · {new Date(at).toLocaleString(lang === "en" ? "en-GB" : "ko-KR")}</p>}
     </div>
   );
+}
+
+/** 키워드·문구 배열 렌더 (구형 문자열 데이터는 그대로 표시) */
+function RiskKeywords({ value }: { value: string | string[] }) {
+  if (Array.isArray(value)) {
+    if (!value.length) return null;
+    return (
+      <ul className="mt-0.5 space-y-0.5">
+        {value.map((k) => (
+          <li key={k} className="flex gap-1.5">
+            <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-muted-foreground/70" />
+            <span>{k}</span>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  return value ? <p>{value}</p> : null;
 }
 
 /** 위험 유형별 뱃지 색상 (한/영 공통) */

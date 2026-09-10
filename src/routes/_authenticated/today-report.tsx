@@ -212,8 +212,18 @@ function TodayReportPage() {
                       </td>
                       <td className="border-b border-slate-200 px-1.5 py-1 font-semibold">{r.title}</td>
                       <td className="border-b border-slate-200 px-1.5 py-1 text-slate-600">{r.bldg}<br />{r.sub}</td>
-                      <td className="border-b border-slate-200 px-1.5 py-1">{r.hazard}</td>
-                      <td className="border-b border-slate-200 px-1.5 py-1 text-slate-700">{r.action}</td>
+                      <td className="border-b border-slate-200 px-1.5 py-1">
+                        {Array.isArray(r.hazard) ? (
+                          <ul className="space-y-[1px]">{r.hazard.map((k) => <li key={k}>· {k}</li>)}</ul>
+                        ) : r.hazard}
+                        {r.hazardDetail ? <div className="mt-[1px] text-[8.5px] text-slate-500">{r.hazardDetail}</div> : null}
+                      </td>
+                      <td className="border-b border-slate-200 px-1.5 py-1 text-slate-700">
+                        {Array.isArray(r.action) ? (
+                          <ul className="space-y-[1px]">{r.action.map((k) => <li key={k}>· {k}</li>)}</ul>
+                        ) : r.action}
+                        {r.actionDetail ? <div className="mt-[1px] text-[8.5px] text-slate-500">{r.actionDetail}</div> : null}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
