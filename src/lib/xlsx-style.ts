@@ -122,11 +122,18 @@ export function styledAoaSheet(aoa: unknown[][], headerRows = 1, opts: SheetOpti
     if (cell) cell.s = SUB_STYLE;
     (ws["!merges"] ??= []).push({ s: { r: opts.title ? 1 : 0, c: 0 }, e: { r: opts.title ? 1 : 0, c: Math.max(width - 1, 1) } });
   }
+  const minW = opts.minColWidth ?? 8;
   ws["!cols"] = Array.from({ length: width }, (_, c) => ({
-    wch: Math.min(40, Math.max(8, ...all.map((r) => dispLen(r[c]) + 2))),
+    wch: Math.min(40, Math.max(minW, ...all.map((r) => dispLen(r[c]) + 2))),
   }));
-  ws["!rows"] = all.map((_, r) => (r === 0 && opts.title ? { hpt: 24 } : r < lead.length + headerRows ? { hpt: 24 } : { hpt: 18 }));
-  ws["!freeze"] = { xSplit: 1, ySplit: lead.length + headerRows };
+  ws["!rows"] = all.map((_, r) => (r === 0 && opts.title ? { hpt: 24 } : r < lead.length + headerRows ? { hpt: 24 } : { hpt: 20 }));
+  ws["!freeze"] = { xSplit: opts.freezeCols ?? 1, ySplit: lead.length + headerRows };
+  for (const m of opts.merges ?? []) {
+    (ws["!merges"] ??= []).push({
+      s: { r: m.r1 + lead.length, c: m.c1 },
+      e: { r: m.r2 + lead.length, c: m.c2 },
+    });
+  }
   return ws;
 }
 
