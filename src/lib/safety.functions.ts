@@ -7,6 +7,8 @@ const Input = z.object({
   facts: z.string().min(1).max(12000),
   /** true면 기존 저장 결과를 무시하고 다시 생성 (관리자 "다시 분석") */
   force: z.boolean().optional(),
+  /** 출력 언어 (ko: 한국어, en: 건설 영어) */
+  lang: z.enum(["ko", "en"]).optional(),
 });
 
 export type SafetyRisk = {
