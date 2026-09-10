@@ -23,6 +23,7 @@ import { Route as AuthenticatedTodayReportRouteImport } from './routes/_authenti
 import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedManpowerIndexRouteImport } from './routes/_authenticated/manpower.index'
+import { Route as AuthenticatedManpowerCompareRouteImport } from './routes/_authenticated/manpower.compare'
 import { Route as AuthenticatedTcElecRouteImport } from './routes/_authenticated/tc.elec'
 import { Route as AuthenticatedTcListRouteImport } from './routes/_authenticated/tc.list'
 import { Route as AuthenticatedTcMechRouteImport } from './routes/_authenticated/tc.mech'
@@ -100,6 +101,12 @@ const AuthenticatedManpowerIndexRoute =
     path: '/manpower/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedManpowerCompareRoute =
+  AuthenticatedManpowerCompareRouteImport.update({
+    id: '/manpower/compare',
+    path: '/manpower/compare',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedTcElecRoute = AuthenticatedTcElecRouteImport.update({
   id: '/tc/elec',
   path: '/tc/elec',
@@ -139,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/today-report': typeof AuthenticatedTodayReportRoute
   '/upload': typeof AuthenticatedUploadRoute
   '/users': typeof AuthenticatedUsersRoute
+  '/manpower/compare': typeof AuthenticatedManpowerCompareRoute
   '/tc/elec': typeof AuthenticatedTcElecRoute
   '/tc/list': typeof AuthenticatedTcListRoute
   '/tc/mech': typeof AuthenticatedTcMechRoute
@@ -159,6 +167,7 @@ export interface FileRoutesByTo {
   '/today-report': typeof AuthenticatedTodayReportRoute
   '/upload': typeof AuthenticatedUploadRoute
   '/users': typeof AuthenticatedUsersRoute
+  '/manpower/compare': typeof AuthenticatedManpowerCompareRoute
   '/tc/elec': typeof AuthenticatedTcElecRoute
   '/tc/list': typeof AuthenticatedTcListRoute
   '/tc/mech': typeof AuthenticatedTcMechRoute
@@ -181,6 +190,7 @@ export interface FileRoutesById {
   '/_authenticated/today-report': typeof AuthenticatedTodayReportRoute
   '/_authenticated/upload': typeof AuthenticatedUploadRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
+  '/_authenticated/manpower/compare': typeof AuthenticatedManpowerCompareRoute
   '/_authenticated/tc/elec': typeof AuthenticatedTcElecRoute
   '/_authenticated/tc/list': typeof AuthenticatedTcListRoute
   '/_authenticated/tc/mech': typeof AuthenticatedTcMechRoute
@@ -203,6 +213,7 @@ export interface FileRouteTypes {
     | '/today-report'
     | '/upload'
     | '/users'
+    | '/manpower/compare'
     | '/tc/elec'
     | '/tc/list'
     | '/tc/mech'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/today-report'
     | '/upload'
     | '/users'
+    | '/manpower/compare'
     | '/tc/elec'
     | '/tc/list'
     | '/tc/mech'
@@ -244,6 +256,7 @@ export interface FileRouteTypes {
     | '/_authenticated/today-report'
     | '/_authenticated/upload'
     | '/_authenticated/users'
+    | '/_authenticated/manpower/compare'
     | '/_authenticated/tc/elec'
     | '/_authenticated/tc/list'
     | '/_authenticated/tc/mech'
@@ -359,6 +372,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedManpowerIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/manpower/compare': {
+      id: '/_authenticated/manpower/compare'
+      path: '/manpower/compare'
+      fullPath: '/manpower/compare'
+      preLoaderRoute: typeof AuthenticatedManpowerCompareRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/tc/elec': {
       id: '/_authenticated/tc/elec'
       path: '/tc/elec'
@@ -408,6 +428,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTodayReportRoute: typeof AuthenticatedTodayReportRoute
   AuthenticatedUploadRoute: typeof AuthenticatedUploadRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
+  AuthenticatedManpowerCompareRoute: typeof AuthenticatedManpowerCompareRoute
   AuthenticatedTcElecRoute: typeof AuthenticatedTcElecRoute
   AuthenticatedTcListRoute: typeof AuthenticatedTcListRoute
   AuthenticatedTcMechRoute: typeof AuthenticatedTcMechRoute
@@ -426,6 +447,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTodayReportRoute: AuthenticatedTodayReportRoute,
   AuthenticatedUploadRoute: AuthenticatedUploadRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
+  AuthenticatedManpowerCompareRoute: AuthenticatedManpowerCompareRoute,
   AuthenticatedTcElecRoute: AuthenticatedTcElecRoute,
   AuthenticatedTcListRoute: AuthenticatedTcListRoute,
   AuthenticatedTcMechRoute: AuthenticatedTcMechRoute,
