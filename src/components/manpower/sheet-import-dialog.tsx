@@ -42,7 +42,7 @@ export function SheetImportDialog({ settings }: { settings: Record<string, strin
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>구글 시트에서 출면 자료 가져오기</DialogTitle>
-          <DialogDescription>봇이 기록한 시트를 읽어 미리보기 후 저장합니다. 시트 행 번호 기준으로 갱신되며 기존 기록은 지워지지 않습니다.</DialogDescription>
+          <DialogDescription>봇이 기록한 시트를 읽어 미리보기 후 저장합니다. 시트 행 번호 기준으로 갱신되며 기존 기록은 지워지지 않습니다. 미리보기에는 별칭으로 합치기 전의 원래 이름이 그대로 보입니다.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 text-xs">
