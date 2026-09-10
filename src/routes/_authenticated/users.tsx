@@ -94,10 +94,10 @@ function UsersPage() {
     onError: err,
   });
 
-  if (isLoading) return <AppShell title="사용자 관리"><p className="text-sm text-muted-foreground">불러오는 중…</p></AppShell>;
+  if (isLoading) return <AppShell title="CMS 사용자 관리"><p className="text-sm text-muted-foreground">불러오는 중…</p></AppShell>;
   if (!isAdmin)
     return (
-      <AppShell title="사용자 관리">
+      <AppShell title="CMS 사용자 관리">
         <p role="alert" className="rounded-md border border-border bg-card p-6 text-sm">관리자만 접근할 수 있는 화면입니다.</p>
       </AppShell>
     );
@@ -105,7 +105,7 @@ function UsersPage() {
   const rows = (users.data ?? []) as Row[];
 
   return (
-    <AppShell title="사용자 관리" desc={`총 ${rows.length}명 · 초기 비밀번호 ${INITIAL_PASSWORD}`}>
+    <AppShell title="CMS 사용자 관리" desc={`총 ${rows.length}명 · 초기 비밀번호 ${INITIAL_PASSWORD}`}>
       <section className="mb-5 rounded-md border border-border bg-card p-3 shadow-sm">
         <p className="mb-2 text-xs font-bold">새 계정 만들기</p>
         <div className="flex flex-wrap items-center gap-2">
