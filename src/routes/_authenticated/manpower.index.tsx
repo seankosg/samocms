@@ -306,7 +306,6 @@ function ManpowerPage() {
         subtitle={`기준일 ${fmtDay(day)} · 총 ${totals.total.toLocaleString()}명 · 카드 ${shown.length}건`}
       />
     </AppShell>
-    </AdminGate>
   );
 }
 
