@@ -173,7 +173,19 @@ export const getManpowerMasters = createServerFn({ method: "GET" })
     };
   });
 
-const hmTime = /^([01]\d|2[0-3]):[0-5]\d$/;
+const hmTime = /^([01]?\d|2[0-3]):[0-5]\d$/;
+/** "9:0", "09：00", 전각/공백 등을 HH:mm 로 정규화 */
+const normalizeTimes = (v: string) =>
+  v
+    .replace(/[：]/g, ":")
+    .replace(/[，、]/g, ",")
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .map((t) => {
+      const m = /^(\d{1,2}):(\d{1,2})$/.exec(t);
+      return m ? `${m[1]!.padStart(2, "0")}:${m[2]!.padStart(2, "0")}` : t;
+    });
 
 /** 출면 알림·마감 설정 저장 — 관리자 전용, app_settings upsert */
 export const saveManpowerSettings = createServerFn({ method: "POST" })
