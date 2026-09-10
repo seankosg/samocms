@@ -88,7 +88,13 @@ function ManpowerPage() {
   const navigate = Route.useNavigate();
   const day = s.day ?? riyadhToday();
   const source: Source = s.src ?? "SUB";
-  const { cards, companies, locations, settings, cutoff, lastReceivedAt } = useManpower(day, day);
+  const { cards, companies, locations, settings, cutoff, lastReceivedAt, reminderLog } = useManpower(day, day);
+  /** 오늘 미보고 알림이 발송된 횟수 (협력사별) */
+  const reminderCount = useMemo(() => {
+    const m = new Map<string, number>();
+    reminderLog.forEach((r) => (r.missing ?? []).forEach((co) => m.set(co, (m.get(co) ?? 0) + 1)));
+    return m;
+  }, [reminderLog]);
   const { isAdmin } = useAuth();
   const [matrixMode, setMatrixMode] = useState<"company" | "location">("company");
   const [exportOpen, setExportOpen] = useState(false);

@@ -42,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/manpower/masters")({
 type Kind = "company" | "location";
 
 function MastersPage() {
-  const { companies, locations, aliases, usage, members } = useManpowerMasters();
+  const { companies, locations, aliases, usage, members, settings } = useManpowerMasters();
   const qc = useQueryClient();
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["manpower-masters"] });
