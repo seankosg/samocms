@@ -134,23 +134,20 @@ function ManpowerPage() {
       ["합계", sum<number>((d) => d.day_total), sum<number>((d) => d.ot_total), sum<number>((d) => d.night_total),
         ...TRADES.map((t) => totals[t]), totals.total, ""],
     ];
-    const head1: unknown[] = [matrixMode === "company" ? MP.company : MP.location];
-    const head2: unknown[] = [""];
+    const head1: unknown[] = [matrixMode === "company" ? MP.company : MP.location, "합계"];
+    const head2: unknown[] = ["", ""];
     matrix.cols.forEach((col) => {
       head1.push(col, "", "");
       MATRIX_SHIFTS.forEach((sh) => head2.push(MATRIX_SHIFT_LABEL[sh]));
     });
-    head1.push("합계"); head2.push("");
     const body = [...matrix.rows.entries()].map(([rowKey, row]) => {
-      const line: unknown[] = [rowKey];
+      const line: unknown[] = [rowKey, [...row.values()].reduce((a, c) => a + c.total, 0)];
       matrix.cols.forEach((col) => MATRIX_SHIFTS.forEach((sh) => line.push(row.get(col)?.byShift[sh] || 0)));
-      line.push([...row.values()].reduce((a, c) => a + c.total, 0));
       return line;
     });
-    const totalLine: unknown[] = ["합계"];
+    const totalLine: unknown[] = ["합계", [...matrix.rows.values()].reduce((a, row) => a + [...row.values()].reduce((b, c) => b + c.total, 0), 0)];
     matrix.cols.forEach((col) => MATRIX_SHIFTS.forEach((sh) =>
       totalLine.push([...matrix.rows.values()].reduce((a, row) => a + (row.get(col)?.byShift[sh] ?? 0), 0))));
-    totalLine.push([...matrix.rows.values()].reduce((a, row) => a + [...row.values()].reduce((b, c) => b + c.total, 0), 0));
     return [
       { name: "협력사집계", aoa: summary, headerRows: 1, title: `출면 현황 - 협력사 집계 (${source === "SUB" ? MP.sub : MP.hdec})`, subtitle: `기준일 ${fmtDay(day)}` },
       {
