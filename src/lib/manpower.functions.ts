@@ -195,7 +195,7 @@ export const saveManpowerMaster = createServerFn({ method: "POST" })
       row["bldg_code"] = data.bldg_code || null;
       row["zone"] = data.zone || null;
     }
-    const { error } = await supabaseAdmin.from(table).upsert(row, { onConflict: "name" });
+    const { error } = await supabaseAdmin.from(table).upsert(row as never, { onConflict: "name" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -327,17 +327,18 @@ export const renameManpowerMaster = createServerFn({ method: "POST" })
     const { data: oldRow, error: oErr } = await supabaseAdmin.from(table).select("*").eq("name", oldName).maybeSingle();
     if (oErr) throw new Error(oErr.message);
     if (!oldRow) throw new Error("기존 이름을 찾을 수 없습니다.");
+    const prev = oldRow as Record<string, unknown>;
 
-    const base: Record<string, unknown> = { name: newName, sort_order: oldRow.sort_order, is_active: true, updated_at: now };
+    const base: Record<string, unknown> = { name: newName, sort_order: prev["sort_order"] as number, is_active: true, updated_at: now };
     if (data.kind === "company") {
-      base["short_name"] = oldRow.short_name ?? null;
-      base["discipline"] = oldRow.discipline ?? null;
-      base["contract_no"] = oldRow.contract_no ?? null;
+      base["short_name"] = (prev["short_name"] as string | null) ?? null;
+      base["discipline"] = (prev["discipline"] as string | null) ?? null;
+      base["contract_no"] = (prev["contract_no"] as string | null) ?? null;
     } else {
-      base["bldg_code"] = oldRow.bldg_code ?? null;
-      base["zone"] = oldRow.zone ?? null;
+      base["bldg_code"] = (prev["bldg_code"] as string | null) ?? null;
+      base["zone"] = (prev["zone"] as string | null) ?? null;
     }
-    const { error: insErr } = await supabaseAdmin.from(table).upsert(base, { onConflict: "name" });
+    const { error: insErr } = await supabaseAdmin.from(table).upsert(base as never, { onConflict: "name" });
     if (insErr) throw new Error(insErr.message);
 
     const { error: offErr } = await supabaseAdmin.from(table).update({ is_active: false, updated_at: now }).eq("name", oldName);
