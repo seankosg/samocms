@@ -94,6 +94,7 @@ export const importActivities = createServerFn({ method: "POST" })
         work_scope: r.work_scope,
         milestone: r.milestone,
         subcontractor: r.subcontractor,
+        manager: r.manager,
         unit: r.unit,
         done_quantity: r.done_quantity,
         total_quantity: r.total_quantity,
