@@ -44,9 +44,15 @@ type Kind = "company" | "location";
 function MastersPage() {
   const { companies, locations, aliases, usage, members, settings } = useManpowerMasters();
   const qc = useQueryClient();
-  const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ["manpower-masters"] });
-    qc.invalidateQueries({ queryKey: ["manpower"] });
+  const router = useRouter();
+  /** 마스터를 바꾸면 출면 현황·매트릭스가 쓰는 데이터까지 즉시 다시 불러옵니다. */
+  const invalidate = async () => {
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ["manpower-masters"], refetchType: "all" }),
+      qc.invalidateQueries({ queryKey: ["manpower"], refetchType: "all" }),
+      qc.invalidateQueries({ queryKey: ["manpower-members"], refetchType: "all" }),
+    ]);
+    await router.invalidate();
   };
 
   const count = useMemo(() => {
