@@ -151,10 +151,10 @@ export function planAt(r: { s: string | null; e: string | null; plRaw: number | 
   if (!s || !e) return r.plRaw;
   if (base >= e) return 1;
   if (base < s) return 0;
-  const span = Date.parse(e) - Date.parse(s);
-  if (!(span > 0)) return base >= e ? 1 : 0;
-  const v = (Date.parse(base) - Date.parse(s)) / span;
-  return Math.max(0, Math.min(1, v));
+  const total = (Date.parse(e) - Date.parse(s)) / 864e5 + 1;
+  if (!(total > 0)) return 1;
+  const elapsed = (Date.parse(base) - Date.parse(s)) / 864e5 + 1;
+  return Math.max(0, Math.min(1, elapsed / total));
 }
 
 /** 기준일을 적용해 계획 진도율을 재계산한 행 목록 */
