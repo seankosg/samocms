@@ -115,6 +115,7 @@ export function parseScheduleFile(buffer: ArrayBuffer, fileName: string): { rows
       work_scope: text(r[4]),
       milestone: text(r[5]),
       subcontractor: text(r[6]),
+      manager: managerCol >= 0 ? text(r[managerCol]) : null,
       activity,
       unit: text(r[8]),
       done_quantity: num(r[9]),
