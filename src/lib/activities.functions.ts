@@ -22,6 +22,7 @@ const rowSchema = z.object({
   work_scope: z.string().nullable(),
   milestone: z.string().nullable(),
   subcontractor: z.string().nullable(),
+  manager: z.string().nullable().optional(),
   activity: z.string().min(1),
   unit: z.string().nullable(),
   done_quantity: z.number().nullable(),
