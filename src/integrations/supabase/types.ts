@@ -26,6 +26,7 @@ export type Database = {
           done_quantity: number | null
           finish_date: string | null
           id: number
+          manager: string | null
           milestone: string | null
           planned_progress: number | null
           predecessor: string | null
@@ -49,6 +50,7 @@ export type Database = {
           done_quantity?: number | null
           finish_date?: string | null
           id?: number
+          manager?: string | null
           milestone?: string | null
           planned_progress?: number | null
           predecessor?: string | null
@@ -72,6 +74,7 @@ export type Database = {
           done_quantity?: number | null
           finish_date?: string | null
           id?: number
+          manager?: string | null
           milestone?: string | null
           planned_progress?: number | null
           predecessor?: string | null
@@ -151,6 +154,7 @@ export type Database = {
           finish_date: string | null
           id: number
           item_key: string
+          manager: string | null
           milestone: string | null
           planned_progress: number | null
           room: string | null
@@ -175,6 +179,7 @@ export type Database = {
           finish_date?: string | null
           id?: number
           item_key: string
+          manager?: string | null
           milestone?: string | null
           planned_progress?: number | null
           room?: string | null
@@ -199,6 +204,7 @@ export type Database = {
           finish_date?: string | null
           id?: number
           item_key?: string
+          manager?: string | null
           milestone?: string | null
           planned_progress?: number | null
           room?: string | null

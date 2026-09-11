@@ -22,6 +22,7 @@ const rowSchema = z.object({
   work_scope: z.string().nullable(),
   milestone: z.string().nullable(),
   subcontractor: z.string().nullable(),
+  manager: z.string().nullable().optional(),
   activity: z.string().min(1),
   unit: z.string().nullable(),
   done_quantity: z.number().nullable(),
@@ -50,7 +51,7 @@ export const importActivities = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertCanEdit(context as never, data.sourceFile);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const rows = data.rows.map((r) => ({ ...r, source_file: data.sourceFile }));
+    const rows = data.rows.map((r) => ({ ...r, manager: r.manager ?? null, source_file: data.sourceFile }));
 
     const { error: delError } = await supabaseAdmin.from("activities").delete().eq("source_file", data.sourceFile);
     if (delError) throw new Error(delError.message);
@@ -93,6 +94,7 @@ export const importActivities = createServerFn({ method: "POST" })
         work_scope: r.work_scope,
         milestone: r.milestone,
         subcontractor: r.subcontractor,
+        manager: r.manager,
         unit: r.unit,
         done_quantity: r.done_quantity,
         total_quantity: r.total_quantity,

@@ -8,6 +8,7 @@ export type ImportRow = {
   work_scope: string | null;
   milestone: string | null;
   subcontractor: string | null;
+  manager: string | null;
   activity: string;
   unit: string | null;
   done_quantity: number | null;
@@ -92,6 +93,12 @@ export function parseScheduleFile(buffer: ArrayBuffer, fileName: string): { rows
   }
   const fileDate = sheetDate ?? dateFromFileName(fileName);
 
+  // 머리글(2~3행)에 「담당자」 컬럼이 있으면 그 위치를 찾아 함께 읽습니다.
+  let managerCol = -1;
+  for (let i = headerRow; i < Math.min(grid.length, headerRow + 3); i += 1) {
+    const at = (grid[i] ?? []).findIndex((c) => /담당\s*자?|담당자|Manager|Charge/i.test(String(text(c) ?? "")));
+    if (at >= 0) { managerCol = at; break; }
+  }
 
   const rows: ImportRow[] = [];
   for (let i = headerRow + 3; i < grid.length; i += 1) {
@@ -108,6 +115,7 @@ export function parseScheduleFile(buffer: ArrayBuffer, fileName: string): { rows
       work_scope: text(r[4]),
       milestone: text(r[5]),
       subcontractor: text(r[6]),
+      manager: managerCol >= 0 ? text(r[managerCol]) : null,
       activity,
       unit: text(r[8]),
       done_quantity: num(r[9]),
