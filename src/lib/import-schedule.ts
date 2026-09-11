@@ -8,6 +8,7 @@ export type ImportRow = {
   work_scope: string | null;
   milestone: string | null;
   subcontractor: string | null;
+  manager: string | null;
   activity: string;
   unit: string | null;
   done_quantity: number | null;
