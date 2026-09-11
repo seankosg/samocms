@@ -51,7 +51,7 @@ export const importActivities = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertCanEdit(context as never, data.sourceFile);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const rows = data.rows.map((r) => ({ ...r, source_file: data.sourceFile }));
+    const rows = data.rows.map((r) => ({ ...r, manager: r.manager ?? null, source_file: data.sourceFile }));
 
     const { error: delError } = await supabaseAdmin.from("activities").delete().eq("source_file", data.sourceFile);
     if (delError) throw new Error(delError.message);
