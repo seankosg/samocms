@@ -477,10 +477,12 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
                 const label = mode === "tc"
                   ? (s.disc === "ALL" || s.disc === "Mech" || s.disc === "Elec" ? (s.disc === "Mech" ? "MECH" : s.disc === "Elec" ? "ELEC" : "전체") : s.disc)
                   : (s.disc === "ALL" ? (mode === "milestone" ? "전체 공종" : "전체") : (SLOT_LABEL[s.disc] ?? s.disc));
-                const tcSearch = mode === "tc" ? {
+                const tcSearch = mode === "tc" ? ({
                   ...(tcStage !== "ALL" ? { stage: tcStage } : {}),
-                  ...(s.disc !== "ALL" && s.disc !== "Mech" && s.disc !== "Elec" ? { disc: s.disc, bldg: s.disc } : s.disc === "Mech" || s.disc === "Elec" ? { disc: s.disc } : {}),
-                } as never : null;
+                  ...(s.disc === "Mech" || s.disc === "Elec"
+                    ? { disc: s.disc }
+                    : { disc: tcTeam, bldg: s.disc }),
+                } as never) : null;
                 return (
                   <tr key={s.disc} className={`border-b border-border/60 ${isActive ? "bg-muted/50" : ""}`}>
                     <td className="py-1.5 font-semibold">
