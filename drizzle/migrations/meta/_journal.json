@@ -120,6 +120,13 @@
       "when": 1789196825743,
       "tag": "0016_activity_daily_trend_fn",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1789203714193,
+      "tag": "0017_create_company_disciplines",
+      "breakpoints": true
     }
   ]
 }

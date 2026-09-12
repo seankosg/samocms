@@ -244,6 +244,30 @@ export type Database = {
         }
         Relationships: []
       }
+      company_disciplines: {
+        Row: {
+          aliases: string[]
+          discipline: string
+          name: string
+          note: string | null
+          updated_at: string
+        }
+        Insert: {
+          aliases?: string[]
+          discipline: string
+          name: string
+          note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aliases?: string[]
+          discipline?: string
+          name?: string
+          note?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       exec_summaries: {
         Row: {
           base: string
