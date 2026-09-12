@@ -149,7 +149,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
 
     const diffDays = forecastEnd ? Math.round((toTs(forecastEnd) - toTs(planDoneDate)) / DAY) : null;
     return { hist, days, planCurve, forecastCurve, slope, planDoneDate, hmPlanDoneDate, forecastEnd, diffDays, lastDate, lastActual, itemCount: sel.length };
-  }, [data, eligibleRows, milestone, milestoneDisc, mode, rows, tab]);
+  }, [data, eligibleRows, milestone, milestoneDisc, mode, rows, tab, tcItems, tcStage, tcTeam, tcBldg, base]);
 
   // 공종별 요약 표 데이터
   const summary = useMemo(() => {
