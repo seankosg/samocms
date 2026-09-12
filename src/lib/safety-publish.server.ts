@@ -54,8 +54,10 @@ export async function publishSafetyAssets(day: string): Promise<{ ok: boolean; r
   const bldgs = byBldg(allRows).slice(0, 8);
 
   const langs: SafetyLang[] = ["ko", "en"];
+  const pageCount: Record<SafetyLang, number> = { ko: 0, en: 0 };
+
   for (const lang of langs) {
-    const bytes = await buildSafetyPdf({
+    const docInput = {
       day,
       lang,
       risks: (lang === "en" ? r["risks_en"] : r["risks"]) as SafetyRisk[],
@@ -66,11 +68,30 @@ export async function publishSafetyAssets(day: string): Promise<{ ok: boolean; r
         label: (lang === "en" ? SLOT_LABEL_EN[x.label] : SLOT_LABEL[x.label]) ?? x.label,
       })),
       bldgs,
-    });
+    };
+
+    const bytes = await buildSafetyPdf(docInput);
     const { error: upErr } = await supabaseAdmin.storage
       .from(BUCKET)
       .upload(pdfPath(day, lang), bytes, { contentType: "application/pdf", upsert: true });
     if (upErr) throw new Error(`PDF 저장 실패: ${upErr.message}`);
+
+    // 이미지 생성은 실패해도 PDF 발송에 영향을 주지 않도록 분리합니다.
+    try {
+      const images = await buildSafetyImages(docInput);
+      for (let i = 0; i < images.length; i++) {
+        const { error: imgErr } = await supabaseAdmin.storage
+          .from(BUCKET)
+          .upload(imgPath(day, lang, i + 1), images[i]!, { contentType: "image/jpeg", upsert: true });
+        if (imgErr) throw new Error(imgErr.message);
+      }
+      pageCount[lang] = images.length;
+      // 이전 회차에서 더 많았던 페이지 파일 정리 (최대 12쪽까지 확인)
+      const stale = Array.from({ length: 12 - images.length }, (_, i) => imgPath(day, lang, images.length + i + 1));
+      if (stale.length) await supabaseAdmin.storage.from(BUCKET).remove(stale);
+    } catch (e) {
+      console.error("safety image build failed:", e);
+    }
   }
 
   const { error: updErr } = await supabaseAdmin
@@ -78,6 +99,8 @@ export async function publishSafetyAssets(day: string): Promise<{ ok: boolean; r
     .update({
       pdf_ko_path: pdfPath(day, "ko"),
       pdf_en_path: pdfPath(day, "en"),
+      jpg_ko_pages: pageCount.ko,
+      jpg_en_pages: pageCount.en,
       telegram_ready_at: new Date().toISOString(),
     } as never)
     .eq("day", day);
