@@ -404,13 +404,15 @@ export function ForecastChart({ rows, base }: { rows: Row[]; base: string }) {
             </thead>
             <tbody>
               {summary.map((s) => (
-                <tr key={s.disc} className={`border-b border-border/60 ${s.disc === tab ? "bg-muted/50" : ""}`}>
+                <tr key={s.disc} className={`border-b border-border/60 ${(mode === "discipline" ? s.disc === tab : s.disc === milestoneDisc) ? "bg-muted/50" : ""}`}>
                   <td className="py-1.5 font-semibold">
-                    {s.disc === "ALL" ? (mode === "milestone" ? "전체 공종" : "전체") : (
-                      <Link to="/schedule" search={{ slot: s.disc, ...(mode === "milestone" && milestone !== "ALL" ? { ms: milestone } : {}) } as never} className="cursor-pointer rounded underline-offset-2 hover:text-primary hover:underline">
-                        {SLOT_LABEL[s.disc] ?? s.disc}
-                      </Link>
-                    )}
+                    <Link
+                      to="/schedule"
+                      search={{ ...(s.disc !== "ALL" ? { slot: s.disc } : {}), ...(mode === "milestone" && milestone !== "ALL" ? { ms: milestone } : {}) } as never}
+                      className="cursor-pointer rounded underline-offset-2 hover:text-primary hover:underline"
+                    >
+                      {s.disc === "ALL" ? (mode === "milestone" ? "전체 공종" : "전체") : (SLOT_LABEL[s.disc] ?? s.disc)}
+                    </Link>
                   </td>
                   <td className="text-right">{s.actual == null ? "—" : `${pct1(s.actual)}%`}</td>
                   <td className="text-right">{s.slope == null ? "—" : `${(s.slope * 100).toFixed(1)}%p/일`}</td>
