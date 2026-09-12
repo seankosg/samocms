@@ -166,7 +166,7 @@ function Dashboard() {
         <section className="mt-6">
           <h2 className="mb-2 text-sm font-bold">MEP T&amp;C 현황 <span className="ml-1 text-[11px] font-normal text-muted-foreground">MECH + ELEC 합계</span></h2>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {TC_CARDS.map((c) => <TcCard key={c.k} card={c} disc={tcDisc} />)}
+            {TC_CARDS.map((c) => <TcCard key={c.k} card={c} disc={tcDisc} base={base} />)}
           </div>
         </section>
       )}
@@ -276,7 +276,9 @@ const TC_CARDS = [
 
 type Disc = { key: string; label: string; pr: ReturnType<typeof stageProgress> };
 
-function TcCard({ card, disc }: { card: (typeof TC_CARDS)[number]; disc: Disc[] }) {
+const TC_PLAN_FIELD: Record<TcStage, string> = { T0: "t0_p", T1: "t1_p", Report: "rp_p", RFI: "rfi_p", T2: "t2_p", Response: "resp_p" };
+
+function TcCard({ card, disc, base }: { card: (typeof TC_CARDS)[number]; disc: Disc[]; base: string }) {
   const isSt = card.k === "Status";
   let act = 0, plan = 0, tot = 0;
   const side = disc.map((d) => {
@@ -290,6 +292,15 @@ function TcCard({ card, disc }: { card: (typeof TC_CARDS)[number]; disc: Disc[] 
   const prog = tot ? act / tot : 0;
   const planP = tot ? plan / tot : 0;
   const gap = act - plan;
+  const stage = card.k as TcStage;
+  /** 실적(완료) 목록 */
+  const actSearch = (d?: string): TcDrillSearch => (isSt
+    ? { cell: "pass", ...(d ? { disc: d } : {}) }
+    : { stage, cell: "done", ...(d ? { disc: d } : {}) });
+  /** 계획(기준일 내 예정) 목록 */
+  const planSearch = (d?: string): TcDrillSearch => (isSt
+    ? { cell: "fail", ...(d ? { disc: d } : {}) }
+    : { stage, field: TC_PLAN_FIELD[stage], to: base, ...(d ? { disc: d } : {}) });
   const tone = isSt ? (plan ? "border-chart-3/40 bg-chart-3/5" : "border-primary/30 bg-primary/5") : gap < 0 ? "border-destructive/30 bg-destructive/5" : "border-primary/30 bg-primary/5";
 
   return (
@@ -297,15 +308,17 @@ function TcCard({ card, disc }: { card: (typeof TC_CARDS)[number]; disc: Disc[] 
       <div>
         <p className="text-xs font-bold">{card.t}<span className="ml-1 block text-[10px] font-normal text-muted-foreground">{card.s}</span></p>
         <p className="mt-1 flex flex-wrap items-baseline gap-1">
-          <span className="text-2xl font-bold"><Drill to="/tc/list" search={isSt ? { only: "Fail" } : {}}>{tcPct(prog)}</Drill></span>
+          <span className="text-2xl font-bold"><Drill to="/tc/list" search={actSearch()}>{tcPct(prog)}</Drill></span>
           {!isSt && <>
-            <span className="text-xs text-muted-foreground">/ {tcPct(planP)}</span>
-            <span className={`text-[11px] font-bold ${gapCls(prog - planP)}`}>{sign(prog - planP)}{tcPct(Math.abs(prog - planP)).replace("%", "")}%p</span>
+            <span className="text-xs text-muted-foreground">/ <Drill to="/tc/list" search={planSearch()}>{tcPct(planP)}</Drill></span>
+            <span className={`text-[11px] font-bold ${gapCls(prog - planP)}`}><Drill to="/tc/list" search={{ stage, cell: "late" }}>{sign(prog - planP)}{tcPct(Math.abs(prog - planP)).replace("%", "")}%p</Drill></span>
           </>}
         </p>
         <p className="mt-1 text-[11px] text-muted-foreground">
-          {isSt ? `Pass ${act} · Fail ${plan}` : `실적 ${act} / 계획 ${plan}`} · 전체 {tot} Qty
+          {isSt ? <>Pass <Drill to="/tc/list" search={actSearch()}>{act}</Drill> · Fail <Drill to="/tc/list" search={planSearch()}>{plan}</Drill></> : <>실적 <Drill to="/tc/list" search={actSearch()}>{act}</Drill> / 계획 <Drill to="/tc/list" search={planSearch()}>{plan}</Drill></>}
+          {" · 전체 "}<Drill to="/tc/list">{tot}</Drill> Qty
         </p>
+        <p className="text-[9px] text-muted-foreground">수치는 Qty 합계 · 클릭 시 해당 조건의 항목 목록</p>
         <Bar v={prog} marker={isSt ? undefined : planP} className="mt-2" tone={isSt ? "warn" : "ok"} />
       </div>
       <div className="border-t border-border pt-2 text-[11px] sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
@@ -315,8 +328,8 @@ function TcCard({ card, disc }: { card: (typeof TC_CARDS)[number]; disc: Disc[] 
             <div className="flex items-center justify-between gap-2">
               <span className="font-semibold"><Drill to="/tc/list" search={{ disc: x.key }}>{x.lbl}</Drill></span>
               <span>
-                <b><Drill to="/tc/list" search={isSt ? { disc: x.key, only: "Fail" } : { disc: x.key }}>{x.a}</Drill></b>
-                <span className="text-muted-foreground"> / {x.p}</span>
+                <b><Drill to="/tc/list" search={actSearch(x.key)}>{x.a}</Drill></b>
+                <span className="text-muted-foreground"> / <Drill to="/tc/list" search={planSearch(x.key)}>{x.p}</Drill></span>
                 {!isSt && x.p > 0 && x.a > x.p && <span className="ml-0.5 text-[9px] text-chart-3">▲</span>}
               </span>
             </div>
@@ -329,7 +342,7 @@ function TcCard({ card, disc }: { card: (typeof TC_CARDS)[number]; disc: Disc[] 
         {!isSt && (
           <div className="mt-1 flex items-center justify-between border-t border-border pt-1">
             <span className="text-muted-foreground">차이</span>
-            <b className={gapCls(gap)}>{sign(gap)}{Math.abs(gap)}</b>
+            <b className={gapCls(gap)}><Drill to="/tc/list" search={{ stage, cell: "late" }}>{sign(gap)}{Math.abs(gap)}</Drill></b>
           </div>
         )}
       </div>
