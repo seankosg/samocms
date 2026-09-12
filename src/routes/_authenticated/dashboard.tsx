@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Eye, FileText, Printer } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { ProgressRiskAnalysis } from "@/components/dashboard/progress-risk-analysis";
 import { ManpowerKpiCard } from "@/components/manpower/manpower-kpi-card";
 import { useAuth } from "@/lib/use-auth";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { projectQuery, useProgressHistory, useProject } from "@/lib/use-project";
 import {
-  avgOf, isDone, isLate, MSDEF, milestoneDates, pct1, SLOT_LABEL, KPI_SLOTS, fmtDate, dayDiff, type Row,
+  avgOf, isDone, isLate, MSDEF, milestoneDates, pct1, SLOT_LABEL, KPI_SLOTS, fmtDate, dayDiff,
 } from "@/lib/schedule-model";
 import { stageProgress, tcPct, TC_DISC_LABEL, type TcStage } from "@/lib/tc-model";
 
@@ -60,31 +61,12 @@ function Dashboard() {
         plan, act, gap: act - plan,
       };
     });
-    const byDept = KPI_SLOTS.map((s) => {
-      const list = rows.filter((r) => r.slot === s);
-      return { slot: s, n: list.length, pl: avgOf(list, "pl"), pc: avgOf(list, "pc"), late: list.filter(isLate).length };
-    }).filter((d) => d.n);
-    const rank = (key: (r: Row) => string | null) => {
-      const g = new Map<string, { n: number; late: number; gap: number }>();
-      rows.forEach((r) => {
-        const k = key(r);
-        if (!k) return;
-        const o = g.get(k) ?? { n: 0, late: 0, gap: 0 };
-        o.n += 1;
-        if (isLate(r)) {
-          o.late += 1;
-          o.gap += (r.pl ?? 0) - (r.pc ?? 0);
-        }
-        g.set(k, o);
-      });
-      return [...g.entries()].map(([k, v]) => ({ k, ...v })).filter((x) => x.late).sort((a, b) => b.late - a.late).slice(0, 8);
-    };
     return {
       total: rows.length, withP: withP.length, done: done.length, late: late.length,
       donePct: rows.length ? done.length / rows.length : 0,
       latePct: withP.length ? late.length / withP.length : 0,
       pl: avgOf(withP, "pl"), pc: avgOf(withP, "pc"),
-      bySlot, byMs, byDept, bldg: rank((r) => r.bldg), sub: rank((r) => r.sub),
+      bySlot, byMs,
     };
   }, [rows, base]);
 
@@ -223,37 +205,7 @@ function Dashboard() {
         </div>
       </section>
 
-      <section className="mt-6 grid gap-4 xl:grid-cols-[1.1fr_1fr]">
-        <Card title="부서별 진도">
-          <div className="-mx-1 overflow-x-auto px-1">
-          <table className="w-full min-w-[420px] text-left text-xs">
-
-            <thead className="border-b text-muted-foreground">
-              <tr><th className="py-2">공종</th><th className="text-right">활동</th><th className="text-right">계획</th><th className="text-right">실적</th><th className="text-right">차이</th><th className="text-right">지연</th></tr>
-            </thead>
-            <tbody>
-              {m.byDept.map((d) => (
-                <tr key={d.slot} className="border-b border-border/60">
-                  <td className="py-2 font-semibold"><Drill to="/schedule" search={{ dept: d.slot }}>{SLOT_LABEL[d.slot]}</Drill></td>
-                  <td className="text-right"><Drill to="/schedule" search={{ dept: d.slot }}>{d.n}</Drill></td>
-                  <td className="text-right">{pct1(d.pl)}%</td>
-                  <td className="text-right font-semibold">{pct1(d.pc)}%</td>
-                  <td className={`text-right ${gapCls(d.pc - d.pl)}`}>{pct1(d.pc - d.pl)}%p</td>
-                  <td className="text-right"><Drill to="/delays" search={{ dept: d.slot }}>{d.late}</Drill></td>
-                </tr>
-              ))}
-
-            </tbody>
-          </table>
-          </div>
-
-        </Card>
-        <div className="grid gap-4">
-          <RankCard title="건물별 지연" rows={m.bldg} field="bldg" />
-          <RankCard title="협력사별 지연" rows={m.sub} field="sub" />
-
-        </div>
-      </section>
+      <ProgressRiskAnalysis rows={rows} />
 
       <section className="mt-6">
         <TrendCard />
@@ -473,23 +425,3 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   );
 }
 
-function RankCard({ title, rows, field }: { title: string; rows: { k: string; n: number; late: number; gap: number }[]; field: "bldg" | "sub" }) {
-  const max = Math.max(1, ...rows.map((r) => r.late));
-  return (
-    <Card title={title}>
-      {rows.length === 0 && <p className="text-xs text-muted-foreground">지연 항목이 없습니다.</p>}
-      <ul className="space-y-1.5">
-        {rows.map((r) => (
-          <li key={r.k} className="flex items-center gap-2 text-xs">
-            <span className="w-[36%] truncate" title={r.k}><Drill to="/delays" search={{ [field]: r.k }}>{r.k}</Drill></span>
-            <span className="h-2 flex-1 overflow-hidden rounded bg-muted">
-              <span className="block h-full bg-destructive" style={{ width: `${(r.late / max) * 100}%` }} />
-            </span>
-            <span className="w-14 text-right font-semibold"><Drill to="/delays" search={{ [field]: r.k }}>{r.late}건</Drill></span>
-          </li>
-        ))}
-      </ul>
-
-    </Card>
-  );
-}
