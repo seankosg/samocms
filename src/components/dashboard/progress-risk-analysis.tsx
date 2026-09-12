@@ -13,17 +13,25 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { avgOf, isLate, pct1, SLOT_LABEL, type Row } from "@/lib/schedule-model";
+import { avgOf, isLate, MSDEF, pct1, SLOT_LABEL, type Row } from "@/lib/schedule-model";
+import { stageDone, TC_STAGES, TC_STAGE_SUB, type TcItem, type TcStage } from "@/lib/tc-model";
 import { cn } from "@/lib/utils";
 
-type Dimension = "dept" | "bldg" | "mgr" | "sub";
+type RowDimension = "dept" | "bldg" | "mgr" | "sub" | "ms";
+type Dimension = RowDimension | "tc";
 
 const DIMENSIONS: { key: Dimension; label: string }[] = [
   { key: "dept", label: "담당부서별" },
   { key: "bldg", label: "건물별" },
   { key: "mgr", label: "담당자별" },
   { key: "sub", label: "협력사별" },
+  { key: "ms", label: "마일스톤별" },
+  { key: "tc", label: "T&C별" },
 ];
+
+const TC_PLAN_COL: Record<TcStage, keyof TcItem> = {
+  T0: "t0_p", T1: "t1_p", Report: "rp_p", RFI: "rfi_p", T2: "t2_p", Response: "resp_p",
+};
 
 type GroupMetric = {
   key: string;
