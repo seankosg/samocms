@@ -85,6 +85,11 @@ export function ForecastChart({ rows, base }: { rows: Row[]; base: string }) {
     // 계획 완료일 = 계획 곡선이 처음 99.9% 도달하는 날
     const planDoneDate = days.find((d) => (planCurve.get(d) ?? 0) >= 0.999) ?? planEnd;
 
+    // 발주처(HM) 항목의 계획 완료일 — 집계에서는 제외하되 참조용 세로선으로 표시
+    const hmRows = rows.filter((r) => r.mgr === "HM" && r.s && r.e);
+    const hmPlanEnd = hmRows.reduce<string | null>((acc, r) => (r.e && (!acc || r.e > acc) ? r.e : acc), null);
+    const hmPlanDoneDate = hmPlanEnd ? (days.find((d) => (planCurveOf(hmRows, days).get(d) ?? 0) >= 0.999) ?? hmPlanEnd) : null;
+
     // 예측 곡선 (마지막 기록 이후)
     const forecastCurve = new Map<string, number>();
     if (slope != null && slope > 1e-6) {
@@ -96,7 +101,7 @@ export function ForecastChart({ rows, base }: { rows: Row[]; base: string }) {
     }
 
     const diffDays = forecastEnd ? Math.round((toTs(forecastEnd) - toTs(planDoneDate)) / DAY) : null;
-    return { hist, days, planCurve, forecastCurve, slope, planDoneDate, forecastEnd, diffDays, lastDate, lastActual, itemCount: sel.length };
+    return { hist, days, planCurve, forecastCurve, slope, planDoneDate, hmPlanDoneDate, forecastEnd, diffDays, lastDate, lastActual, itemCount: sel.length };
   }, [data, rows, tab]);
 
   // 공종별 요약 표 데이터
@@ -258,6 +263,14 @@ export function ForecastChart({ rows, base }: { rows: Row[]; base: string }) {
                 <line x1={xi(model.planDoneDate)} x2={xi(model.planDoneDate)} y1={padT} y2={H - padB} stroke="var(--muted-foreground)" strokeWidth={1.2} />
                 <text x={xi(model.planDoneDate)} y={H - padB + 12} textAnchor="middle" fontSize={9} fill="var(--muted-foreground)">계획완료 {fmtD(model.planDoneDate)}</text>
               </g>
+
+              {/* 발주처(HM) 계획완료일 마커 — 집계 제외, 참조용 세로선 */}
+              {model.hmPlanDoneDate && toTs(model.hmPlanDoneDate) >= toTs(model.days[0]!) && toTs(model.hmPlanDoneDate) <= toTs(model.days[model.days.length - 1]!) && (
+                <g>
+                  <line x1={xi(model.hmPlanDoneDate)} x2={xi(model.hmPlanDoneDate)} y1={padT} y2={H - padB} stroke="var(--chart-3)" strokeWidth={1.2} strokeDasharray="3 3" />
+                  <text x={xi(model.hmPlanDoneDate)} y={H - padB + 24} textAnchor="middle" fontSize={9} fill="var(--chart-3)">발주처 계획완료 {fmtD(model.hmPlanDoneDate)}</text>
+                </g>
+              )}
 
               {/* 예측 완료일 마커 */}
               {model.forecastEnd && model.forecastEnd !== model.planDoneDate && (
