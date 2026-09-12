@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 
 type RowDimension = "dept" | "bldg" | "mgr" | "sub" | "ms";
 type Dimension = RowDimension | "tc";
+type TcGroupBy = "discipline" | "bldg" | "supplier";
 
 const DIMENSIONS: { key: Dimension; label: string }[] = [
   { key: "dept", label: "담당부서별" },
@@ -27,6 +28,12 @@ const DIMENSIONS: { key: Dimension; label: string }[] = [
   { key: "sub", label: "협력사별" },
   { key: "ms", label: "마일스톤별" },
   { key: "tc", label: "T&C별" },
+];
+
+const TC_GROUPS: { key: TcGroupBy; label: string }[] = [
+  { key: "discipline", label: "공종별" },
+  { key: "bldg", label: "건물별" },
+  { key: "supplier", label: "공급사별" },
 ];
 
 const TC_PLAN_COL: Record<TcStage, keyof TcItem> = {
@@ -71,6 +78,19 @@ const taskDelayDays = (row: Row) => {
   return Math.max(1, Math.round(((row.pl ?? 0) - (row.pc ?? 0)) * duration));
 };
 
+const severityOf = (avgGap: number, maxDelayDays: number): GroupMetric["severity"] =>
+  avgGap >= 20 || maxDelayDays >= 14
+    ? "critical"
+    : avgGap >= 10 || maxDelayDays >= 7
+      ? "warning"
+      : "watch";
+
+const delayBuckets = (delayDays: number[]) => ({
+  long: delayDays.filter((days) => days >= 14).length,
+  medium: delayDays.filter((days) => days >= 7 && days < 14).length,
+  short: delayDays.filter((days) => days > 0 && days < 7).length,
+});
+
 function aggregate(rows: Row[], dimension: RowDimension): GroupMetric[] {
   const groups = new Map<string, Row[]>();
   rows.forEach((row) => {
@@ -89,14 +109,6 @@ function aggregate(rows: Row[], dimension: RowDimension): GroupMetric[] {
       : 0;
     const avgDelayDays = delayDays.length ? delayDays.reduce((sum, days) => sum + days, 0) / delayDays.length : 0;
     const maxDelayDays = delayDays.length ? Math.max(...delayDays) : 0;
-    const long = delayDays.filter((days) => days >= 14).length;
-    const medium = delayDays.filter((days) => days >= 7 && days < 14).length;
-    const short = delayDays.filter((days) => days > 0 && days < 7).length;
-    const severity: GroupMetric["severity"] = avgGap >= 20 || maxDelayDays >= 14
-      ? "critical"
-      : avgGap >= 10 || maxDelayDays >= 7
-        ? "warning"
-        : "watch";
     return {
       key,
       label: displayLabel(key, dimension),
@@ -109,25 +121,27 @@ function aggregate(rows: Row[], dimension: RowDimension): GroupMetric[] {
       avgGap,
       avgDelayDays,
       maxDelayDays,
-      short,
-      medium,
-      long,
-      severity,
+      ...delayBuckets(delayDays),
+      severity: severityOf(avgGap, maxDelayDays),
     };
   }).filter((group) => group.total > 0);
 }
 
-/** T&C 단계별 집계 — 계획 누계 Qty 대비 완료 Qty, 계획일 경과 미완료 항목을 지연으로 산정 */
-function aggregateTc(items: TcItem[], base: string | null): GroupMetric[] {
-  const total = items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
-  if (!total) return [];
+/** T&C 단계 내 세부 그룹(공종/건물/공급사) 집계 — 그룹 누계 Qty 대비 해당 단계 완료 Qty */
+function aggregateTcStage(items: TcItem[], base: string | null, stage: TcStage, groupBy: TcGroupBy): GroupMetric[] {
+  const planCol = TC_PLAN_COL[stage];
+  const groups = new Map<string, TcItem[]>();
+  items.forEach((item) => {
+    const key = (String(item[groupBy] ?? "").trim() || "미지정");
+    groups.set(key, [...(groups.get(key) ?? []), item]);
+  });
 
-  return TC_STAGES.map((stage) => {
-    const planCol = TC_PLAN_COL[stage];
+  return [...groups.entries()].map(([key, list]) => {
+    const totalQty = list.reduce((sum, item) => sum + (Number(item.qty) || 0), 0) || 1;
     let planQty = 0, doneQty = 0, ahead = 0;
     const delayDays: number[] = [];
 
-    items.forEach((item) => {
+    list.forEach((item) => {
       const qty = Number(item.qty) || 0;
       const planDate = item[planCol] as string | null;
       const due = !!planDate && !!base && planDate <= base;
@@ -140,25 +154,17 @@ function aggregateTc(items: TcItem[], base: string | null): GroupMetric[] {
       }
     });
 
-    const planned = (planQty / total) * 100;
-    const actual = (doneQty / total) * 100;
+    const planned = (planQty / totalQty) * 100;
+    const actual = (doneQty / totalQty) * 100;
     const late = delayDays.length;
     const avgGap = Math.max(0, planned - actual);
     const avgDelayDays = late ? delayDays.reduce((sum, days) => sum + days, 0) / late : 0;
     const maxDelayDays = late ? Math.max(...delayDays) : 0;
-    const long = delayDays.filter((days) => days >= 14).length;
-    const medium = delayDays.filter((days) => days >= 7 && days < 14).length;
-    const short = delayDays.filter((days) => days > 0 && days < 7).length;
-    const severity: GroupMetric["severity"] = avgGap >= 20 || maxDelayDays >= 14
-      ? "critical"
-      : avgGap >= 10 || maxDelayDays >= 7
-        ? "warning"
-        : "watch";
 
     return {
-      key: stage,
-      label: `${stage} · ${TC_STAGE_SUB[stage]}`,
-      total: items.length,
+      key,
+      label: key,
+      total: list.length,
       planned,
       actual,
       gap: actual - planned,
@@ -167,12 +173,10 @@ function aggregateTc(items: TcItem[], base: string | null): GroupMetric[] {
       avgGap,
       avgDelayDays,
       maxDelayDays,
-      short,
-      medium,
-      long,
-      severity,
+      ...delayBuckets(delayDays),
+      severity: severityOf(avgGap, maxDelayDays),
     };
-  });
+  }).sort((a, b) => b.total - a.total || a.label.localeCompare(b.label));
 }
 
 const searchFor = (dimension: RowDimension, key: string) => {
@@ -184,31 +188,51 @@ const searchFor = (dimension: RowDimension, key: string) => {
   return { q: key };
 };
 
+const tcSearchFor = (groupBy: TcGroupBy, key: string) => {
+  if (key === "미지정") return {};
+  if (groupBy === "discipline") return { disc: key };
+  if (groupBy === "bldg") return { bldg: key };
+  return { supplier: key };
+};
+
 export function ProgressRiskAnalysis({ rows, tcItems = [], base = null }: { rows: Row[]; tcItems?: TcItem[]; base?: string | null }) {
   const [progressDimension, setProgressDimension] = useState<Dimension>("dept");
   const [riskDimension, setRiskDimension] = useState<Dimension>("dept");
+  const [pTcStage, setPTcStage] = useState<TcStage>("T1");
+  const [pTcGroup, setPTcGroup] = useState<TcGroupBy>("bldg");
+  const [rTcStage, setRTcStage] = useState<TcStage>("T1");
+  const [rTcGroup, setRTcGroup] = useState<TcGroupBy>("bldg");
   const navigate = useNavigate();
-  const all = useMemo((): Record<Dimension, GroupMetric[]> => ({
+
+  const all = useMemo((): Record<RowDimension, GroupMetric[]> => ({
     dept: aggregate(rows, "dept"),
     bldg: aggregate(rows, "bldg"),
     mgr: aggregate(rows, "mgr"),
     sub: aggregate(rows, "sub"),
     ms: aggregate(rows, "ms"),
-    tc: aggregateTc(tcItems, base),
-  }), [rows, tcItems, base]);
+  }), [rows]);
+
+  const pTc = useMemo(
+    () => aggregateTcStage(tcItems, base, pTcStage, pTcGroup),
+    [tcItems, base, pTcStage, pTcGroup],
+  );
+  const rTc = useMemo(
+    () => aggregateTcStage(tcItems, base, rTcStage, rTcGroup),
+    [tcItems, base, rTcStage, rTcGroup],
+  );
 
   const progress = progressDimension === "tc"
-    ? all.tc
+    ? pTc
     : [...all[progressDimension]].sort((a, b) => b.total - a.total);
-  const risks = [...all[riskDimension]]
+  const risks = [...(riskDimension === "tc" ? rTc : all[riskDimension])]
     .filter((group) => group.late > 0)
     .sort((a, b) => b.long - a.long || b.maxDelayDays - a.maxDelayDays || b.avgGap - a.avgGap)
     .slice(0, 10);
-  const chartWidth = Math.max(620, progress.length * (progressDimension === "tc" ? 130 : 92));
+  const chartWidth = Math.max(620, progress.length * (progressDimension === "tc" ? 96 : 92));
 
-  const openList = (dimension: Dimension, key: string, late = false) => {
+  const openList = (dimension: Dimension, key: string, late = false, tcGroup: TcGroupBy = "bldg") => {
     if (dimension === "tc") {
-      void navigate({ to: "/tc/progress", search: { stages: key } });
+      void navigate({ to: "/tc/list", search: tcSearchFor(tcGroup, key) });
       return;
     }
     void navigate({
@@ -228,6 +252,9 @@ export function ProgressRiskAnalysis({ rows, tcItems = [], base = null }: { rows
           <span className="rounded-sm bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">기준일 재계산</span>
         </header>
         <DimensionTabs value={progressDimension} onChange={setProgressDimension} />
+        {progressDimension === "tc" && (
+          <TcControls stage={pTcStage} onStage={setPTcStage} groupBy={pTcGroup} onGroupBy={setPTcGroup} />
+        )}
         <div className="overflow-x-auto p-3 sm:p-4">
           <div style={{ width: chartWidth, minWidth: "100%" }}>
             <ResponsiveContainer width="100%" height={315}>
@@ -238,7 +265,7 @@ export function ProgressRiskAnalysis({ rows, tcItems = [], base = null }: { rows
                 margin={{ top: 52, right: 10, bottom: progress.length > 7 ? 45 : 20, left: -12 }}
                 onClick={(state) => {
                   const payload = state?.activePayload?.[0]?.payload as GroupMetric | undefined;
-                  if (payload) openList(progressDimension, payload.key);
+                  if (payload) openList(progressDimension, payload.key, false, pTcGroup);
                 }}
               >
                 <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
@@ -276,6 +303,9 @@ export function ProgressRiskAnalysis({ rows, tcItems = [], base = null }: { rows
           </Button>
         </header>
         <DimensionTabs value={riskDimension} onChange={setRiskDimension} />
+        {riskDimension === "tc" && (
+          <TcControls stage={rTcStage} onStage={setRTcStage} groupBy={rTcGroup} onGroupBy={setRTcGroup} />
+        )}
         <div className="grid grid-cols-[minmax(0,1fr)_74px_70px] gap-2 border-b border-border bg-muted/25 px-4 py-2 text-[9px] font-bold text-muted-foreground">
           <span>대상 · 지속 구간</span><span className="text-right">평균 격차</span><span className="text-right">최장 환산</span>
         </div>
@@ -287,7 +317,7 @@ export function ProgressRiskAnalysis({ rows, tcItems = [], base = null }: { rows
               <button
                 key={group.key}
                 type="button"
-                onClick={() => openList(riskDimension, group.key, true)}
+                onClick={() => openList(riskDimension, group.key, true, rTcGroup)}
                 className={cn(
                   "grid w-full grid-cols-[minmax(0,1fr)_74px_70px] items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
                   group.severity === "critical" && "bg-destructive/5",
@@ -338,6 +368,56 @@ function DimensionTabs({ value, onChange }: { value: Dimension; onChange: (value
         ))}
       </TabsList>
     </Tabs>
+  );
+}
+
+/** T&C 단계 선택 + 단계 내 세부 그룹(공종/건물/공급사) 선택 */
+function TcControls({ stage, onStage, groupBy, onGroupBy }: {
+  stage: TcStage;
+  onStage: (stage: TcStage) => void;
+  groupBy: TcGroupBy;
+  onGroupBy: (groupBy: TcGroupBy) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border bg-muted/10 px-4 py-2">
+      <div className="flex flex-wrap items-center gap-1">
+        {TC_STAGES.map((s) => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => onStage(s)}
+            title={TC_STAGE_SUB[s]}
+            className={cn(
+              "rounded-sm border px-2 py-1 text-[10px] font-semibold transition-colors",
+              s === stage
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground",
+            )}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+      <span className="hidden h-4 w-px bg-border sm:block" />
+      <div className="flex items-center gap-1">
+        {TC_GROUPS.map((g) => (
+          <button
+            key={g.key}
+            type="button"
+            onClick={() => onGroupBy(g.key)}
+            className={cn(
+              "rounded-sm px-2 py-1 text-[10px] font-semibold transition-colors",
+              g.key === groupBy
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+          >
+            {g.label}
+          </button>
+        ))}
+      </div>
+      <span className="ml-auto text-[9px] text-muted-foreground">{stage} · {TC_STAGE_SUB[stage]} 단계 내 비교</span>
+    </div>
   );
 }
 
