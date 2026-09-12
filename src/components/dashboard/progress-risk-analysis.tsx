@@ -283,10 +283,10 @@ export function ProgressRiskAnalysis({ rows, tcItems = [], base = null }: { rows
                 <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tickFormatter={(value) => `${value}%`} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
                 <Tooltip content={<ProgressTooltip />} cursor={{ fill: "var(--muted)" }} />
                 <Bar dataKey="planned" name="계획" fill="var(--schedule-plan)" radius={[3, 3, 0, 0]}>
-                  <LabelList dataKey="planned" content={<ProgressLabel kind="planned" rows={progress} />} />
+                  <LabelList dataKey="planned" content={<ProgressLabel kind="planned" rows={progress} onOpen={(key) => openList(progressDimension, key, false, pTcGroup, pTcStage)} />} />
                 </Bar>
                 <Bar dataKey="actual" name="실적" fill="var(--schedule-actual)" radius={[3, 3, 0, 0]}>
-                  <LabelList dataKey="actual" content={<ProgressLabel kind="actual" rows={progress} />} />
+                  <LabelList dataKey="actual" content={<ProgressLabel kind="actual" rows={progress} onOpen={(key) => openList(progressDimension, key, false, pTcGroup, pTcStage)} />} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
