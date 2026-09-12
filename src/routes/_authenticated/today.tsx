@@ -8,7 +8,7 @@ import { projectQuery, useProject } from "@/lib/use-project";
 import { SLOT_LABEL, fmtShortDate, isLate, pct1, type Row } from "@/lib/schedule-model";
 import { TC_STAGE_SUB, TC_DISC_LABEL, type TcStage } from "@/lib/tc-model";
 import { TODAY_GROUPS, fmtToday, jeddahToday, safetyFacts, splitToday, todayTc, byTeam, byBldg, type TodayGroupKey } from "@/lib/today-model";
-import { T, SLOT_LABEL_EN, TC_STAGE_SUB_EN, fmtTodayEn, type Lang } from "@/lib/today-i18n";
+import { T, SLOT_LABEL_EN, TC_STAGE_SUB_EN, activityLabel, fmtTodayEn, type Lang } from "@/lib/today-i18n";
 import { analyzeSafety, getSafetyReport, type SafetyRisk } from "@/lib/safety.functions";
 import { useAuth } from "@/lib/use-auth";
 
@@ -303,13 +303,14 @@ function ActivityGroup({ gkey, label, desc, rows, lang }: { gkey: TodayGroupKey;
                 {rows.map((r) => {
                   const late = isLate(r);
                   const slot = lang === "en" ? SLOT_LABEL_EN[r.slot] ?? r.slot : SLOT_LABEL[r.slot] ?? r.slot;
+                  const activity = activityLabel(r.act, lang);
                   return (
                     <tr key={r.id} className={`border-b border-border/60 ${late ? "bg-destructive/5" : ""}`}>
                       <td className="whitespace-nowrap px-2 py-1.5">{slot}</td>
                       <td className="whitespace-nowrap px-2 py-1.5">{r.bldg ?? "—"}</td>
                       <td className="whitespace-nowrap px-2 py-1.5 text-muted-foreground">{r.room ?? "—"}</td>
-                      <td className="max-w-[320px] truncate px-2 py-1.5" title={r.act}>
-                        <Link to="/schedule" search={{ q: r.act }} className="hover:underline">{r.act}</Link>
+                      <td className="max-w-[320px] truncate px-2 py-1.5" title={activity}>
+                        <Link to="/schedule" search={{ q: r.act }} className="hover:underline">{activity}</Link>
                       </td>
                       <td className="whitespace-nowrap px-2 py-1.5">{r.ms ?? "—"}</td>
                       <td className="max-w-[140px] truncate px-2 py-1.5 text-muted-foreground" title={r.sub ?? ""}>{r.sub ?? "—"}</td>
