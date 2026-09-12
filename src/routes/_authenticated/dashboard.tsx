@@ -398,6 +398,7 @@ function Bar({ v, marker, tone = "ok", className = "" }: { v: number; marker?: n
 /** 업로드 시점마다 저장된 기록으로 계산한 계획·실적 추이와 일일 진도율 */
 function TrendCard() {
   const { data, isLoading } = useProgressHistory();
+  const { base } = useProject();
   const series = data?.series ?? [];
   return (
     <Card title="진도 추이 · 일일 진도율 (기록 기반)">
@@ -414,8 +415,10 @@ function TrendCard() {
             <tbody>
               {series.map((s) => (
                 <tr key={s.date} className="border-b border-border/60">
-                  <td className="py-2 font-semibold">{s.date}</td>
-                  <td className="text-right">{s.count}</td>
+                  <td className="py-2 font-semibold">
+                    {s.date === base ? <Drill to="/schedule">{s.date}</Drill> : <span title="과거 기록일 — 현재 목록은 기준일 자료만 표시합니다">{s.date}</span>}
+                  </td>
+                  <td className="text-right">{s.date === base ? <Drill to="/schedule" search={{ hasProgress: true }}>{s.count}</Drill> : s.count}</td>
                   <td className="text-right">{pct1(s.planned)}%</td>
                   <td className="text-right font-semibold">{pct1(s.actual)}%</td>
                   <td className={`text-right ${gapCls(s.actual - s.planned)}`}>{sign(s.actual - s.planned)}{pct1(Math.abs(s.actual - s.planned))}%p</td>
