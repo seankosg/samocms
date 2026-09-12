@@ -88,8 +88,8 @@ function Body({ data, onDone }: { data: Data; onDone: () => void }) {
 
   const rebuild = useMutation({
     mutationFn: () => rebuildSafetyPdf({ data: { day: today } }),
-    onSuccess: (r) => { onDone(); r.ok ? toast.success("PDF 를 다시 만들었습니다") : toast.warning(r.reason ?? "만들 수 없습니다"); },
-    onError: (e: Error) => toast.error("PDF 생성 실패", { description: e.message }),
+    onSuccess: (r) => { onDone(); r.ok ? toast.success("문서·이미지를 다시 만들었습니다") : toast.warning(r.reason ?? "만들 수 없습니다"); },
+    onError: (e: Error) => toast.error("문서·이미지 생성 실패", { description: e.message }),
   });
 
   return (
@@ -161,10 +161,10 @@ function Body({ data, onDone }: { data: Data; onDone: () => void }) {
           <Badge variant="outline">{today}</Badge>
           <span>한국어 {todayReport?.["generated_at"] ? "생성됨" : "없음"}</span>
           <span>영문 {todayReport?.["generated_at_en"] ? "생성됨" : "없음"}</span>
-          <span>PDF {todayReport?.["telegram_ready_at"] ? "준비됨" : "없음"}</span>
+          <span>문서 {todayReport?.["telegram_ready_at"] ? "준비됨" : "없음"}</span>
           <span>발송 회차 {String(todayReport?.["telegram_send_seq"] ?? 0)}</span>
           <Button size="sm" variant="outline" onClick={() => rebuild.mutate()} disabled={rebuild.isPending}>
-            <RefreshCw className={`mr-1 size-4 ${rebuild.isPending ? "animate-spin" : ""}`} />PDF 다시 만들기
+            <RefreshCw className={`mr-1 size-4 ${rebuild.isPending ? "animate-spin" : ""}`} />문서·이미지 다시 만들기
           </Button>
           <Button size="sm" variant="outline" onClick={() => resend.mutate()} disabled={resend.isPending}>
             <Send className="mr-1 size-4" />재발송 요청
