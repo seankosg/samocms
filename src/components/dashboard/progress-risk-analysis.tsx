@@ -81,7 +81,7 @@ function aggregate(rows: Row[], dimension: Dimension): GroupMetric[] {
     const long = delayDays.filter((days) => days >= 14).length;
     const medium = delayDays.filter((days) => days >= 7 && days < 14).length;
     const short = delayDays.filter((days) => days > 0 && days < 7).length;
-    const severity = avgGap >= 20 || maxDelayDays >= 14
+    const severity: GroupMetric["severity"] = avgGap >= 20 || maxDelayDays >= 14
       ? "critical"
       : avgGap >= 10 || maxDelayDays >= 7
         ? "warning"
