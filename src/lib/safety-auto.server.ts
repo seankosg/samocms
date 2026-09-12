@@ -60,10 +60,9 @@ export async function generateTodaySafetyReports(): Promise<{
   const count = groups.start.length + groups.ongoing.length + groups.finish.length + tc.length;
   if (count === 0) return { day, generated: [], skipped, reason: "당일 작업 없음" };
 
-  const facts = safetyFacts(groups, tc, day);
   const generated: SafetyLang[] = [];
   for (const lang of missing) {
-    await generateSafety(day, facts, lang, null);
+    await generateSafety(day, safetyFacts(groups, tc, day, lang), lang, null);
     generated.push(lang);
   }
 

@@ -53,7 +53,7 @@ function TodayPage() {
   });
 
   const safety = useMutation({
-    mutationFn: (force: boolean) => analyzeSafety({ data: { day: today!, facts: safetyFacts(groups!, tc, today!), force, lang } }),
+    mutationFn: (force: boolean) => analyzeSafety({ data: { day: today!, facts: safetyFacts(groups!, tc, today!, lang), force, lang } }),
     onSuccess: (res) => qc.setQueryData(["safety-report", today, res.lang], res),
   });
 

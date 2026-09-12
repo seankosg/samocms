@@ -80,7 +80,7 @@ export function safetyFacts(groups: Record<TodayGroupKey, Row[]>, tc: TodayTc[],
   const team = (value: string) => en ? SLOT_LABEL_EN[value] ?? value : value;
   const line = (r: Row, tag: string) =>
     `${tag}|${team(r.dept)}|${flat(r.bldg) || "-"}|${flat(r.room) || "-"}|${activityLabel(r.act, lang)}|${en ? "Subcontractor" : "협력사"}:${flat(r.sub) || "-"}|${en ? "Quantity" : "수량"}:${r.done ?? "-"}/${r.tot ?? "-"}${r.unit ? r.unit : ""}|${en ? "Actual" : "실적"}:${r.pc == null ? "-" : Math.round(r.pc * 100) + "%"}`;
-  const parts: string[] = [`${en ? "Reference date" : "기준 날짜"}: ${today}`, "", [en ? "Construction Activities" : "공정 작업"]`[${en ? "Construction Activities" : "공정 작업"}]`];
+  const parts: string[] = [`${en ? "Reference date" : "기준 날짜"}: ${today}`, "", `[${en ? "Construction Activities" : "공정 작업"}]`];
   TODAY_GROUPS.forEach((g) => groups[g.key].slice(0, 120).forEach((r) => parts.push(line(r, groupLabel[g.key]))));
   parts.push("", `[${en ? "T&C Schedule" : "T&C 시운전 계획"}]`);
   tc.slice(0, 120).forEach((t) =>
