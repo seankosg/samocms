@@ -16,6 +16,7 @@ export function useProgressHistory(opts: { itemKey?: string; discipline?: string
     queryKey: ["progress-history", opts.itemKey ?? null, opts.discipline ?? null],
     queryFn: () => getProgressHistory({ data: opts }),
     staleTime: 120_000,
+    refetchInterval: 5 * 60_000, // 일일 스냅샷(자동 채움 포함) 반영을 위한 자동 갱신
   });
 }
 
