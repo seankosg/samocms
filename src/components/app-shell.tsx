@@ -157,7 +157,7 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
     <nav className="p-2 space-y-2" aria-label="주 메뉴">
       {groups.map((g) => (
         <div key={g.group} className="rounded-lg border border-border/60 bg-muted/30 px-1.5 py-2">
-          {expanded && <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{g.group}</p>}
+          {expanded && <p className="px-2 py-1 text-[10px] font-bold tracking-wide text-muted-foreground">{g.group}</p>}
           {g.items.map((it) => (
             <Link
               key={it.to} to={it.to} title={it.label} onClick={onNavigate}
