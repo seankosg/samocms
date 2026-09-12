@@ -85,6 +85,11 @@ export function ForecastChart({ rows, base }: { rows: Row[]; base: string }) {
     // 계획 완료일 = 계획 곡선이 처음 99.9% 도달하는 날
     const planDoneDate = days.find((d) => (planCurve.get(d) ?? 0) >= 0.999) ?? planEnd;
 
+    // 발주처(HM) 항목의 계획 완료일 — 집계에서는 제외하되 참조용 세로선으로 표시
+    const hmRows = rows.filter((r) => r.mgr === "HM" && r.s && r.e);
+    const hmPlanEnd = hmRows.reduce<string | null>((acc, r) => (r.e && (!acc || r.e > acc) ? r.e : acc), null);
+    const hmPlanDoneDate = hmPlanEnd ? (days.find((d) => (planCurveOf(hmRows, days).get(d) ?? 0) >= 0.999) ?? hmPlanEnd) : null;
+
     // 예측 곡선 (마지막 기록 이후)
     const forecastCurve = new Map<string, number>();
     if (slope != null && slope > 1e-6) {
@@ -96,7 +101,7 @@ export function ForecastChart({ rows, base }: { rows: Row[]; base: string }) {
     }
 
     const diffDays = forecastEnd ? Math.round((toTs(forecastEnd) - toTs(planDoneDate)) / DAY) : null;
-    return { hist, days, planCurve, forecastCurve, slope, planDoneDate, forecastEnd, diffDays, lastDate, lastActual, itemCount: sel.length };
+    return { hist, days, planCurve, forecastCurve, slope, planDoneDate, hmPlanDoneDate, forecastEnd, diffDays, lastDate, lastActual, itemCount: sel.length };
   }, [data, rows, tab]);
 
   // 공종별 요약 표 데이터
