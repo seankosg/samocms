@@ -283,10 +283,10 @@ export function ProgressRiskAnalysis({ rows, tcItems = [], base = null }: { rows
                 <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tickFormatter={(value) => `${value}%`} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
                 <Tooltip content={<ProgressTooltip />} cursor={{ fill: "var(--muted)" }} />
                 <Bar dataKey="planned" name="계획" fill="var(--schedule-plan)" radius={[3, 3, 0, 0]}>
-                  <LabelList dataKey="planned" content={<ProgressLabel kind="planned" rows={progress} />} />
+                  <LabelList dataKey="planned" content={<ProgressLabel kind="planned" rows={progress} onOpen={(key) => openList(progressDimension, key, false, pTcGroup, pTcStage)} />} />
                 </Bar>
                 <Bar dataKey="actual" name="실적" fill="var(--schedule-actual)" radius={[3, 3, 0, 0]}>
-                  <LabelList dataKey="actual" content={<ProgressLabel kind="actual" rows={progress} />} />
+                  <LabelList dataKey="actual" content={<ProgressLabel kind="actual" rows={progress} onOpen={(key) => openList(progressDimension, key, false, pTcGroup, pTcStage)} />} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -436,21 +436,39 @@ function ProgressTooltip({ active, payload }: { active?: boolean; payload?: Arra
   );
 }
 
-function ProgressLabel({ x = 0, y = 0, width = 0, value = 0, index = 0, kind, rows }: {
-  x?: number; y?: number; width?: number; value?: number; index?: number; kind: "planned" | "actual"; rows: GroupMetric[];
+function ProgressLabel({ x = 0, y = 0, width = 0, value = 0, index = 0, kind, rows, onOpen }: {
+  x?: number; y?: number; width?: number; value?: number; index?: number; kind: "planned" | "actual"; rows: GroupMetric[]; onOpen?: (key: string) => void;
 }) {
   const row = rows[index];
   if (!row) return null;
+  const clickable = onOpen
+    ? {
+        onClick: (e: React.MouseEvent) => { e.stopPropagation(); onOpen(row.key); },
+        style: { cursor: "pointer" } as const,
+        className: "hover:opacity-70",
+        pointerEvents: "all" as const,
+      }
+    : {};
   if (kind === "planned") {
-    return <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize="9" fill="var(--muted-foreground)">{Math.round(value)}%</text>;
+    if (value <= 0) return null;
+    return <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize="9" fill="var(--muted-foreground)" {...clickable}>{Math.round(value)}%</text>;
   }
+  if (value <= 0 && !row.ahead && !row.late && !row.gap) return null;
   return (
-    <g>
-      <text x={x + width / 2} y={y - 34} textAnchor="middle" fontSize="9" fontWeight="700">
-        <tspan fill="var(--primary)">▲{row.ahead}</tspan><tspan fill="var(--muted-foreground)"> </tspan><tspan fill="var(--destructive)">▼{row.late}</tspan>
-      </text>
-      <text x={x + width / 2} y={y - 20} textAnchor="middle" fontSize="9" fontWeight="700" fill={row.gap < 0 ? "var(--destructive)" : "var(--primary)"}>{row.gap > 0 ? "+" : ""}{row.gap.toFixed(1)}p</text>
-      <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize="9" fontWeight="700" fill="var(--foreground)">{Math.round(value)}%</text>
+    <g {...clickable}>
+      {(row.ahead > 0 || row.late > 0) && (
+        <text x={x + width / 2} y={y - 34} textAnchor="middle" fontSize="9" fontWeight="700">
+          {row.ahead > 0 && <tspan fill="var(--primary)">▲{row.ahead}</tspan>}
+          {row.ahead > 0 && row.late > 0 && <tspan fill="var(--muted-foreground)"> </tspan>}
+          {row.late > 0 && <tspan fill="var(--destructive)">▼{row.late}</tspan>}
+        </text>
+      )}
+      {row.gap !== 0 && (
+        <text x={x + width / 2} y={y - 20} textAnchor="middle" fontSize="9" fontWeight="700" fill={row.gap < 0 ? "var(--destructive)" : "var(--primary)"}>{row.gap > 0 ? "+" : ""}{row.gap.toFixed(1)}p</text>
+      )}
+      {value > 0 && (
+        <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize="9" fontWeight="700" fill="var(--foreground)">{Math.round(value)}%</text>
+      )}
     </g>
   );
 }
