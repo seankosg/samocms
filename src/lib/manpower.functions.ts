@@ -212,7 +212,14 @@ export const saveManpowerSettings = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as Ctx);
+    // 관리자 또는 안전관리팀 팀장(안전리포트 설정 화면의 독촉 알림 카드) 허용
+    const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (!isAdmin) {
+      const { data: p } = await context.supabase.from("profiles").select("team, position").eq("id", context.userId).maybeSingle();
+      if (!(p?.team === "안전관리팀" && String(p?.position ?? "").includes("팀장"))) {
+        throw new Error("관리자 또는 안전관리팀 팀장만 사용할 수 있습니다.");
+      }
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const now = new Date().toISOString();
     const rows = [

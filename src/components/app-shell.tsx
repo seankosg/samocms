@@ -77,6 +77,11 @@ const ADMIN_NAV = [
   ] },
 ] as const;
 
+/** 안전관리팀 팀장 등 Admin 아닌 설정 담당자용 메뉴 */
+const SAFETY_NAV = [
+  { group: "관리", items: [{ to: "/safety-settings", label: "안전리포트 설정", icon: ShieldAlert }] },
+] as const;
+
 export function AppShell({ title, desc, actions, children }: { title: string; desc?: string; actions?: ReactNode; children: ReactNode }) {
   const [open, setOpen] = useState(true);
   useEffect(() => { if (window.innerWidth < 1024) setOpen(false); }, []);
@@ -84,7 +89,7 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const { rows, base, batches, tcItems } = useProject();
-  const { profile, role, isAdmin, canWrite } = useAuth();
+  const { profile, role, isAdmin, isSafetyLead, canWrite } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const rev = Math.max(1, ...batches.map((b) => b.rev ?? 1));
@@ -114,7 +119,7 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
     XLSX.writeFile(wb, `HMMME_통합_공정_${base.replace(/-/g, "")}.xlsx`);
   };
 
-  const groups = [...NAV, ...(isAdmin ? ADMIN_NAV : []), ...DATA_NAV];
+  const groups = [...NAV, ...(isAdmin ? ADMIN_NAV : isSafetyLead ? SAFETY_NAV : []), ...DATA_NAV];
 
   const userBadge = (expanded: boolean) => (
     <div className="flex items-center gap-2 rounded-md bg-accent/40 px-2 py-1.5">
