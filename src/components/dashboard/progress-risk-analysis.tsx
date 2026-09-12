@@ -71,7 +71,7 @@ const taskDelayDays = (row: Row) => {
   return Math.max(1, Math.round(((row.pl ?? 0) - (row.pc ?? 0)) * duration));
 };
 
-function aggregate(rows: Row[], dimension: Dimension): GroupMetric[] {
+function aggregate(rows: Row[], dimension: RowDimension): GroupMetric[] {
   const groups = new Map<string, Row[]>();
   rows.forEach((row) => {
     const key = groupValue(row, dimension);
