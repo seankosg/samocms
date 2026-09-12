@@ -4,6 +4,7 @@ import { useProgressForecast } from "@/lib/use-project";
 import { KPI_SLOTS, planAt, pct1, SLOT_LABEL, type Row } from "@/lib/schedule-model";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { TcItem } from "@/lib/tc-model";
 import {
   TC_FORECAST_STAGES, TC_F_STAGE_LABEL,
@@ -233,12 +234,12 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
 
   return (
     <div className="min-w-0 rounded-md border border-border bg-card p-4 shadow-sm">
-      <div className="mb-3 border-b border-border">
+      <div className="mb-3">
         <Tabs value={mode} onValueChange={(value) => { setMode(value as Mode); setHover(null); }}>
-          <TabsList className="h-10 rounded-none bg-transparent p-0">
-            <TabsTrigger value="discipline" className="h-10 rounded-none border-b-2 border-transparent px-4 data-[state=active]:border-primary data-[state=active]:bg-transparent">공종별 예측</TabsTrigger>
-            <TabsTrigger value="milestone" className="h-10 rounded-none border-b-2 border-transparent px-4 data-[state=active]:border-primary data-[state=active]:bg-transparent">마일스톤별 예측</TabsTrigger>
-            <TabsTrigger value="tc" className="h-10 rounded-none border-b-2 border-transparent px-4 data-[state=active]:border-primary data-[state=active]:bg-transparent">T&C 예측</TabsTrigger>
+          <TabsList className="h-9">
+            <TabsTrigger value="discipline" className="px-4 text-xs">공종별 예측</TabsTrigger>
+            <TabsTrigger value="milestone" className="px-4 text-xs">마일스톤별 예측</TabsTrigger>
+            <TabsTrigger value="tc" className="px-4 text-xs">T&C 예측</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -252,10 +253,10 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
             {(mode === "discipline" ? (["ALL", ...KPI_SLOTS] as string[]) : (["ALL", ...milestones] as string[])).map((d) => {
               const active = mode === "discipline" ? tab === d : milestone === d;
               return (
-                <Button key={d} type="button" size="sm" variant={active ? "default" : "outline"} className="h-7 rounded-full px-2.5 text-[11px]"
+                <button key={d} type="button" data-active={active} className="ui-filter h-7 cursor-pointer rounded-full px-2.5 text-[11px] transition-colors"
                   onClick={() => { if (mode === "discipline") setTab(d); else { setMilestone(d); setMilestoneDisc("ALL"); } setHover(null); }}>
                   {d === "ALL" ? "전체" : (mode === "discipline" ? (SLOT_LABEL[d] ?? d) : d)}
-                </Button>
+                </button>
               );
             })}
           </div>
@@ -266,10 +267,10 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
         <div className="mb-3 flex flex-wrap items-center gap-1 border-b border-border/60 pb-2">
           <span className="mr-1 text-[11px] font-semibold text-muted-foreground">공종</span>
           {(["ALL", ...milestoneDiscs] as string[]).map((disc) => (
-            <Button key={disc} type="button" size="sm" variant={milestoneDisc === disc ? "secondary" : "ghost"} className="h-7 px-2.5 text-[11px]"
+            <button key={disc} type="button" data-active={milestoneDisc === disc} className="ui-filter h-7 cursor-pointer rounded-full px-2.5 text-[11px] transition-colors"
               onClick={() => { setMilestoneDisc(disc); setHover(null); }}>
               {disc === "ALL" ? "전체 공종" : (SLOT_LABEL[disc] ?? disc)}
-            </Button>
+            </button>
           ))}
         </div>
       )}
@@ -279,27 +280,32 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
           <div className="mb-2 flex flex-wrap items-center gap-1 border-b border-border/60 pb-2">
             <span className="mr-1 text-[11px] font-semibold text-muted-foreground">단계</span>
             {(["ALL", ...TC_FORECAST_STAGES] as const).map((st) => (
-              <Button key={st} type="button" size="sm" variant={tcStage === st ? "default" : "outline"} className="h-7 rounded-full px-2.5 text-[11px]"
+              <button key={st} type="button" data-active={tcStage === st} className="ui-filter h-7 cursor-pointer rounded-full px-2.5 text-[11px] transition-colors"
                 onClick={() => { setTcStage(st); setTcBldg("ALL"); setHover(null); }}>
                 {st === "ALL" ? "전체(4단계 합산)" : TC_F_STAGE_LABEL[st]}
-              </Button>
+              </button>
             ))}
           </div>
           <div className="mb-3 flex flex-wrap items-center gap-1 border-b border-border/60 pb-2">
             <span className="mr-1 text-[11px] font-semibold text-muted-foreground">팀</span>
             {(["ALL", "Mech", "Elec"] as const).map((tm) => (
-              <Button key={tm} type="button" size="sm" variant={tcTeam === tm ? "secondary" : "ghost"} className="h-7 px-2.5 text-[11px]"
+              <button key={tm} type="button" data-active={tcTeam === tm} className="ui-filter h-7 cursor-pointer rounded-full px-2.5 text-[11px] transition-colors"
                 onClick={() => { setTcTeam(tm); setTcBldg("ALL"); setHover(null); }}>
                 {tm === "ALL" ? "전체 팀" : tm === "Mech" ? "MECH" : "ELEC"}
-              </Button>
+              </button>
             ))}
-            <span className="mx-2 text-[11px] font-semibold text-muted-foreground">건물</span>
-            <Button type="button" size="sm" variant={tcBldg === "ALL" ? "secondary" : "ghost"} className="h-7 px-2.5 text-[11px]"
-              onClick={() => { setTcBldg("ALL"); setHover(null); }}>전체 건물</Button>
-            {tcBuildings.map((b) => (
-              <Button key={b} type="button" size="sm" variant={tcBldg === b ? "secondary" : "ghost"} className="h-7 px-2.5 text-[11px]"
-                onClick={() => { setTcBldg(b); setHover(null); }}>{b}</Button>
-            ))}
+            <span className="ml-2 mr-1 text-[11px] font-semibold text-muted-foreground">건물</span>
+            <Select value={tcBldg} onValueChange={(v) => { setTcBldg(v); setHover(null); }}>
+              <SelectTrigger data-active={tcBldg !== "ALL"} className="ui-filter h-7 w-[180px] rounded-full px-3 text-[11px]">
+                <SelectValue placeholder="전체 건물" />
+              </SelectTrigger>
+              <SelectContent className="max-h-72">
+                <SelectItem value="ALL" className="text-xs">전체 건물</SelectItem>
+                {tcBuildings.map((b) => (
+                  <SelectItem key={b} value={b} className="text-xs">{b}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </>
       )}
