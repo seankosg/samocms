@@ -20,6 +20,16 @@ export function useProgressHistory(opts: { itemKey?: string; discipline?: string
   });
 }
 
+/** 공종×날짜별 스냅샷 평균 — 진행도 예측선용 */
+export function useProgressForecast() {
+  return useQuery({
+    queryKey: ["progress-forecast"],
+    queryFn: () => getProgressForecast(),
+    staleTime: 120_000,
+    refetchInterval: 5 * 60_000,
+  });
+}
+
 /** 기준일 직전 스냅샷 실적값 맵 (당일 실적 증분용) */
 export function usePrevActuals(base: string) {
   const q = useQuery({
