@@ -459,11 +459,11 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
             </svg>
           </div>
 
-          {/* 선택 범위의 공종별 요약 표 */}
+          {/* 선택 범위의 요약 표 */}
           <table className="mt-3 w-full text-left text-xs">
             <thead className="border-b text-muted-foreground">
               <tr>
-                <th className="py-1.5">공종</th>
+                <th className="py-1.5">{mode === "tc" ? (tcTeam === "ALL" ? "팀" : "건물") : "공종"}</th>
                 <th className="text-right">현재 실적</th>
                 <th className="text-right">최근 속도</th>
                 <th className="text-right">계획 완료</th>
@@ -472,26 +472,40 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
               </tr>
             </thead>
             <tbody>
-              {summary.map((s) => (
-                <tr key={s.disc} className={`border-b border-border/60 ${(mode === "discipline" ? s.disc === tab : s.disc === milestoneDisc) ? "bg-muted/50" : ""}`}>
-                  <td className="py-1.5 font-semibold">
-                    <Link
-                      to="/schedule"
-                      search={{ ...(s.disc !== "ALL" ? { slot: s.disc } : {}), ...(mode === "milestone" && milestone !== "ALL" ? { ms: milestone } : {}) } as never}
-                      className="cursor-pointer rounded underline-offset-2 hover:text-primary hover:underline"
-                    >
-                      {s.disc === "ALL" ? (mode === "milestone" ? "전체 공종" : "전체") : (SLOT_LABEL[s.disc] ?? s.disc)}
-                    </Link>
-                  </td>
-                  <td className="text-right">{s.actual == null ? "—" : `${pct1(s.actual)}%`}</td>
-                  <td className="text-right">{s.slope == null ? "—" : `${(s.slope * 100).toFixed(1)}%p/일`}</td>
-                  <td className="text-right">{s.planDone ? fmtD(s.planDone) : "—"}</td>
-                  <td className="text-right font-semibold">{s.forecastEnd ? fmtD(s.forecastEnd) : "—"}</td>
-                  <td className={`text-right font-bold ${s.diffDays == null || s.diffDays === 0 ? "text-muted-foreground" : s.diffDays > 0 ? "text-destructive" : "text-chart-2"}`}>
-                    {s.diffDays == null ? "—" : s.diffDays === 0 ? "정상" : s.diffDays > 0 ? `${s.diffDays}일 지연` : `${Math.abs(s.diffDays)}일 선행`}
-                  </td>
-                </tr>
-              ))}
+              {summary.map((s) => {
+                const isActive = mode === "discipline" ? s.disc === tab : mode === "milestone" ? s.disc === milestoneDisc : s.disc === tcBldg || (tcTeam === "ALL" && s.disc === tcTeam);
+                const label = mode === "tc"
+                  ? (s.disc === "ALL" || s.disc === "Mech" || s.disc === "Elec" ? (s.disc === "Mech" ? "MECH" : s.disc === "Elec" ? "ELEC" : "전체") : s.disc)
+                  : (s.disc === "ALL" ? (mode === "milestone" ? "전체 공종" : "전체") : (SLOT_LABEL[s.disc] ?? s.disc));
+                const tcSearch = mode === "tc" ? {
+                  ...(tcStage !== "ALL" ? { stage: tcStage } : {}),
+                  ...(s.disc !== "ALL" && s.disc !== "Mech" && s.disc !== "Elec" ? { disc: s.disc, bldg: s.disc } : s.disc === "Mech" || s.disc === "Elec" ? { disc: s.disc } : {}),
+                } as never : null;
+                return (
+                  <tr key={s.disc} className={`border-b border-border/60 ${isActive ? "bg-muted/50" : ""}`}>
+                    <td className="py-1.5 font-semibold">
+                      {mode === "tc" && tcSearch ? (
+                        <Link to="/tc/list" search={tcSearch} className="cursor-pointer rounded underline-offset-2 hover:text-primary hover:underline">{label}</Link>
+                      ) : (
+                        <Link
+                          to="/schedule"
+                          search={{ ...(s.disc !== "ALL" ? { slot: s.disc } : {}), ...(mode === "milestone" && milestone !== "ALL" ? { ms: milestone } : {}) } as never}
+                          className="cursor-pointer rounded underline-offset-2 hover:text-primary hover:underline"
+                        >
+                          {label}
+                        </Link>
+                      )}
+                    </td>
+                    <td className="text-right">{s.actual == null ? "—" : `${pct1(s.actual)}%`}</td>
+                    <td className="text-right">{s.slope == null ? "—" : `${(s.slope * 100).toFixed(1)}%p/일`}</td>
+                    <td className="text-right">{s.planDone ? fmtD(s.planDone) : "—"}</td>
+                    <td className="text-right font-semibold">{s.forecastEnd ? fmtD(s.forecastEnd) : "—"}</td>
+                    <td className={`text-right font-bold ${s.diffDays == null || s.diffDays === 0 ? "text-muted-foreground" : s.diffDays > 0 ? "text-destructive" : "text-chart-2"}`}>
+                      {s.diffDays == null ? "—" : s.diffDays === 0 ? "정상" : s.diffDays > 0 ? `${s.diffDays}일 지연` : `${Math.abs(s.diffDays)}일 선행`}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </>
