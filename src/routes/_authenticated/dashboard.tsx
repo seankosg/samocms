@@ -213,7 +213,7 @@ function Dashboard() {
       </section>
 
       <section className="mt-4">
-        <ForecastChart rows={rows} base={base} />
+        <ForecastChart rows={rows} tcItems={tcItems} base={base} />
       </section>
 
 
