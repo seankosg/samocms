@@ -30,7 +30,7 @@ export const getSafetySettings = createServerFn({ method: "GET" })
     return {
       settings: map,
       members: (members.data ?? []) as { telegram_id: string; name: string; company: string | null; role: string; is_active: boolean }[],
-      logs: (logs.data ?? []) as { received_at: string; warnings: Record<string, unknown> | null }[],
+      logs: (logs.data ?? []) as SafetySendLog[],
       reports: (reports.data ?? []) as Record<string, string | number | null>[],
     };
   });
