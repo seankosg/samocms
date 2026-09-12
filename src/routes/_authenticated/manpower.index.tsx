@@ -242,12 +242,12 @@ function ManpowerPage() {
           <tbody>
             {daily.sort((a, b) => b.total - a.total).map((d, i) => (
               <tr key={d.company} className={`transition-colors hover:bg-primary/5 ${i % 2 ? "bg-muted/30" : ""} [&>td]:border-b [&>td]:border-border/50 [&>td]:px-3 [&>td]:py-2 [&>td]:text-right [&>td:first-child]:text-left`}>
-                <td className="font-semibold">{d.company}</td>
+                <td className="w-[90px] min-w-[90px] font-semibold">{d.company}</td>
+                <td className="bg-primary/5 text-sm font-extrabold">{d.total.toLocaleString()}</td>
                 <td className="font-medium text-sky-700 dark:text-sky-300">{d.day_total || <span className="text-muted-foreground/30">–</span>}</td>
                 <td className="font-medium text-amber-700 dark:text-amber-300">{d.ot_total || <span className="text-muted-foreground/30">–</span>}</td>
                 <td className="font-medium text-indigo-700 dark:text-indigo-300">{d.night_total || <span className="text-muted-foreground/30">–</span>}</td>
                 {TRADES.map((t) => <td key={t} className="text-muted-foreground">{d[t] || ""}</td>)}
-                <td className="bg-primary/5 text-sm font-extrabold">{d.total.toLocaleString()}</td>
                 <td className="!text-left text-muted-foreground">{d.first_submitted_at ? riyadhTime(d.first_submitted_at) : "—"}</td>
               </tr>
             ))}
