@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { AppShell } from "@/components/app-shell";
 import { ScheduleTable } from "@/components/schedule-table";
 import { projectQuery, useProject } from "@/lib/use-project";
-import { fmtDate } from "@/lib/schedule-model";
+import { fmtDate, hasProgress, SLOT_LABEL } from "@/lib/schedule-model";
 import { searchKey, toInitial, validateListSearch } from "@/lib/list-search";
 
 export const Route = createFileRoute("/_authenticated/schedule")({
@@ -22,11 +23,20 @@ export const Route = createFileRoute("/_authenticated/schedule")({
 function SchedulePage() {
   const { rows, base } = useProject();
   const search = Route.useSearch();
+  const scoped = useMemo(() => rows.filter((r) => {
+    if (search.slot && !(r.slot === search.slot || r.dept === search.slot)) return false;
+    if (search.hasProgress && !hasProgress(r)) return false;
+    return true;
+  }), [rows, search.slot, search.hasProgress]);
+  const scope = [
+    search.slot ? `공종 ${SLOT_LABEL[search.slot] ?? search.slot}` : null,
+    search.hasProgress ? "진도 보유 행" : null,
+  ].filter(Boolean).join(" · ");
   return (
-    <AppShell title="공정리스트" desc={`기준일 ${fmtDate(base)} · 전체 ${rows.length.toLocaleString()}개 활동`}>
+    <AppShell title="공정리스트" desc={`기준일 ${fmtDate(base)} · ${scope ? `${scope} · ` : "전체 "}${scoped.length.toLocaleString()}개 활동`}>
       <ScheduleTable
         key={searchKey(search)}
-        rows={rows}
+        rows={scoped}
         fileName="HMMME_공정리스트.xlsx"
         initial={toInitial(search)}
         dueBy={search.duebyBase ? base : null}
