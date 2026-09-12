@@ -1,6 +1,6 @@
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { getPrevActuals, getProgressHistory, getProjectData } from "./project.functions";
+import { getPrevActuals, getProgressForecast, getProgressHistory, getProjectData } from "./project.functions";
 import { applyBaseline, toRow } from "./schedule-model";
 
 
@@ -17,6 +17,16 @@ export function useProgressHistory(opts: { itemKey?: string; discipline?: string
     queryFn: () => getProgressHistory({ data: opts }),
     staleTime: 120_000,
     refetchInterval: 5 * 60_000, // 일일 스냅샷(자동 채움 포함) 반영을 위한 자동 갱신
+  });
+}
+
+/** 공종×날짜별 스냅샷 평균 — 진행도 예측선용 */
+export function useProgressForecast() {
+  return useQuery({
+    queryKey: ["progress-forecast"],
+    queryFn: () => getProgressForecast(),
+    staleTime: 120_000,
+    refetchInterval: 5 * 60_000,
   });
 }
 
