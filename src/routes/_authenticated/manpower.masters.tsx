@@ -15,10 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { manpowerMastersQuery, useManpowerMasters, type AliasRow, type MasterRow } from "@/lib/use-manpower";
 import {
   saveManpowerMaster, setManpowerMasterActive, setManpowerMasterOrder, deleteManpowerMaster,
-  saveManpowerAlias, deleteManpowerAlias, renameManpowerMaster, saveManpowerSettings,
+  saveManpowerAlias, deleteManpowerAlias, renameManpowerMaster,
 } from "@/lib/manpower.functions";
-import { MP } from "@/lib/manpower-i18n";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/_authenticated/manpower/masters")({
   head: () => ({ meta: [
@@ -42,7 +40,7 @@ export const Route = createFileRoute("/_authenticated/manpower/masters")({
 type Kind = "company" | "location";
 
 function MastersPage() {
-  const { companies, locations, aliases, usage, members, settings } = useManpowerMasters();
+  const { companies, locations, aliases, usage, members } = useManpowerMasters();
   const qc = useQueryClient();
   const router = useRouter();
   /** 마스터를 바꾸면 출면 현황·매트릭스가 쓰는 데이터까지 즉시 다시 불러옵니다. */
