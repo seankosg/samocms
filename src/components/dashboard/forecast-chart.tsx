@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { TrendingDown, TrendingUp } from "lucide-react";
 import { useProgressForecast } from "@/lib/use-project";
 import { KPI_SLOTS, planAt, pct1, SLOT_LABEL, type Row } from "@/lib/schedule-model";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -315,28 +316,57 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
         <p className="text-xs text-muted-foreground">예측에 필요한 기록이 부족합니다. {mode === "tc" ? "선택한 단계·팀·건물의 계획/실적일 데이터가 부족합니다." : "스냅샷이 2일 이상 쌓이면 표시됩니다."}</p>
       ) : (
         <>
-          {/* 요약 수치 */}
-          <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
-            <span>실적 <b className="text-primary">{pct1(model.lastActual)}%</b></span>
-            <span>계획 <b>{pct1(model.planCurve.get(model.lastDate) ?? 0)}%</b></span>
-            <span className={model.lastActual - (model.planCurve.get(model.lastDate) ?? 0) < 0 ? "font-bold text-destructive" : "font-bold text-chart-2"}>
-              격차 {pct1(Math.abs(model.lastActual - (model.planCurve.get(model.lastDate) ?? 0)))}%p{model.lastActual - (model.planCurve.get(model.lastDate) ?? 0) < 0 ? " 지연" : " 선행"}
-            </span>
-            <span>최근 속도 <b>{model.slope != null ? `${(model.slope * 100).toFixed(1)}%p/일` : "—"}</b> (최근 {Math.min(14, model.hist.length)}개 기록)</span>
-            {model.forecastEnd ? (
-              <span>
-                예측 완료 <b className="text-primary">{fmtD(model.forecastEnd)}</b>
-                {" / "}계획 완료 <b>{fmtD(model.planDoneDate)}</b>
-                {model.diffDays != null && model.diffDays !== 0 && (
-                  <b className={model.diffDays > 0 ? "ml-1 text-destructive" : "ml-1 text-chart-2"}>
-                    ({model.diffDays > 0 ? `${model.diffDays}일 지연` : `${Math.abs(model.diffDays)}일 선행`})
-                  </b>
-                )}
-              </span>
-            ) : (
-              <span className="font-semibold text-destructive">현재 속도로는 완료 예측 불가</span>
-            )}
-          </div>
+          {/* 요약 지표 카드 */}
+          {(() => {
+            const planNow = model.planCurve.get(model.lastDate) ?? 0;
+            const gap = model.lastActual - planNow;
+            const late = gap < 0;
+            return (
+              <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                <div className="rounded-lg border bg-card px-3 py-2">
+                  <p className="text-[11px] text-muted-foreground">실적</p>
+                  <p className="text-lg font-bold leading-tight text-primary">{pct1(model.lastActual)}%</p>
+                </div>
+                <div className="rounded-lg border bg-card px-3 py-2">
+                  <p className="text-[11px] text-muted-foreground">계획</p>
+                  <p className="text-lg font-bold leading-tight">{pct1(planNow)}%</p>
+                </div>
+                <div className={`rounded-lg border px-3 py-2 ${late ? "border-destructive/40 bg-destructive/10" : "border-chart-2/40 bg-chart-2/10"}`}>
+                  <p className="text-[11px] text-muted-foreground">계획 대비</p>
+                  <p className={`flex items-center gap-1 text-lg font-bold leading-tight ${late ? "text-destructive" : "text-chart-2"}`}>
+                    {late ? <TrendingDown className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />}
+                    {late ? "−" : "+"}{pct1(Math.abs(gap))}%p
+                  </p>
+                  <span className={`mt-0.5 inline-block rounded-full px-1.5 py-px text-[10px] font-semibold ${late ? "bg-destructive/15 text-destructive" : "bg-chart-2/15 text-chart-2"}`}>
+                    {late ? "지연" : "선행"}
+                  </span>
+                </div>
+                <div className="rounded-lg border bg-card px-3 py-2">
+                  <p className="text-[11px] text-muted-foreground">최근 속도</p>
+                  <p className="text-lg font-bold leading-tight">{model.slope != null ? `${(model.slope * 100).toFixed(1)}%p/일` : "—"}</p>
+                  <p className="mt-0.5 text-[10px] text-muted-foreground">최근 {Math.min(14, model.hist.length)}개 기록</p>
+                </div>
+                <div className="col-span-2 rounded-lg border bg-card px-3 py-2 sm:col-span-1">
+                  <p className="text-[11px] text-muted-foreground">완료 전망</p>
+                  {model.forecastEnd ? (
+                    <>
+                      <p className="text-lg font-bold leading-tight text-primary">{fmtD(model.forecastEnd)}</p>
+                      <p className="mt-0.5 text-[10px] text-muted-foreground">
+                        계획 완료 {fmtD(model.planDoneDate)}
+                        {model.diffDays != null && model.diffDays !== 0 && (
+                          <b className={model.diffDays > 0 ? "ml-1 text-destructive" : "ml-1 text-chart-2"}>
+                            · {model.diffDays > 0 ? `${model.diffDays}일 지연` : `${Math.abs(model.diffDays)}일 선행`}
+                          </b>
+                        )}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="mt-1 text-xs font-semibold text-destructive">현재 속도로는 완료 예측 불가</p>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* 범례 */}
           <div className="mb-1 flex flex-wrap gap-x-4 text-[11px] text-muted-foreground">
