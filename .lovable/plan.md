@@ -16,9 +16,9 @@
 - 한글·영문 분석이 모두 끝나는 순간(자동 생성·「다시 분석」 모두) PDF와 함께 만들어집니다.
 
 ### 2) 봇 연계
-- 봇이 읽는 공개 목록(`v_safety_telegram`)에 `jpg_ko_urls`, `jpg_en_urls`(순서대로 담긴 주소 목록)와 장수를 추가합니다. PDF와 동일하게 `?v=준비시각`이 붙어 옛 파일이 캐시되지 않습니다.
+- 봇이 읽는 공개 목록(`v_safety_telegram`)에 `img_ko_urls`, `img_en_urls`(페이지 순서대로 담긴 공개 주소 JSON 배열)와 장수를 추가합니다. PDF와 동일하게 `?v=준비시각`이 붙어 옛 파일이 캐시되지 않습니다.
 - 인증 없이 받아갈 수 있는 공개 주소 `/api/public/safety-image?day=…&lang=ko|en&page=1` 을 새로 만듭니다.
-- 봇은 1장이면 `sendPhoto`, 여러 장이면 `sendMediaGroup`(앨범)으로 보내고 첫 장 설명글에 본문 + PDF 링크를 넣으면 됩니다. (봇 쪽 코드는 앱 범위 밖)
+- 봇은 1장이면 `sendPhoto`, 여러 장이면 `sendMediaGroup`(앨범)으로 보내고, 사진 뒤에 PDF를 파일로 이어 보냅니다. 설명글에는 PDF 링크를 넣지 않습니다. (봇 쪽 코드는 앱 범위 밖)
 
 ### 3) 화면
 - Safety Report 화면의 내려받기 영역에 PDF와 함께 **이미지(JPG)** 링크를 추가합니다.
