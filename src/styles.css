@@ -103,6 +103,14 @@
   --schedule-actual: oklch(0.59 0.155 174);
   --schedule-over: oklch(0.55 0.14 155);
   --schedule-short: oklch(0.577 0.245 27.325);
+  --tab: oklch(0.93 0.04 245);
+  --tab-fg: oklch(0.44 0.1 250);
+  --tab-active: oklch(0.52 0.16 250);
+  --tab-active-fg: oklch(0.99 0 0);
+  --filter: oklch(0.95 0.05 80);
+  --filter-fg: oklch(0.45 0.09 70);
+  --filter-active: oklch(0.63 0.15 65);
+  --filter-active-fg: oklch(1 0 0);
 }
 
 .dark {
@@ -142,6 +150,14 @@
   --schedule-actual: oklch(0.7 0.13 174);
   --schedule-over: oklch(0.7 0.14 155);
   --schedule-short: oklch(0.704 0.191 22.216);
+  --tab: oklch(0.32 0.05 250);
+  --tab-fg: oklch(0.82 0.05 250);
+  --tab-active: oklch(0.6 0.15 250);
+  --tab-active-fg: oklch(0.99 0 0);
+  --filter: oklch(0.33 0.05 75);
+  --filter-fg: oklch(0.86 0.06 80);
+  --filter-active: oklch(0.68 0.15 70);
+  --filter-active-fg: oklch(0.18 0.02 70);
 }
 
 @layer base {
@@ -161,3 +177,41 @@
 .raw-table th:first-child, .raw-table td:first-child { position: sticky; left: 0; z-index: 1; background: var(--color-card); }
 .raw-table th:first-child { z-index: 3; }
 .raw-table tbody tr:hover td { background: var(--color-accent); }
+
+/* 탭(파랑) · 필터(호박) 공용 스타일 — 기본 흐리게, 선택 시 진하게 */
+@utility ui-tabs-list {
+  background-color: color-mix(in oklch, var(--tab) 65%, transparent);
+  color: var(--tab-fg);
+}
+
+@utility ui-tab {
+  color: var(--tab-fg);
+  background-color: transparent;
+  box-shadow: none;
+  &:hover {
+    background-color: color-mix(in oklch, var(--tab-active) 18%, transparent);
+    color: var(--tab-active);
+  }
+  &[data-state="active"] {
+    background-color: var(--tab-active);
+    color: var(--tab-active-fg);
+    font-weight: 700;
+    box-shadow: none;
+  }
+}
+
+@utility ui-filter {
+  background-color: color-mix(in oklch, var(--filter) 75%, transparent);
+  color: var(--filter-fg);
+  border: 1px solid color-mix(in oklch, var(--filter-active) 28%, transparent);
+  &:hover {
+    background-color: color-mix(in oklch, var(--filter-active) 28%, transparent);
+    color: var(--filter-fg);
+  }
+  &[data-active="true"] {
+    background-color: var(--filter-active);
+    border-color: var(--filter-active);
+    color: var(--filter-active-fg);
+    font-weight: 700;
+  }
+}

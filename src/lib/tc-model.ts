@@ -13,7 +13,7 @@ export const TC_STAGE_SUB: Record<TcStage, string> = {
   Report: "검사 보고서",
   RFI: "검사 요청",
   T2: "Consultant Inspection",
-  Response: "코멘트 대응",
+  Response: "기술회사 회신",
 };
 
 const PLAN_COL: Record<TcStage, keyof TcItem> = {

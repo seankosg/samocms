@@ -103,10 +103,10 @@ function ComparePage() {
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         {(["ALL", "DIFF", "HDEC ONLY", "NOT COUNTED", "MATCH"] as const).map((v) => (
-          <Button key={v} size="sm" variant={filter === v ? "default" : "outline"} onClick={() => setResult(v)} className="h-7 text-xs">
+          <button key={v} type="button" data-active={filter === v} onClick={() => setResult(v)} className="ui-filter inline-flex h-7 cursor-pointer items-center rounded-md px-2.5 text-xs transition-colors">
             {v === "ALL" ? "전체" : RESULT_LABEL[v]}
             <span className="ml-1 opacity-70">{v === "ALL" ? rows.length : rows.filter((r) => r.result === v).length}</span>
-          </Button>
+          </button>
         ))}
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="협력사·장소 검색" className="h-8 max-w-[200px] text-xs" />
       </div>
