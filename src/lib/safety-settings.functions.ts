@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { SAFETY_KEYS, hmTime, normalizeTimes } from "./safety-settings";
+import { SAFETY_KEYS, hmTime, normalizeTimes, type SafetySendLog } from "./safety-settings";
 
 type Ctx = { supabase: any; userId: string };
 
