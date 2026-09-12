@@ -307,6 +307,39 @@ export const recordScheduleBatch = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** 공종×날짜별 스냅샷 평균 계획/실적 — 예측선 계산용 (전수, 행 수 제한 없음) */
+export const getProgressForecast = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const c = context.supabase;
+    type R = { snapshot_date: string; discipline: string; planned_progress: number | null; actual_progress: number | null };
+    const rows: R[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data: page, error } = await c
+        .from("activity_snapshots")
+        .select("snapshot_date,discipline,planned_progress,actual_progress")
+        .order("snapshot_date")
+        .range(from, from + 999);
+      if (error) throw new Error(error.message);
+      rows.push(...((page ?? []) as R[]));
+      if (!page || page.length < 1000) break;
+    }
+    const agg = new Map<string, { p: number; a: number; n: number }>();
+    for (const r of rows) {
+      const key = `${r.discipline}|${r.snapshot_date}`;
+      const cur = agg.get(key) ?? { p: 0, a: 0, n: 0 };
+      cur.p += Number(r.planned_progress ?? 0);
+      cur.a += Number(r.actual_progress ?? 0);
+      cur.n += 1;
+      agg.set(key, cur);
+    }
+    const series = [...agg.entries()].map(([key, v]) => {
+      const [disc, date] = key.split("|") as [string, string];
+      return { date, disc, planned: v.n ? v.p / v.n : 0, actual: v.n ? v.a / v.n : 0, count: v.n };
+    }).sort((x, y) => x.date.localeCompare(y.date));
+    return { series };
+  });
+
 /** 기준일 바로 하루 전(기준일-1일) 스냅샷의 항목별 실적 진도율 — 당일 실적 증분 계산용 */
 export const getPrevActuals = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
