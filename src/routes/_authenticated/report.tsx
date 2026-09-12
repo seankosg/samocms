@@ -4,9 +4,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { Printer, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { projectQuery, useProject } from "@/lib/use-project";
+import { projectQuery, useProgressForecast, useProject } from "@/lib/use-project";
 import { fmtDate, fmtShortDate, pct1, SLOT_LABEL } from "@/lib/schedule-model";
-import { buildReportMetrics, buildTcT1T2 } from "@/lib/report-metrics";
+import { buildForecastFacts, buildReportMetrics, buildTcT1T2 } from "@/lib/report-metrics";
 import { TC_DISC_LABEL } from "@/lib/tc-model";
 import { generateExecSummary } from "@/lib/report.functions";
 import { useAuth } from "@/lib/use-auth";
@@ -28,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/report")({
   component: ReportPage,
 });
 
-const LABEL_TONE: Record<string, string> = { 진도: "#1d4ed8", 공종: "#0f766e", 리스크: "#b91c1c", 조치: "#7c3aed" };
+const LABEL_TONE: Record<string, string> = { 진도: "#1d4ed8", 공종: "#0f766e", 리스크: "#b91c1c", 전망: "#c2410c", 조치: "#7c3aed" };
 
 /** "[라벨] 본문" 형태의 문단 파싱 */
 function parseSummary(text: string) {
@@ -62,6 +62,13 @@ function ReportPage() {
   const m = useMemo(() => buildReportMetrics(rows, base), [rows, base]);
   const tc = useMemo(() => buildTcT1T2(tcItems, base, (k) => TC_DISC_LABEL[k] ?? k.toUpperCase()), [tcItems, base]);
 
+  const fc = useProgressForecast();
+  const fcLoading = fc.isLoading;
+  const fcFacts = useMemo(
+    () => buildForecastFacts(fc.data?.series ?? [], rows, tcItems, base),
+    [fc.data, rows, tcItems, base],
+  );
+
   const facts = useMemo(() => {
     const l: string[] = [];
     l.push(`전체 활동 ${m.total}건, 완료 ${m.done}건(${pct1(m.donePct)}%), 지연 ${m.late}건(${pct1(m.latePct)}%)`);
@@ -71,8 +78,9 @@ function ReportPage() {
     m.bldg.slice(0, 5).forEach((b) => l.push(`건물 지연 상위: ${b.k} ${b.late}건`));
     m.sub.slice(0, 5).forEach((b) => l.push(`협력사 지연 상위: ${b.k} ${b.late}건`));
     tc.forEach((d) => l.push(`T&C ${d.label}: 총 ${d.qty} Qty, T1 완료 ${d.t1.doneQty}/잔여 ${d.t1.rem}(지연 ${d.t1.lateQty}), T2 완료 ${d.t2.doneQty}/잔여 ${d.t2.rem}(지연 ${d.t2.lateQty}), Pass ${d.pass}, Fail ${d.fail}`));
-    return l.join("\n");
-  }, [m, tc]);
+    if (fcFacts) l.push("", "[진행도 예측 — 스냅샷 기반 추세]", fcFacts);
+    return l.join("\n").slice(0, 12000);
+  }, [m, tc, fcFacts]);
 
   const qc = useQueryClient();
   const { isAdmin } = useAuth();
@@ -81,7 +89,7 @@ function ReportPage() {
     queryFn: () => generateExecSummary({ data: { base, facts } }),
     staleTime: Infinity,
     retry: false,
-    enabled: withSummary,
+    enabled: withSummary && !fcLoading,
   });
   const regen = useMutation({
     mutationFn: () => generateExecSummary({ data: { base, facts, force: true } }),
@@ -91,11 +99,11 @@ function ReportPage() {
   const printed = useRef(false);
   useEffect(() => {
     if (!print || printed.current) return;
-    if (withSummary && ai.isLoading) return;
+    if (withSummary && (fcLoading || ai.isLoading)) return;
     printed.current = true;
     const t = setTimeout(() => window.print(), 400);
     return () => clearTimeout(t);
-  }, [print, withSummary, ai.isLoading]);
+  }, [print, withSummary, fcLoading, ai.isLoading]);
 
   const title = `SAMO 현장 Progress Report [기준일 ${base}]`;
 
