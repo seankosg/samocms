@@ -18,6 +18,7 @@ import { Route as AuthenticatedNetworkRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedRawDataRouteImport } from './routes/_authenticated/raw-data'
 import { Route as AuthenticatedReportRouteImport } from './routes/_authenticated/report'
 import { Route as AuthenticatedSafetyReportRouteImport } from './routes/_authenticated/safety-report'
+import { Route as AuthenticatedSafetySettingsRouteImport } from './routes/_authenticated/safety-settings'
 import { Route as AuthenticatedScheduleRouteImport } from './routes/_authenticated/schedule'
 import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
 import { Route as AuthenticatedTodayReportRouteImport } from './routes/_authenticated/today-report'
@@ -80,6 +81,12 @@ const AuthenticatedSafetyReportRoute =
   AuthenticatedSafetyReportRouteImport.update({
     id: '/safety-report',
     path: '/safety-report',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSafetySettingsRoute =
+  AuthenticatedSafetySettingsRouteImport.update({
+    id: '/safety-settings',
+    path: '/safety-settings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedScheduleRoute = AuthenticatedScheduleRouteImport.update({
@@ -188,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/raw-data': typeof AuthenticatedRawDataRoute
   '/report': typeof AuthenticatedReportRoute
   '/safety-report': typeof AuthenticatedSafetyReportRoute
+  '/safety-settings': typeof AuthenticatedSafetySettingsRoute
   '/schedule': typeof AuthenticatedScheduleRoute
   '/today': typeof AuthenticatedTodayRoute
   '/today-report': typeof AuthenticatedTodayReportRoute
@@ -216,6 +224,7 @@ export interface FileRoutesByTo {
   '/raw-data': typeof AuthenticatedRawDataRoute
   '/report': typeof AuthenticatedReportRoute
   '/safety-report': typeof AuthenticatedSafetyReportRoute
+  '/safety-settings': typeof AuthenticatedSafetySettingsRoute
   '/schedule': typeof AuthenticatedScheduleRoute
   '/today': typeof AuthenticatedTodayRoute
   '/today-report': typeof AuthenticatedTodayReportRoute
@@ -246,6 +255,7 @@ export interface FileRoutesById {
   '/_authenticated/raw-data': typeof AuthenticatedRawDataRoute
   '/_authenticated/report': typeof AuthenticatedReportRoute
   '/_authenticated/safety-report': typeof AuthenticatedSafetyReportRoute
+  '/_authenticated/safety-settings': typeof AuthenticatedSafetySettingsRoute
   '/_authenticated/schedule': typeof AuthenticatedScheduleRoute
   '/_authenticated/today': typeof AuthenticatedTodayRoute
   '/_authenticated/today-report': typeof AuthenticatedTodayReportRoute
@@ -276,6 +286,7 @@ export interface FileRouteTypes {
     | '/raw-data'
     | '/report'
     | '/safety-report'
+    | '/safety-settings'
     | '/schedule'
     | '/today'
     | '/today-report'
@@ -304,6 +315,7 @@ export interface FileRouteTypes {
     | '/raw-data'
     | '/report'
     | '/safety-report'
+    | '/safety-settings'
     | '/schedule'
     | '/today'
     | '/today-report'
@@ -333,6 +345,7 @@ export interface FileRouteTypes {
     | '/_authenticated/raw-data'
     | '/_authenticated/report'
     | '/_authenticated/safety-report'
+    | '/_authenticated/safety-settings'
     | '/_authenticated/schedule'
     | '/_authenticated/today'
     | '/_authenticated/today-report'
@@ -426,6 +439,13 @@ declare module '@tanstack/react-router' {
       path: '/safety-report'
       fullPath: '/safety-report'
       preLoaderRoute: typeof AuthenticatedSafetyReportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/safety-settings': {
+      id: '/_authenticated/safety-settings'
+      path: '/safety-settings'
+      fullPath: '/safety-settings'
+      preLoaderRoute: typeof AuthenticatedSafetySettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/schedule': {
@@ -564,6 +584,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRawDataRoute: typeof AuthenticatedRawDataRoute
   AuthenticatedReportRoute: typeof AuthenticatedReportRoute
   AuthenticatedSafetyReportRoute: typeof AuthenticatedSafetyReportRoute
+  AuthenticatedSafetySettingsRoute: typeof AuthenticatedSafetySettingsRoute
   AuthenticatedScheduleRoute: typeof AuthenticatedScheduleRoute
   AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
   AuthenticatedTodayReportRoute: typeof AuthenticatedTodayReportRoute
@@ -587,6 +608,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRawDataRoute: AuthenticatedRawDataRoute,
   AuthenticatedReportRoute: AuthenticatedReportRoute,
   AuthenticatedSafetyReportRoute: AuthenticatedSafetyReportRoute,
+  AuthenticatedSafetySettingsRoute: AuthenticatedSafetySettingsRoute,
   AuthenticatedScheduleRoute: AuthenticatedScheduleRoute,
   AuthenticatedTodayRoute: AuthenticatedTodayRoute,
   AuthenticatedTodayReportRoute: AuthenticatedTodayReportRoute,
