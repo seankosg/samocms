@@ -112,6 +112,7 @@ function UploadPage() {
         }
       }
       await qc.invalidateQueries({ queryKey: ["project"] });
+      await qc.invalidateQueries({ queryKey: ["progress-history"] });
       if (done.length) toast.success("업로드 반영 완료", { description: done.join(" · ") });
       else toast.info("적용된 파일이 없습니다");
     } catch (e) {
