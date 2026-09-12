@@ -33,7 +33,7 @@
 - `src/lib/safety-image.server.ts` 신설: `safety-pdf.server.ts`의 그리기 로직을 페이지 단위 명령 목록으로 공용화해 PDF와 이미지가 **같은 페이지 분할**을 쓰도록 리팩터 → 페이지별 A4 SVG 생성 → `@resvg/resvg-wasm`로 1240×1754 래스터화(폰트는 버킷의 NanumGothic TTF를 `fontBuffers`로 주입) → `jpeg-js`로 JPEG(품질 85) 인코딩.
 - Worker 런타임 제약상 sharp/canvas 사용 불가. resvg는 WASM이라 Worker에서 동작하지만, 초기화 실패 시 대비로 PNG 직출력(`asPng`) 경로를 유지하고 실패해도 PDF 생성·발송은 영향받지 않도록 try/catch 분리.
 - `publishSafetyPdfs`를 `publishSafetyAssets`로 확장(PDF 2개 + 언어별 JPG N장 업로드, 이전 회차의 남는 페이지 파일 삭제, 경로·장수·준비시각 갱신).
-- `v_safety_telegram` 뷰에 `jpg_ko_urls`·`jpg_en_urls`(text[] 또는 JSON 배열)와 `jpg_ko_pages`·`jpg_en_pages` 추가, 각 주소에 `?v=<ready_at>`, anon SELECT 권한 유지.
+- `v_safety_telegram` 뷰에 `img_ko_urls`·`img_en_urls`(jsonb 배열, 페이지 순서)와 `img_ko_pages`·`img_en_pages` 추가, 각 주소에 `?v=<ready_at>`, anon SELECT 권한 유지.
 - 새 공개 라우트 `src/routes/api/public/safety-image.ts` — `day`·`lang`·`page` 검증 후 Storage 스트리밍(`image/jpeg`).
 
 ## 인수 확인
