@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { Eye, FileText, Printer } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { ProgressRiskAnalysis } from "@/components/dashboard/progress-risk-analysis";
+import { ForecastChart } from "@/components/dashboard/forecast-chart";
 import { ManpowerKpiCard } from "@/components/manpower/manpower-kpi-card";
 import { useAuth } from "@/lib/use-auth";
 import { Button } from "@/components/ui/button";
@@ -209,6 +210,10 @@ function Dashboard() {
 
       <section className="mt-6">
         <TrendCard />
+      </section>
+
+      <section className="mt-4">
+        <ForecastChart rows={rows} base={base} />
       </section>
 
 
