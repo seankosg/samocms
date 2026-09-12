@@ -28,11 +28,11 @@ const COLS: { key: SortKey | null; label: string; f: ColFilter }[] = [
   { key: "no", label: "No.", f: { kind: "text", field: "no" } },
   { key: "dept", label: "담당부서", f: { kind: "sel", field: "dept" } },
   { key: null, label: "담당자", f: { kind: "sel", field: "mgr" } },
+  { key: null, label: "Subcon", f: { kind: "sel", field: "sub" } },
   { key: "bldg", label: "Bldg.", f: { kind: "sel", field: "bldg" } },
   { key: null, label: "Room", f: { kind: "text", field: "room" } },
   { key: null, label: "Work Scope", f: { kind: "text", field: "scope" } },
   { key: null, label: "Milestone", f: { kind: "sel", field: "ms" } },
-  { key: null, label: "Subcon", f: { kind: "sel", field: "sub" } },
   { key: "act", label: "Activity", f: { kind: "text", field: "act" } },
   { key: null, label: "Unit", f: { kind: "text", field: "unit" } },
   { key: null, label: "Done / Total", f: null },
@@ -162,8 +162,8 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
   const exportRows = useCallback((): ExportRow[] => filtered.map((r) => ({
     group: r.sub ?? "",
     rec: {
-      "No.": r.no, 담당부서: r.dept, 담당자: mgrLabel(r.mgr), "Bldg.": r.bldg, Room: r.room, "Work Scope": r.scope, Milestone: r.ms,
-      Subcon: r.sub, Activity: r.act, Unit: r.unit, Done: r.done, Total: r.tot,
+      "No.": r.no, 담당부서: r.dept, 담당자: mgrLabel(r.mgr), Subcon: r.sub, "Bldg.": r.bldg, Room: r.room, "Work Scope": r.scope, Milestone: r.ms,
+      Activity: r.act, Unit: r.unit, Done: r.done, Total: r.tot,
       "계획(%)": r.pl == null ? null : r.pl * 100, "실적(%)": r.pc == null ? null : r.pc * 100,
       "당일계획(%)": dailyPlan(r, base) == null ? null : dailyPlan(r, base)! * 100,
       "당일실적(%)": dailyActual(r, prevActuals) == null ? null : dailyActual(r, prevActuals)! * 100,
@@ -256,11 +256,11 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
 
                   <td className="px-3 py-2">{SLOT_LABEL[r.dept] ?? r.dept}</td>
                   <td className={`whitespace-nowrap px-3 py-2 ${r.mgr ? "" : "text-muted-foreground"}`}>{mgrLabel(r.mgr)}</td>
+                  <td className="px-3 py-2">{cell(r.sub, "subcontractor", "text")}</td>
                   <td className="px-3 py-2">{cell(r.bldg, "building", "text")}</td>
                   <td className="px-3 py-2">{cell(r.room, "room", "text")}</td>
                   <td className="max-w-[200px] truncate px-3 py-2">{cell(r.scope, "work_scope", "text")}</td>
                   <td className="px-3 py-2">{cell(r.ms, "milestone", "text")}</td>
-                  <td className="px-3 py-2">{cell(r.sub, "subcontractor", "text")}</td>
                   <td className="max-w-[340px] px-3 py-2 font-medium">
                     <EditableCell value={r.act} editable={on} onSave={(x) => x && save({ activity: x })} />
                   </td>
