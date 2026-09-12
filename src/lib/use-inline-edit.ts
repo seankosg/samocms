@@ -10,6 +10,7 @@ export function useActivityEdit() {
     mutationFn: (v: { id: number; patch: Record<string, unknown> }) => updateActivity({ data: v }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["project"] });
+      qc.invalidateQueries({ queryKey: ["progress-history"] });
       toast.success("저장되었습니다.");
     },
     onError: (e: Error) => toast.error(e.message || "저장에 실패했습니다."),
@@ -23,6 +24,7 @@ export function useTcEdit() {
     mutationFn: (v: { id: number; patch: Record<string, unknown> }) => updateTcItem({ data: v }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["project"] });
+      qc.invalidateQueries({ queryKey: ["progress-history"] });
       toast.success("저장되었습니다.");
     },
     onError: (e: Error) => toast.error(e.message || "저장에 실패했습니다."),
