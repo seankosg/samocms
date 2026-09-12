@@ -652,24 +652,36 @@ export type Database = {
           day: string
           generated_at: string
           generated_at_en: string | null
+          pdf_en_path: string | null
+          pdf_ko_path: string | null
           risks: Json
           risks_en: Json | null
+          telegram_ready_at: string | null
+          telegram_send_seq: number
         }
         Insert: {
           created_by?: string | null
           day: string
           generated_at?: string
           generated_at_en?: string | null
+          pdf_en_path?: string | null
+          pdf_ko_path?: string | null
           risks?: Json
           risks_en?: Json | null
+          telegram_ready_at?: string | null
+          telegram_send_seq?: number
         }
         Update: {
           created_by?: string | null
           day?: string
           generated_at?: string
           generated_at_en?: string | null
+          pdf_en_path?: string | null
+          pdf_ko_path?: string | null
           risks?: Json
           risks_en?: Json | null
+          telegram_ready_at?: string | null
+          telegram_send_seq?: number
         }
         Relationships: []
       }
@@ -1097,6 +1109,18 @@ export type Database = {
           staff: number | null
           total: number | null
           worker: number | null
+        }
+        Relationships: []
+      }
+      v_safety_telegram: {
+        Row: {
+          cover_en: string | null
+          cover_ko: string | null
+          day: string | null
+          pdf_en_url: string | null
+          pdf_ko_url: string | null
+          ready_at: string | null
+          send_seq: number | null
         }
         Relationships: []
       }
