@@ -230,12 +230,13 @@ function ManpowerPage() {
           <caption className="sr-only">협력사별 출면 집계</caption>
           <thead>
             <tr className="bg-primary/10 [&>th]:border-b-2 [&>th]:border-primary/30 [&>th]:px-3 [&>th]:py-2.5 [&>th]:text-right [&>th]:text-[11px] [&>th]:font-bold [&>th]:uppercase [&>th]:tracking-wide [&>th]:text-primary [&>th:first-child]:text-left">
-              <th scope="col">{MP.company}</th>
+              <th scope="col" className="w-[90px] min-w-[90px]">{MP.company}</th>
+              <th scope="col">{MP.total}</th>
               <th scope="col" className="text-sky-700 dark:text-sky-300">{MP.day}</th>
               <th scope="col" className="text-amber-700 dark:text-amber-300">{MP.ot}</th>
               <th scope="col" className="text-indigo-700 dark:text-indigo-300">{MP.night}</th>
               {TRADES.map((t) => <th key={t} scope="col">{TRADE_LABEL[t]}</th>)}
-              <th scope="col">{MP.total}</th><th scope="col" className="!text-left">{MP.firstSubmit}</th>
+              <th scope="col" className="!text-left">{MP.firstSubmit}</th>
             </tr>
           </thead>
           <tbody>
