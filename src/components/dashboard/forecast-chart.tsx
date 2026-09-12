@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useProgressForecast } from "@/lib/use-project";
 import { KPI_SLOTS, planAt, pct1, SLOT_LABEL, type Row } from "@/lib/schedule-model";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const DAY = 864e5;
 const toTs = (d: string) => Date.parse(d);
@@ -40,19 +42,42 @@ function planCurveOf(rows: Row[], dates: string[]): Map<string, number> {
 
 export function ForecastChart({ rows, base }: { rows: Row[]; base: string }) {
   const { data, isLoading } = useProgressForecast();
+  const [mode, setMode] = useState<"discipline" | "milestone">("discipline");
   const [tab, setTab] = useState<string>("ALL");
+  const [milestone, setMilestone] = useState<string>("ALL");
+  const [milestoneDisc, setMilestoneDisc] = useState<string>("ALL");
   const [hover, setHover] = useState<number | null>(null);
+
+  const eligibleRows = useMemo(() => rows.filter((r) => r.mgr !== "HM"), [rows]);
+  const milestones = useMemo(() => {
+    const values = new Set(eligibleRows.map((r) => r.ms ?? "미지정"));
+    return [...values].sort((a, b) => {
+      const an = /^M(\d+)$/.exec(a), bn = /^M(\d+)$/.exec(b);
+      if (an && bn) return Number(an[1]) - Number(bn[1]);
+      if (an) return -1;
+      if (bn) return 1;
+      return a.localeCompare(b, "ko");
+    });
+  }, [eligibleRows]);
+  const milestoneDiscs = useMemo(() => {
+    const scoped = milestone === "ALL" ? eligibleRows : eligibleRows.filter((r) => (r.ms ?? "미지정") === milestone);
+    return KPI_SLOTS.filter((disc) => scoped.some((r) => r.slot === disc));
+  }, [eligibleRows, milestone]);
 
   const model = useMemo(() => {
     const series = data?.series ?? [];
     if (series.length === 0) return null;
-    const baseRows = rows.filter((r) => r.mgr !== "HM"); // 발주처(현대자동차) 담당 항목 제외
-    const sel = tab === "ALL" ? baseRows : baseRows.filter((r) => r.slot === tab);
+    const baseRows = eligibleRows; // 발주처(현대자동차) 담당 항목 제외
+    const sel = mode === "discipline"
+      ? (tab === "ALL" ? baseRows : baseRows.filter((r) => r.slot === tab))
+      : baseRows.filter((r) => (milestone === "ALL" || (r.ms ?? "미지정") === milestone) && (milestoneDisc === "ALL" || r.slot === milestoneDisc));
 
     // 기록 이력 (선택 공종, 전체는 가중평균)
     const byDate = new Map<string, { p: number; a: number; n: number }>();
     for (const s of series) {
-      if (tab !== "ALL" && s.disc !== tab) continue;
+      if (mode === "discipline" && tab !== "ALL" && s.disc !== tab) continue;
+      if (mode === "milestone" && milestone !== "ALL" && s.ms !== milestone) continue;
+      if (mode === "milestone" && milestoneDisc !== "ALL" && s.disc !== milestoneDisc) continue;
       const cur = byDate.get(s.date) ?? { p: 0, a: 0, n: 0 };
       cur.p += s.planned * s.count; cur.a += s.actual * s.count; cur.n += s.count;
       byDate.set(s.date, cur);
@@ -102,22 +127,27 @@ export function ForecastChart({ rows, base }: { rows: Row[]; base: string }) {
 
     const diffDays = forecastEnd ? Math.round((toTs(forecastEnd) - toTs(planDoneDate)) / DAY) : null;
     return { hist, days, planCurve, forecastCurve, slope, planDoneDate, hmPlanDoneDate, forecastEnd, diffDays, lastDate, lastActual, itemCount: sel.length };
-  }, [data, rows, tab]);
+  }, [data, eligibleRows, milestone, milestoneDisc, mode, rows, tab]);
 
   // 공종별 요약 표 데이터
   const summary = useMemo(() => {
     const series = data?.series ?? [];
-    return (["ALL", ...KPI_SLOTS] as string[]).map((disc) => {
+    const summaryDiscs = mode === "milestone" ? (["ALL", ...milestoneDiscs] as string[]) : (["ALL", ...KPI_SLOTS] as string[]);
+    return summaryDiscs.map((disc) => {
       const byDate = new Map<string, { a: number; n: number }>();
       for (const s of series) {
         if (disc !== "ALL" && s.disc !== disc) continue;
+        if (mode === "milestone" && milestone !== "ALL" && s.ms !== milestone) continue;
         const cur = byDate.get(s.date) ?? { a: 0, n: 0 };
         cur.a += s.actual * s.count; cur.n += s.count;
         byDate.set(s.date, cur);
       }
       const hist: Hist[] = [...byDate.entries()].sort((x, y) => x[0].localeCompare(y[0]))
         .map(([date, v]) => ({ date, planned: 0, actual: v.a / v.n }));
-      const sel = disc === "ALL" ? rows : rows.filter((r) => r.slot === disc);
+      const scopedRows = mode === "milestone"
+        ? eligibleRows.filter((r) => milestone === "ALL" || (r.ms ?? "미지정") === milestone)
+        : eligibleRows;
+      const sel = disc === "ALL" ? scopedRows : scopedRows.filter((r) => r.slot === disc);
       if (hist.length === 0 || sel.length === 0) return { disc, slope: null, forecastEnd: null, diffDays: null, planDone: null as string | null, actual: null as number | null };
       const last = hist[hist.length - 1]!;
       const slope = slopeOf(hist);
@@ -133,7 +163,7 @@ export function ForecastChart({ rows, base }: { rows: Row[]; base: string }) {
       const diffDays = forecastEnd ? Math.round((toTs(forecastEnd) - toTs(planDone)) / DAY) : null;
       return { disc, slope, forecastEnd, diffDays, planDone, actual: last.actual };
     });
-  }, [data, rows]);
+  }, [data, eligibleRows, milestone, milestoneDiscs, mode]);
 
   const W = 960, H = 260;
   const padL = 40, padR = 14, padT = 26, padB = 26;
@@ -170,20 +200,40 @@ export function ForecastChart({ rows, base }: { rows: Row[]; base: string }) {
 
   return (
     <div className="min-w-0 rounded-md border border-border bg-card p-4 shadow-sm">
+      <div className="mb-3 border-b border-border">
+        <Tabs value={mode} onValueChange={(value) => { setMode(value as "discipline" | "milestone"); setHover(null); }}>
+          <TabsList className="h-10 rounded-none bg-transparent p-0">
+            <TabsTrigger value="discipline" className="h-10 rounded-none border-b-2 border-transparent px-4 data-[state=active]:border-primary data-[state=active]:bg-transparent">공종별 예측</TabsTrigger>
+            <TabsTrigger value="milestone" className="h-10 rounded-none border-b-2 border-transparent px-4 data-[state=active]:border-primary data-[state=active]:bg-transparent">마일스톤별 예측</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
       <div className="mb-2 flex flex-wrap items-center gap-2">
-        <p className="text-xs font-bold text-muted-foreground">공종별 진행도 예측 (스냅샷 기록 기반)</p>
+        <p className="text-xs font-bold text-muted-foreground">{mode === "discipline" ? "공종별 진행도 예측" : "마일스톤별 진행도 예측"} (스냅샷 기록 기반)</p>
         <div className="ml-auto flex flex-wrap gap-1">
-          {(["ALL", ...KPI_SLOTS] as string[]).map((d) => (
-            <button
-              key={d}
-              onClick={() => { setTab(d); setHover(null); }}
-              className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold transition-colors ${tab === d ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground hover:bg-muted"}`}
-            >
-              {d === "ALL" ? "전체" : (SLOT_LABEL[d] ?? d)}
-            </button>
-          ))}
+          {(mode === "discipline" ? (["ALL", ...KPI_SLOTS] as string[]) : (["ALL", ...milestones] as string[])).map((d) => {
+            const active = mode === "discipline" ? tab === d : milestone === d;
+            return (
+              <Button key={d} type="button" size="sm" variant={active ? "default" : "outline"} className="h-7 rounded-full px-2.5 text-[11px]"
+                onClick={() => { if (mode === "discipline") setTab(d); else { setMilestone(d); setMilestoneDisc("ALL"); } setHover(null); }}>
+                {d === "ALL" ? "전체" : (mode === "discipline" ? (SLOT_LABEL[d] ?? d) : d)}
+              </Button>
+            );
+          })}
         </div>
       </div>
+
+      {mode === "milestone" && (
+        <div className="mb-3 flex flex-wrap items-center gap-1 border-b border-border/60 pb-2">
+          <span className="mr-1 text-[11px] font-semibold text-muted-foreground">공종</span>
+          {(["ALL", ...milestoneDiscs] as string[]).map((disc) => (
+            <Button key={disc} type="button" size="sm" variant={milestoneDisc === disc ? "secondary" : "ghost"} className="h-7 px-2.5 text-[11px]"
+              onClick={() => { setMilestoneDisc(disc); setHover(null); }}>
+              {disc === "ALL" ? "전체 공종" : (SLOT_LABEL[disc] ?? disc)}
+            </Button>
+          ))}
+        </div>
+      )}
 
       {isLoading ? (
         <p className="text-xs text-muted-foreground">불러오는 중…</p>
@@ -340,7 +390,7 @@ export function ForecastChart({ rows, base }: { rows: Row[]; base: string }) {
             </svg>
           </div>
 
-          {/* 공종별 요약 표 */}
+          {/* 선택 범위의 공종별 요약 표 */}
           <table className="mt-3 w-full text-left text-xs">
             <thead className="border-b text-muted-foreground">
               <tr>
@@ -354,13 +404,15 @@ export function ForecastChart({ rows, base }: { rows: Row[]; base: string }) {
             </thead>
             <tbody>
               {summary.map((s) => (
-                <tr key={s.disc} className={`border-b border-border/60 ${s.disc === tab ? "bg-muted/50" : ""}`}>
+                <tr key={s.disc} className={`border-b border-border/60 ${(mode === "discipline" ? s.disc === tab : s.disc === milestoneDisc) ? "bg-muted/50" : ""}`}>
                   <td className="py-1.5 font-semibold">
-                    {s.disc === "ALL" ? "전체" : (
-                      <Link to="/schedule" search={{ slot: s.disc } as never} className="cursor-pointer rounded underline-offset-2 hover:text-primary hover:underline">
-                        {SLOT_LABEL[s.disc] ?? s.disc}
-                      </Link>
-                    )}
+                    <Link
+                      to="/schedule"
+                      search={{ ...(s.disc !== "ALL" ? { slot: s.disc } : {}), ...(mode === "milestone" && milestone !== "ALL" ? { ms: milestone } : {}) } as never}
+                      className="cursor-pointer rounded underline-offset-2 hover:text-primary hover:underline"
+                    >
+                      {s.disc === "ALL" ? (mode === "milestone" ? "전체 공종" : "전체") : (SLOT_LABEL[s.disc] ?? s.disc)}
+                    </Link>
                   </td>
                   <td className="text-right">{s.actual == null ? "—" : `${pct1(s.actual)}%`}</td>
                   <td className="text-right">{s.slope == null ? "—" : `${(s.slope * 100).toFixed(1)}%p/일`}</td>
