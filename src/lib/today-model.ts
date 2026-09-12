@@ -1,6 +1,7 @@
 import type { Row } from "./schedule-model";
 import { flat } from "./schedule-model";
 import { TC_STAGES, type TcItem, type TcStage, stageDone } from "./tc-model";
+import { SLOT_LABEL_EN, activityLabel, type Lang } from "./today-i18n";
 
 /** 사우디아라비아 제다 현지(UTC+3) 기준 오늘 날짜 yyyy-mm-dd */
 export const jeddahToday = (d: Date = new Date()) =>
@@ -71,15 +72,20 @@ export function byBldg(items: { bldg: string | null }[] | { item: { bldg: string
   });
   return [...map.entries()].sort((a, b) => b[1] - a[1]).map(([label, v]) => ({ label, v }));
 }
-export function safetyFacts(groups: Record<TodayGroupKey, Row[]>, tc: TodayTc[], today: string) {
+export function safetyFacts(groups: Record<TodayGroupKey, Row[]>, tc: TodayTc[], today: string, lang: Lang = "ko") {
+  const en = lang === "en";
+  const groupLabel: Record<TodayGroupKey, string> = en
+    ? { start: "Commencing Today", ongoing: "Ongoing Today", finish: "Completing Today" }
+    : Object.fromEntries(TODAY_GROUPS.map((g) => [g.key, g.label])) as Record<TodayGroupKey, string>;
+  const team = (value: string) => en ? SLOT_LABEL_EN[value] ?? value : value;
   const line = (r: Row, tag: string) =>
-    `${tag}|${r.dept}|${flat(r.bldg) || "-"}|${flat(r.room) || "-"}|${r.act}|협력사:${flat(r.sub) || "-"}|수량:${r.done ?? "-"}/${r.tot ?? "-"}${r.unit ? r.unit : ""}|실적:${r.pc == null ? "-" : Math.round(r.pc * 100) + "%"}`;
-  const parts: string[] = [`기준 날짜: ${today}`, "", "[공정 작업]"];
-  TODAY_GROUPS.forEach((g) => groups[g.key].slice(0, 120).forEach((r) => parts.push(line(r, g.label))));
-  parts.push("", "[T&C 시운전 계획]");
+    `${tag}|${team(r.dept)}|${flat(r.bldg) || "-"}|${flat(r.room) || "-"}|${activityLabel(r.act, lang)}|${en ? "Subcontractor" : "협력사"}:${flat(r.sub) || "-"}|${en ? "Quantity" : "수량"}:${r.done ?? "-"}/${r.tot ?? "-"}${r.unit ? r.unit : ""}|${en ? "Actual" : "실적"}:${r.pc == null ? "-" : Math.round(r.pc * 100) + "%"}`;
+  const parts: string[] = [`${en ? "Reference date" : "기준 날짜"}: ${today}`, "", [en ? "Construction Activities" : "공정 작업"]`[${en ? "Construction Activities" : "공정 작업"}]`];
+  TODAY_GROUPS.forEach((g) => groups[g.key].slice(0, 120).forEach((r) => parts.push(line(r, groupLabel[g.key]))));
+  parts.push("", `[${en ? "T&C Schedule" : "T&C 시운전 계획"}]`);
   tc.slice(0, 120).forEach((t) =>
     parts.push(
-      `${t.stage}|${t.item.discipline}|${flat(t.item.bldg) || "-"}|${flat(t.item.item) || "-"}|${flat(t.item.equip) || "-"}|수량:${t.item.qty}|공급사:${flat(t.item.supplier) || "-"}|${t.done ? "완료" : "미완료"}`,
+      `${t.stage}|${team(t.item.discipline)}|${flat(t.item.bldg) || "-"}|${flat(t.item.item) || "-"}|${flat(t.item.equip) || "-"}|${en ? "Quantity" : "수량"}:${t.item.qty}|${en ? "Supplier" : "공급사"}:${flat(t.item.supplier) || "-"}|${t.done ? (en ? "Completed" : "완료") : (en ? "Open" : "미완료")}`,
     ),
   );
   return parts.join("\n").slice(0, 11500);
