@@ -46,7 +46,8 @@ export function ForecastChart({ rows, base }: { rows: Row[]; base: string }) {
   const model = useMemo(() => {
     const series = data?.series ?? [];
     if (series.length === 0) return null;
-    const sel = tab === "ALL" ? rows : rows.filter((r) => r.slot === tab);
+    const baseRows = rows.filter((r) => r.mgr !== "HM"); // 발주처(현대자동차) 담당 항목 제외
+    const sel = tab === "ALL" ? baseRows : baseRows.filter((r) => r.slot === tab);
 
     // 기록 이력 (선택 공종, 전체는 가중평균)
     const byDate = new Map<string, { p: number; a: number; n: number }>();

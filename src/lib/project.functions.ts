@@ -312,12 +312,12 @@ export const getProgressForecast = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const c = context.supabase;
-    type R = { snapshot_date: string; discipline: string; planned_progress: number | null; actual_progress: number | null };
+    type R = { snapshot_date: string; discipline: string; planned_progress: number | null; actual_progress: number | null; manager: string | null };
     const rows: R[] = [];
     for (let from = 0; ; from += 1000) {
       const { data: page, error } = await c
         .from("activity_snapshots")
-        .select("snapshot_date,discipline,planned_progress,actual_progress")
+        .select("snapshot_date,discipline,planned_progress,actual_progress,manager")
         .order("snapshot_date")
         .range(from, from + 999);
       if (error) throw new Error(error.message);
@@ -326,6 +326,7 @@ export const getProgressForecast = createServerFn({ method: "GET" })
     }
     const agg = new Map<string, { p: number; a: number; n: number }>();
     for (const r of rows) {
+      if (r.manager === "HM") continue; // 발주처(현대자동차) 담당 항목은 예측 대상에서 제외
       const key = `${r.discipline}|${r.snapshot_date}`;
       const cur = agg.get(key) ?? { p: 0, a: 0, n: 0 };
       cur.p += Number(r.planned_progress ?? 0);
