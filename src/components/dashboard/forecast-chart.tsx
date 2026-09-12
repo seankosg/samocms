@@ -46,12 +46,17 @@ function planCurveOf(rows: Row[], dates: string[]): Map<string, number> {
   return m;
 }
 
-export function ForecastChart({ rows, base }: { rows: Row[]; base: string }) {
+type Mode = "discipline" | "milestone" | "tc";
+
+export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: TcItem[]; base: string }) {
   const { data, isLoading } = useProgressForecast();
-  const [mode, setMode] = useState<"discipline" | "milestone">("discipline");
+  const [mode, setMode] = useState<Mode>("discipline");
   const [tab, setTab] = useState<string>("ALL");
   const [milestone, setMilestone] = useState<string>("ALL");
   const [milestoneDisc, setMilestoneDisc] = useState<string>("ALL");
+  const [tcStage, setTcStage] = useState<TcForecastStage | "ALL">("ALL");
+  const [tcTeam, setTcTeam] = useState<"ALL" | "Mech" | "Elec">("ALL");
+  const [tcBldg, setTcBldg] = useState<string>("ALL");
   const [hover, setHover] = useState<number | null>(null);
 
   const eligibleRows = useMemo(() => rows.filter((r) => r.mgr !== "HM"), [rows]);
