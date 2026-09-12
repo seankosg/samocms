@@ -31,12 +31,21 @@ export const Route = createFileRoute("/_authenticated/safety-settings")({
 });
 
 function SafetySettingsPage() {
-  return (
-    <AdminGate title="안전리포트 설정">
-      <AppShell title="안전리포트 설정" desc="매일 자동 생성되는 안전 리포트의 발송 조건과 본문, 결과 수신자를 관리합니다.">
-        <Inner />
+  const { canSafetySettings } = useAuth();
+  if (!canSafetySettings) {
+    return (
+      <AppShell title="안전리포트 설정">
+        <div className="flex flex-col items-center justify-center gap-2 py-24 text-center">
+          <p className="text-lg font-semibold">접근 권한이 없습니다</p>
+          <p className="text-sm text-muted-foreground">안전리포트 설정은 관리자 또는 안전관리팀 팀장만 사용할 수 있습니다.</p>
+        </div>
       </AppShell>
-    </AdminGate>
+    );
+  }
+  return (
+    <AppShell title="안전리포트 설정" desc="매일 자동 생성되는 안전 리포트의 발송 조건과 본문, 결과 수신자를 관리합니다.">
+      <Inner />
+    </AppShell>
   );
 }
 

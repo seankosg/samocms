@@ -5,10 +5,16 @@ import { SAFETY_KEYS, hmTime, normalizeTimes, type SafetySendLog } from "./safet
 
 type Ctx = { supabase: any; userId: string };
 
+/** 안전리포트 설정 접근: 관리자 또는 안전관리팀 팀장 */
 async function assertAdmin(context: Ctx) {
-  const { data, error } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+  const { data: isAdmin, error } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
   if (error) throw new Error(error.message);
-  if (!data) throw new Error("관리자만 사용할 수 있습니다.");
+  if (isAdmin) return;
+  const { data: p, error: pErr } = await context.supabase
+    .from("profiles").select("team, position").eq("id", context.userId).maybeSingle();
+  if (pErr) throw new Error(pErr.message);
+  if (p?.team === "안전관리팀" && String(p?.position ?? "").includes("팀장")) return;
+  throw new Error("관리자 또는 안전관리팀 팀장만 사용할 수 있습니다.");
 }
 
 /** 안전리포트 설정 화면 데이터 (관리자) */

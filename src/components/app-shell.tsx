@@ -77,6 +77,11 @@ const ADMIN_NAV = [
   ] },
 ] as const;
 
+/** 안전관리팀 팀장 등 Admin 아닌 설정 담당자용 메뉴 */
+const SAFETY_NAV = [
+  { group: "관리", items: [{ to: "/safety-settings", label: "안전리포트 설정", icon: ShieldAlert }] },
+] as const;
+
 export function AppShell({ title, desc, actions, children }: { title: string; desc?: string; actions?: ReactNode; children: ReactNode }) {
   const [open, setOpen] = useState(true);
   useEffect(() => { if (window.innerWidth < 1024) setOpen(false); }, []);
