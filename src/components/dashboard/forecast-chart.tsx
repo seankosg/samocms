@@ -243,18 +243,23 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
         </Tabs>
       </div>
       <div className="mb-2 flex flex-wrap items-center gap-2">
-        <p className="text-xs font-bold text-muted-foreground">{mode === "discipline" ? "공종별 진행도 예측" : "마일스톤별 진행도 예측"} (스냅샷 기록 기반)</p>
-        <div className="ml-auto flex flex-wrap gap-1">
-          {(mode === "discipline" ? (["ALL", ...KPI_SLOTS] as string[]) : (["ALL", ...milestones] as string[])).map((d) => {
-            const active = mode === "discipline" ? tab === d : milestone === d;
-            return (
-              <Button key={d} type="button" size="sm" variant={active ? "default" : "outline"} className="h-7 rounded-full px-2.5 text-[11px]"
-                onClick={() => { if (mode === "discipline") setTab(d); else { setMilestone(d); setMilestoneDisc("ALL"); } setHover(null); }}>
-                {d === "ALL" ? "전체" : (mode === "discipline" ? (SLOT_LABEL[d] ?? d) : d)}
-              </Button>
-            );
-          })}
-        </div>
+        <p className="text-xs font-bold text-muted-foreground">
+          {mode === "discipline" ? "공종별 진행도 예측" : mode === "milestone" ? "마일스톤별 진행도 예측" : "T&C 진행도 예측"}
+          {mode === "tc" ? " (단계별 계획/실적일 기반)" : " (스냅샷 기록 기반)"}
+        </p>
+        {mode !== "tc" && (
+          <div className="ml-auto flex flex-wrap gap-1">
+            {(mode === "discipline" ? (["ALL", ...KPI_SLOTS] as string[]) : (["ALL", ...milestones] as string[])).map((d) => {
+              const active = mode === "discipline" ? tab === d : milestone === d;
+              return (
+                <Button key={d} type="button" size="sm" variant={active ? "default" : "outline"} className="h-7 rounded-full px-2.5 text-[11px]"
+                  onClick={() => { if (mode === "discipline") setTab(d); else { setMilestone(d); setMilestoneDisc("ALL"); } setHover(null); }}>
+                  {d === "ALL" ? "전체" : (mode === "discipline" ? (SLOT_LABEL[d] ?? d) : d)}
+                </Button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {mode === "milestone" && (
@@ -267,6 +272,36 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
             </Button>
           ))}
         </div>
+      )}
+
+      {mode === "tc" && (
+        <>
+          <div className="mb-2 flex flex-wrap items-center gap-1 border-b border-border/60 pb-2">
+            <span className="mr-1 text-[11px] font-semibold text-muted-foreground">단계</span>
+            {(["ALL", ...TC_FORECAST_STAGES] as const).map((st) => (
+              <Button key={st} type="button" size="sm" variant={tcStage === st ? "default" : "outline"} className="h-7 rounded-full px-2.5 text-[11px]"
+                onClick={() => { setTcStage(st); setTcBldg("ALL"); setHover(null); }}>
+                {st === "ALL" ? "전체(4단계 합산)" : TC_F_STAGE_LABEL[st]}
+              </Button>
+            ))}
+          </div>
+          <div className="mb-3 flex flex-wrap items-center gap-1 border-b border-border/60 pb-2">
+            <span className="mr-1 text-[11px] font-semibold text-muted-foreground">팀</span>
+            {(["ALL", "Mech", "Elec"] as const).map((tm) => (
+              <Button key={tm} type="button" size="sm" variant={tcTeam === tm ? "secondary" : "ghost"} className="h-7 px-2.5 text-[11px]"
+                onClick={() => { setTcTeam(tm); setTcBldg("ALL"); setHover(null); }}>
+                {tm === "ALL" ? "전체 팀" : tm === "Mech" ? "MECH" : "ELEC"}
+              </Button>
+            ))}
+            <span className="mx-2 text-[11px] font-semibold text-muted-foreground">건물</span>
+            <Button type="button" size="sm" variant={tcBldg === "ALL" ? "secondary" : "ghost"} className="h-7 px-2.5 text-[11px]"
+              onClick={() => { setTcBldg("ALL"); setHover(null); }}>전체 건물</Button>
+            {tcBuildings.map((b) => (
+              <Button key={b} type="button" size="sm" variant={tcBldg === b ? "secondary" : "ghost"} className="h-7 px-2.5 text-[11px]"
+                onClick={() => { setTcBldg(b); setHover(null); }}>{b}</Button>
+            ))}
+          </div>
+        </>
       )}
 
       {isLoading ? (
