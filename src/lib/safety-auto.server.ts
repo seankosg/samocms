@@ -31,7 +31,7 @@ export async function generateTodaySafetyReports(): Promise<{
 
   const { data: exist, error: exErr } = await supabaseAdmin
     .from("safety_reports")
-    .select("day, risks, generated_at, risks_en, generated_at_en")
+    .select("day, risks, generated_at, risks_en, generated_at_en, telegram_ready_at")
     .eq("day", day)
     .maybeSingle();
   if (exErr) throw new Error(exErr.message);
