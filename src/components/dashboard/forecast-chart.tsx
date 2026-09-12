@@ -153,6 +153,17 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
 
   // 공종별 요약 표 데이터
   const summary = useMemo(() => {
+    if (mode === "tc") {
+      const rows = buildTcForecastSummary(tcItems, { stage: tcStage, team: tcTeam, base });
+      return rows.map((r) => ({
+        disc: r.key,
+        slope: r.slope,
+        forecastEnd: r.forecastEnd,
+        diffDays: r.diffDays,
+        planDone: r.planDone,
+        actual: r.actual,
+      }));
+    }
     const series = data?.series ?? [];
     const summaryDiscs = mode === "milestone" ? (["ALL", ...milestoneDiscs] as string[]) : (["ALL", ...KPI_SLOTS] as string[]);
     return summaryDiscs.map((disc) => {
@@ -185,7 +196,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
       const diffDays = forecastEnd ? Math.round((toTs(forecastEnd) - toTs(planDone)) / DAY) : null;
       return { disc, slope, forecastEnd, diffDays, planDone, actual: last.actual };
     });
-  }, [data, eligibleRows, milestone, milestoneDiscs, mode]);
+  }, [data, eligibleRows, milestone, milestoneDiscs, mode, tcItems, tcStage, tcTeam, base]);
 
   const W = 960, H = 260;
   const padL = 40, padR = 14, padT = 26, padB = 26;
