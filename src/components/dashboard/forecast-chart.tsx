@@ -264,6 +264,14 @@ export function ForecastChart({ rows, base }: { rows: Row[]; base: string }) {
                 <text x={xi(model.planDoneDate)} y={H - padB + 12} textAnchor="middle" fontSize={9} fill="var(--muted-foreground)">계획완료 {fmtD(model.planDoneDate)}</text>
               </g>
 
+              {/* 발주처(HM) 계획완료일 마커 — 집계 제외, 참조용 세로선 */}
+              {model.hmPlanDoneDate && toTs(model.hmPlanDoneDate) >= toTs(model.days[0]!) && toTs(model.hmPlanDoneDate) <= toTs(model.days[model.days.length - 1]!) && (
+                <g>
+                  <line x1={xi(model.hmPlanDoneDate)} x2={xi(model.hmPlanDoneDate)} y1={padT} y2={H - padB} stroke="var(--chart-3)" strokeWidth={1.2} strokeDasharray="3 3" />
+                  <text x={xi(model.hmPlanDoneDate)} y={H - padB + 24} textAnchor="middle" fontSize={9} fill="var(--chart-3)">발주처 계획완료 {fmtD(model.hmPlanDoneDate)}</text>
+                </g>
+              )}
+
               {/* 예측 완료일 마커 */}
               {model.forecastEnd && model.forecastEnd !== model.planDoneDate && (
                 <g>
