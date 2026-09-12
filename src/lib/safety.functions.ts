@@ -68,84 +68,104 @@ export const analyzeSafety = createServerFn({ method: "POST" })
     const lang: SafetyLang = data.lang ?? "ko";
     const c = col(lang);
 
+    let existing: Record<string, unknown> | null = null;
     if (!data.force) {
       const { data: exist } = await supabaseAdmin
         .from("safety_reports")
         .select("day, risks, generated_at, risks_en, generated_at_en")
         .eq("day", data.day)
         .maybeSingle();
-      const row = exist as Record<string, unknown> | null;
-      if (row && row[c.risks]) {
-        return { day: data.day, lang, risks: (row[c.risks] as unknown as SafetyRisk[]) ?? [], generatedAt: (row[c.at] as string | null) ?? null };
+      existing = exist as Record<string, unknown> | null;
+      if (existing && existing[c.risks]) {
+        return { day: data.day, lang, risks: (existing[c.risks] as unknown as SafetyRisk[]) ?? [], generatedAt: (existing[c.at] as string | null) ?? null };
       }
     }
 
     const key = process.env["LOVABLE_API_KEY"];
     if (!key) throw new Error("AI 키가 설정되어 있지 않습니다.");
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "fetch" },
-      body: JSON.stringify({
-        model: "google/gemini-3.8-flash",
-        messages: [
-          { role: "system", content: lang === "en" ? SYSTEM_EN : SYSTEM_KO },
-          {
-            role: "user",
-            content:
-              lang === "en"
-                ? `Today's activity list (respond in JSON):\n${data.facts}`
-                : `당일 작업 목록 (json 형식으로 응답):\n${data.facts}`,
-          },
-        ],
-        response_format: { type: "json_object" },
-      }),
-    });
+    /** 지정 언어로 AI 분석 1회 실행 후 저장 */
+    const generate = async (target: SafetyLang): Promise<{ risks: SafetyRisk[]; generatedAt: string }> => {
+      const tc = col(target);
+      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "fetch" },
+        body: JSON.stringify({
+          model: "google/gemini-3.8-flash",
+          messages: [
+            { role: "system", content: target === "en" ? SYSTEM_EN : SYSTEM_KO },
+            {
+              role: "user",
+              content:
+                target === "en"
+                  ? `Today's activity list (respond in JSON):\n${data.facts}`
+                  : `당일 작업 목록 (json 형식으로 응답):\n${data.facts}`,
+            },
+          ],
+          response_format: { type: "json_object" },
+        }),
+      });
 
-    if (!res.ok) {
-      const msg = await res.text().catch(() => "");
-      if (res.status === 429) throw new Error("AI 요청이 일시적으로 많습니다. 잠시 후 다시 시도해 주세요.");
-      if (res.status === 402) throw new Error("AI 사용 크레딧이 부족합니다. 워크스페이스 크레딧을 충전해 주세요.");
-      if (res.status === 403) throw new Error("AI 사용이 워크스페이스 정책으로 차단되어 있습니다.");
-      throw new Error(`AI 안전 분석 실패 (${res.status}) ${msg.slice(0, 200)}`);
-    }
-
-    const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-    const text = json.choices?.[0]?.message?.content?.trim() ?? "";
-    if (!text) throw new Error("AI 분석 결과가 비어 있습니다.");
-
-    let risks: SafetyRisk[] = [];
-    try {
-      const parsed = JSON.parse(text.replace(/^```(?:json)?|```$/g, "").trim()) as { risks?: unknown };
-      if (Array.isArray(parsed.risks)) {
-        risks = (parsed.risks as Record<string, unknown>[])
-          .map((r) => ({
-            level: String(r["level"]) === "High" ? ("High" as const) : ("Medium" as const),
-            title: String(r["title"] ?? "-"),
-            bldg: String(r["bldg"] ?? "-"),
-            sub: String(r["sub"] ?? "-"),
-            hazard: toList(r["hazard"]),
-            action: toList(r["action"]),
-            hazardDetail: String(r["hazardDetail"] ?? ""),
-            actionDetail: String(r["actionDetail"] ?? ""),
-            hazardType: Array.isArray(r["hazardType"]) ? (r["hazardType"] as unknown[]).map(String).filter(Boolean).slice(0, 3) : [],
-          }))
-          .filter((r) => r.title && r.title !== "-")
-          .slice(0, 12);
+      if (!res.ok) {
+        const msg = await res.text().catch(() => "");
+        if (res.status === 429) throw new Error("AI 요청이 일시적으로 많습니다. 잠시 후 다시 시도해 주세요.");
+        if (res.status === 402) throw new Error("AI 사용 크레딧이 부족합니다. 워크스페이스 크레딧을 충전해 주세요.");
+        if (res.status === 403) throw new Error("AI 사용이 워크스페이스 정책으로 차단되어 있습니다.");
+        throw new Error(`AI 안전 분석 실패 (${res.status}) ${msg.slice(0, 200)}`);
       }
-    } catch {
-      throw new Error("AI 분석 결과를 해석하지 못했습니다. 다시 시도해 주세요.");
+
+      const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+      const text = json.choices?.[0]?.message?.content?.trim() ?? "";
+      if (!text) throw new Error("AI 분석 결과가 비어 있습니다.");
+
+      let risks: SafetyRisk[] = [];
+      try {
+        const parsed = JSON.parse(text.replace(/^```(?:json)?|```$/g, "").trim()) as { risks?: unknown };
+        if (Array.isArray(parsed.risks)) {
+          risks = (parsed.risks as Record<string, unknown>[])
+            .map((r) => ({
+              level: String(r["level"]) === "High" ? ("High" as const) : ("Medium" as const),
+              title: String(r["title"] ?? "-"),
+              bldg: String(r["bldg"] ?? "-"),
+              sub: String(r["sub"] ?? "-"),
+              hazard: toList(r["hazard"]),
+              action: toList(r["action"]),
+              hazardDetail: String(r["hazardDetail"] ?? ""),
+              actionDetail: String(r["actionDetail"] ?? ""),
+              hazardType: Array.isArray(r["hazardType"]) ? (r["hazardType"] as unknown[]).map(String).filter(Boolean).slice(0, 3) : [],
+            }))
+            .filter((r) => r.title && r.title !== "-")
+            .slice(0, 12);
+        }
+      } catch {
+        throw new Error("AI 분석 결과를 해석하지 못했습니다. 다시 시도해 주세요.");
+      }
+
+      const generatedAt = new Date().toISOString();
+      await supabaseAdmin
+        .from("safety_reports")
+        .upsert(
+          { day: data.day, [tc.risks]: risks, [tc.at]: generatedAt, created_by: context.userId } as never,
+          { onConflict: "day" },
+        );
+      return { risks, generatedAt };
+    };
+
+    const out = await generate(lang);
+
+    // 다른 언어 결과가 없으면 함께 생성 (실패해도 요청 언어 결과는 정상 반환)
+    const other: SafetyLang = lang === "en" ? "ko" : "en";
+    const oc = col(other);
+    const hasOther = existing && existing[oc.risks];
+    if (data.force || !hasOther) {
+      try {
+        await generate(other);
+      } catch {
+        // 보조 언어 생성 실패는 무시 — 다음 조회 시 다시 시도됨
+      }
     }
 
-    const generatedAt = new Date().toISOString();
-    await supabaseAdmin
-      .from("safety_reports")
-      .upsert(
-        { day: data.day, [c.risks]: risks, [c.at]: generatedAt, created_by: context.userId } as never,
-        { onConflict: "day" },
-      );
-
-    return { day: data.day, lang, risks, generatedAt };
+    return { day: data.day, lang, risks: out.risks, generatedAt: out.generatedAt };
   });
 
 /** 저장된 당일 안전 위험 분석 결과 조회 */
