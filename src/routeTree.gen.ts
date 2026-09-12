@@ -17,6 +17,8 @@ import { Route as AuthenticatedDelaysRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedNetworkRouteImport } from './routes/_authenticated/network'
 import { Route as AuthenticatedRawDataRouteImport } from './routes/_authenticated/raw-data'
 import { Route as AuthenticatedReportRouteImport } from './routes/_authenticated/report'
+import { Route as AuthenticatedSafetyReportRouteImport } from './routes/_authenticated/safety-report'
+import { Route as AuthenticatedSafetySettingsRouteImport } from './routes/_authenticated/safety-settings'
 import { Route as AuthenticatedScheduleRouteImport } from './routes/_authenticated/schedule'
 import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
 import { Route as AuthenticatedTodayReportRouteImport } from './routes/_authenticated/today-report'
@@ -32,6 +34,7 @@ import { Route as AuthenticatedTcListRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedTcMechRouteImport } from './routes/_authenticated/tc.mech'
 import { Route as AuthenticatedTcProgressRouteImport } from './routes/_authenticated/tc.progress'
 import { Route as ApiPublicManpowerSyncRouteImport } from './routes/api/public/manpower-sync'
+import { Route as ApiPublicSafetyPdfRouteImport } from './routes/api/public/safety-pdf'
 import { Route as ApiPublicSafetyReportRouteImport } from './routes/api/public/safety-report'
 import { Route as ApiPublicVersionRouteImport } from './routes/api/public/version'
 
@@ -74,6 +77,18 @@ const AuthenticatedReportRoute = AuthenticatedReportRouteImport.update({
   path: '/report',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSafetyReportRoute =
+  AuthenticatedSafetyReportRouteImport.update({
+    id: '/safety-report',
+    path: '/safety-report',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSafetySettingsRoute =
+  AuthenticatedSafetySettingsRouteImport.update({
+    id: '/safety-settings',
+    path: '/safety-settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedScheduleRoute = AuthenticatedScheduleRouteImport.update({
   id: '/schedule',
   path: '/schedule',
@@ -155,6 +170,11 @@ const ApiPublicManpowerSyncRoute = ApiPublicManpowerSyncRouteImport.update({
   path: '/api/public/manpower-sync',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSafetyPdfRoute = ApiPublicSafetyPdfRouteImport.update({
+  id: '/api/public/safety-pdf',
+  path: '/api/public/safety-pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSafetyReportRoute = ApiPublicSafetyReportRouteImport.update({
   id: '/api/public/safety-report',
   path: '/api/public/safety-report',
@@ -174,6 +194,8 @@ export interface FileRoutesByFullPath {
   '/network': typeof AuthenticatedNetworkRoute
   '/raw-data': typeof AuthenticatedRawDataRoute
   '/report': typeof AuthenticatedReportRoute
+  '/safety-report': typeof AuthenticatedSafetyReportRoute
+  '/safety-settings': typeof AuthenticatedSafetySettingsRoute
   '/schedule': typeof AuthenticatedScheduleRoute
   '/today': typeof AuthenticatedTodayRoute
   '/today-report': typeof AuthenticatedTodayReportRoute
@@ -188,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/tc/mech': typeof AuthenticatedTcMechRoute
   '/tc/progress': typeof AuthenticatedTcProgressRoute
   '/api/public/manpower-sync': typeof ApiPublicManpowerSyncRoute
+  '/api/public/safety-pdf': typeof ApiPublicSafetyPdfRoute
   '/api/public/safety-report': typeof ApiPublicSafetyReportRoute
   '/api/public/version': typeof ApiPublicVersionRoute
   '/manpower/': typeof AuthenticatedManpowerIndexRoute
@@ -200,6 +223,8 @@ export interface FileRoutesByTo {
   '/network': typeof AuthenticatedNetworkRoute
   '/raw-data': typeof AuthenticatedRawDataRoute
   '/report': typeof AuthenticatedReportRoute
+  '/safety-report': typeof AuthenticatedSafetyReportRoute
+  '/safety-settings': typeof AuthenticatedSafetySettingsRoute
   '/schedule': typeof AuthenticatedScheduleRoute
   '/today': typeof AuthenticatedTodayRoute
   '/today-report': typeof AuthenticatedTodayReportRoute
@@ -214,6 +239,7 @@ export interface FileRoutesByTo {
   '/tc/mech': typeof AuthenticatedTcMechRoute
   '/tc/progress': typeof AuthenticatedTcProgressRoute
   '/api/public/manpower-sync': typeof ApiPublicManpowerSyncRoute
+  '/api/public/safety-pdf': typeof ApiPublicSafetyPdfRoute
   '/api/public/safety-report': typeof ApiPublicSafetyReportRoute
   '/api/public/version': typeof ApiPublicVersionRoute
   '/manpower': typeof AuthenticatedManpowerIndexRoute
@@ -228,6 +254,8 @@ export interface FileRoutesById {
   '/_authenticated/network': typeof AuthenticatedNetworkRoute
   '/_authenticated/raw-data': typeof AuthenticatedRawDataRoute
   '/_authenticated/report': typeof AuthenticatedReportRoute
+  '/_authenticated/safety-report': typeof AuthenticatedSafetyReportRoute
+  '/_authenticated/safety-settings': typeof AuthenticatedSafetySettingsRoute
   '/_authenticated/schedule': typeof AuthenticatedScheduleRoute
   '/_authenticated/today': typeof AuthenticatedTodayRoute
   '/_authenticated/today-report': typeof AuthenticatedTodayReportRoute
@@ -242,6 +270,7 @@ export interface FileRoutesById {
   '/_authenticated/tc/mech': typeof AuthenticatedTcMechRoute
   '/_authenticated/tc/progress': typeof AuthenticatedTcProgressRoute
   '/api/public/manpower-sync': typeof ApiPublicManpowerSyncRoute
+  '/api/public/safety-pdf': typeof ApiPublicSafetyPdfRoute
   '/api/public/safety-report': typeof ApiPublicSafetyReportRoute
   '/api/public/version': typeof ApiPublicVersionRoute
   '/_authenticated/manpower/': typeof AuthenticatedManpowerIndexRoute
@@ -256,6 +285,8 @@ export interface FileRouteTypes {
     | '/network'
     | '/raw-data'
     | '/report'
+    | '/safety-report'
+    | '/safety-settings'
     | '/schedule'
     | '/today'
     | '/today-report'
@@ -270,6 +301,7 @@ export interface FileRouteTypes {
     | '/tc/mech'
     | '/tc/progress'
     | '/api/public/manpower-sync'
+    | '/api/public/safety-pdf'
     | '/api/public/safety-report'
     | '/api/public/version'
     | '/manpower/'
@@ -282,6 +314,8 @@ export interface FileRouteTypes {
     | '/network'
     | '/raw-data'
     | '/report'
+    | '/safety-report'
+    | '/safety-settings'
     | '/schedule'
     | '/today'
     | '/today-report'
@@ -296,6 +330,7 @@ export interface FileRouteTypes {
     | '/tc/mech'
     | '/tc/progress'
     | '/api/public/manpower-sync'
+    | '/api/public/safety-pdf'
     | '/api/public/safety-report'
     | '/api/public/version'
     | '/manpower'
@@ -309,6 +344,8 @@ export interface FileRouteTypes {
     | '/_authenticated/network'
     | '/_authenticated/raw-data'
     | '/_authenticated/report'
+    | '/_authenticated/safety-report'
+    | '/_authenticated/safety-settings'
     | '/_authenticated/schedule'
     | '/_authenticated/today'
     | '/_authenticated/today-report'
@@ -323,6 +360,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tc/mech'
     | '/_authenticated/tc/progress'
     | '/api/public/manpower-sync'
+    | '/api/public/safety-pdf'
     | '/api/public/safety-report'
     | '/api/public/version'
     | '/_authenticated/manpower/'
@@ -333,6 +371,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiPublicManpowerSyncRoute: typeof ApiPublicManpowerSyncRoute
+  ApiPublicSafetyPdfRoute: typeof ApiPublicSafetyPdfRoute
   ApiPublicSafetyReportRoute: typeof ApiPublicSafetyReportRoute
   ApiPublicVersionRoute: typeof ApiPublicVersionRoute
 }
@@ -393,6 +432,20 @@ declare module '@tanstack/react-router' {
       path: '/report'
       fullPath: '/report'
       preLoaderRoute: typeof AuthenticatedReportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/safety-report': {
+      id: '/_authenticated/safety-report'
+      path: '/safety-report'
+      fullPath: '/safety-report'
+      preLoaderRoute: typeof AuthenticatedSafetyReportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/safety-settings': {
+      id: '/_authenticated/safety-settings'
+      path: '/safety-settings'
+      fullPath: '/safety-settings'
+      preLoaderRoute: typeof AuthenticatedSafetySettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/schedule': {
@@ -500,6 +553,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicManpowerSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/safety-pdf': {
+      id: '/api/public/safety-pdf'
+      path: '/api/public/safety-pdf'
+      fullPath: '/api/public/safety-pdf'
+      preLoaderRoute: typeof ApiPublicSafetyPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/safety-report': {
       id: '/api/public/safety-report'
       path: '/api/public/safety-report'
@@ -523,6 +583,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNetworkRoute: typeof AuthenticatedNetworkRoute
   AuthenticatedRawDataRoute: typeof AuthenticatedRawDataRoute
   AuthenticatedReportRoute: typeof AuthenticatedReportRoute
+  AuthenticatedSafetyReportRoute: typeof AuthenticatedSafetyReportRoute
+  AuthenticatedSafetySettingsRoute: typeof AuthenticatedSafetySettingsRoute
   AuthenticatedScheduleRoute: typeof AuthenticatedScheduleRoute
   AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
   AuthenticatedTodayReportRoute: typeof AuthenticatedTodayReportRoute
@@ -545,6 +607,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedNetworkRoute: AuthenticatedNetworkRoute,
   AuthenticatedRawDataRoute: AuthenticatedRawDataRoute,
   AuthenticatedReportRoute: AuthenticatedReportRoute,
+  AuthenticatedSafetyReportRoute: AuthenticatedSafetyReportRoute,
+  AuthenticatedSafetySettingsRoute: AuthenticatedSafetySettingsRoute,
   AuthenticatedScheduleRoute: AuthenticatedScheduleRoute,
   AuthenticatedTodayRoute: AuthenticatedTodayRoute,
   AuthenticatedTodayReportRoute: AuthenticatedTodayReportRoute,
@@ -569,6 +633,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiPublicManpowerSyncRoute: ApiPublicManpowerSyncRoute,
+  ApiPublicSafetyPdfRoute: ApiPublicSafetyPdfRoute,
   ApiPublicSafetyReportRoute: ApiPublicSafetyReportRoute,
   ApiPublicVersionRoute: ApiPublicVersionRoute,
 }

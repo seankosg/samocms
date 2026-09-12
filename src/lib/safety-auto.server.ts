@@ -31,7 +31,7 @@ export async function generateTodaySafetyReports(): Promise<{
 
   const { data: exist, error: exErr } = await supabaseAdmin
     .from("safety_reports")
-    .select("day, risks, generated_at, risks_en, generated_at_en")
+    .select("day, risks, generated_at, risks_en, generated_at_en, telegram_ready_at")
     .eq("day", day)
     .maybeSingle();
   if (exErr) throw new Error(exErr.message);
@@ -40,7 +40,14 @@ export async function generateTodaySafetyReports(): Promise<{
   const langs: SafetyLang[] = ["ko", "en"];
   const missing = langs.filter((l) => !(row && row[safetyCol(l).risks]));
   const skipped = langs.filter((l) => !missing.includes(l));
-  if (missing.length === 0) return { day, generated: [], skipped, reason: "이미 생성됨" };
+  if (missing.length === 0) {
+    // 이미 두 언어가 있으면 PDF 만 보강 (없을 때만 생성됨)
+    if (!row?.["telegram_ready_at"]) {
+      const { publishSafetyPdfs } = await import("./safety-publish.server");
+      await publishSafetyPdfs(day).catch((e) => console.error("safety pdf publish failed:", e));
+    }
+    return { day, generated: [], skipped, reason: "이미 생성됨" };
+  }
 
   const [acts, tcItems] = await Promise.all([
     fetchAll<ActivityRow>(supabaseAdmin, "activities"),
@@ -59,5 +66,9 @@ export async function generateTodaySafetyReports(): Promise<{
     await generateSafety(day, facts, lang, null);
     generated.push(lang);
   }
+
+  const { publishSafetyPdfs } = await import("./safety-publish.server");
+  await publishSafetyPdfs(day).catch((e) => console.error("safety pdf publish failed:", e));
+
   return { day, generated, skipped };
 }

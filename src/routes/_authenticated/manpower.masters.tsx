@@ -15,10 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { manpowerMastersQuery, useManpowerMasters, type AliasRow, type MasterRow } from "@/lib/use-manpower";
 import {
   saveManpowerMaster, setManpowerMasterActive, setManpowerMasterOrder, deleteManpowerMaster,
-  saveManpowerAlias, deleteManpowerAlias, renameManpowerMaster, saveManpowerSettings,
+  saveManpowerAlias, deleteManpowerAlias, renameManpowerMaster,
 } from "@/lib/manpower.functions";
-import { MP } from "@/lib/manpower-i18n";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/_authenticated/manpower/masters")({
   head: () => ({ meta: [
@@ -42,7 +40,7 @@ export const Route = createFileRoute("/_authenticated/manpower/masters")({
 type Kind = "company" | "location";
 
 function MastersPage() {
-  const { companies, locations, aliases, usage, members, settings } = useManpowerMasters();
+  const { companies, locations, aliases, usage, members } = useManpowerMasters();
   const qc = useQueryClient();
   const router = useRouter();
   /** 마스터를 바꾸면 출면 현황·매트릭스가 쓰는 데이터까지 즉시 다시 불러옵니다. */
@@ -64,7 +62,7 @@ function MastersPage() {
   return (
     <AdminGate title="출면 업체 장소 관리 설정">
       <AppShell title="출면 업체 장소 관리 설정" desc={`협력사 ${companies.length}곳 · 장소 ${locations.length}곳 · 별칭 ${aliases.length}건`}>
-        <ReminderCard settings={settings} onDone={invalidate} />
+        
         <Tabs defaultValue="company">
           <TabsList className="mb-3">
             <TabsTrigger value="company">회사</TabsTrigger>
@@ -87,42 +85,6 @@ function MastersPage() {
   );
 }
 
-/** 미보고 알림 설정 — 봇이 읽는 app_settings 값 (관리자 전용) */
-function ReminderCard({ settings, onDone }: { settings: Record<string, string>; onDone: () => void }) {
-  const [enabled, setEnabled] = useState(settings["manpower_reminder_enabled"] === "true");
-  const [times, setTimes] = useState(settings["manpower_remind_times"] ?? "09:00,11:00");
-  const [cutoff, setCutoff] = useState(settings["manpower_cutoff_time"] ?? "09:00");
-
-  const save = useMutation({
-    mutationFn: () => saveManpowerSettings({ data: { reminderEnabled: enabled, remindTimes: times, cutoffTime: cutoff } }),
-    onSuccess: () => { onDone(); toast.success("알림 설정이 저장되었습니다"); },
-    onError: (e: Error) => toast.error("저장 실패", { description: e.message }),
-  });
-
-  return (
-    <Card className="mb-4">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm">{MP.reminderSettings}</CardTitle>
-        <CardDescription className="text-xs leading-relaxed">{MP.reminderGuide}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-wrap items-end gap-4">
-        <div className="flex items-center gap-2">
-          <Switch id="reminder-enabled" checked={enabled} onCheckedChange={setEnabled} />
-          <Label htmlFor="reminder-enabled" className="text-xs">{MP.reminderEnabled}</Label>
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="remind-times" className="text-xs">{MP.remindTimes} (HH:mm, 쉼표 구분)</Label>
-          <Input id="remind-times" value={times} onChange={(e) => setTimes(e.target.value)} className="h-8 w-40 text-xs" placeholder="09:00,11:00" />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="cutoff-time" className="text-xs">{MP.cutoffTime}</Label>
-          <Input id="cutoff-time" value={cutoff} onChange={(e) => setCutoff(e.target.value)} className="h-8 w-24 text-xs" placeholder="09:00" />
-        </div>
-        <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>저장</Button>
-      </CardContent>
-    </Card>
-  );
-}
 
 type Draft = MasterRow & { isNew: boolean };
 

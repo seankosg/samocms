@@ -6,7 +6,7 @@ import * as XLSX from "xlsx";
 import {
   AlertTriangle, BarChart3, CalendarClock, TrendingUp, CalendarDays, ChevronLeft, Download, FileText, ListChecks,
   LogOut, Menu, MoreVertical, Network, PanelLeft, Settings, Sparkles, Table2, UploadCloud, Users, Wrench, Zap,
-  UserCheck, GitCompare, LineChart, Contact,
+  UserCheck, GitCompare, LineChart, Contact, ShieldAlert,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ROLE_LABEL, useAuth } from "@/lib/use-auth";
@@ -45,6 +45,7 @@ const NAV = [
     { to: "/dashboard", label: "대시보드", icon: BarChart3 },
     { to: "/today", label: "오늘의 주요 작업", icon: CalendarClock },
     { to: "/network", label: "네트워크", icon: Network },
+    { to: "/safety-report", label: "Safety Report", icon: ShieldAlert },
     { to: "/report", label: "Progress Report", icon: FileText },
   ] },
   { group: "공정", items: [
@@ -73,7 +74,7 @@ const ADMIN_NAV = [
     { to: "/users", label: "CMS 사용자 관리", icon: Users },
     { to: "/manpower/members", label: "출면기록 관리자 설정", icon: Contact },
     { to: "/manpower/masters", label: "출면 업체 장소 관리 설정", icon: Contact },
-
+    { to: "/safety-settings", label: "안전리포트 설정", icon: ShieldAlert },
   ] },
 ] as const;
 
