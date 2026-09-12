@@ -99,6 +99,13 @@
       "when": 1789093318459,
       "tag": "0013_add_activity_manager",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1789196120496,
+      "tag": "0014_daily_snapshot_carryover",
+      "breakpoints": true
     }
   ]
 }
