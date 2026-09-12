@@ -8,7 +8,7 @@ import { MastersPanel } from "@/components/manpower/masters-panel";
 import { manpowerMembersQuery, manpowerMastersQuery } from "@/lib/use-manpower";
 
 const searchSchema = z.object({
-  tab: z.enum(["members", "masters"]).catch("members").default("members"),
+  tab: z.enum(["members", "companies", "locations", "aliases"]).catch("members").default("members"),
 });
 
 export const Route = createFileRoute("/_authenticated/manpower/admin")({
@@ -41,13 +41,19 @@ function ManpowerAdminPage() {
   return (
     <AdminGate title="출면관리">
       <AppShell title="출면관리" desc="출면기록 관리자(봇 사용자)와 협력사·장소 마스터를 한곳에서 관리합니다.">
-        <Tabs value={tab} onValueChange={(v) => navigate({ search: { tab: v as "members" | "masters" }, replace: true })}>
-          <TabsList className="mb-3">
+        <Tabs value={tab} onValueChange={(v) => navigate({ search: { tab: v as "members" | "companies" | "locations" | "aliases" }, replace: true })}>
+          <div className="mb-3 overflow-x-auto pb-1">
+          <TabsList className="w-max min-w-full justify-start">
             <TabsTrigger value="members">출면기록 관리자 설정</TabsTrigger>
-            <TabsTrigger value="masters">출면 업체 장소 관리 설정</TabsTrigger>
+            <TabsTrigger value="companies">출면업체 설정</TabsTrigger>
+            <TabsTrigger value="locations">출면 장소 설정</TabsTrigger>
+            <TabsTrigger value="aliases">별칭 설정</TabsTrigger>
           </TabsList>
+          </div>
           <TabsContent value="members"><MembersPanel /></TabsContent>
-          <TabsContent value="masters"><MastersPanel /></TabsContent>
+          <TabsContent value="companies"><MastersPanel view="company" /></TabsContent>
+          <TabsContent value="locations"><MastersPanel view="location" /></TabsContent>
+          <TabsContent value="aliases"><MastersPanel view="alias" /></TabsContent>
         </Tabs>
       </AppShell>
     </AdminGate>
