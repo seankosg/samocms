@@ -7,6 +7,8 @@ const Lang = z.enum(["ko", "en"]);
 const Input = z.object({
   day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   facts: z.string().min(1).max(12000),
+  /** 요청 언어와 반대 언어의 공정명 사전을 적용한 분석 입력 */
+  otherFacts: z.string().min(1).max(12000).optional(),
   /** true면 기존 저장 결과를 무시하고 다시 생성 (관리자 "다시 분석") */
   force: z.boolean().optional(),
   /** 출력 언어 (ko: 한국어, en: 건설 영어) */
@@ -61,7 +63,7 @@ export const analyzeSafety = createServerFn({ method: "POST" })
     const hasOther = existing && existing[col(other).risks];
     if (data.force || !hasOther) {
       try {
-        await generateSafety(data.day, data.facts, other, context.userId);
+        await generateSafety(data.day, data.otherFacts ?? data.facts, other, context.userId);
       } catch {
         // 보조 언어 생성 실패는 무시 — 다음 조회 시 다시 시도됨
       }

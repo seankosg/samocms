@@ -46,7 +46,13 @@ function SafetyReportPage() {
   });
 
   const run = useMutation({
-    mutationFn: () => analyzeSafety({ data: { day, facts: safetyFacts(groups!, tc, day), force: true, lang } }),
+    mutationFn: () => analyzeSafety({ data: {
+      day,
+      facts: safetyFacts(groups!, tc, day, lang),
+      otherFacts: safetyFacts(groups!, tc, day, lang === "en" ? "ko" : "en"),
+      force: true,
+      lang,
+    } }),
     onSuccess: () => { toast.success("안전 리포트를 다시 생성했습니다."); qc.invalidateQueries({ queryKey: ["safety-report"] }); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "생성에 실패했습니다."),
   });
