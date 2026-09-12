@@ -304,10 +304,10 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
         </>
       )}
 
-      {isLoading ? (
+      {mode !== "tc" && isLoading ? (
         <p className="text-xs text-muted-foreground">불러오는 중…</p>
       ) : !model || model.hist.length < 2 ? (
-        <p className="text-xs text-muted-foreground">예측에 필요한 기록이 부족합니다. 스냅샷이 2일 이상 쌓이면 표시됩니다.</p>
+        <p className="text-xs text-muted-foreground">예측에 필요한 기록이 부족합니다. {mode === "tc" ? "선택한 단계·팀·건물의 계획/실적일 데이터가 부족합니다." : "스냅샷이 2일 이상 쌓이면 표시됩니다."}</p>
       ) : (
         <>
           {/* 요약 수치 */}
