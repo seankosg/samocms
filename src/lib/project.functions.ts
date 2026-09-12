@@ -224,8 +224,24 @@ export const getProgressHistory = createServerFn({ method: "GET" })
       .order("snapshot_date");
     if (data.itemKey) q = q.eq("item_key", data.itemKey);
     if (data.discipline) q = q.eq("discipline", data.discipline);
-    const { data: rows, error } = await q.limit(5000);
-    if (error) throw new Error(error.message);
+    // 전수 조회 — 페이지네이션으로 전 행 수집 (제한 없음)
+    type SnapRow = {
+      snapshot_date: string;
+      discipline: string;
+      item_key: string;
+      activity: string | null;
+      planned_progress: number | null;
+      actual_progress: number | null;
+      done_quantity: number | null;
+      total_quantity: number | null;
+    };
+    const rows: SnapRow[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data: page, error } = await q.range(from, from + 999);
+      if (error) throw new Error(error.message);
+      rows.push(...((page ?? []) as SnapRow[]));
+      if (!page || page.length < 1000) break;
+    }
 
     // 날짜별 평균 계획/실적 — DB 집계(행 수 제한 없이 전체 기간)
     const { data: agg, error: aggErr } = data.itemKey
@@ -299,12 +315,18 @@ export const getPrevActuals = createServerFn({ method: "GET" })
     const d = new Date(`${data.base}T00:00:00Z`);
     d.setUTCDate(d.getUTCDate() - 1);
     const prevDate = d.toISOString().slice(0, 10);
-    const { data: rows, error } = await context.supabase
-      .from("activity_snapshots")
-      .select("item_key,actual_progress")
-      .eq("snapshot_date", prevDate)
-      .limit(20000);
-    if (error) throw new Error(error.message);
+    // 전수 조회 — 페이지네이션으로 전 행 수집 (제한 없음)
+    const rows: Array<{ item_key: string; actual_progress: number | null }> = [];
+    for (let from = 0; ; from += 1000) {
+      const { data: page, error } = await context.supabase
+        .from("activity_snapshots")
+        .select("item_key,actual_progress")
+        .eq("snapshot_date", prevDate)
+        .range(from, from + 999);
+      if (error) throw new Error(error.message);
+      rows.push(...((page ?? []) as Array<{ item_key: string; actual_progress: number | null }>));
+      if (!page || page.length < 1000) break;
+    }
     const map: Record<string, number> = {};
     (rows ?? []).forEach((r: { item_key: string; actual_progress: number | null }) => {
       if (r.actual_progress != null) map[r.item_key] = Number(r.actual_progress);
