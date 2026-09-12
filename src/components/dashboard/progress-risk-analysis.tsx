@@ -13,17 +13,25 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { avgOf, isLate, pct1, SLOT_LABEL, type Row } from "@/lib/schedule-model";
+import { avgOf, isLate, MSDEF, pct1, SLOT_LABEL, type Row } from "@/lib/schedule-model";
+import { stageDone, TC_STAGES, TC_STAGE_SUB, type TcItem, type TcStage } from "@/lib/tc-model";
 import { cn } from "@/lib/utils";
 
-type Dimension = "dept" | "bldg" | "mgr" | "sub";
+type RowDimension = "dept" | "bldg" | "mgr" | "sub" | "ms";
+type Dimension = RowDimension | "tc";
 
 const DIMENSIONS: { key: Dimension; label: string }[] = [
   { key: "dept", label: "담당부서별" },
   { key: "bldg", label: "건물별" },
   { key: "mgr", label: "담당자별" },
   { key: "sub", label: "협력사별" },
+  { key: "ms", label: "마일스톤별" },
+  { key: "tc", label: "T&C별" },
 ];
+
+const TC_PLAN_COL: Record<TcStage, keyof TcItem> = {
+  T0: "t0_p", T1: "t1_p", Report: "rp_p", RFI: "rfi_p", T2: "t2_p", Response: "resp_p",
+};
 
 type GroupMetric = {
   key: string;
@@ -43,14 +51,17 @@ type GroupMetric = {
   severity: "critical" | "warning" | "watch";
 };
 
-const groupValue = (row: Row, dimension: Dimension) => {
-  const raw = dimension === "dept" ? row.dept : row[dimension];
+const groupValue = (row: Row, dimension: RowDimension) => {
+  const raw = row[dimension];
   const value = String(raw ?? "").trim();
   return value || "미지정";
 };
 
-const displayLabel = (value: string, dimension: Dimension) =>
-  dimension === "dept" ? (SLOT_LABEL[value] ?? value) : value;
+const displayLabel = (value: string, dimension: RowDimension) => {
+  if (dimension === "dept") return SLOT_LABEL[value] ?? value;
+  if (dimension === "ms") return value === "미지정" ? value : `${value} ${MSDEF[value] ?? ""}`.trim();
+  return value;
+};
 
 const taskDelayDays = (row: Row) => {
   if (!isLate(row)) return 0;
@@ -60,7 +71,7 @@ const taskDelayDays = (row: Row) => {
   return Math.max(1, Math.round(((row.pl ?? 0) - (row.pc ?? 0)) * duration));
 };
 
-function aggregate(rows: Row[], dimension: Dimension): GroupMetric[] {
+function aggregate(rows: Row[], dimension: RowDimension): GroupMetric[] {
   const groups = new Map<string, Row[]>();
   rows.forEach((row) => {
     const key = groupValue(row, dimension);
@@ -106,33 +117,100 @@ function aggregate(rows: Row[], dimension: Dimension): GroupMetric[] {
   }).filter((group) => group.total > 0);
 }
 
-const searchFor = (dimension: Dimension, key: string) => {
+/** T&C 단계별 집계 — 계획 누계 Qty 대비 완료 Qty, 계획일 경과 미완료 항목을 지연으로 산정 */
+function aggregateTc(items: TcItem[], base: string | null): GroupMetric[] {
+  const total = items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
+  if (!total) return [];
+
+  return TC_STAGES.map((stage) => {
+    const planCol = TC_PLAN_COL[stage];
+    let planQty = 0, doneQty = 0, ahead = 0;
+    const delayDays: number[] = [];
+
+    items.forEach((item) => {
+      const qty = Number(item.qty) || 0;
+      const planDate = item[planCol] as string | null;
+      const due = !!planDate && !!base && planDate <= base;
+      const done = stageDone(item, stage);
+      if (done) doneQty += qty;
+      if (due) planQty += qty;
+      if (done && !due) ahead += 1;
+      if (!done && due && base && planDate) {
+        delayDays.push(Math.max(1, Math.round((Date.parse(base) - Date.parse(planDate)) / 864e5)));
+      }
+    });
+
+    const planned = (planQty / total) * 100;
+    const actual = (doneQty / total) * 100;
+    const late = delayDays.length;
+    const avgGap = Math.max(0, planned - actual);
+    const avgDelayDays = late ? delayDays.reduce((sum, days) => sum + days, 0) / late : 0;
+    const maxDelayDays = late ? Math.max(...delayDays) : 0;
+    const long = delayDays.filter((days) => days >= 14).length;
+    const medium = delayDays.filter((days) => days >= 7 && days < 14).length;
+    const short = delayDays.filter((days) => days > 0 && days < 7).length;
+    const severity: GroupMetric["severity"] = avgGap >= 20 || maxDelayDays >= 14
+      ? "critical"
+      : avgGap >= 10 || maxDelayDays >= 7
+        ? "warning"
+        : "watch";
+
+    return {
+      key: stage,
+      label: `${stage} · ${TC_STAGE_SUB[stage]}`,
+      total: items.length,
+      planned,
+      actual,
+      gap: actual - planned,
+      ahead,
+      late,
+      avgGap,
+      avgDelayDays,
+      maxDelayDays,
+      short,
+      medium,
+      long,
+      severity,
+    };
+  });
+}
+
+const searchFor = (dimension: RowDimension, key: string) => {
   if (key === "미지정") return {};
   if (dimension === "dept") return { dept: key };
   if (dimension === "bldg") return { bldg: key };
   if (dimension === "sub") return { sub: key };
+  if (dimension === "ms") return { ms: key };
   return { q: key };
 };
 
-export function ProgressRiskAnalysis({ rows }: { rows: Row[] }) {
+export function ProgressRiskAnalysis({ rows, tcItems = [], base = null }: { rows: Row[]; tcItems?: TcItem[]; base?: string | null }) {
   const [progressDimension, setProgressDimension] = useState<Dimension>("dept");
   const [riskDimension, setRiskDimension] = useState<Dimension>("dept");
   const navigate = useNavigate();
-  const all = useMemo(() => ({
+  const all = useMemo((): Record<Dimension, GroupMetric[]> => ({
     dept: aggregate(rows, "dept"),
     bldg: aggregate(rows, "bldg"),
     mgr: aggregate(rows, "mgr"),
     sub: aggregate(rows, "sub"),
-  }), [rows]);
+    ms: aggregate(rows, "ms"),
+    tc: aggregateTc(tcItems, base),
+  }), [rows, tcItems, base]);
 
-  const progress = [...all[progressDimension]].sort((a, b) => b.total - a.total);
+  const progress = progressDimension === "tc"
+    ? all.tc
+    : [...all[progressDimension]].sort((a, b) => b.total - a.total);
   const risks = [...all[riskDimension]]
     .filter((group) => group.late > 0)
     .sort((a, b) => b.long - a.long || b.maxDelayDays - a.maxDelayDays || b.avgGap - a.avgGap)
     .slice(0, 10);
-  const chartWidth = Math.max(620, progress.length * 92);
+  const chartWidth = Math.max(620, progress.length * (progressDimension === "tc" ? 130 : 92));
 
   const openList = (dimension: Dimension, key: string, late = false) => {
+    if (dimension === "tc") {
+      void navigate({ to: "/tc/progress", search: { stages: key } });
+      return;
+    }
     void navigate({
       to: late ? "/delays" : "/schedule",
       search: searchFor(dimension, key),
@@ -248,12 +326,12 @@ export function ProgressRiskAnalysis({ rows }: { rows: Row[] }) {
 function DimensionTabs({ value, onChange }: { value: Dimension; onChange: (value: Dimension) => void }) {
   return (
     <Tabs value={value} onValueChange={(next) => onChange(next as Dimension)}>
-      <TabsList className="grid h-10 w-full grid-cols-4 rounded-none border-b border-border bg-muted/25 p-0">
+      <TabsList className="grid h-auto w-full grid-cols-3 rounded-none sm:h-10 sm:grid-cols-6 border-b border-border bg-muted/25 p-0">
         {DIMENSIONS.map((dimension) => (
           <TabsTrigger
             key={dimension.key}
             value={dimension.key}
-            className="h-10 rounded-none border-b-2 border-transparent px-1 text-[10px] shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none sm:text-[11px]"
+            className="h-10 whitespace-nowrap rounded-none border-b-2 border-transparent px-1 text-[10px] shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none sm:text-[11px]"
           >
             {dimension.label}
           </TabsTrigger>

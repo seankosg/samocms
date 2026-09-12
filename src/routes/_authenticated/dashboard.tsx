@@ -205,7 +205,7 @@ function Dashboard() {
         </div>
       </section>
 
-      <ProgressRiskAnalysis rows={rows} />
+      <ProgressRiskAnalysis rows={rows} tcItems={tcItems} base={base} />
 
       <section className="mt-6">
         <TrendCard />
