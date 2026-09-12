@@ -61,7 +61,7 @@ function multiValue(r: Row, k: MultiKey): string {
   return String(r[k] ?? "");
 }
 
-export type TableInitial = Partial<{ dept: string; bldg: string; ms: string; sub: string; status: string; q: string }>;
+export type TableInitial = Partial<{ dept: string; bldg: string; ms: string; sub: string; mgr: string; status: string; efrom: string; eto: string; q: string }>;
 
 export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy }: { rows: Row[]; fileName: string; lockLate?: boolean; initial?: TableInitial; dueBy?: string | null }) {
   const { canEdit, canWrite } = useAuth();
