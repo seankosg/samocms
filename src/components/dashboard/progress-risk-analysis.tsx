@@ -326,12 +326,12 @@ export function ProgressRiskAnalysis({ rows, tcItems = [], base = null }: { rows
 function DimensionTabs({ value, onChange }: { value: Dimension; onChange: (value: Dimension) => void }) {
   return (
     <Tabs value={value} onValueChange={(next) => onChange(next as Dimension)}>
-      <TabsList className="grid h-10 w-full grid-cols-4 rounded-none border-b border-border bg-muted/25 p-0">
+      <TabsList className="grid h-auto w-full grid-cols-3 rounded-none sm:h-10 sm:grid-cols-6 border-b border-border bg-muted/25 p-0">
         {DIMENSIONS.map((dimension) => (
           <TabsTrigger
             key={dimension.key}
             value={dimension.key}
-            className="h-10 rounded-none border-b-2 border-transparent px-1 text-[10px] shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none sm:text-[11px]"
+            className="h-10 whitespace-nowrap rounded-none border-b-2 border-transparent px-1 text-[10px] shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none sm:text-[11px]"
           >
             {dimension.label}
           </TabsTrigger>
