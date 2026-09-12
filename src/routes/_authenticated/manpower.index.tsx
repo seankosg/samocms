@@ -254,12 +254,13 @@ function ManpowerPage() {
             {!daily.length && <tr><td colSpan={12} className="p-6 text-center text-muted-foreground">해당 일자의 보고가 없습니다.</td></tr>}
             {daily.length > 0 && (
               <tr className="bg-primary/10 font-bold [&>td]:border-t-2 [&>td]:border-primary/30 [&>td]:px-3 [&>td]:py-2.5 [&>td]:text-right [&>td:first-child]:text-left">
-                <td>합계</td>
+                <td className="w-[90px] min-w-[90px]">합계</td>
+                <td className="text-sm font-extrabold">{totals.total.toLocaleString()}</td>
                 <td className="text-sky-700 dark:text-sky-300">{daily.reduce((a, d) => a + d.day_total, 0)}</td>
                 <td className="text-amber-700 dark:text-amber-300">{daily.reduce((a, d) => a + d.ot_total, 0)}</td>
                 <td className="text-indigo-700 dark:text-indigo-300">{daily.reduce((a, d) => a + d.night_total, 0)}</td>
                 {TRADES.map((t) => <td key={t}>{totals[t]}</td>)}
-                <td className="text-sm font-extrabold">{totals.total.toLocaleString()}</td><td />
+                <td />
               </tr>
             )}
           </tbody>
