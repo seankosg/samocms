@@ -16,7 +16,7 @@ import {
 
 type SortKey = "no" | "dept" | "bldg" | "act" | "pl" | "pc" | "e";
 type TextKey = "no" | "room" | "scope" | "act" | "unit" | "pred" | "succ";
-type MultiKey = "dept" | "bldg" | "ms" | "sub" | "status";
+type MultiKey = "dept" | "bldg" | "ms" | "sub" | "mgr" | "status";
 type DateKey = "s" | "e";
 type ColFilter =
   | { kind: "text"; field: TextKey }
@@ -32,6 +32,7 @@ const COLS: { key: SortKey | null; label: string; f: ColFilter }[] = [
   { key: null, label: "Work Scope", f: { kind: "text", field: "scope" } },
   { key: null, label: "Milestone", f: { kind: "sel", field: "ms" } },
   { key: null, label: "Subcon", f: { kind: "sel", field: "sub" } },
+  { key: null, label: "담당자", f: { kind: "sel", field: "mgr" } },
   { key: "act", label: "Activity", f: { kind: "text", field: "act" } },
   { key: null, label: "Unit", f: { kind: "text", field: "unit" } },
   { key: null, label: "Done / Total", f: null },
@@ -46,12 +47,17 @@ const COLS: { key: SortKey | null; label: string; f: ColFilter }[] = [
   { key: "e", label: "Finish", f: { kind: "date", field: "e" } },
 ];
 
-const MULTI_LABEL: Record<MultiKey, string> = { dept: "담당부서", bldg: "Bldg.", ms: "Milestone", sub: "Subcon", status: "상태" };
+const MULTI_LABEL: Record<MultiKey, string> = { dept: "담당부서", bldg: "Bldg.", ms: "Milestone", sub: "Subcon", mgr: "담당자", status: "상태" };
+
+/** 담당자 표시값 (빈 값은 미지정) */
+const MGR_NONE = "미지정";
+const mgrLabel = (v: string | null) => (v && v.trim() ? v.trim() : MGR_NONE);
 
 /** 컬럼 필터 비교값 = 화면 표시값 */
 function multiValue(r: Row, k: MultiKey): string {
   if (k === "dept") return SLOT_LABEL[r.dept] ?? r.dept ?? "";
   if (k === "status") return STATUS_LABEL[statusOfRow(r)] ?? statusOfRow(r);
+  if (k === "mgr") return mgrLabel(r.mgr);
   return String(r[k] ?? "");
 }
 
