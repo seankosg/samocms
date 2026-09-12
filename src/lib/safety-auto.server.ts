@@ -43,8 +43,8 @@ export async function generateTodaySafetyReports(): Promise<{
   if (missing.length === 0) {
     // 이미 두 언어가 있으면 PDF 만 보강 (없을 때만 생성됨)
     if (!row?.["telegram_ready_at"]) {
-      const { publishSafetyPdfs } = await import("./safety-publish.server");
-      await publishSafetyPdfs(day).catch((e) => console.error("safety pdf publish failed:", e));
+      const { publishSafetyAssets } = await import("./safety-publish.server");
+      await publishSafetyAssets(day).catch((e) => console.error("safety pdf publish failed:", e));
     }
     return { day, generated: [], skipped, reason: "이미 생성됨" };
   }
@@ -66,8 +66,8 @@ export async function generateTodaySafetyReports(): Promise<{
     generated.push(lang);
   }
 
-  const { publishSafetyPdfs } = await import("./safety-publish.server");
-  await publishSafetyPdfs(day).catch((e) => console.error("safety pdf publish failed:", e));
+  const { publishSafetyAssets } = await import("./safety-publish.server");
+  await publishSafetyAssets(day).catch((e) => console.error("safety pdf publish failed:", e));
 
   return { day, generated, skipped };
 }

@@ -110,6 +110,6 @@ export const rebuildSafetyPdf = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context as Ctx);
-    const { publishSafetyPdfs } = await import("./safety-publish.server");
-    return await publishSafetyPdfs(data.day);
+    const { publishSafetyAssets } = await import("./safety-publish.server");
+    return await publishSafetyAssets(data.day);
   });

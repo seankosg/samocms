@@ -71,8 +71,8 @@ export const analyzeSafety = createServerFn({ method: "POST" })
 
     // 두 언어가 준비되면 A4 PDF 를 다시 만들어 저장 (텔레그램 발송용)
     try {
-      const { publishSafetyPdfs } = await import("@/lib/safety-publish.server");
-      await publishSafetyPdfs(data.day);
+      const { publishSafetyAssets } = await import("@/lib/safety-publish.server");
+      await publishSafetyAssets(data.day);
     } catch (e) {
       console.error("safety pdf publish failed:", e);
     }
