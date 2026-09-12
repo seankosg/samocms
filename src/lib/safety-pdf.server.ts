@@ -121,8 +121,7 @@ export async function buildSafetyPdf(input: SafetyPdfInput): Promise<Uint8Array>
   const fonts = await loadFonts();
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
-  const reg = await doc.embedFont(fonts.r, { subset: true });
-  const bold = await doc.embedFont(fonts.b, { subset: true });
+  const reg = await doc.embedFont(fonts.r, { subset: false });
 
   const W = 595.28, H = 841.89, M = 28;
   const CW = W - M * 2;
@@ -131,23 +130,27 @@ export async function buildSafetyPdf(input: SafetyPdfInput): Promise<Uint8Array>
 
   const newPage = () => { page = doc.addPage([W, H]); y = H - M; };
   const need = (h: number) => { if (y - h < M + 24) newPage(); };
-  const txt = (s: string, x: number, yy: number, size: number, f: PDFFont = reg, color = BLACK) =>
-    page.drawText(s, { x, y: yy, size, font: f, color });
+  /** 굵게는 같은 글자를 아주 살짝 겹쳐 찍어 표현합니다(한 벌 글꼴로 안전하게 처리) */
+  const txt = (s: string, x: number, yy: number, size: number, b = false, color = BLACK) => {
+    page.drawText(s, { x, y: yy, size, font: reg, color });
+    if (b) page.drawText(s, { x: x + 0.28, y: yy, size, font: reg, color });
+  };
+  const wd = (s: string, size: number) => reg.widthOfTextAtSize(s, size);
   const box = (x: number, yy: number, w: number, h: number, opts: { fill?: ReturnType<typeof rgb>; border?: boolean } = {}) =>
     page.drawRectangle({
       x, y: yy, width: w, height: h,
-      ...(opts.fill ? { color: opts.fill } : {}),
-      ...(opts.border === false ? {} : { borderColor: LINE, borderWidth: 0.6 }),
+      ...(opts.fill ? { color: opts.fill } : { opacity: 0 }),
+      ...(opts.border === false ? {} : { borderColor: LINE, borderWidth: 0.6, borderOpacity: 1 }),
     });
 
   // ── 헤더
-  txt(t.title, M, y - 14, 14, bold, NAVY);
-  txt(t.sub, M, y - 25, 7.5, reg, GREY);
+  txt(t.title, M, y - 14, 14, true, NAVY);
+  txt(t.sub, M, y - 25, 7.5, false, GREY);
   const dateLabel = fmtDate(input.day, input.lang);
-  txt(dateLabel, W - M - bold.widthOfTextAtSize(dateLabel, 11), y - 14, 11, bold);
+  txt(dateLabel, W - M - wd(dateLabel, 11), y - 14, 11, true);
   if (input.generatedAt) {
     const at = `${t.at} ${new Date(input.generatedAt).toISOString().slice(0, 16).replace("T", " ")} UTC`;
-    txt(at, W - M - reg.widthOfTextAtSize(at, 7), y - 25, 7, reg, GREY);
+    txt(at, W - M - wd(at, 7), y - 25, 7, false, GREY);
   }
   y -= 31;
   page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 1.4, color: NAVY });
@@ -159,9 +162,9 @@ export async function buildSafetyPdf(input: SafetyPdfInput): Promise<Uint8Array>
     const x = M + i * (kw + 6);
     box(x, y - 34, kw, 34);
     const label = t.kpi[i] ?? "";
-    txt(label, x + (kw - reg.widthOfTextAtSize(label, 7)) / 2, y - 12, 7, reg, GREY);
+    txt(label, x + (kw - wd(label, 7)) / 2, y - 12, 7, false, GREY);
     const v = String(input.kpi[i] ?? 0);
-    txt(v, x + (kw - bold.widthOfTextAtSize(v, 15)) / 2, y - 29, 15, bold, NAVY);
+    txt(v, x + (kw - wd(v, 15)) / 2, y - 29, 15, true, NAVY);
   }
   y -= 42;
 
@@ -172,7 +175,7 @@ export async function buildSafetyPdf(input: SafetyPdfInput): Promise<Uint8Array>
     const h = 14 + lines.length * 10 + 4;
     box(x, y - h, halfW, h);
     box(x, y - 13, halfW, 13, { fill: LIGHT });
-    txt(title, x + 5, y - 10, 7.5, bold, GREY);
+    txt(title, x + 5, y - 10, 7.5, true, GREY);
     lines.forEach((ln, i) => txt(ln, x + 5, y - 24 - i * 10, 8));
     return h;
   };
@@ -182,23 +185,23 @@ export async function buildSafetyPdf(input: SafetyPdfInput): Promise<Uint8Array>
 
   // ── 위험 작업 표
   box(M, y - 14, CW, 14, { fill: RED, border: false });
-  txt(t.riskTitle, M + 6, y - 10.5, 8, bold, WHITE);
+  txt(t.riskTitle, M + 6, y - 10.5, 8, true, WHITE);
   const cnt = String(input.risks.length);
-  txt(cnt, W - M - 6 - reg.widthOfTextAtSize(cnt, 8), y - 10.5, 8, reg, WHITE);
+  txt(cnt, W - M - 6 - wd(cnt, 8), y - 10.5, 8, false, WHITE);
   y -= 14;
 
-  const colW = [46, 118, 76, 140, CW - 46 - 118 - 76 - 140];
-  const colX = colW.reduce<number[]>((acc, w, i) => [...acc, (acc[i - 1] ?? M) + (i === 0 ? 0 : colW[i - 1]!)], []);
+  const colW = [50, 112, 76, 142, CW - 50 - 112 - 76 - 142];
+  const colX = colW.reduce<number[]>((acc, _w, i) => [...acc, (acc[i - 1] ?? M) + (i === 0 ? 0 : colW[i - 1]!)], []);
 
   const header = () => {
     box(M, y - 14, CW, 14, { fill: LIGHT });
-    t.cols.forEach((c, i) => txt(c, (colX[i] ?? M) + 4, y - 10, 7, bold, GREY));
+    t.cols.forEach((c, i) => txt(c, (colX[i] ?? M) + 4, y - 10, 7, true, GREY));
     y -= 14;
   };
 
   if (input.risks.length === 0) {
     box(M, y - 22, CW, 22);
-    txt(t.none, M + 6, y - 14, 8, reg, GREY);
+    txt(t.none, M + 6, y - 14, 8, false, GREY);
     y -= 30;
   } else {
     header();
@@ -207,28 +210,28 @@ export async function buildSafetyPdf(input: SafetyPdfInput): Promise<Uint8Array>
       const ac = Array.isArray(r.action) ? r.action.map((s) => `· ${s}`) : [String(r.action)];
       const cells: string[][] = [
         [r.level === "High" ? t.high : t.med, ...r.hazardType],
-        wrap(r.title, bold, 7.5, colW[1]! - 8),
+        wrap(r.title, reg, 7.5, colW[1]! - 8),
         [...wrap(r.bldg, reg, 7, colW[2]! - 8), ...wrap(r.sub, reg, 7, colW[2]! - 8)],
-        [...hz.flatMap((s) => wrap(s, reg, 7.5, colW[3]! - 8)), ...(r.hazardDetail ? wrap(r.hazardDetail, reg, 6.8, colW[3]! - 8) : [])],
-        [...ac.flatMap((s) => wrap(s, reg, 7.5, colW[4]! - 8)), ...(r.actionDetail ? wrap(r.actionDetail, reg, 6.8, colW[4]! - 8) : [])],
+        [...hz.flatMap((s) => wrap(s, reg, 7.5, colW[3]! - 8)), ...(r.hazardDetail ? wrap(r.hazardDetail, reg, 7.5, colW[3]! - 8) : [])],
+        [...ac.flatMap((s) => wrap(s, reg, 7.5, colW[4]! - 8)), ...(r.actionDetail ? wrap(r.actionDetail, reg, 7.5, colW[4]! - 8) : [])],
       ];
-      const rows = Math.max(...cells.map((c) => c.length));
-      const h = rows * 9.6 + 8;
+      const badgeLines = 1 + r.hazardType.length;
+      const rows = Math.max(badgeLines + 0.4, ...cells.slice(1).map((c) => c.length));
+      const h = rows * 9.8 + 8;
       if (y - h < M + 40) { newPage(); header(); }
-      box(M, y - h, CW, h, { border: false });
       page.drawLine({ start: { x: M, y: y - h }, end: { x: W - M, y: y - h }, thickness: 0.5, color: LINE });
 
       // Risk 배지
       const lvl = cells[0]![0]!;
-      const bw = bold.widthOfTextAtSize(lvl, 7) + 8;
-      page.drawRectangle({ x: M + 4, y: y - 13, width: bw, height: 10, color: r.level === "High" ? RED : AMBER });
-      txt(lvl, M + 8, y - 10.5, 7, bold, r.level === "High" ? WHITE : BLACK);
-      cells[0]!.slice(1).forEach((ht, i) => txt(ht, M + 4, y - 23 - i * 9, 6.5, reg, GREY));
+      const bw = wd(lvl, 7) + 9;
+      page.drawRectangle({ x: M + 4, y: y - 13.5, width: bw, height: 10.5, color: r.level === "High" ? RED : AMBER });
+      txt(lvl, M + 8.5, y - 11, 7, true, r.level === "High" ? WHITE : BLACK);
+      cells[0]!.slice(1).forEach((ht, i) => txt(ht, M + 4, y - 23 - i * 9, 6.5, false, GREY));
 
-      cells[1]!.forEach((ln, i) => txt(ln, colX[1]! + 4, y - 11 - i * 9.6, 7.5, bold));
-      cells[2]!.forEach((ln, i) => txt(ln, colX[2]! + 4, y - 11 - i * 9.6, 7, reg, GREY));
-      cells[3]!.forEach((ln, i) => txt(ln, colX[3]! + 4, y - 11 - i * 9.6, 7.5, reg));
-      cells[4]!.forEach((ln, i) => txt(ln, colX[4]! + 4, y - 11 - i * 9.6, 7.5, reg));
+      cells[1]!.forEach((ln, i) => txt(ln, colX[1]! + 4, y - 11 - i * 9.8, 7.5, true));
+      cells[2]!.forEach((ln, i) => txt(ln, colX[2]! + 4, y - 11 - i * 9.8, 7, false, GREY));
+      cells[3]!.forEach((ln, i) => txt(ln, colX[3]! + 4, y - 11 - i * 9.8, 7.5, false));
+      cells[4]!.forEach((ln, i) => txt(ln, colX[4]! + 4, y - 11 - i * 9.8, 7.5, false));
       y -= h;
     }
     y -= 8;
@@ -243,7 +246,7 @@ export async function buildSafetyPdf(input: SafetyPdfInput): Promise<Uint8Array>
   need(rh + 40);
   box(M, y - rh, CW, rh);
   box(M, y - 14, CW, 14, { fill: LIGHT });
-  txt(t.rules, M + 5, y - 10.5, 7.5, bold, GREY);
+  txt(t.rules, M + 5, y - 10.5, 7.5, true, GREY);
   left.forEach((ln, i) => txt(ln, M + 6, y - 25 - i * 10, 7.5));
   right.forEach((ln, i) => txt(ln, M + 12 + colw, y - 25 - i * 10, 7.5));
   y -= rh + 14;
@@ -253,7 +256,7 @@ export async function buildSafetyPdf(input: SafetyPdfInput): Promise<Uint8Array>
   [t.sign, t.signW].forEach((s, i) => {
     const x = M + i * (sw + 10);
     page.drawLine({ start: { x, y }, end: { x: x + sw, y }, thickness: 0.7, color: GREY });
-    txt(s, x, y - 10, 7.5, reg, GREY);
+    txt(s, x, y - 10, 7.5, false, GREY);
   });
 
   return await doc.save();
