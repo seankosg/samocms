@@ -1078,6 +1078,15 @@ export type Database = {
       }
     }
     Functions: {
+      activity_daily_trend: {
+        Args: { _discipline?: string }
+        Returns: {
+          actual_avg: number
+          item_count: number
+          planned_avg: number
+          snapshot_date: string
+        }[]
+      }
       can_edit_slot: {
         Args: { _slot: string; _user_id: string }
         Returns: boolean

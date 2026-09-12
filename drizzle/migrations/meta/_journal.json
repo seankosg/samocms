@@ -113,6 +113,13 @@
       "when": 1789196149779,
       "tag": "0015_snapshot_carryover_null_batch",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1789196825743,
+      "tag": "0016_activity_daily_trend_fn",
+      "breakpoints": true
     }
   ]
 }
