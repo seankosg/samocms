@@ -61,6 +61,7 @@ function SafetyReportPage() {
 
   const risks = saved.data?.risks ?? [];
   const pdfUrl = saved.data?.pdfUrl ?? null;
+  const imageUrls = saved.data?.imageUrls ?? [];
   const dateLabel = lang === "en" ? fmtTodayEn(day) : fmtToday(day);
 
   return (
@@ -81,6 +82,13 @@ function SafetyReportPage() {
               ? <a href={pdfUrl} target="_blank" rel="noreferrer"><Download className="mr-1 size-4" />생성된 PDF</a>
               : <span><Download className="mr-1 size-4" />생성된 PDF</span>}
           </Button>
+          {imageUrls.map((u, i) => (
+            <Button key={u} size="sm" variant="outline" asChild>
+              <a href={u} target="_blank" rel="noreferrer">
+                <Download className="mr-1 size-4" />이미지 {i + 1}
+              </a>
+            </Button>
+          ))}
           {isAdmin && (
             <Button size="sm" onClick={() => run.mutate()} disabled={run.isPending || !groups}>
               <RefreshCw className={`mr-1 size-4 ${run.isPending ? "animate-spin" : ""}`} />다시 분석
