@@ -1,26 +1,40 @@
 /** 대시보드 → 리스트 드릴다운용 URL 검색 파라미터 */
 export type ListSearch = {
   dept?: string;
+  /** 파일 구분(공종) 그룹 — 대시보드 부문별 집계와 동일하게 slot 또는 dept 일치 */
+  slot?: string;
   bldg?: string;
   ms?: string;
   sub?: string;
+  mgr?: string;
   status?: string;
   /** 기준일 내 종료 예정만 보기 */
   duebyBase?: boolean;
+  /** 계획·실적 진도 값이 있는 행만 보기 (대시보드 평균 모수와 동일) */
+  hasProgress?: boolean;
+  /** Finish 날짜 범위 */
+  efrom?: string;
+  eto?: string;
   q?: string;
 };
 
 const str = (v: unknown) => (typeof v === "string" && v.trim() ? v : undefined);
+const bool = (v: unknown) => v === true || v === "true";
 
 export function validateListSearch(raw: Record<string, unknown>): ListSearch {
   const out: ListSearch = {};
   const dept = str(raw["dept"]); if (dept) out.dept = dept;
+  const slot = str(raw["slot"]); if (slot) out.slot = slot;
   const bldg = str(raw["bldg"]); if (bldg) out.bldg = bldg;
   const ms = str(raw["ms"]); if (ms) out.ms = ms;
   const sub = str(raw["sub"]); if (sub) out.sub = sub;
+  const mgr = str(raw["mgr"]); if (mgr) out.mgr = mgr;
   const status = str(raw["status"]); if (status) out.status = status;
+  const efrom = str(raw["efrom"]); if (efrom) out.efrom = efrom;
+  const eto = str(raw["eto"]); if (eto) out.eto = eto;
   const q = str(raw["q"]); if (q) out.q = q;
-  if (raw["duebyBase"] === true || raw["duebyBase"] === "true") out.duebyBase = true;
+  if (bool(raw["duebyBase"])) out.duebyBase = true;
+  if (bool(raw["hasProgress"])) out.hasProgress = true;
   return out;
 }
 
@@ -30,7 +44,10 @@ export const toInitial = (s: ListSearch) => ({
   ...(s.bldg ? { bldg: s.bldg } : {}),
   ...(s.ms ? { ms: s.ms } : {}),
   ...(s.sub ? { sub: s.sub } : {}),
+  ...(s.mgr ? { mgr: s.mgr } : {}),
   ...(s.status ? { status: s.status } : {}),
+  ...(s.efrom ? { efrom: s.efrom } : {}),
+  ...(s.eto ? { eto: s.eto } : {}),
   ...(s.q ? { q: s.q } : {}),
 });
 
