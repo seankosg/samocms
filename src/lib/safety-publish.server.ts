@@ -1,7 +1,7 @@
 /**
- * 안전 리포트 PDF 생성·저장 (서버 전용)
- * 한글·영문 분석 결과가 모두 있을 때 A4 PDF 2개를 만들어 Storage 에 저장하고
- * safety_reports 의 경로·준비 시각을 갱신합니다.
+ * 안전 리포트 PDF·이미지 생성·저장 (서버 전용)
+ * 한글·영문 분석 결과가 모두 있을 때 A4 PDF 2개와 언어별 A4 페이지 이미지(JPG)를
+ * 만들어 Storage 에 저장하고 safety_reports 의 경로·장수·준비 시각을 갱신합니다.
  */
 import { toRow, type ActivityRow, SLOT_LABEL } from "./schedule-model";
 import { splitToday, todayTc, byTeam, byBldg } from "./today-model";
