@@ -234,10 +234,11 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
   return (
     <div className="min-w-0 rounded-md border border-border bg-card p-4 shadow-sm">
       <div className="mb-3 border-b border-border">
-        <Tabs value={mode} onValueChange={(value) => { setMode(value as "discipline" | "milestone"); setHover(null); }}>
+        <Tabs value={mode} onValueChange={(value) => { setMode(value as Mode); setHover(null); }}>
           <TabsList className="h-10 rounded-none bg-transparent p-0">
             <TabsTrigger value="discipline" className="h-10 rounded-none border-b-2 border-transparent px-4 data-[state=active]:border-primary data-[state=active]:bg-transparent">공종별 예측</TabsTrigger>
             <TabsTrigger value="milestone" className="h-10 rounded-none border-b-2 border-transparent px-4 data-[state=active]:border-primary data-[state=active]:bg-transparent">마일스톤별 예측</TabsTrigger>
+            <TabsTrigger value="tc" className="h-10 rounded-none border-b-2 border-transparent px-4 data-[state=active]:border-primary data-[state=active]:bg-transparent">T&C 예측</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
