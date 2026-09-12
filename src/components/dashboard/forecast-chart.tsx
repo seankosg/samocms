@@ -81,12 +81,12 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
     return [...new Set(scoped.map((r) => r.bldg ?? "(미지정)"))].sort((a, b) => a.localeCompare(b, "ko"));
   }, [tcItems, tcTeam]);
 
-  const tcModel = useMemo<TcForecastModel | null>(() => {
-    if (mode !== "tc") return null;
-    return buildTcForecast(tcItems, { stage: tcStage, team: tcTeam, bldg: tcBldg, base });
-  }, [mode, tcItems, tcStage, tcTeam, tcBldg, base]);
-
   const model = useMemo(() => {
+    if (mode === "tc") {
+      const m = buildTcForecast(tcItems, { stage: tcStage, team: tcTeam, bldg: tcBldg, base });
+      if (!m) return null;
+      return { ...m, hmPlanDoneDate: null as string | null };
+    }
     const series = data?.series ?? [];
     if (series.length === 0) return null;
     const baseRows = eligibleRows; // 발주처(현대자동차) 담당 항목 제외
