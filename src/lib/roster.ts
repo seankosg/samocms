@@ -41,6 +41,7 @@ export const ROSTER: RosterEntry[] = [
   { username: "syshin", full_name: "신수영", position: "팀장", team: "사업지원2팀", role: "user", scopes: ["permit"] },
   { username: "ythan", full_name: "한용태", position: "팀장", team: "사업수행팀", role: "user", scopes: [] },
   { username: "jwlee", full_name: "이정우", position: "팀장", team: "안전관리팀", role: "user", scopes: ["safety"] },
+  { username: "kjkang", full_name: "강기주", position: "PA", team: "", role: "guest", scopes: ["external"] },
   { username: "hjlee", full_name: "이희재", position: "공무 책임", team: "사업지원2팀", role: "user", scopes: ["permit"] },
   { username: "jhlee", full_name: "이지한", position: "공무 매니저", team: "사업지원2팀", role: "user", scopes: ["permit"] },
   { username: "gschoi", full_name: "최규산", position: "설계 책임", team: "사업지원2팀", role: "user", scopes: [] },
