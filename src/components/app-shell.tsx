@@ -72,8 +72,7 @@ const DATA_NAV = [
 const ADMIN_NAV = [
   { group: "관리", items: [
     { to: "/users", label: "CMS 사용자 관리", icon: Users },
-    { to: "/manpower/members", label: "출면기록 관리자 설정", icon: Contact },
-    { to: "/manpower/masters", label: "출면 업체 장소 관리 설정", icon: Contact },
+    { to: "/manpower/admin", label: "출면관리", icon: Contact },
     { to: "/safety-settings", label: "안전리포트 설정", icon: ShieldAlert },
   ] },
 ] as const;
