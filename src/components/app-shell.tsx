@@ -41,24 +41,24 @@ function NewVersionButton() {
 }
 
 const NAV = [
-  { group: "현황", items: [
+  { group: "공정현황", items: [
     { to: "/dashboard", label: "대시보드", icon: BarChart3 },
-    { to: "/today", label: "오늘의 주요 작업", icon: CalendarClock },
-    { to: "/network", label: "네트워크", icon: Network },
-    { to: "/safety-report", label: "Safety Report", icon: ShieldAlert },
+    { to: "/network", label: "네트워크 공정표", icon: Network },
+    { to: "/delays", label: "지연 리스트", icon: AlertTriangle },
+    { to: "/schedule", label: "공정 리스트", icon: Table2 },
     { to: "/report", label: "Progress Report", icon: FileText },
   ] },
-  { group: "공정", items: [
-    { to: "/delays", label: "지연 리스트", icon: AlertTriangle },
-    { to: "/schedule", label: "공정리스트", icon: Table2 },
-  ] },
-  { group: "시운전 (T&C)", items: [
+  { group: "시운전 현황", items: [
+    { to: "/tc/progress", label: "T&C Progress", icon: TrendingUp },
     { to: "/tc/mech", label: "MECH T&C", icon: Wrench },
     { to: "/tc/elec", label: "ELEC T&C", icon: Zap },
-    { to: "/tc/progress", label: "T&C Progress", icon: TrendingUp },
     { to: "/tc/list", label: "T&C List", icon: ListChecks },
   ] },
-  { group: "Daily Manpower 관리", items: [
+  { group: "안전현황", items: [
+    { to: "/today", label: "오늘의 주요작업", icon: CalendarClock },
+    { to: "/safety-report", label: "Safety Report", icon: ShieldAlert },
+  ] },
+  { group: "Manpower 현황", items: [
     { to: "/manpower", label: "출면 현황", icon: UserCheck },
     { to: "/manpower/trend", label: "출면 추이", icon: LineChart },
     { to: "/manpower/compare", label: "검증 대조", icon: GitCompare },
@@ -154,10 +154,10 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
   );
 
   const navList = (expanded: boolean, onNavigate?: () => void) => (
-    <nav className="p-2" aria-label="주 메뉴">
+    <nav className="p-2 space-y-2" aria-label="주 메뉴">
       {groups.map((g) => (
-        <div key={g.group} className="mb-3">
-          {expanded && <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{g.group}</p>}
+        <div key={g.group} className="rounded-lg border border-border/60 bg-muted/30 px-1.5 py-2">
+          {expanded && <p className="px-2 py-1 text-[10px] font-bold tracking-wide text-muted-foreground">{g.group}</p>}
           {g.items.map((it) => (
             <Link
               key={it.to} to={it.to} title={it.label} onClick={onNavigate}
