@@ -4,6 +4,12 @@ import { useProgressForecast } from "@/lib/use-project";
 import { KPI_SLOTS, planAt, pct1, SLOT_LABEL, type Row } from "@/lib/schedule-model";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { TcItem } from "@/lib/tc-model";
+import {
+  TC_FORECAST_STAGES, TC_F_STAGE_LABEL,
+  buildTcForecast, buildTcForecastSummary,
+  type TcForecastStage, type TcForecastModel,
+} from "@/lib/tc-forecast";
 
 const DAY = 864e5;
 const toTs = (d: string) => Date.parse(d);
