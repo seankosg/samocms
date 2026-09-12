@@ -10,10 +10,10 @@ export const TC_FORECAST_STAGES = ["T0", "T1", "T2", "Response"] as const;
 export type TcForecastStage = (typeof TC_FORECAST_STAGES)[number];
 
 export const TC_F_STAGE_LABEL: Record<TcForecastStage, string> = {
-  T0: "T0 반입·설치",
-  T1: "T1 내부 시운전",
-  T2: "T2 입회 검사",
-  Response: "코멘트 대응",
+  T0: "T0",
+  T1: "T1",
+  T2: "T2",
+  Response: "Response",
 };
 
 const PLAN_COL: Record<TcForecastStage, keyof TcItem> = {
