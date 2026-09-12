@@ -26,9 +26,10 @@ async function fetchAll<T>(client: any, table: string): Promise<T[]> {
 }
 
 export const pdfPath = (day: string, lang: SafetyLang) => `safety/${day}-${lang}.pdf`;
+export const imgPath = (day: string, lang: SafetyLang, page: number) => `safety/${day}-${lang}-${page}.jpg`;
 
-/** 두 언어 결과가 모두 저장되어 있으면 PDF 2개를 만들어 저장합니다. */
-export async function publishSafetyPdfs(day: string): Promise<{ ok: boolean; reason?: string }> {
+/** 두 언어 결과가 모두 저장되어 있으면 PDF 2개와 A4 페이지 이미지를 만들어 저장합니다. */
+export async function publishSafetyAssets(day: string): Promise<{ ok: boolean; reason?: string }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   const { data: row, error } = await supabaseAdmin
