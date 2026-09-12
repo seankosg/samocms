@@ -134,6 +134,13 @@
       "when": 1789204861687,
       "tag": "0018_safety_telegram_rev4",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1789204894273,
+      "tag": "0019_safety_telegram_view_app_url",
+      "breakpoints": true
     }
   ]
 }
