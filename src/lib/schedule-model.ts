@@ -97,6 +97,8 @@ export type Row = {
   scope: string | null;
   ms: string | null;
   sub: string | null;
+  /** 담당자 (엑셀 「담당」 컬럼) */
+  mgr: string | null;
   act: string;
   unit: string | null;
   done: number | null;
@@ -126,6 +128,7 @@ export function toRow(a: ActivityRow): Row {
     scope: a.work_scope,
     ms: normMS(a.milestone),
     sub: a.subcontractor,
+    mgr: (a as { manager?: string | null }).manager ?? null,
     act: flat(a.activity),
     unit: a.unit,
     done: a.done_quantity,

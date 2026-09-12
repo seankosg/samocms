@@ -93,10 +93,16 @@ export function parseScheduleFile(buffer: ArrayBuffer, fileName: string): { rows
   }
   const fileDate = sheetDate ?? dateFromFileName(fileName);
 
-  // 머리글(2~3행)에 「담당자」 컬럼이 있으면 그 위치를 찾아 함께 읽습니다.
+  // 머리글(2~3행)에 「담당」/「담당자」 컬럼이 있으면 그 위치를 찾아 함께 읽습니다.
+  // 「담당부서」(공종) 컬럼은 제외합니다.
   let managerCol = -1;
   for (let i = headerRow; i < Math.min(grid.length, headerRow + 3); i += 1) {
-    const at = (grid[i] ?? []).findIndex((c) => /담당\s*자?|담당자|Manager|Charge/i.test(String(text(c) ?? "")));
+    const at = (grid[i] ?? []).findIndex((c) => {
+      const s = String(text(c) ?? "");
+      if (!s) return false;
+      if (/부서|dept|department|division|팀/i.test(s)) return false;
+      return /^담당\s*자?$/.test(s) || /manager|in\s*charge/i.test(s);
+    });
     if (at >= 0) { managerCol = at; break; }
   }
 
