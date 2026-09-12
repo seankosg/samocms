@@ -9,6 +9,7 @@ import { SLOT_LABEL_EN } from "./today-i18n";
 import type { TcItem } from "./tc-model";
 import type { SafetyLang, SafetyRisk } from "./safety.server";
 import { buildSafetyPdf } from "./safety-pdf.server";
+import { buildSafetyImages } from "./safety-image.server";
 
 const BUCKET = "safety-reports";
 
