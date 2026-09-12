@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { AppShell } from "@/components/app-shell";
 import { ScheduleTable } from "@/components/schedule-table";
 import { projectQuery, useProject } from "@/lib/use-project";
-import { fmtDate, isLate, pct1 } from "@/lib/schedule-model";
+import { fmtDate, isLate, pct1, SLOT_LABEL } from "@/lib/schedule-model";
 import { searchKey, toInitial, validateListSearch } from "@/lib/list-search";
 
 export const Route = createFileRoute("/_authenticated/delays")({
@@ -23,11 +23,15 @@ export const Route = createFileRoute("/_authenticated/delays")({
 function DelaysPage() {
   const { rows, base } = useProject();
   const search = Route.useSearch();
-  const late = useMemo(() => rows.filter(isLate), [rows]);
+  const late = useMemo(() => rows.filter((r) => {
+    if (!isLate(r)) return false;
+    if (search.slot && !(r.slot === search.slot || r.dept === search.slot)) return false;
+    return true;
+  }), [rows, search.slot]);
   const gap = late.length ? late.reduce((s, r) => s + ((r.pl ?? 0) - (r.pc ?? 0)), 0) / late.length : 0;
 
   return (
-    <AppShell title="지연 리스트" desc={`기준일 ${fmtDate(base)} · 지연 ${late.length.toLocaleString()}건 · 평균 격차 ${pct1(gap)}%p`}>
+    <AppShell title="지연 리스트" desc={`기준일 ${fmtDate(base)}${search.slot ? ` · 공종 ${SLOT_LABEL[search.slot] ?? search.slot}` : ""} · 지연 ${late.length.toLocaleString()}건 · 평균 격차 ${pct1(gap)}%p`}>
       <ScheduleTable
         key={searchKey(search)}
         rows={late}

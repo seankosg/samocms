@@ -61,7 +61,7 @@ function multiValue(r: Row, k: MultiKey): string {
   return String(r[k] ?? "");
 }
 
-export type TableInitial = Partial<{ dept: string; bldg: string; ms: string; sub: string; status: string; q: string }>;
+export type TableInitial = Partial<{ dept: string; bldg: string; ms: string; sub: string; mgr: string; status: string; efrom: string; eto: string; q: string }>;
 
 export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy }: { rows: Row[]; fileName: string; lockLate?: boolean; initial?: TableInitial; dueBy?: string | null }) {
   const { canEdit, canWrite } = useAuth();
@@ -82,11 +82,15 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
     put("bldg", initial?.bldg);
     put("ms", initial?.ms);
     put("sub", initial?.sub);
+    put("mgr", initial?.mgr);
     put("status", initial?.status ? STATUS_LABEL[initial.status] ?? initial.status : undefined);
     return init;
   });
   const [texts, setTexts] = useState<Partial<Record<TextKey, TextFilterValue>>>({});
-  const [dates, setDates] = useState<Partial<Record<DateKey, DateFilterValue>>>({});
+  const [dates, setDates] = useState<Partial<Record<DateKey, DateFilterValue>>>(() => {
+    if (!initial?.efrom && !initial?.eto) return {};
+    return { e: { ...(initial.efrom ? { from: initial.efrom } : {}), ...(initial.eto ? { to: initial.eto } : {}) } };
+  });
 
   const setMultiCol = (k: MultiKey, v: string[] | undefined) => setMulti((o) => ({ ...o, [k]: v }));
   const setTextCol = (k: TextKey, v: TextFilterValue | undefined) => setTexts((o) => ({ ...o, [k]: v }));

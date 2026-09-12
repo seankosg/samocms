@@ -18,29 +18,33 @@ export function ManpowerKpiCard() {
   const comp = compliance(cards, companies, day, data?.settings?.["manpower_cutoff_time"] ?? "09:00");
 
   return (
-    <Link to="/manpower" className="block rounded-md border border-border bg-card p-4 shadow-sm transition hover:border-primary/50">
-      <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+    <div className="rounded-md border border-border bg-card p-4 shadow-sm transition hover:border-primary/50">
+      <Link to="/manpower" search={{ day }} className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground hover:text-primary">
         <UserCheck className="size-3.5" />오늘 출면 · {fmtDay(day)}
-      </div>
+      </Link>
       {isError ? (
         <p className="mt-2 text-xs text-muted-foreground">출면 자료를 불러오지 못했습니다.</p>
       ) : (
         <>
-          <p className="mt-1 text-2xl font-bold">{isLoading ? "…" : `${total.toLocaleString()}명`}</p>
+          <p className="mt-1 text-2xl font-bold">
+            <Link to="/manpower" search={{ day, src: "SUB" }} className="underline-offset-2 hover:text-primary hover:underline">
+              {isLoading ? "…" : `${total.toLocaleString()}명`}
+            </Link>
+          </p>
           <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
-            <Cell label="보고 협력사" value={`${new Set(sub.map((c) => c.company)).size}/${companies.filter((c) => c.is_active).length}`} />
-            <Cell label={MP.compliance} value={`${Math.round(comp.rate * 100)}%`} />
-            <Cell label={MP.notReported} value={String(comp.missing.length)} />
+            <Cell label="보고 협력사" value={`${new Set(sub.map((c) => c.company)).size}/${companies.filter((c) => c.is_active).length}`} day={day} />
+            <Cell label={MP.compliance} value={`${Math.round(comp.rate * 100)}%`} day={day} />
+            <Cell label={MP.notReported} value={String(comp.missing.length)} day={day} />
           </div>
         </>
       )}
-    </Link>
+    </div>
   );
 }
 
-const Cell = ({ label, value }: { label: string; value: string }) => (
-  <div className="rounded bg-muted/50 px-2 py-1.5">
+const Cell = ({ label, value, day }: { label: string; value: string; day: string }) => (
+  <Link to="/manpower" search={{ day, src: "SUB" }} className="rounded bg-muted/50 px-2 py-1.5 transition hover:bg-muted">
     <p className="truncate text-muted-foreground">{label}</p>
     <p className="font-bold text-foreground">{value}</p>
-  </div>
+  </Link>
 );

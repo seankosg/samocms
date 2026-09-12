@@ -189,7 +189,8 @@ export function dailyActual(r: Row, prev: Map<string, number> | undefined): numb
 
 
 export const isLate = (r: Row) => r.pl != null && r.pc != null && r.pc < r.pl;
-export const isDone = (r: Row) => r.pc != null && r.pc >= 1;
+/** 완료 판정 — 상태 컬럼(stOf)과 동일 기준(99.5% 이상) */
+export const isDone = (r: Row) => r.pc != null && r.pc >= 0.995;
 export const hasProgress = (r: Row) => r.pl != null || r.pc != null;
 
 export function stOf(pl: number | null, pc: number | null, late: boolean) {

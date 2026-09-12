@@ -97,10 +97,10 @@ function Dashboard() {
             </div>
             {m.bySlot.map((s) => (
               <div key={s.slot} className="grid grid-cols-4 gap-1 border-t border-border/60 py-1 text-right">
-                <span className="text-left font-semibold"><Drill to="/schedule" search={{ dept: s.slot }}>{SLOT_LABEL[s.slot]}</Drill></span>
-                <span><Drill to="/schedule" search={{ dept: s.slot, duebyBase: true }}>{s.plan}</Drill></span>
-                <span className="font-bold"><Drill to="/schedule" search={{ dept: s.slot, status: "done" }}>{s.act}</Drill></span>
-                <span className={`font-semibold ${gapCls(s.gap)}`}>{sign(s.gap)}{Math.abs(s.gap)}</span>
+                <span className="text-left font-semibold"><Drill to="/schedule" search={{ slot: s.slot }}>{SLOT_LABEL[s.slot]}</Drill></span>
+                <span><Drill to="/schedule" search={{ slot: s.slot, duebyBase: true }}>{s.plan}</Drill></span>
+                <span className="font-bold"><Drill to="/schedule" search={{ slot: s.slot, status: "done" }}>{s.act}</Drill></span>
+                <span className={`font-semibold ${gapCls(s.gap)}`}><Drill to="/schedule" search={{ slot: s.slot, duebyBase: true }}>{sign(s.gap)}{Math.abs(s.gap)}</Drill></span>
               </div>
             ))}
             <p className="mt-1 text-right text-[9px] text-muted-foreground">계획 = 기준일 내 완료 예정 · 실적 = 완료</p>
@@ -111,11 +111,11 @@ function Dashboard() {
           <div>
             <p className="text-xs font-bold text-muted-foreground">계획 대비 실적</p>
             <p className="mt-1 flex flex-wrap items-baseline gap-1.5">
-              <span className="text-3xl font-bold"><Drill to="/schedule">{pct1(m.pc)}%</Drill></span>
-              <span className="text-sm text-muted-foreground">/ {pct1(m.pl)}%</span>
-              <span className={`text-xs font-bold ${gapCls(m.pc - m.pl)}`}>{sign(m.pc - m.pl)}{pct1(Math.abs(m.pc - m.pl))}p</span>
+              <span className="text-3xl font-bold"><Drill to="/schedule" search={{ hasProgress: true }}>{pct1(m.pc)}%</Drill></span>
+              <span className="text-sm text-muted-foreground">/ <Drill to="/schedule" search={{ hasProgress: true }}>{pct1(m.pl)}%</Drill></span>
+              <span className={`text-xs font-bold ${gapCls(m.pc - m.pl)}`}><Drill to="/delays">{sign(m.pc - m.pl)}{pct1(Math.abs(m.pc - m.pl))}p</Drill></span>
             </p>
-            <p className="mt-1 text-[11px] text-muted-foreground">평균 진도 · 대상 {m.withP.toLocaleString()}행</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">평균 진도 · 대상 <Drill to="/schedule" search={{ hasProgress: true }} className="font-semibold text-foreground">{m.withP.toLocaleString()}</Drill>행</p>
             <Bar v={m.pc} marker={m.pl} className="mt-3" />
           </div>
           <div className="border-t border-border pt-2 text-[11px] sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
@@ -124,12 +124,12 @@ function Dashboard() {
             </div>
             {m.bySlot.map((s) => (
               <div key={s.slot} className="grid grid-cols-4 gap-1 border-t border-border/60 py-1 text-right">
-                <span className="text-left font-semibold"><Drill to="/schedule" search={{ dept: s.slot }}>{SLOT_LABEL[s.slot]}</Drill></span>
+                <span className="text-left font-semibold"><Drill to="/schedule" search={{ slot: s.slot, hasProgress: true }}>{SLOT_LABEL[s.slot]}</Drill></span>
                 {s.n === 0 ? <><span className="text-muted-foreground">—</span><span className="text-muted-foreground">—</span><span className="text-muted-foreground">—</span></> : (
                   <>
-                    <span><Drill to="/schedule" search={{ dept: s.slot }}>{pct1(s.pl)}</Drill></span>
-                    <span className="font-bold"><Drill to="/schedule" search={{ dept: s.slot }}>{pct1(s.pc)}</Drill></span>
-                    <span className={`font-semibold ${gapCls(s.pc - s.pl)}`}>{sign(s.pc - s.pl)}{pct1(Math.abs(s.pc - s.pl))}</span>
+                    <span><Drill to="/schedule" search={{ slot: s.slot, hasProgress: true }}>{pct1(s.pl)}</Drill></span>
+                    <span className="font-bold"><Drill to="/schedule" search={{ slot: s.slot, hasProgress: true }}>{pct1(s.pc)}</Drill></span>
+                    <span className={`font-semibold ${gapCls(s.pc - s.pl)}`}><Drill to="/delays" search={{ slot: s.slot }}>{sign(s.pc - s.pl)}{pct1(Math.abs(s.pc - s.pl))}</Drill></span>
                   </>
                 )}
               </div>
@@ -143,16 +143,16 @@ function Dashboard() {
             <p className="mt-1 text-3xl font-bold text-destructive">
               <Drill to="/delays">{m.late.toLocaleString()}</Drill><span className="ml-1 text-sm font-semibold text-muted-foreground">건</span>
             </p>
-            <p className="mt-1 text-[11px] text-muted-foreground">대상 {m.withP.toLocaleString()}행 중 · <b className="text-foreground">{pct1(m.latePct)}%</b></p>
+            <p className="mt-1 text-[11px] text-muted-foreground">대상 <Drill to="/schedule" search={{ hasProgress: true }} className="font-semibold text-foreground">{m.withP.toLocaleString()}</Drill>행 중 · <b className="text-foreground"><Drill to="/delays">{pct1(m.latePct)}%</Drill></b></p>
             <Bar v={m.latePct} tone="bad" className="mt-3" />
           </div>
           <div className="border-t border-border pt-2 text-[11px] sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
             <div className="grid grid-cols-[1fr_auto_60px] gap-2 pb-1 text-right text-muted-foreground"><span /><span>지연</span><span>비교</span></div>
             {m.bySlot.map((s) => (
               <div key={s.slot} className="grid grid-cols-[1fr_auto_60px] items-center gap-2 border-t border-border/60 py-1">
-                <span className="font-semibold"><Drill to="/delays" search={{ dept: s.slot }}>{SLOT_LABEL[s.slot]}</Drill></span>
+                <span className="font-semibold"><Drill to="/delays" search={{ slot: s.slot }}>{SLOT_LABEL[s.slot]}</Drill></span>
                 <span className={`text-right font-bold ${s.late ? "text-destructive" : "text-muted-foreground"}`}>
-                  <Drill to="/delays" search={{ dept: s.slot }}>{s.late}</Drill>
+                  <Drill to="/delays" search={{ slot: s.slot }}>{s.late}</Drill>
                 </span>
                 <span className="h-1.5 overflow-hidden rounded bg-muted"><span className="block h-full bg-destructive" style={{ width: `${(s.late / maxLate) * 100}%` }} /></span>
               </div>
@@ -166,7 +166,7 @@ function Dashboard() {
         <section className="mt-6">
           <h2 className="mb-2 text-sm font-bold">MEP T&amp;C 현황 <span className="ml-1 text-[11px] font-normal text-muted-foreground">MECH + ELEC 합계</span></h2>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {TC_CARDS.map((c) => <TcCard key={c.k} card={c} disc={tcDisc} />)}
+            {TC_CARDS.map((c) => <TcCard key={c.k} card={c} disc={tcDisc} base={base} />)}
           </div>
         </section>
       )}
@@ -189,15 +189,15 @@ function Dashboard() {
               <Bar v={x.pc ?? 0} className="mt-2" />
               <div className="mt-1.5 flex flex-wrap gap-x-2 text-[11px] text-muted-foreground">
                 <span>총 <Drill to="/schedule" search={{ ms: x.key }}>{x.total}</Drill>건</span>
-                <span>평균 {x.pc == null ? "—" : `${pct1(x.pc)}%`}</span>
+                <span>평균 {x.pc == null ? "—" : <Drill to="/schedule" search={{ ms: x.key, hasProgress: true }}>{pct1(x.pc)}%</Drill>}</span>
                 <span className={x.late ? "font-bold text-destructive" : ""}>지연 <Drill to="/delays" search={{ ms: x.key }}>{x.late}</Drill></span>
-                {x.over > 0 && <span className="font-bold text-destructive">초과 {x.over}</span>}
+                {x.over > 0 && x.due && <span className="font-bold text-destructive">초과 <Drill to="/schedule" search={{ ms: x.key, efrom: nextDay(x.due) }}>{x.over}</Drill></span>}
                 {x.dd != null && x.pc != null && x.pc < 0.995 && <span className={x.dd < 0 ? "font-bold text-destructive" : x.dd <= 14 ? "font-bold text-chart-3" : ""}>D{x.dd >= 0 ? "-" : "+"}{Math.abs(x.dd)}</span>}
               </div>
               <div className="mt-2 border-t border-border pt-1.5 text-[11px]">
                 <MsRow label="계획" n={x.plan} p={x.total ? x.plan / x.total : 0} search={{ ms: x.key, duebyBase: true }} />
                 <MsRow label="실적" n={x.act} p={x.total ? x.act / x.total : 0} search={{ ms: x.key, status: "done" }} />
-                <MsRow label="차이" n={x.gap} p={x.total ? x.gap / x.total : 0} signed />
+                <MsRow label="차이" n={x.gap} p={x.total ? x.gap / x.total : 0} signed search={{ ms: x.key, duebyBase: true }} />
               </div>
 
             </div>
@@ -276,7 +276,9 @@ const TC_CARDS = [
 
 type Disc = { key: string; label: string; pr: ReturnType<typeof stageProgress> };
 
-function TcCard({ card, disc }: { card: (typeof TC_CARDS)[number]; disc: Disc[] }) {
+const TC_PLAN_FIELD: Record<TcStage, string> = { T0: "t0_p", T1: "t1_p", Report: "rp_p", RFI: "rfi_p", T2: "t2_p", Response: "resp_p" };
+
+function TcCard({ card, disc, base }: { card: (typeof TC_CARDS)[number]; disc: Disc[]; base: string }) {
   const isSt = card.k === "Status";
   let act = 0, plan = 0, tot = 0;
   const side = disc.map((d) => {
@@ -290,6 +292,15 @@ function TcCard({ card, disc }: { card: (typeof TC_CARDS)[number]; disc: Disc[] 
   const prog = tot ? act / tot : 0;
   const planP = tot ? plan / tot : 0;
   const gap = act - plan;
+  const stage = card.k as TcStage;
+  /** 실적(완료) 목록 */
+  const actSearch = (d?: string): TcDrillSearch => (isSt
+    ? { cell: "pass", ...(d ? { disc: d } : {}) }
+    : { stage, cell: "done", ...(d ? { disc: d } : {}) });
+  /** 계획(기준일 내 예정) 목록 */
+  const planSearch = (d?: string): TcDrillSearch => (isSt
+    ? { cell: "fail", ...(d ? { disc: d } : {}) }
+    : { stage, field: TC_PLAN_FIELD[stage], to: base, ...(d ? { disc: d } : {}) });
   const tone = isSt ? (plan ? "border-chart-3/40 bg-chart-3/5" : "border-primary/30 bg-primary/5") : gap < 0 ? "border-destructive/30 bg-destructive/5" : "border-primary/30 bg-primary/5";
 
   return (
@@ -297,15 +308,17 @@ function TcCard({ card, disc }: { card: (typeof TC_CARDS)[number]; disc: Disc[] 
       <div>
         <p className="text-xs font-bold">{card.t}<span className="ml-1 block text-[10px] font-normal text-muted-foreground">{card.s}</span></p>
         <p className="mt-1 flex flex-wrap items-baseline gap-1">
-          <span className="text-2xl font-bold"><Drill to="/tc/list" search={isSt ? { only: "Fail" } : {}}>{tcPct(prog)}</Drill></span>
+          <span className="text-2xl font-bold"><Drill to="/tc/list" search={actSearch()}>{tcPct(prog)}</Drill></span>
           {!isSt && <>
-            <span className="text-xs text-muted-foreground">/ {tcPct(planP)}</span>
-            <span className={`text-[11px] font-bold ${gapCls(prog - planP)}`}>{sign(prog - planP)}{tcPct(Math.abs(prog - planP)).replace("%", "")}%p</span>
+            <span className="text-xs text-muted-foreground">/ <Drill to="/tc/list" search={planSearch()}>{tcPct(planP)}</Drill></span>
+            <span className={`text-[11px] font-bold ${gapCls(prog - planP)}`}><Drill to="/tc/list" search={{ stage, cell: "late" }}>{sign(prog - planP)}{tcPct(Math.abs(prog - planP)).replace("%", "")}%p</Drill></span>
           </>}
         </p>
         <p className="mt-1 text-[11px] text-muted-foreground">
-          {isSt ? `Pass ${act} · Fail ${plan}` : `실적 ${act} / 계획 ${plan}`} · 전체 {tot} Qty
+          {isSt ? <>Pass <Drill to="/tc/list" search={actSearch()}>{act}</Drill> · Fail <Drill to="/tc/list" search={planSearch()}>{plan}</Drill></> : <>실적 <Drill to="/tc/list" search={actSearch()}>{act}</Drill> / 계획 <Drill to="/tc/list" search={planSearch()}>{plan}</Drill></>}
+          {" · 전체 "}<Drill to="/tc/list">{tot}</Drill> Qty
         </p>
+        <p className="text-[9px] text-muted-foreground">수치는 Qty 합계 · 클릭 시 해당 조건의 항목 목록</p>
         <Bar v={prog} marker={isSt ? undefined : planP} className="mt-2" tone={isSt ? "warn" : "ok"} />
       </div>
       <div className="border-t border-border pt-2 text-[11px] sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
@@ -315,8 +328,8 @@ function TcCard({ card, disc }: { card: (typeof TC_CARDS)[number]; disc: Disc[] 
             <div className="flex items-center justify-between gap-2">
               <span className="font-semibold"><Drill to="/tc/list" search={{ disc: x.key }}>{x.lbl}</Drill></span>
               <span>
-                <b><Drill to="/tc/list" search={isSt ? { disc: x.key, only: "Fail" } : { disc: x.key }}>{x.a}</Drill></b>
-                <span className="text-muted-foreground"> / {x.p}</span>
+                <b><Drill to="/tc/list" search={actSearch(x.key)}>{x.a}</Drill></b>
+                <span className="text-muted-foreground"> / <Drill to="/tc/list" search={planSearch(x.key)}>{x.p}</Drill></span>
                 {!isSt && x.p > 0 && x.a > x.p && <span className="ml-0.5 text-[9px] text-chart-3">▲</span>}
               </span>
             </div>
@@ -329,7 +342,7 @@ function TcCard({ card, disc }: { card: (typeof TC_CARDS)[number]; disc: Disc[] 
         {!isSt && (
           <div className="mt-1 flex items-center justify-between border-t border-border pt-1">
             <span className="text-muted-foreground">차이</span>
-            <b className={gapCls(gap)}>{sign(gap)}{Math.abs(gap)}</b>
+            <b className={gapCls(gap)}><Drill to="/tc/list" search={{ stage, cell: "late" }}>{sign(gap)}{Math.abs(gap)}</Drill></b>
           </div>
         )}
       </div>
@@ -337,10 +350,13 @@ function TcCard({ card, disc }: { card: (typeof TC_CARDS)[number]; disc: Disc[] 
   );
 }
 
-type DrillSearch = { dept?: string; ms?: string; bldg?: string; sub?: string; status?: string; duebyBase?: boolean };
+type DrillSearch = { dept?: string; slot?: string; ms?: string; bldg?: string; sub?: string; mgr?: string; status?: string; duebyBase?: boolean; hasProgress?: boolean; efrom?: string; eto?: string; q?: string };
+
+/** 날짜 하루 뒤 (YYYY-MM-DD) */
+const nextDay = (d: string) => new Date(Date.parse(d) + 864e5).toISOString().slice(0, 10);
 
 /** 대시보드 수치 → 리스트 드릴다운 링크 */
-function Drill({ to, search, className = "", children }: { to: "/schedule" | "/delays" | "/tc/list"; search?: DrillSearch | { disc?: string; only?: string }; className?: string; children: React.ReactNode }) {
+function Drill({ to, search, className = "", children }: { to: "/schedule" | "/delays" | "/tc/list"; search?: DrillSearch | TcDrillSearch; className?: string; children: React.ReactNode }) {
   return (
     <Link
       to={to}
@@ -351,6 +367,8 @@ function Drill({ to, search, className = "", children }: { to: "/schedule" | "/d
     </Link>
   );
 }
+
+type TcDrillSearch = { disc?: string; only?: string; bldg?: string; supplier?: string; stage?: string; cell?: string; field?: string; from?: string; to?: string };
 
 function MsRow({ label, n, p, signed, search }: { label: string; n: number; p: number; signed?: boolean; search?: DrillSearch }) {
   const cls = signed ? gapCls(n) : "";
@@ -380,6 +398,7 @@ function Bar({ v, marker, tone = "ok", className = "" }: { v: number; marker?: n
 /** 업로드 시점마다 저장된 기록으로 계산한 계획·실적 추이와 일일 진도율 */
 function TrendCard() {
   const { data, isLoading } = useProgressHistory();
+  const { base } = useProject();
   const series = data?.series ?? [];
   return (
     <Card title="진도 추이 · 일일 진도율 (기록 기반)">
@@ -396,8 +415,10 @@ function TrendCard() {
             <tbody>
               {series.map((s) => (
                 <tr key={s.date} className="border-b border-border/60">
-                  <td className="py-2 font-semibold">{s.date}</td>
-                  <td className="text-right">{s.count}</td>
+                  <td className="py-2 font-semibold">
+                    {s.date === base ? <Drill to="/schedule">{s.date}</Drill> : <span title="과거 기록일 — 현재 목록은 기준일 자료만 표시합니다">{s.date}</span>}
+                  </td>
+                  <td className="text-right">{s.date === base ? <Drill to="/schedule" search={{ hasProgress: true }}>{s.count}</Drill> : s.count}</td>
                   <td className="text-right">{pct1(s.planned)}%</td>
                   <td className="text-right font-semibold">{pct1(s.actual)}%</td>
                   <td className={`text-right ${gapCls(s.actual - s.planned)}`}>{sign(s.actual - s.planned)}{pct1(Math.abs(s.actual - s.planned))}%p</td>

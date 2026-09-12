@@ -16,6 +16,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { avgOf, isLate, MSDEF, pct1, SLOT_LABEL, type Row } from "@/lib/schedule-model";
 import { stageDone, TC_STAGES, TC_STAGE_SUB, type TcItem, type TcStage } from "@/lib/tc-model";
 import { cn } from "@/lib/utils";
+import { EMPTY_TOKEN } from "@/components/column-filter";
 
 type RowDimension = "dept" | "bldg" | "mgr" | "sub" | "ms";
 type Dimension = RowDimension | "tc";
@@ -180,19 +181,20 @@ function aggregateTcStage(items: TcItem[], base: string | null, stage: TcStage, 
 }
 
 const searchFor = (dimension: RowDimension, key: string) => {
-  if (key === "미지정") return {};
-  if (dimension === "dept") return { dept: key };
-  if (dimension === "bldg") return { bldg: key };
-  if (dimension === "sub") return { sub: key };
-  if (dimension === "ms") return { ms: key };
-  return { q: key };
+  const empty = key === "미지정";
+  if (dimension === "mgr") return { mgr: key };
+  if (dimension === "dept") return { dept: empty ? EMPTY_TOKEN : key };
+  if (dimension === "bldg") return { bldg: empty ? EMPTY_TOKEN : key };
+  if (dimension === "sub") return { sub: empty ? EMPTY_TOKEN : key };
+  return { ms: empty ? EMPTY_TOKEN : key };
 };
 
-const tcSearchFor = (groupBy: TcGroupBy, key: string) => {
-  if (key === "미지정") return {};
-  if (groupBy === "discipline") return { disc: key };
-  if (groupBy === "bldg") return { bldg: key };
-  return { supplier: key };
+const tcSearchFor = (groupBy: TcGroupBy, key: string, stage: TcStage, late: boolean) => {
+  const base = { stage, ...(late ? { cell: "late" } : {}) };
+  if (key === "미지정") return base;
+  if (groupBy === "discipline") return { ...base, disc: key };
+  if (groupBy === "bldg") return { ...base, bldg: key };
+  return { ...base, supplier: key };
 };
 
 export function ProgressRiskAnalysis({ rows, tcItems = [], base = null }: { rows: Row[]; tcItems?: TcItem[]; base?: string | null }) {
@@ -230,9 +232,9 @@ export function ProgressRiskAnalysis({ rows, tcItems = [], base = null }: { rows
     .slice(0, 10);
   const chartWidth = Math.max(620, progress.length * (progressDimension === "tc" ? 96 : 92));
 
-  const openList = (dimension: Dimension, key: string, late = false, tcGroup: TcGroupBy = "bldg") => {
+  const openList = (dimension: Dimension, key: string, late = false, tcGroup: TcGroupBy = "bldg", tcStage: TcStage = "T1") => {
     if (dimension === "tc") {
-      void navigate({ to: "/tc/list", search: tcSearchFor(tcGroup, key) });
+      void navigate({ to: "/tc/list", search: tcSearchFor(tcGroup, key, tcStage, late) });
       return;
     }
     void navigate({
@@ -265,7 +267,7 @@ export function ProgressRiskAnalysis({ rows, tcItems = [], base = null }: { rows
                 margin={{ top: 52, right: 10, bottom: progress.length > 7 ? 45 : 20, left: -12 }}
                 onClick={(state) => {
                   const payload = state?.activePayload?.[0]?.payload as GroupMetric | undefined;
-                  if (payload) openList(progressDimension, payload.key, false, pTcGroup);
+                  if (payload) openList(progressDimension, payload.key, false, pTcGroup, pTcStage);
                 }}
               >
                 <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
@@ -317,7 +319,7 @@ export function ProgressRiskAnalysis({ rows, tcItems = [], base = null }: { rows
               <button
                 key={group.key}
                 type="button"
-                onClick={() => openList(riskDimension, group.key, true, rTcGroup)}
+                onClick={() => openList(riskDimension, group.key, true, rTcGroup, rTcStage)}
                 className={cn(
                   "grid w-full grid-cols-[minmax(0,1fr)_74px_70px] items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
                   group.severity === "critical" && "bg-destructive/5",
