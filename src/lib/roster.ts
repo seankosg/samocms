@@ -1,5 +1,5 @@
 /** 파일 종류(slot) → 담당 업무(scope) */
-export const SCOPES = ["arch", "elec", "mech", "permit", "management", "safety", "external"] as const;
+export const SCOPES = ["arch", "elec", "mech", "permit", "design", "management", "safety", "external"] as const;
 export type Scope = (typeof SCOPES)[number];
 
 export const SCOPE_LABEL: Record<string, string> = {
@@ -7,6 +7,7 @@ export const SCOPE_LABEL: Record<string, string> = {
   elec: "전기 (Elec)",
   mech: "설비 (Mech)",
   permit: "공무 (Permit)",
+  design: "설계 (Design)",
   management: "관리",
   safety: "안전",
   external: "외부",
@@ -44,8 +45,8 @@ export const ROSTER: RosterEntry[] = [
   { username: "kjkang", full_name: "강기주", position: "PA", team: "", role: "guest", scopes: ["external"] },
   { username: "hjlee", full_name: "이희재", position: "공무 책임", team: "사업지원2팀", role: "user", scopes: ["permit"] },
   { username: "jhlee", full_name: "이지한", position: "공무 매니저", team: "사업지원2팀", role: "user", scopes: ["permit"] },
-  { username: "gschoi", full_name: "최규산", position: "설계 책임", team: "사업지원2팀", role: "user", scopes: [] },
-  { username: "hgkim", full_name: "김형기", position: "설계 책임", team: "사업지원2팀", role: "user", scopes: [] },
+  { username: "gschoi", full_name: "최규산", position: "설계 책임", team: "사업지원2팀", role: "user", scopes: ["design"] },
+  { username: "hgkim", full_name: "김형기", position: "설계 책임", team: "사업지원2팀", role: "user", scopes: ["design"] },
   { username: "jibril", full_name: "지브릴", position: "건축 책임", team: "사업수행팀", role: "user", scopes: ["arch"] },
   { username: "tyhwang", full_name: "황태연", position: "건축 매니저", team: "사업수행팀", role: "user", scopes: ["arch"] },
   { username: "dhkim", full_name: "김두현", position: "전기 책임", team: "사업수행팀", role: "user", scopes: ["elec"] },
