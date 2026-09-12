@@ -105,8 +105,12 @@ function wrap(text: string, font: PDFFont, size: number, width: number): string[
   for (const ch of String(text ?? "")) {
     if (ch === "\n") { out.push(line); line = ""; continue; }
     const t = line + ch;
-    if (font.widthOfTextAtSize(t, size) > width && line) { out.push(line); line = ch; }
-    else line = t;
+    if (font.widthOfTextAtSize(t, size) > width && line) {
+      // 영문은 되도록 단어 단위로 끊습니다
+      const sp = line.lastIndexOf(" ");
+      if (ch !== " " && sp > width / (size * 1.2)) { out.push(line.slice(0, sp)); line = line.slice(sp + 1) + ch; }
+      else { out.push(line); line = ch === " " ? "" : ch; }
+    } else line = t;
   }
   if (line) out.push(line);
   return out.length ? out : [""];
