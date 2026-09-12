@@ -19,18 +19,14 @@ const FONT_BUCKET = "safety-reports";
 const FONT_R = "fonts/NanumGothic-Regular.ttf";
 const FONT_B = "fonts/NanumGothic-Bold.ttf";
 
-let fontCache: { r: Uint8Array; b: Uint8Array } | null = null;
+let fontCache: { r: Uint8Array } | null = null;
 
 async function loadFonts() {
   if (fontCache) return fontCache;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const get = async (p: string) => {
-    const { data, error } = await supabaseAdmin.storage.from(FONT_BUCKET).download(p);
-    if (error || !data) throw new Error(`글꼴을 불러오지 못했습니다: ${p} ${error?.message ?? ""}`);
-    return new Uint8Array(await data.arrayBuffer());
-  };
-  const [r, b] = await Promise.all([get(FONT_R), get(FONT_B)]);
-  fontCache = { r, b };
+  const { data, error } = await supabaseAdmin.storage.from(FONT_BUCKET).download(FONT_R);
+  if (error || !data) throw new Error(`글꼴을 불러오지 못했습니다: ${error?.message ?? ""}`);
+  fontCache = { r: new Uint8Array(await data.arrayBuffer()) };
   return fontCache;
 }
 
