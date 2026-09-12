@@ -1,9 +1,9 @@
 # 안전 리포트 이미지(JPG) 자동 생성 — 작업 계획
 
-봇이 텔레그램 메시지에 **사진(JPG)** 을 바로 붙여 보낼 수 있도록, 앱이 매일 리포트 이미지를 만들어 지금 PDF와 같은 방식으로 공개 주소로 제공합니다. PDF 링크도 그대로 함께 유지합니다.
+봇이 텔레그램 메시지에 **사진(JPG)** 을 바로 붙여 보낼 수 있도록, 앱이 매일 리포트 이미지를 A4 페이지 단위로 만들어 공개 주소로 제공합니다. PDF도 지금처럼 그대로 유지합니다.
 
 ## 확정된 요구사항
-- 이미지 + PDF 둘 다 제공 (메시지에는 사진, 본문에 PDF 링크)
+- 이미지 + PDF 둘 다 제공. 본문(caption)에는 PDF 링크를 넣지 않고, 봇이 사진 뒤에 PDF 파일을 직접 보냅니다.
 - 이미지는 **A4 크기에 맞춰 페이지 단위로 분할** (내용이 길면 2장, 3장)
 - 한글·영문 각각 생성
 
@@ -16,9 +16,9 @@
 - 한글·영문 분석이 모두 끝나는 순간(자동 생성·「다시 분석」 모두) PDF와 함께 만들어집니다.
 
 ### 2) 봇 연계
-- 봇이 읽는 공개 목록(`v_safety_telegram`)에 `jpg_ko_urls`, `jpg_en_urls`(순서대로 담긴 주소 목록)와 장수를 추가합니다. PDF와 동일하게 `?v=준비시각`이 붙어 옛 파일이 캐시되지 않습니다.
+- 봇이 읽는 공개 목록(`v_safety_telegram`)에 `img_ko_urls`, `img_en_urls`(페이지 순서대로 담긴 공개 주소 JSON 배열)와 장수를 추가합니다. PDF와 동일하게 `?v=준비시각`이 붙어 옛 파일이 캐시되지 않습니다.
 - 인증 없이 받아갈 수 있는 공개 주소 `/api/public/safety-image?day=…&lang=ko|en&page=1` 을 새로 만듭니다.
-- 봇은 1장이면 `sendPhoto`, 여러 장이면 `sendMediaGroup`(앨범)으로 보내고 첫 장 설명글에 본문 + PDF 링크를 넣으면 됩니다. (봇 쪽 코드는 앱 범위 밖)
+- 봇은 1장이면 `sendPhoto`, 여러 장이면 `sendMediaGroup`(앨범)으로 보내고, 사진 뒤에 PDF를 파일로 이어 보냅니다. 설명글에는 PDF 링크를 넣지 않습니다. (봇 쪽 코드는 앱 범위 밖)
 
 ### 3) 화면
 - Safety Report 화면의 내려받기 영역에 PDF와 함께 **이미지(JPG)** 링크를 추가합니다.
@@ -33,7 +33,7 @@
 - `src/lib/safety-image.server.ts` 신설: `safety-pdf.server.ts`의 그리기 로직을 페이지 단위 명령 목록으로 공용화해 PDF와 이미지가 **같은 페이지 분할**을 쓰도록 리팩터 → 페이지별 A4 SVG 생성 → `@resvg/resvg-wasm`로 1240×1754 래스터화(폰트는 버킷의 NanumGothic TTF를 `fontBuffers`로 주입) → `jpeg-js`로 JPEG(품질 85) 인코딩.
 - Worker 런타임 제약상 sharp/canvas 사용 불가. resvg는 WASM이라 Worker에서 동작하지만, 초기화 실패 시 대비로 PNG 직출력(`asPng`) 경로를 유지하고 실패해도 PDF 생성·발송은 영향받지 않도록 try/catch 분리.
 - `publishSafetyPdfs`를 `publishSafetyAssets`로 확장(PDF 2개 + 언어별 JPG N장 업로드, 이전 회차의 남는 페이지 파일 삭제, 경로·장수·준비시각 갱신).
-- `v_safety_telegram` 뷰에 `jpg_ko_urls`·`jpg_en_urls`(text[] 또는 JSON 배열)와 `jpg_ko_pages`·`jpg_en_pages` 추가, 각 주소에 `?v=<ready_at>`, anon SELECT 권한 유지.
+- `v_safety_telegram` 뷰에 `img_ko_urls`·`img_en_urls`(jsonb 배열, 페이지 순서)와 `img_ko_pages`·`img_en_pages` 추가, 각 주소에 `?v=<ready_at>`, anon SELECT 권한 유지.
 - 새 공개 라우트 `src/routes/api/public/safety-image.ts` — `day`·`lang`·`page` 검증 후 Storage 스트리밍(`image/jpeg`).
 
 ## 인수 확인
