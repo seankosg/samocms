@@ -51,14 +51,17 @@ type GroupMetric = {
   severity: "critical" | "warning" | "watch";
 };
 
-const groupValue = (row: Row, dimension: Dimension) => {
-  const raw = dimension === "dept" ? row.dept : row[dimension];
+const groupValue = (row: Row, dimension: RowDimension) => {
+  const raw = row[dimension];
   const value = String(raw ?? "").trim();
   return value || "미지정";
 };
 
-const displayLabel = (value: string, dimension: Dimension) =>
-  dimension === "dept" ? (SLOT_LABEL[value] ?? value) : value;
+const displayLabel = (value: string, dimension: RowDimension) => {
+  if (dimension === "dept") return SLOT_LABEL[value] ?? value;
+  if (dimension === "ms") return value === "미지정" ? value : `${value} ${MSDEF[value] ?? ""}`.trim();
+  return value;
+};
 
 const taskDelayDays = (row: Row) => {
   if (!isLate(row)) return 0;
