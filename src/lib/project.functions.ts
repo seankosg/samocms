@@ -230,7 +230,7 @@ export const getProgressHistory = createServerFn({ method: "GET" })
     // 날짜별 평균 계획/실적 — DB 집계(행 수 제한 없이 전체 기간)
     const { data: agg, error: aggErr } = data.itemKey
       ? { data: null, error: null }
-      : await c.rpc("activity_daily_trend", { _discipline: data.discipline ?? undefined });
+      : await c.rpc("activity_daily_trend", (data.discipline ? { _discipline: data.discipline } : {}) as never);
     if (aggErr) throw new Error(aggErr.message);
 
     let base: Array<{ date: string; planned: number; actual: number; count: number }>;
