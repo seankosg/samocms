@@ -91,21 +91,27 @@ export const getSafetyReport = createServerFn({ method: "GET" })
     const c = col(lang);
     const { data: row, error } = await context.supabase
       .from("safety_reports")
-      .select("day, risks, generated_at, risks_en, generated_at_en, pdf_ko_path, pdf_en_path, telegram_ready_at")
+      .select(
+        "day, risks, generated_at, risks_en, generated_at_en, pdf_ko_path, pdf_en_path, jpg_ko_pages, jpg_en_pages, telegram_ready_at",
+      )
       .eq("day", data.day)
       .maybeSingle();
     if (error) throw new Error(error.message);
     const r = row as Record<string, unknown> | null;
     if (!r || !r[c.risks]) return null;
     const ready = r["telegram_ready_at"] as string | null;
+    const v = ready ? Math.floor(new Date(ready).getTime() / 1000) : 0;
     const hasPdf = !!r[lang === "en" ? "pdf_en_path" : "pdf_ko_path"];
+    const pages = Number(r[lang === "en" ? "jpg_en_pages" : "jpg_ko_pages"] ?? 0);
     return {
       day: data.day,
       lang,
       risks: (r[c.risks] as unknown as SafetyRisk[]) ?? [],
       generatedAt: (r[c.at] as string | null) ?? null,
-      pdfUrl: hasPdf
-        ? `/api/public/safety-pdf?day=${data.day}&lang=${lang}&v=${ready ? Math.floor(new Date(ready).getTime() / 1000) : 0}`
-        : null,
+      pdfUrl: hasPdf ? `/api/public/safety-pdf?day=${data.day}&lang=${lang}&v=${v}` : null,
+      imageUrls: Array.from(
+        { length: pages },
+        (_, i) => `/api/public/safety-image?day=${data.day}&lang=${lang}&page=${i + 1}&v=${v}`,
+      ),
     };
   });
