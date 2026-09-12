@@ -366,12 +366,12 @@ export function ProgressRiskAnalysis({ rows, tcItems = [], base = null }: { rows
 function DimensionTabs({ value, onChange }: { value: Dimension; onChange: (value: Dimension) => void }) {
   return (
     <Tabs value={value} onValueChange={(next) => onChange(next as Dimension)}>
-      <TabsList className="grid h-auto w-full grid-cols-3 rounded-none sm:h-10 sm:grid-cols-6 border-b border-border bg-muted/25 p-0">
+      <TabsList className="grid h-auto w-full grid-cols-3 rounded-none sm:h-10 sm:grid-cols-6 border-b border-border p-0">
         {DIMENSIONS.map((dimension) => (
           <TabsTrigger
             key={dimension.key}
             value={dimension.key}
-            className="h-10 whitespace-nowrap rounded-none border-b-2 border-transparent px-1 text-[10px] shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none sm:text-[11px]"
+            className="h-10 whitespace-nowrap rounded-none px-1 text-[10px] sm:text-[11px]"
           >
             {dimension.label}
           </TabsTrigger>
@@ -397,12 +397,8 @@ function TcControls({ stage, onStage, groupBy, onGroupBy }: {
             type="button"
             onClick={() => onStage(s)}
             title={TC_STAGE_SUB[s]}
-            className={cn(
-              "rounded-sm border px-2 py-1 text-[10px] font-semibold transition-colors",
-              s === stage
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground",
-            )}
+            data-active={s === stage}
+            className="ui-filter rounded-sm px-2 py-1 text-[10px] font-semibold transition-colors"
           >
             {s}
           </button>
@@ -415,12 +411,8 @@ function TcControls({ stage, onStage, groupBy, onGroupBy }: {
             key={g.key}
             type="button"
             onClick={() => onGroupBy(g.key)}
-            className={cn(
-              "rounded-sm px-2 py-1 text-[10px] font-semibold transition-colors",
-              g.key === groupBy
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            )}
+            data-active={g.key === groupBy}
+            className="ui-filter rounded-sm px-2 py-1 text-[10px] font-semibold transition-colors"
           >
             {g.label}
           </button>

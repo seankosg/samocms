@@ -142,8 +142,8 @@ function TrendPage() {
 
       <div className="mb-3 flex flex-wrap gap-1.5">
         {["전체", ...groups].map((c) => (
-          <Button key={c} size="sm" variant={active === c ? "default" : "outline"} className="h-7 text-xs"
-            onClick={() => navigate({ search: (p) => ({ ...p, mpVal: c }), replace: true })}>{c}</Button>
+          <button key={c} type="button" data-active={active === c} className="ui-filter h-7 cursor-pointer rounded-md px-2.5 text-xs transition-colors"
+            onClick={() => navigate({ search: (p) => ({ ...p, mpVal: c }), replace: true })}>{c}</button>
         ))}
       </div>
 
@@ -251,7 +251,7 @@ function MonthlyShiftChart({ cards }: { cards: MpCard[] }) {
       </div>
       <div className="mb-3 flex flex-wrap gap-1.5">
         {["전체", ...companyList].map((c) => (
-          <Button key={c} size="sm" variant={picked === c ? "default" : "outline"} className="h-7 text-xs" onClick={() => setCompany(c)}>{c}</Button>
+          <button key={c} type="button" data-active={picked === c} className="ui-filter h-7 cursor-pointer rounded-md px-2.5 text-xs transition-colors" onClick={() => setCompany(c)}>{c}</button>
         ))}
       </div>
       {data.length ? (

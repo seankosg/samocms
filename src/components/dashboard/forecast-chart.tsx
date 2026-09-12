@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useProgressForecast } from "@/lib/use-project";
 import { KPI_SLOTS, planAt, pct1, SLOT_LABEL, type Row } from "@/lib/schedule-model";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { TcItem } from "@/lib/tc-model";
