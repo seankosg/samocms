@@ -652,6 +652,8 @@ export type Database = {
           day: string
           generated_at: string
           generated_at_en: string | null
+          jpg_en_pages: number
+          jpg_ko_pages: number
           pdf_en_path: string | null
           pdf_ko_path: string | null
           risks: Json
@@ -664,6 +666,8 @@ export type Database = {
           day: string
           generated_at?: string
           generated_at_en?: string | null
+          jpg_en_pages?: number
+          jpg_ko_pages?: number
           pdf_en_path?: string | null
           pdf_ko_path?: string | null
           risks?: Json
@@ -676,6 +680,8 @@ export type Database = {
           day?: string
           generated_at?: string
           generated_at_en?: string | null
+          jpg_en_pages?: number
+          jpg_ko_pages?: number
           pdf_en_path?: string | null
           pdf_ko_path?: string | null
           risks?: Json
@@ -1117,6 +1123,10 @@ export type Database = {
           cover_en: string | null
           cover_ko: string | null
           day: string | null
+          img_en_pages: number | null
+          img_en_urls: Json | null
+          img_ko_pages: number | null
+          img_ko_urls: Json | null
           pdf_en_url: string | null
           pdf_ko_url: string | null
           ready_at: string | null
