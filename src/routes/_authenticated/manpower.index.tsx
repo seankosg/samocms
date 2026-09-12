@@ -230,35 +230,37 @@ function ManpowerPage() {
           <caption className="sr-only">협력사별 출면 집계</caption>
           <thead>
             <tr className="bg-primary/10 [&>th]:border-b-2 [&>th]:border-primary/30 [&>th]:px-3 [&>th]:py-2.5 [&>th]:text-right [&>th]:text-[11px] [&>th]:font-bold [&>th]:uppercase [&>th]:tracking-wide [&>th]:text-primary [&>th:first-child]:text-left">
-              <th scope="col">{MP.company}</th>
+              <th scope="col" className="w-[90px] min-w-[90px]">{MP.company}</th>
+              <th scope="col">{MP.total}</th>
               <th scope="col" className="text-sky-700 dark:text-sky-300">{MP.day}</th>
               <th scope="col" className="text-amber-700 dark:text-amber-300">{MP.ot}</th>
               <th scope="col" className="text-indigo-700 dark:text-indigo-300">{MP.night}</th>
               {TRADES.map((t) => <th key={t} scope="col">{TRADE_LABEL[t]}</th>)}
-              <th scope="col">{MP.total}</th><th scope="col" className="!text-left">{MP.firstSubmit}</th>
+              <th scope="col" className="!text-left">{MP.firstSubmit}</th>
             </tr>
           </thead>
           <tbody>
             {daily.sort((a, b) => b.total - a.total).map((d, i) => (
               <tr key={d.company} className={`transition-colors hover:bg-primary/5 ${i % 2 ? "bg-muted/30" : ""} [&>td]:border-b [&>td]:border-border/50 [&>td]:px-3 [&>td]:py-2 [&>td]:text-right [&>td:first-child]:text-left`}>
-                <td className="font-semibold">{d.company}</td>
+                <td className="w-[90px] min-w-[90px] font-semibold">{d.company}</td>
+                <td className="bg-primary/5 text-sm font-extrabold">{d.total.toLocaleString()}</td>
                 <td className="font-medium text-sky-700 dark:text-sky-300">{d.day_total || <span className="text-muted-foreground/30">–</span>}</td>
                 <td className="font-medium text-amber-700 dark:text-amber-300">{d.ot_total || <span className="text-muted-foreground/30">–</span>}</td>
                 <td className="font-medium text-indigo-700 dark:text-indigo-300">{d.night_total || <span className="text-muted-foreground/30">–</span>}</td>
                 {TRADES.map((t) => <td key={t} className="text-muted-foreground">{d[t] || ""}</td>)}
-                <td className="bg-primary/5 text-sm font-extrabold">{d.total.toLocaleString()}</td>
                 <td className="!text-left text-muted-foreground">{d.first_submitted_at ? riyadhTime(d.first_submitted_at) : "—"}</td>
               </tr>
             ))}
             {!daily.length && <tr><td colSpan={12} className="p-6 text-center text-muted-foreground">해당 일자의 보고가 없습니다.</td></tr>}
             {daily.length > 0 && (
               <tr className="bg-primary/10 font-bold [&>td]:border-t-2 [&>td]:border-primary/30 [&>td]:px-3 [&>td]:py-2.5 [&>td]:text-right [&>td:first-child]:text-left">
-                <td>합계</td>
+                <td className="w-[90px] min-w-[90px]">합계</td>
+                <td className="text-sm font-extrabold">{totals.total.toLocaleString()}</td>
                 <td className="text-sky-700 dark:text-sky-300">{daily.reduce((a, d) => a + d.day_total, 0)}</td>
                 <td className="text-amber-700 dark:text-amber-300">{daily.reduce((a, d) => a + d.ot_total, 0)}</td>
                 <td className="text-indigo-700 dark:text-indigo-300">{daily.reduce((a, d) => a + d.night_total, 0)}</td>
                 {TRADES.map((t) => <td key={t}>{totals[t]}</td>)}
-                <td className="text-sm font-extrabold">{totals.total.toLocaleString()}</td><td />
+                <td />
               </tr>
             )}
           </tbody>
