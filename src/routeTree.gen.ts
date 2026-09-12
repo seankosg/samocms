@@ -27,8 +27,6 @@ import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedManpowerIndexRouteImport } from './routes/_authenticated/manpower.index'
 import { Route as AuthenticatedManpowerAdminRouteImport } from './routes/_authenticated/manpower.admin'
 import { Route as AuthenticatedManpowerCompareRouteImport } from './routes/_authenticated/manpower.compare'
-import { Route as AuthenticatedManpowerMastersRouteImport } from './routes/_authenticated/manpower.masters'
-import { Route as AuthenticatedManpowerMembersRouteImport } from './routes/_authenticated/manpower.members'
 import { Route as AuthenticatedManpowerTrendRouteImport } from './routes/_authenticated/manpower.trend'
 import { Route as AuthenticatedTcElecRouteImport } from './routes/_authenticated/tc.elec'
 import { Route as AuthenticatedTcListRouteImport } from './routes/_authenticated/tc.list'
@@ -134,18 +132,6 @@ const AuthenticatedManpowerCompareRoute =
     path: '/manpower/compare',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedManpowerMastersRoute =
-  AuthenticatedManpowerMastersRouteImport.update({
-    id: '/manpower/masters',
-    path: '/manpower/masters',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedManpowerMembersRoute =
-  AuthenticatedManpowerMembersRouteImport.update({
-    id: '/manpower/members',
-    path: '/manpower/members',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedManpowerTrendRoute =
   AuthenticatedManpowerTrendRouteImport.update({
     id: '/manpower/trend',
@@ -210,8 +196,6 @@ export interface FileRoutesByFullPath {
   '/users': typeof AuthenticatedUsersRoute
   '/manpower/admin': typeof AuthenticatedManpowerAdminRoute
   '/manpower/compare': typeof AuthenticatedManpowerCompareRoute
-  '/manpower/masters': typeof AuthenticatedManpowerMastersRoute
-  '/manpower/members': typeof AuthenticatedManpowerMembersRoute
   '/manpower/trend': typeof AuthenticatedManpowerTrendRoute
   '/tc/elec': typeof AuthenticatedTcElecRoute
   '/tc/list': typeof AuthenticatedTcListRoute
@@ -240,8 +224,6 @@ export interface FileRoutesByTo {
   '/users': typeof AuthenticatedUsersRoute
   '/manpower/admin': typeof AuthenticatedManpowerAdminRoute
   '/manpower/compare': typeof AuthenticatedManpowerCompareRoute
-  '/manpower/masters': typeof AuthenticatedManpowerMastersRoute
-  '/manpower/members': typeof AuthenticatedManpowerMembersRoute
   '/manpower/trend': typeof AuthenticatedManpowerTrendRoute
   '/tc/elec': typeof AuthenticatedTcElecRoute
   '/tc/list': typeof AuthenticatedTcListRoute
@@ -272,8 +254,6 @@ export interface FileRoutesById {
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/manpower/admin': typeof AuthenticatedManpowerAdminRoute
   '/_authenticated/manpower/compare': typeof AuthenticatedManpowerCompareRoute
-  '/_authenticated/manpower/masters': typeof AuthenticatedManpowerMastersRoute
-  '/_authenticated/manpower/members': typeof AuthenticatedManpowerMembersRoute
   '/_authenticated/manpower/trend': typeof AuthenticatedManpowerTrendRoute
   '/_authenticated/tc/elec': typeof AuthenticatedTcElecRoute
   '/_authenticated/tc/list': typeof AuthenticatedTcListRoute
@@ -304,8 +284,6 @@ export interface FileRouteTypes {
     | '/users'
     | '/manpower/admin'
     | '/manpower/compare'
-    | '/manpower/masters'
-    | '/manpower/members'
     | '/manpower/trend'
     | '/tc/elec'
     | '/tc/list'
@@ -334,8 +312,6 @@ export interface FileRouteTypes {
     | '/users'
     | '/manpower/admin'
     | '/manpower/compare'
-    | '/manpower/masters'
-    | '/manpower/members'
     | '/manpower/trend'
     | '/tc/elec'
     | '/tc/list'
@@ -365,8 +341,6 @@ export interface FileRouteTypes {
     | '/_authenticated/users'
     | '/_authenticated/manpower/admin'
     | '/_authenticated/manpower/compare'
-    | '/_authenticated/manpower/masters'
-    | '/_authenticated/manpower/members'
     | '/_authenticated/manpower/trend'
     | '/_authenticated/tc/elec'
     | '/_authenticated/tc/list'
@@ -517,20 +491,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedManpowerCompareRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/manpower/masters': {
-      id: '/_authenticated/manpower/masters'
-      path: '/manpower/masters'
-      fullPath: '/manpower/masters'
-      preLoaderRoute: typeof AuthenticatedManpowerMastersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/manpower/members': {
-      id: '/_authenticated/manpower/members'
-      path: '/manpower/members'
-      fullPath: '/manpower/members'
-      preLoaderRoute: typeof AuthenticatedManpowerMembersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/manpower/trend': {
       id: '/_authenticated/manpower/trend'
       path: '/manpower/trend'
@@ -612,8 +572,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedManpowerAdminRoute: typeof AuthenticatedManpowerAdminRoute
   AuthenticatedManpowerCompareRoute: typeof AuthenticatedManpowerCompareRoute
-  AuthenticatedManpowerMastersRoute: typeof AuthenticatedManpowerMastersRoute
-  AuthenticatedManpowerMembersRoute: typeof AuthenticatedManpowerMembersRoute
   AuthenticatedManpowerTrendRoute: typeof AuthenticatedManpowerTrendRoute
   AuthenticatedTcElecRoute: typeof AuthenticatedTcElecRoute
   AuthenticatedTcListRoute: typeof AuthenticatedTcListRoute
@@ -637,8 +595,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedManpowerAdminRoute: AuthenticatedManpowerAdminRoute,
   AuthenticatedManpowerCompareRoute: AuthenticatedManpowerCompareRoute,
-  AuthenticatedManpowerMastersRoute: AuthenticatedManpowerMastersRoute,
-  AuthenticatedManpowerMembersRoute: AuthenticatedManpowerMembersRoute,
   AuthenticatedManpowerTrendRoute: AuthenticatedManpowerTrendRoute,
   AuthenticatedTcElecRoute: AuthenticatedTcElecRoute,
   AuthenticatedTcListRoute: AuthenticatedTcListRoute,
