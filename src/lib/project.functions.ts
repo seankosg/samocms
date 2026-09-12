@@ -227,32 +227,44 @@ export const getProgressHistory = createServerFn({ method: "GET" })
     const { data: rows, error } = await q.limit(5000);
     if (error) throw new Error(error.message);
 
-    // 날짜별 평균 계획/실적 + 일일 진도율
-    const byDate = new Map<string, { p: number; a: number; n: number }>();
-    (rows ?? []).forEach((r) => {
-      const d = r.snapshot_date;
-      const cur = byDate.get(d) ?? { p: 0, a: 0, n: 0 };
-      cur.p += Number(r.planned_progress ?? 0);
-      cur.a += Number(r.actual_progress ?? 0);
-      cur.n += 1;
-      byDate.set(d, cur);
-    });
-    const series = [...byDate.entries()]
-      .sort((x, y) => x[0].localeCompare(y[0]))
-      .map(([date, v], i, arr) => {
-        const planned = v.n ? v.p / v.n : 0;
-        const actual = v.n ? v.a / v.n : 0;
-        const prev = i > 0 ? arr[i - 1]! : null;
-        const prevActual = prev && prev[1].n ? prev[1].a / prev[1].n : null;
-        const days = prev ? Math.max(1, (new Date(date).getTime() - new Date(prev[0]).getTime()) / 86400000) : 0;
-        return {
-          date,
-          planned,
-          actual,
-          count: v.n,
-          dailyRate: prevActual === null ? null : (actual - prevActual) / days,
-        };
+    // 날짜별 평균 계획/실적 — DB 집계(행 수 제한 없이 전체 기간)
+    const { data: agg, error: aggErr } = data.itemKey
+      ? { data: null, error: null }
+      : await c.rpc("activity_daily_trend", { _discipline: data.discipline ?? null });
+    if (aggErr) throw new Error(aggErr.message);
+
+    let base: Array<{ date: string; planned: number; actual: number; count: number }>;
+    if (agg) {
+      base = (agg as Array<{ snapshot_date: string; item_count: number; planned_avg: number | null; actual_avg: number | null }>).map((r) => ({
+        date: r.snapshot_date,
+        planned: Number(r.planned_avg ?? 0),
+        actual: Number(r.actual_avg ?? 0),
+        count: Number(r.item_count ?? 0),
+      }));
+    } else {
+      // itemKey 지정 시 — 가져온 행으로 직접 집계
+      const byDate = new Map<string, { p: number; a: number; n: number }>();
+      (rows ?? []).forEach((r) => {
+        const d = r.snapshot_date;
+        const cur = byDate.get(d) ?? { p: 0, a: 0, n: 0 };
+        cur.p += Number(r.planned_progress ?? 0);
+        cur.a += Number(r.actual_progress ?? 0);
+        cur.n += 1;
+        byDate.set(d, cur);
       });
+      base = [...byDate.entries()]
+        .sort((x, y) => x[0].localeCompare(y[0]))
+        .map(([date, v]) => ({ date, planned: v.n ? v.p / v.n : 0, actual: v.n ? v.a / v.n : 0, count: v.n }));
+    }
+
+    const series = base.map((b, i) => {
+      const prev = i > 0 ? base[i - 1]! : null;
+      const days = prev ? Math.max(1, (new Date(b.date).getTime() - new Date(prev.date).getTime()) / 86400000) : 0;
+      return {
+        ...b,
+        dailyRate: prev === null ? null : (b.actual - prev.actual) / days,
+      };
+    });
     return { rows: rows ?? [], series };
   });
 
