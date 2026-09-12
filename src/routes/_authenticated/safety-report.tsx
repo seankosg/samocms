@@ -61,6 +61,7 @@ function SafetyReportPage() {
 
   const risks = saved.data?.risks ?? [];
   const pdfUrl = saved.data?.pdfUrl ?? null;
+  const imageUrls = saved.data?.imageUrls ?? [];
   const dateLabel = lang === "en" ? fmtTodayEn(day) : fmtToday(day);
 
   return (
