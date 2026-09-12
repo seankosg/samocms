@@ -75,6 +75,17 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
     return KPI_SLOTS.filter((disc) => scoped.some((r) => r.slot === disc));
   }, [eligibleRows, milestone]);
 
+  // T&C 예측: 팀 선택에 따라 건물 목록 갱신
+  const tcBuildings = useMemo(() => {
+    const scoped = tcTeam === "ALL" ? tcItems : tcItems.filter((r) => r.discipline === tcTeam);
+    return [...new Set(scoped.map((r) => r.bldg ?? "(미지정)"))].sort((a, b) => a.localeCompare(b, "ko"));
+  }, [tcItems, tcTeam]);
+
+  const tcModel = useMemo<TcForecastModel | null>(() => {
+    if (mode !== "tc") return null;
+    return buildTcForecast(tcItems, { stage: tcStage, team: tcTeam, bldg: tcBldg, base });
+  }, [mode, tcItems, tcStage, tcTeam, tcBldg, base]);
+
   const model = useMemo(() => {
     const series = data?.series ?? [];
     if (series.length === 0) return null;
