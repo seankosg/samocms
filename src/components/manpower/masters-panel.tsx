@@ -1,10 +1,8 @@
 import { useMemo, useState } from "react";
-import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
+import { useRouter } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
-import { AdminGate } from "@/components/manpower/admin-gate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,34 +10,16 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { manpowerMastersQuery, useManpowerMasters, type AliasRow, type MasterRow } from "@/lib/use-manpower";
+import { useManpowerMasters, type AliasRow, type MasterRow } from "@/lib/use-manpower";
 import {
   saveManpowerMaster, setManpowerMasterActive, setManpowerMasterOrder, deleteManpowerMaster,
   saveManpowerAlias, deleteManpowerAlias, renameManpowerMaster,
 } from "@/lib/manpower.functions";
 
-export const Route = createFileRoute("/_authenticated/manpower/masters")({
-  head: () => ({ meta: [
-    { title: "출면 업체 장소 관리 설정 | HMMME PROJECT CMS" },
-    { name: "description", content: "출면 보고에 쓰이는 협력사·장소 목록과 옛 이름 별칭을 관리합니다." },
-    { property: "og:title", content: "HMMME 출면 업체 장소 관리 설정" },
-    { property: "og:description", content: "협력사·장소 목록과 별칭을 한곳에서 관리하세요." },
-    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
-  ] }),
-  loader: async ({ context }) => {
-    try {
-      return await context.queryClient.ensureQueryData(manpowerMastersQuery);
-    } catch {
-      throw redirect({ to: "/manpower" });
-    }
-  },
-  errorComponent: ({ error }) => <div role="alert" className="p-8 text-sm">마스터를 불러오지 못했습니다. {(error as Error).message}</div>,
-  component: MastersPage,
-});
-
 type Kind = "company" | "location";
 
-function MastersPage() {
+/** 출면 업체·장소 마스터 관리 패널 — 「출면관리」 페이지의 탭 본문. */
+export function MastersPanel() {
   const { companies, locations, aliases, usage, members } = useManpowerMasters();
   const qc = useQueryClient();
   const router = useRouter();
@@ -60,31 +40,25 @@ function MastersPage() {
   }, [usage]);
 
   return (
-    <AdminGate title="출면 업체 장소 관리 설정">
-      <AppShell title="출면 업체 장소 관리 설정" desc={`협력사 ${companies.length}곳 · 장소 ${locations.length}곳 · 별칭 ${aliases.length}건`}>
-        
-        <Tabs defaultValue="company">
-          <TabsList className="mb-3">
-            <TabsTrigger value="company">회사</TabsTrigger>
-            <TabsTrigger value="location">장소</TabsTrigger>
-            <TabsTrigger value="alias">별칭</TabsTrigger>
-          </TabsList>
+    <Tabs defaultValue="company">
+      <TabsList className="mb-3">
+        <TabsTrigger value="company">회사</TabsTrigger>
+        <TabsTrigger value="location">장소</TabsTrigger>
+        <TabsTrigger value="alias">별칭</TabsTrigger>
+      </TabsList>
 
-          <TabsContent value="company">
-            <MasterTab kind="company" rows={companies} count={count} aliases={aliases} members={members} onDone={invalidate} />
-          </TabsContent>
-          <TabsContent value="location">
-            <MasterTab kind="location" rows={locations} count={count} aliases={aliases} members={members} onDone={invalidate} />
-          </TabsContent>
-          <TabsContent value="alias">
-            <AliasTab aliases={aliases} companies={companies} locations={locations} count={count} onDone={invalidate} />
-          </TabsContent>
-        </Tabs>
-      </AppShell>
-    </AdminGate>
+      <TabsContent value="company">
+        <MasterTab kind="company" rows={companies} count={count} aliases={aliases} members={members} onDone={invalidate} />
+      </TabsContent>
+      <TabsContent value="location">
+        <MasterTab kind="location" rows={locations} count={count} aliases={aliases} members={members} onDone={invalidate} />
+      </TabsContent>
+      <TabsContent value="alias">
+        <AliasTab aliases={aliases} companies={companies} locations={locations} count={count} onDone={invalidate} />
+      </TabsContent>
+    </Tabs>
   );
 }
-
 
 type Draft = MasterRow & { isNew: boolean };
 

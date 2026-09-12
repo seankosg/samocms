@@ -1,48 +1,22 @@
 import { useMemo, useState } from "react";
-import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
-import { AdminGate } from "@/components/manpower/admin-gate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { manpowerMembersQuery, manpowerMastersQuery, useManpowerMembers, useManpowerMasters } from "@/lib/use-manpower";
+import { useManpowerMembers, useManpowerMasters } from "@/lib/use-manpower";
 import { saveManpowerMember, setManpowerMemberActive } from "@/lib/manpower.functions";
 import { MP } from "@/lib/manpower-i18n";
-
-export const Route = createFileRoute("/_authenticated/manpower/members")({
-  head: () => ({ meta: [
-    { title: "출면기록 관리자 설정 | HMMME PROJECT CMS" },
-    { name: "description", content: "텔레그램 출면 보고 봇을 사용할 수 있는 협력사·HDEC 담당자를 등록하고 관리합니다." },
-    { property: "og:title", content: "HMMME 출면기록 관리자 설정" },
-    { property: "og:description", content: "출면 보고 담당자를 등록하고 사용 여부를 관리하세요." },
-    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
-  ] }),
-  loader: async ({ context }) => {
-    try {
-      const [members] = await Promise.all([
-        context.queryClient.ensureQueryData(manpowerMembersQuery),
-        context.queryClient.ensureQueryData(manpowerMastersQuery),
-      ]);
-      return members;
-    } catch {
-      throw redirect({ to: "/manpower" });
-    }
-  },
-  errorComponent: ({ error }) => <div role="alert" className="p-8 text-sm">사용자 목록을 불러오지 못했습니다. {(error as Error).message}</div>,
-  component: MembersPage,
-});
-
 
 type Draft = { telegram_id: string; name: string; company: string; role: "SUB" | "HDEC"; is_active: boolean; note: string };
 const empty: Draft = { telegram_id: "", name: "", company: "", role: "SUB", is_active: true, note: "" };
 
-function MembersPage() {
+/** 출면기록 관리자(봇 사용자) 설정 패널 — 「출면관리」 페이지의 탭 본문. */
+export function MembersPanel() {
   const members = useManpowerMembers();
   const { companies } = useManpowerMasters();
   const qc = useQueryClient();
@@ -53,7 +27,6 @@ function MembersPage() {
     draft && draft.role !== "HDEC" && draft.company && !activeCompanies.some((c) => c.name === draft.company)
       ? draft.company
       : null;
-
 
   const shown = useMemo(
     () => members.filter((m) => !q || `${m.name} ${m.company ?? ""} ${m.telegram_id}`.toLowerCase().includes(q.toLowerCase())),
@@ -73,15 +46,13 @@ function MembersPage() {
   });
 
   return (
-    <AdminGate title="출면기록 관리자 설정">
-    <AppShell
-      title={MP.members}
-      desc={`등록 ${members.length}명 · 사용중 ${members.filter((m) => m.is_active).length}명`}
-      actions={<Button size="sm" onClick={() => setDraft(empty)}><Plus className="size-3.5" />사용자 추가</Button>}
-    >
-      <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="이름·협력사·텔레그램 ID 검색" className="mb-3 h-8 max-w-xs text-xs" />
+    <section className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="이름·협력사·텔레그램 ID 검색" className="h-8 max-w-xs text-xs" />
+        <Button size="sm" onClick={() => setDraft(empty)}><Plus className="size-3.5" />사용자 추가</Button>
+      </div>
 
-      <section className="overflow-x-auto rounded-md border border-border">
+      <div className="overflow-x-auto rounded-md border border-border">
         <table className="w-full min-w-[720px] text-xs">
           <caption className="sr-only">출면 보고 봇 사용자 목록</caption>
           <thead className="bg-muted/60">
@@ -113,7 +84,7 @@ function MembersPage() {
             {!shown.length && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">등록된 사용자가 없습니다.</td></tr>}
           </tbody>
         </table>
-      </section>
+      </div>
 
       <Dialog open={!!draft} onOpenChange={(o) => !o && setDraft(null)}>
         <DialogContent className="max-w-md">
@@ -141,7 +112,7 @@ function MembersPage() {
                 {legacyCompany && (
                   <p className="text-[11px] text-amber-600">이 협력사 이름은 출면 마스터에 없습니다. 마스터에 먼저 등록하거나 별칭으로 정리하세요.</p>
                 )}
-                <p className="text-[11px] text-muted-foreground">신규 업체는 먼저 「출면 마스터」에 등록해야 목록에 나옵니다.</p>
+                <p className="text-[11px] text-muted-foreground">신규 업체는 먼저 「업체·장소 관리」 탭에 등록해야 목록에 나옵니다.</p>
               </Field>
               <Field id="rl" label="구분">
                 <Select value={draft.role} onValueChange={(v) => setDraft({ ...draft, role: v as "SUB" | "HDEC", company: v === "HDEC" ? "HDEC" : "" })}>
@@ -163,8 +134,7 @@ function MembersPage() {
           )}
         </DialogContent>
       </Dialog>
-    </AppShell>
-    </AdminGate>
+    </section>
   );
 }
 
