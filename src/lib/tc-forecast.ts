@@ -33,7 +33,7 @@ type Unit = { plan: string; act: string | null };
 
 function unitsFor(items: TcItem[], stage: TcForecastStage | "ALL"): Unit[] {
   const out: Unit[] = [];
-  const stages = stage === "All" ? (null as never) : stage === "ALL" ? [...TC_FORECAST_STAGES] : [stage];
+  const stages = stage === "ALL" ? [...TC_FORECAST_STAGES] : [stage];
   for (const r of items) {
     for (const st of stages) {
       const p = r[PLAN_COL[st]] as string | null;
@@ -175,7 +175,7 @@ export function buildTcForecastSummary(
   // 팀 전체 선택 → 팀별 행(Mech/Elec). 특정 팀 → 건물별 행.
   const keys: { key: string; label: string; team: "Mech" | "Elec"; bldg: "ALL" }[] =
     team === "ALL"
-      ? [{ key: "Mech", label: "MECH", team: "Mech", bldg: "ALL" }, { key: "Elec", label: "ELEC", team: "Elec", bldg: "ALL" }]
+      ? [{ key: "Mech", label: "MECH", team: "Mech", bldg: "ALL" as const }, { key: "Elec", label: "ELEC", team: "Elec", bldg: "ALL" as const }]
       : [];
   if (team !== "ALL") {
     const bldgs = [...new Set(items.filter((r) => r.discipline === team).map((r) => r.bldg ?? "(미지정)"))].sort((a, b) => a.localeCompare(b, "ko"));
