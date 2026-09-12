@@ -64,7 +64,7 @@ const userInput = z.object({
   position: z.string().max(50).nullable(),
   team: z.string().max(50).nullable(),
   role: z.enum(ROLES),
-  scopes: z.array(z.enum(SCOPES)).max(4),
+  scopes: z.array(z.enum(SCOPES)).max(1, "담당공종은 하나만 선택할 수 있습니다."),
 });
 
 export const createUser = createServerFn({ method: "POST" })

@@ -6,6 +6,7 @@ import { KeyRound, Plus, Save, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createUser, deleteUser, listUsers, resetPassword, updateUser } from "@/lib/auth.functions";
 import { INITIAL_PASSWORD, SCOPES, SCOPE_LABEL } from "@/lib/roster";
 import { ROLE_LABEL, useAuth } from "@/lib/use-auth";
@@ -40,7 +41,7 @@ function UsersPage() {
   const { isAdmin, isLoading } = useAuth();
   const qc = useQueryClient();
   const users = useQuery({ queryKey: ["users"], queryFn: () => listUsers(), enabled: isAdmin });
-  const [draft, setDraft] = useState({ username: "", full_name: "", position: "", team: "" });
+  const [draft, setDraft] = useState({ username: "", full_name: "", position: "", team: "", scope: "" });
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["users"] });
   const err = (e: Error) => toast.error("실패", { description: e.message });
@@ -54,12 +55,12 @@ function UsersPage() {
           position: draft.position.trim() || null,
           team: draft.team.trim() || null,
           role: "user" as const,
-          scopes: [],
+          scopes: draft.scope ? [draft.scope as (typeof SCOPES)[number]] : [],
         },
       }),
     onSuccess: () => {
       toast.success("계정이 생성되었습니다", { description: `초기 비밀번호 ${INITIAL_PASSWORD}` });
-      setDraft({ username: "", full_name: "", position: "", team: "" });
+      setDraft({ username: "", full_name: "", position: "", team: "", scope: "" });
       refresh();
     },
     onError: err,
@@ -74,7 +75,7 @@ function UsersPage() {
           position: r.position,
           team: r.team,
           role: r.role as "admin" | "user" | "guest",
-          scopes: r.scopes as ("arch" | "elec" | "mech" | "permit")[],
+          scopes: r.scopes as (typeof SCOPES)[number][],
           is_active: r.is_active,
         },
       }),
@@ -113,6 +114,13 @@ function UsersPage() {
           <Input className="h-9 w-32 text-xs" placeholder="이름" value={draft.full_name} onChange={(e) => setDraft({ ...draft, full_name: e.target.value })} aria-label="이름" />
           <Input className="h-9 w-36 text-xs" placeholder="직책" value={draft.position} onChange={(e) => setDraft({ ...draft, position: e.target.value })} aria-label="직책" />
           <Input className="h-9 w-40 text-xs" placeholder="소속팀" value={draft.team} onChange={(e) => setDraft({ ...draft, team: e.target.value })} aria-label="소속팀" />
+          <Select value={draft.scope || "none"} onValueChange={(scope) => setDraft({ ...draft, scope: scope === "none" ? "" : scope })}>
+            <SelectTrigger className="h-9 w-40 text-xs" aria-label="담당공종"><SelectValue placeholder="담당공종" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">담당공종 없음</SelectItem>
+              {SCOPES.map((scope) => <SelectItem key={scope} value={scope}>{SCOPE_LABEL[scope]}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <Button size="sm" disabled={!draft.username.trim() || !draft.full_name.trim() || add.isPending} onClick={() => add.mutate()}>
             <Plus className="size-3.5" />생성
           </Button>
@@ -142,9 +150,6 @@ function UsersPage() {
 
 function UserRow({ row, onSave, onDelete, onReset }: { row: Row; onSave: (r: Row) => void; onDelete: () => void; onReset: () => void }) {
   const [v, setV] = useState<Row>(row);
-  const toggleScope = (s: string) =>
-    setV({ ...v, scopes: v.scopes.includes(s) ? v.scopes.filter((x) => x !== s) : [...v.scopes, s] });
-
   return (
     <tr className="border-b border-border align-middle">
       <td className="px-3 py-2 font-mono">{v.username}</td>
@@ -157,18 +162,13 @@ function UserRow({ row, onSave, onDelete, onReset }: { row: Row; onSave: (r: Row
         </select>
       </td>
       <td className="px-2 py-2">
-        <div className="flex flex-wrap gap-1">
-          {SCOPES.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => toggleScope(s)}
-              className={`rounded border px-1.5 py-0.5 text-[11px] ${v.scopes.includes(s) ? "border-primary bg-primary/10 font-semibold text-primary" : "border-border text-muted-foreground"}`}
-            >
-              {SCOPE_LABEL[s]!.split(" ")[0]}
-            </button>
-          ))}
-        </div>
+        <Select value={v.scopes[0] ?? "none"} onValueChange={(scope) => setV({ ...v, scopes: scope === "none" ? [] : [scope] })}>
+          <SelectTrigger className="h-8 w-36 text-xs" aria-label="담당공종"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">없음</SelectItem>
+            {SCOPES.map((scope) => <SelectItem key={scope} value={scope}>{SCOPE_LABEL[scope]}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </td>
       <td className="px-2 py-2">
         <label className="flex items-center gap-1 text-[11px]">

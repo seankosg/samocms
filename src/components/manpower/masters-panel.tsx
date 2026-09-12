@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useManpowerMasters, type AliasRow, type MasterRow } from "@/lib/use-manpower";
@@ -18,8 +17,8 @@ import {
 
 type Kind = "company" | "location";
 
-/** 출면 업체·장소 마스터 관리 패널 — 「출면관리」 페이지의 탭 본문. */
-export function MastersPanel() {
+/** 출면 업체·장소·별칭 관리 패널 — 「출면관리」의 독립 탭 본문. */
+export function MastersPanel({ view }: { view: "company" | "location" | "alias" }) {
   const { companies, locations, aliases, usage, members } = useManpowerMasters();
   const qc = useQueryClient();
   const router = useRouter();
@@ -39,25 +38,9 @@ export function MastersPanel() {
     return m;
   }, [usage]);
 
-  return (
-    <Tabs defaultValue="company">
-      <TabsList className="mb-3">
-        <TabsTrigger value="company">회사</TabsTrigger>
-        <TabsTrigger value="location">장소</TabsTrigger>
-        <TabsTrigger value="alias">별칭</TabsTrigger>
-      </TabsList>
-
-      <TabsContent value="company">
-        <MasterTab kind="company" rows={companies} count={count} aliases={aliases} members={members} onDone={invalidate} />
-      </TabsContent>
-      <TabsContent value="location">
-        <MasterTab kind="location" rows={locations} count={count} aliases={aliases} members={members} onDone={invalidate} />
-      </TabsContent>
-      <TabsContent value="alias">
-        <AliasTab aliases={aliases} companies={companies} locations={locations} count={count} onDone={invalidate} />
-      </TabsContent>
-    </Tabs>
-  );
+  if (view === "company") return <MasterTab kind="company" rows={companies} count={count} aliases={aliases} members={members} onDone={invalidate} />;
+  if (view === "location") return <MasterTab kind="location" rows={locations} count={count} aliases={aliases} members={members} onDone={invalidate} />;
+  return <AliasTab aliases={aliases} companies={companies} locations={locations} count={count} onDone={invalidate} />;
 }
 
 type Draft = MasterRow & { isNew: boolean };
