@@ -1082,6 +1082,8 @@ export type Database = {
         Args: { _slot: string; _user_id: string }
         Returns: boolean
       }
+      fill_snapshots_backfill: { Args: never; Returns: number }
+      fill_snapshots_for_day: { Args: { _date: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
