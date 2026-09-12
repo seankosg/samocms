@@ -41,24 +41,24 @@ function NewVersionButton() {
 }
 
 const NAV = [
-  { group: "현황", items: [
+  { group: "공정현황", items: [
     { to: "/dashboard", label: "대시보드", icon: BarChart3 },
-    { to: "/today", label: "오늘의 주요 작업", icon: CalendarClock },
-    { to: "/network", label: "네트워크", icon: Network },
-    { to: "/safety-report", label: "Safety Report", icon: ShieldAlert },
+    { to: "/network", label: "네트워크 공정표", icon: Network },
+    { to: "/delays", label: "지연 리스트", icon: AlertTriangle },
+    { to: "/schedule", label: "공정 리스트", icon: Table2 },
     { to: "/report", label: "Progress Report", icon: FileText },
   ] },
-  { group: "공정", items: [
-    { to: "/delays", label: "지연 리스트", icon: AlertTriangle },
-    { to: "/schedule", label: "공정리스트", icon: Table2 },
-  ] },
-  { group: "시운전 (T&C)", items: [
+  { group: "시운전 현황", items: [
+    { to: "/tc/progress", label: "T&C Progress", icon: TrendingUp },
     { to: "/tc/mech", label: "MECH T&C", icon: Wrench },
     { to: "/tc/elec", label: "ELEC T&C", icon: Zap },
-    { to: "/tc/progress", label: "T&C Progress", icon: TrendingUp },
     { to: "/tc/list", label: "T&C List", icon: ListChecks },
   ] },
-  { group: "Daily Manpower 관리", items: [
+  { group: "안전현황", items: [
+    { to: "/today", label: "오늘의 주요작업", icon: CalendarClock },
+    { to: "/safety-report", label: "Safety Report", icon: ShieldAlert },
+  ] },
+  { group: "Manpower 현황", items: [
     { to: "/manpower", label: "출면 현황", icon: UserCheck },
     { to: "/manpower/trend", label: "출면 추이", icon: LineChart },
     { to: "/manpower/compare", label: "검증 대조", icon: GitCompare },
