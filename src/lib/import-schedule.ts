@@ -49,6 +49,19 @@ const date = (v: unknown): string | null => {
 
 const KNOWN = ["Arch", "Elec", "Int", "Mech", "Permit"];
 
+/** 공정표 담당자 이름 → CMS 사용자 이름 교정표 (불일치 발견 시 여기에 추가) */
+export const MANAGER_ALIAS: Record<string, string> = {
+  "황태언": "황태연",
+};
+
+/** 담당자 이름을 CMS 사용자 이름으로 통일합니다. */
+export function normalizeManager(v: string | null): string | null {
+  if (!v) return null;
+  const s = v.replace(/\s+/g, " ").trim();
+  if (!s) return null;
+  return MANAGER_ALIAS[s] ?? s;
+}
+
 /** 파일명에서 공종 키(Arch/Elec/Int/Mech/Permit)를 추출합니다. */
 export function sourceKeyFromFileName(fileName: string): string {
   const base = fileName.replace(/\.[^.]+$/, "");
@@ -93,10 +106,16 @@ export function parseScheduleFile(buffer: ArrayBuffer, fileName: string): { rows
   }
   const fileDate = sheetDate ?? dateFromFileName(fileName);
 
-  // 머리글(2~3행)에 「담당자」 컬럼이 있으면 그 위치를 찾아 함께 읽습니다.
+  // 머리글(2~3행)에 「담당」/「담당자」 컬럼이 있으면 그 위치를 찾아 함께 읽습니다.
+  // 「담당부서」(공종) 컬럼은 제외합니다.
   let managerCol = -1;
   for (let i = headerRow; i < Math.min(grid.length, headerRow + 3); i += 1) {
-    const at = (grid[i] ?? []).findIndex((c) => /담당\s*자?|담당자|Manager|Charge/i.test(String(text(c) ?? "")));
+    const at = (grid[i] ?? []).findIndex((c) => {
+      const s = String(text(c) ?? "");
+      if (!s) return false;
+      if (/부서|dept|department|division|팀/i.test(s)) return false;
+      return /^담당\s*자?$/.test(s) || /manager|in\s*charge/i.test(s);
+    });
     if (at >= 0) { managerCol = at; break; }
   }
 
@@ -115,7 +134,7 @@ export function parseScheduleFile(buffer: ArrayBuffer, fileName: string): { rows
       work_scope: text(r[4]),
       milestone: text(r[5]),
       subcontractor: text(r[6]),
-      manager: managerCol >= 0 ? text(r[managerCol]) : null,
+      manager: managerCol >= 0 ? normalizeManager(text(r[managerCol])) : null,
       activity,
       unit: text(r[8]),
       done_quantity: num(r[9]),
