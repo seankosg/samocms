@@ -101,7 +101,7 @@ function NcrListPage() {
           if (!isStartDelayed(d, start, cutoff) && !isStartDelayed(d, finish, cutoff)) return false;
         }
       }
-      if (q && ![r.doc_no, r.description, r.location, r.mic, r.pic, r.subcontractor].some((v) => (v ?? "").toLowerCase().includes(q))) return false;
+      if (q && ![r.doc_no, r.description, r.location, r.mic, r.pic, r.subcontractor, r.response_status].some((v) => (v ?? "").toLowerCase().includes(q))) return false;
       return true;
     });
   }, [items, search]);
@@ -125,6 +125,7 @@ function NcrListPage() {
         Location: r.location, "Issued By": r.issued_by, "Issue Date": r.issued_date, Team: r.team,
         MIC: r.mic, PIC: r.pic, Subcontractor: r.subcontractor, Status: r.status,
         "Current Stage(자동)": currentStage(dates(r)), "Current Stage(원본)": r.current_stage_file,
+        "Response Status": r.response_status,
       };
       for (const s of SLOT_ORDER) {
         base[`${slotCode(s)} Plan`] = r[planField(s)];
@@ -205,7 +206,7 @@ function NcrListPage() {
             <table className="w-full min-w-[1100px] text-left text-xs">
               <thead className="sticky top-0 z-10 bg-secondary text-secondary-foreground">
                 <tr>
-                  {["", "SerNo", "종류", "문서번호", "내용", "위치", "발행처", "발행일", "팀", "MIC", "PIC", "협력사", "상태", "현재단계"].map((h) => (
+                  {["", "SerNo", "종류", "문서번호", "내용", "위치", "발행처", "발행일", "팀", "MIC", "PIC", "협력사", "상태", "현재단계", "Response Status"].map((h) => (
                     <th key={h} className="border-b border-border px-2.5 py-2 font-bold whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -231,7 +232,7 @@ function NcrListPage() {
                   );
                 })}
                 {!filtered.length && (
-                  <tr><td colSpan={14} className="px-3 py-10 text-center text-muted-foreground">조건에 맞는 항목이 없습니다.</td></tr>
+                  <tr><td colSpan={15} className="px-3 py-10 text-center text-muted-foreground">조건에 맞는 항목이 없습니다.</td></tr>
                 )}
               </tbody>
             </table>
@@ -285,10 +286,11 @@ function FragmentRow({ r, cur, skipped, expanded, editable, saving, onToggle, on
             </span>
           )}
         </td>
+        <td className="px-2.5 py-1.5 whitespace-nowrap text-muted-foreground">{r.response_status ?? "-"}</td>
       </tr>
       {expanded && (
         <tr className="border-b border-border bg-muted/30">
-          <td colSpan={14} className="px-3 py-3">
+          <td colSpan={15} className="px-3 py-3">
             {!editable && <p className="mb-2 text-[11px] text-muted-foreground">이 행은 MIC/PIC 담당자 또는 관리자만 수정할 수 있습니다.</p>}
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
               {PS_NUMS.map((n) => {
