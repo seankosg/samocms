@@ -6,6 +6,7 @@
 - NCR 대시보드 시인성 개선 (PS1~PS9 행렬, Start/Finish 계획·실적 건수 및 달성률 병행 표시)
 - NCR Progress Row 진도율 바 및 전 항목 드릴다운
 - NCR 현재단계 현황 건수 강도 색상 및 범례 적용
+- NCR Excel 자동 판별 수정 및 Response Status 전체 매핑
 - 출면 검증대조표 전 컬럼 헤더 필터 적용
 
 ## 확정 방침
