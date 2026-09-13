@@ -66,7 +66,7 @@ export const importActivities = createServerFn({ method: "POST" })
     }
 
     // 번호 없는 행은 업데이트 방식에서 식별할 수 없어 거절합니다. (중복은 업로드 화면에서 사전 해소)
-    const noNum = rows.filter((r) => !(r.activity_no ?? "").trim());
+    const noNum = data.rows.filter((r) => !(r.activity_no ?? "").trim());
     if (noNum.length) {
       throw new Error(`Activity No가 비어 있는 행이 ${noNum.length}건 있습니다. 업로드 확인창에서 번호를 지정해 주세요.`);
     }
