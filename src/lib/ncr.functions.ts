@@ -84,7 +84,7 @@ export const importNcrItems = createServerFn({ method: "POST" })
       const rec = r as Record<string, string | null>;
       const key = (rec["doc_no"] ?? "").trim();
       if (seen.has(key)) {
-        rejected.push({ docNo: key, description: rec["description"], reasons: [`문서번호 "${key}"가 파일 안에서 중복됩니다 / Duplicate doc no in file`] });
+        rejected.push({ docNo: key, description: rec["description"] ?? null, reasons: [`문서번호 "${key}"가 파일 안에서 중복됩니다 / Duplicate doc no in file`] });
         continue;
       }
       seen.add(key);
@@ -92,7 +92,7 @@ export const importNcrItems = createServerFn({ method: "POST" })
       const dates = r as unknown as Record<DateField, string | null>;
       const violations = sequenceViolations(dates);
       if (violations.length) {
-        rejected.push({ docNo: key, description: rec["description"], reasons: violations.map((v) => v.reason) });
+        rejected.push({ docNo: key, description: rec["description"] ?? null, reasons: violations.map((v) => v.reason) });
         continue;
       }
 
