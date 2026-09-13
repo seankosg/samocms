@@ -21,7 +21,7 @@ import { dayDiff, fmtDate, SLOTS, SLOT_LABEL } from "@/lib/schedule-model";
 export const Route = createFileRoute("/_authenticated/upload")({
   head: () => ({ meta: [
     { title: "데이터 업로드 | HMMME PROJECT CMS" },
-    { name: "description", content: "공정표와 시운전 워크북을 올리면 공종별 데이터가 최신 파일로 교체됩니다." },
+    { name: "description", content: "공정표와 시운전 워크북을 올리면 공종별 데이터가 번호 기준으로 갱신됩니다." },
     { property: "og:title", content: "HMMME 공정 데이터 업로드" },
     { property: "og:description", content: "Arch · Elec · Mech · Int · Permit · T&C 워크북 업로드." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
@@ -199,7 +199,7 @@ function UploadPage() {
   ];
 
   return (
-    <AppShell title="데이터 업로드" desc={`기준일 ${fmtDate(base)} · 공종 파일을 올리면 해당 공종만 교체됩니다`}>
+    <AppShell title="데이터 업로드" desc={`기준일 ${fmtDate(base)} · 공종 파일을 올리면 번호 기준으로 갱신되고, 빠진 항목은 보관됩니다`}>
       <input ref={fileRef} type="file" accept=".xlsx,.xls" multiple className="hidden" aria-label="업로드 파일 선택" onChange={(e) => handle(e.target.files)} />
 
       <div
