@@ -29,6 +29,12 @@ export const STATUS_LABEL: Record<string, string> = { done: "완료", ongoing: "
 
 export const flat = (v: unknown) => String(v ?? "").replace(/\s+/g, " ").trim();
 
+/** 예측 롤업에서 제외할 발주처 담당 업무 */
+export const isClientOwned = (manager: string | null | undefined) => {
+  const value = flat(manager).toLowerCase();
+  return value === "hm" || value === "발주처";
+};
+
 const MSRE = /^\s*[Mm]\s*\.?\s*(\d{1,2})\s*$/;
 export function normMS(v: string | null): string | null {
   if (v == null) return null;

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { useProgressForecast } from "@/lib/use-project";
-import { KPI_SLOTS, planAt, pct1, SLOT_LABEL, type Row } from "@/lib/schedule-model";
+import { isClientOwned, KPI_SLOTS, planAt, pct1, SLOT_LABEL, type Row } from "@/lib/schedule-model";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { TcItem } from "@/lib/tc-model";
@@ -60,7 +60,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
   const [tcBldg, setTcBldg] = useState<string>("ALL");
   const [hover, setHover] = useState<number | null>(null);
 
-  const eligibleRows = useMemo(() => rows.filter((r) => r.mgr !== "HM"), [rows]);
+  const eligibleRows = useMemo(() => rows.filter((r) => !isClientOwned(r.mgr)), [rows]);
   const milestones = useMemo(() => {
     const values = new Set(eligibleRows.map((r) => r.ms ?? "미지정"));
     return [...values].sort((a, b) => {
@@ -130,11 +130,11 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
     for (let t = toTs(firstDate); t <= toTs(endDate); t += DAY) days.push(toDate(t));
     const planCurve = planCurveOf(sel, days);
 
-    // 계획 완료일 = 계획 곡선이 처음 99.9% 도달하는 날
-    const planDoneDate = days.find((d) => (planCurve.get(d) ?? 0) >= 0.999) ?? planEnd;
+    // 계획 완료일 = 당사 담당 업무 중 가장 늦은 계획완료일
+    const planDoneDate = planEnd;
 
     // 발주처(HM) 항목의 계획 완료일 — 집계에서는 제외하되 참조용 세로선으로 표시
-    const hmRows = rows.filter((r) => r.mgr === "HM" && r.s && r.e);
+    const hmRows = rows.filter((r) => isClientOwned(r.mgr) && r.s && r.e);
     const hmPlanEnd = hmRows.reduce<string | null>((acc, r) => (r.e && (!acc || r.e > acc) ? r.e : acc), null);
     const hmPlanDoneDate = hmPlanEnd ? (days.find((d) => (planCurveOf(hmRows, days).get(d) ?? 0) >= 0.999) ?? hmPlanEnd) : null;
 
@@ -192,8 +192,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
       const end = sel.reduce<string | null>((acc, r) => (r.e && (!acc || r.e > acc) ? r.e : acc), null) ?? last.date;
       const days: string[] = [];
       for (let t = toTs(hist[0]!.date); t <= toTs(end); t += DAY) days.push(toDate(t));
-      const pc = planCurveOf(sel, days);
-      const planDone = days.find((d) => (pc.get(d) ?? 0) >= 0.999) ?? end;
+      const planDone = end;
       const diffDays = forecastEnd ? Math.round((toTs(forecastEnd) - toTs(planDone)) / DAY) : null;
       return { disc, slope, forecastEnd, diffDays, planDone, actual: last.actual };
     });

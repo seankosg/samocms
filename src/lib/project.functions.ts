@@ -357,7 +357,8 @@ export const getProgressForecast = createServerFn({ method: "GET" })
     }
     const agg = new Map<string, { p: number; a: number; n: number }>();
     for (const r of rows) {
-      if (r.manager === "HM") continue; // 발주처(현대자동차) 담당 항목은 예측 대상에서 제외
+      const manager = String(r.manager ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+      if (manager === "hm" || manager === "발주처") continue; // 발주처 담당 항목은 예측 대상에서 제외
       const rawMilestone = String(r.milestone ?? "").trim();
       const match = rawMilestone.match(/^M\s*\.?\s*(\d{1,2})$/i);
       const milestone = match ? `M${Number(match[1])}` : rawMilestone || "미지정";
