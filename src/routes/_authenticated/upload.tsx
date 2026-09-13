@@ -11,10 +11,14 @@ import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { projectQuery, useProject } from "@/lib/use-project";
+import { useNcrItems } from "@/lib/use-ncr";
 import { parseScheduleFile, sourceKeyFromFileName, findNoConflicts, validateNoOverrides, type NoConflict } from "@/lib/import-schedule";
 import { isTcWorkbook, metaFromFileName, parseTcWorkbook, type TcImportRow } from "@/lib/import-tc";
+import { isNcrWorkbook, parseNcrWorkbook, type NcrImportRow } from "@/lib/import-ncr";
+import { sequenceViolations } from "@/lib/ncr-model";
 import { importActivities } from "@/lib/activities.functions";
 import { importTcItems } from "@/lib/project.functions";
+import { importNcrItems } from "@/lib/ncr.functions";
 import type { ImportRow } from "@/lib/import-schedule";
 import { dayDiff, fmtDate, SLOTS, SLOT_LABEL } from "@/lib/schedule-model";
 
@@ -46,7 +50,10 @@ type Job = {
   prevFileDate: string | null;
   payload:
     | { kind: "schedule"; slot: string; fileDate: string | null; rev: number | null; rows: ImportRow[] }
-    | { kind: "tc"; disc: "Mech" | "Elec"; fileDate: string | null; rows: TcImportRow[] };
+    | { kind: "tc"; disc: "Mech" | "Elec"; fileDate: string | null; rows: TcImportRow[] }
+    | { kind: "ncr"; fileDate: string | null; rows: NcrImportRow[] };
+  /** NCR: 단계 순서 위반으로 반려될 행 미리보기 */
+  rejected: { docNo: string; reasons: string[] }[];
 };
 
 /** Row(화면용)를 파일 행과 비교 가능한 지문으로 변환합니다. */
@@ -66,6 +73,7 @@ const diffKeys = (before: string[], after: string[]) => {
 
 function UploadPage() {
   const { rows, tcItems, batches, base } = useProject();
+  const ncrItems = useNcrItems();
   const { canEdit, canWrite, scopes, isAdmin } = useAuth();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -81,7 +89,22 @@ function UploadPage() {
       const buf = await file.arrayBuffer();
       const meta = metaFromFileName(file.name);
       const wb = XLSX.read(buf, { type: "array", bookSheets: true });
-      if (isTcWorkbook(wb)) {
+      if (isNcrWorkbook(wb)) {
+        if (!isAdmin) throw new Error("NCR 자료는 관리자만 업로드할 수 있습니다.");
+        const parsed = parseNcrWorkbook(buf, file.name);
+        const before = ncrItems.map((i) => i.doc_no);
+        const after = parsed.rows.map((r) => r.doc_no);
+        const rejected = parsed.rows
+          .map((r) => ({ docNo: r.doc_no, reasons: sequenceViolations(r).map((v) => v.reason) }))
+          .filter((r) => r.reasons.length > 0);
+        jobs.push({
+          id: `ncr-${file.name}`, label: "NCR·OR·SOR", fileName: file.name,
+          existing: before.length, incoming: parsed.rows.length, ...diffKeys(before, after),
+          changed: 0, conflicts: [], existingNos: [], fileDate: parsed.fileDate ?? meta.date,
+          prevFileDate: batches.find((b) => b.kind === "ncr")?.file_date ?? null, rejected,
+          payload: { kind: "ncr", fileDate: parsed.fileDate ?? meta.date, rows: parsed.rows },
+        });
+      } else if (isTcWorkbook(wb)) {
         const disc = meta.disc === "Elec" ? "Elec" : "Mech";
         if (!canEdit(disc)) throw new Error(`${disc} T&C 자료를 업로드할 권한이 없습니다.`);
         const parsed = parseTcWorkbook(buf, file.name);
@@ -90,7 +113,7 @@ function UploadPage() {
         jobs.push({
           id: `tc-${disc}-${file.name}`, label: `${disc.toUpperCase()} T&C`, fileName: file.name,
           existing: before.length, incoming: parsed.length, ...diffKeys(before, after),
-          changed: 0, conflicts: [], existingNos: [], fileDate: meta.date, prevFileDate: null,
+          changed: 0, conflicts: [], existingNos: [], fileDate: meta.date, prevFileDate: null, rejected: [],
           payload: { kind: "tc", disc, fileDate: meta.date, rows: parsed },
         });
       } else {
@@ -112,7 +135,7 @@ function UploadPage() {
           id: `s-${slot}-${file.name}`, label: SLOT_LABEL[slot] ?? slot, fileName: file.name,
           existing: existingNos.length, incoming: parsed.rows.length,
           ...diffKeys(existingNos, parsed.rows.map((r) => r.activity_no).filter((v): v is string => !!v)),
-          changed, conflicts, existingNos, fileDate, prevFileDate,
+          changed, conflicts, existingNos, fileDate, prevFileDate, rejected: [],
           payload: { kind: "schedule", slot, fileDate, rev: meta.rev, rows: parsed.rows.map((r) => ({ ...r, source_file: slot })) },
         });
       }
@@ -128,6 +151,15 @@ function UploadPage() {
         if (job.payload.kind === "tc") {
           const res = await importTcItems({ data: { discipline: job.payload.disc, fileName: job.fileName, fileDate: job.payload.fileDate, rows: job.payload.rows } });
           done.push(`${job.label} ${res.inserted}건`);
+        } else if (job.payload.kind === "ncr") {
+          const res = await importNcrItems({ data: { fileName: job.fileName, fileDate: job.payload.fileDate, rows: job.payload.rows } });
+          done.push(`${job.label} ${res.inserted}건${res.hidden ? ` (보관 ${res.hidden}건)` : ""}${res.rejected.length ? ` (반려 ${res.rejected.length}건)` : ""}`);
+          if (res.rejected.length) {
+            const first = res.rejected[0]!;
+            toast.warning(`NCR 반려 ${res.rejected.length}건`, {
+              description: `${first.docNo}: ${first.reasons[0] ?? ""}${res.rejected.length > 1 ? ` 외 ${res.rejected.length - 1}건` : ""} — 해당 행만 제외하고 나머지는 반영됐습니다.`,
+            });
+          }
         } else {
           // 확인창에서 지정한 번호(중복·빈 값 해소분)를 반영합니다.
           const fixedRows = job.payload.rows.map((r, i) => {
@@ -143,6 +175,7 @@ function UploadPage() {
       }
       await qc.invalidateQueries({ queryKey: ["project"] });
       await qc.invalidateQueries({ queryKey: ["progress-history"] });
+      await qc.invalidateQueries({ queryKey: ["ncr-items"] });
       if (done.length) toast.success("업로드 반영 완료", { description: done.join(" · ") });
       else toast.info("적용된 파일이 없습니다");
     } catch (e) {
@@ -196,6 +229,7 @@ function UploadPage() {
       key: `t-${s}`, label: `${s.toUpperCase()} T&C`, sub: "T&C",
       count: tcItems.filter((i) => i.discipline === s).length, batch: latestOf("tc", s),
     })),
+    ...(isAdmin ? [{ key: "ncr", label: "NCR·OR·SOR", sub: "준공 준비", count: ncrItems.length, batch: latestOf("ncr", "-") ?? batches.find((b) => b.kind === "ncr") ?? null }] : []),
   ];
 
   return (
@@ -282,6 +316,16 @@ function UploadPage() {
                       {fixError && <p className="mt-1 text-[11px] font-semibold text-destructive">{fixError}</p>}
                     </div>
                   )}
+                  {j.rejected.length > 0 && (
+                    <div className="mt-2 rounded-md border border-chart-2/50 bg-chart-2/5 p-2">
+                      <p className="font-semibold text-chart-2">단계 순서 위반으로 반려 예정 {j.rejected.length}건 — 해당 행만 제외되고 나머지는 정상 반영됩니다</p>
+                      <ul className="mt-1.5 max-h-32 space-y-1 overflow-auto text-[11px] text-muted-foreground">
+                        {j.rejected.map((r) => (
+                          <li key={r.docNo}><b className="text-foreground">{r.docNo}</b> — {r.reasons[0]}{r.reasons.length > 1 ? ` 외 ${r.reasons.length - 1}건` : ""}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   <div className="mt-2 flex gap-2">
                     <Button size="sm" variant={skip[j.id] ? "outline" : "default"} onClick={() => setSkip((s) => ({ ...s, [j.id]: false }))}>이 파일 적용</Button>
                     <Button size="sm" variant={skip[j.id] ? "default" : "outline"} onClick={() => setSkip((s) => ({ ...s, [j.id]: true }))}>건너뛰기</Button>
@@ -329,7 +373,7 @@ function UploadPage() {
             <tbody>
               {batches.map((b) => (
                 <tr key={b.id} className="border-b border-border">
-                  <td className="px-3 py-1.5">{b.kind === "tc" ? "T&C" : "공정표"}</td>
+                  <td className="px-3 py-1.5">{b.kind === "tc" ? "T&C" : b.kind === "ncr" ? "NCR" : "공정표"}</td>
                   <td className="px-3 py-1.5">{SLOT_LABEL[b.slot] ?? b.slot}</td>
                   <td className="max-w-[320px] truncate px-3 py-1.5">{b.file_name}</td>
                   <td className="px-3 py-1.5">{fmtDate(b.file_date)}</td>
