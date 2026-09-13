@@ -9,7 +9,8 @@ import { Kpi } from "@/routes/_authenticated/manpower.index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { manpowerRangeQuery, useManpower } from "@/lib/use-manpower";
-import { RESULT_ORDER, addDays, fmtDay, riyadhToday, verificationStats, type CompareRow } from "@/lib/manpower-model";
+import { RESULT_ORDER, addDays, deptDot, fmtDay, reporterLabel, riyadhToday, verificationStats, type CompareRow } from "@/lib/manpower-model";
+import { CardHistoryButton } from "@/components/manpower/card-history";
 import { MP, RESULT_LABEL } from "@/lib/manpower-i18n";
 import { CompareDiffCharts } from "@/components/manpower/compare-diff-charts";
 import { MultiSelectFilter, matchMulti } from "@/components/column-filter";
@@ -58,7 +59,7 @@ function ComparePage() {
   const day = s.day ?? riyadhToday();
   const filter = s.result ?? "ALL";
   const from = chartFrom(day, s.cmpFrom);
-  const { compare } = useManpower(from, day);
+  const { compare, memberMap } = useManpower(from, day);
   const [q, setQ] = useState("");
   const [exportOpen, setExportOpen] = useState(false);
   const [columnFilters, setColumnFilters] = useState<Partial<Record<ColumnFilterKey, string[]>>>({});
@@ -99,10 +100,10 @@ function ComparePage() {
       "HDEC Recount": r.verified,
       Difference: r.diff,
       Result: r.result,
-      Reporter: r.sub_reporter,
-      "HDEC Counter": r.hdec_counter,
+      Reporter: reporterLabel(memberMap, r.sub_reporter_tg_id, r.sub_reporter).text,
+      "HDEC Counter": reporterLabel(memberMap, r.hdec_counter_tg_id, r.hdec_counter).text,
     },
-  })), [shown]);
+  })), [shown, memberMap]);
 
   const exportStamp = useMemo(() => {
     const value = new Date(`${day}T00:00:00Z`);
@@ -188,8 +189,8 @@ function ComparePage() {
                   {r.diff == null ? "—" : r.diff > 0 ? `+${r.diff}` : r.diff}
                 </td>
                 <td><span className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${TONE[r.result]}`}>{RESULT_LABEL[r.result]}</span></td>
-                <td className="text-muted-foreground">{r.sub_reporter ?? "—"}</td>
-                <td className="text-muted-foreground">{r.hdec_counter ?? "—"}</td>
+                <td className="text-muted-foreground"><ReporterCell source="SUB" row={r} memberMap={memberMap} /></td>
+                 <td className="text-muted-foreground"><ReporterCell source="HDEC" row={r} memberMap={memberMap} /></td>
               </tr>
             ))}
             {!shown.length && <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">해당 조건의 대조 자료가 없습니다.</td></tr>}
@@ -197,5 +198,25 @@ function ComparePage() {
         </table>
       </section>
     </AppShell>
+  );
+}
+
+/** 입력자 칸 — 「이름 · 부서」(부서 색 점), 미등록이면 표시, 재제출 이력 뱃지 */
+function ReporterCell({ source, row, memberMap }: { source: "SUB" | "HDEC"; row: CompareRow; memberMap: Map<string, { telegram_id: string; name: string; dept: string | null; position: string | null }> }) {
+  const tg = source === "SUB" ? row.sub_reporter_tg_id : row.hdec_counter_tg_id;
+  const raw = source === "SUB" ? row.sub_reporter : row.hdec_counter;
+  const superseded = (source === "SUB" ? row.sub_superseded : row.hdec_superseded) ?? 0;
+  const who = reporterLabel(memberMap, tg, raw);
+  if (!who.text || who.text === "—") return <>—</>;
+  return (
+    <span className="inline-flex flex-wrap items-center gap-1">
+      {who.member?.dept && <span className={`inline-block size-1.5 rounded-full ${deptDot(who.member.dept)}`} aria-hidden />}
+      <span>{who.text}</span>
+      {!who.registered && <span className="text-[10px] text-muted-foreground/70">(미등록)</span>}
+      <CardHistoryButton
+        source={source} company={row.company} report_date={row.report_date}
+        location={row.location} shift={row.shift} memberMap={memberMap} superseded={superseded}
+      />
+    </span>
   );
 }

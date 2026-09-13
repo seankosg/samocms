@@ -2,8 +2,8 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { getManpower, getManpowerMembers, getManpowerMasters } from "./manpower.functions";
 
 import {
-  makeIsWorkday, riyadhToday, addDays, toDaily,
-  type Card, type CompareRow, type CompanyMaster, type LocationMaster, type CalendarDay, type PlanRow,
+  makeIsWorkday, riyadhToday, addDays, toDaily, toMemberMap,
+  type Card, type CompareRow, type CompanyMaster, type LocationMaster, type CalendarDay, type PlanRow, type MemberInfo,
 } from "./manpower-model";
 
 export const DEFAULT_TREND_DAYS = 30;
@@ -43,6 +43,7 @@ export function useManpower(from: string, to: string) {
     settings: data.settings,
     ingestLog: data.ingestLog,
     daily: toDaily(cards),
+    memberMap: toMemberMap(((data as { members?: MemberInfo[] }).members ?? [])),
     isWorkday: makeIsWorkday(calendar),
     cutoff: data.settings["manpower_cutoff_time"] ?? "09:00",
     lastReceivedAt: (data as { lastReceivedAt?: string | null }).lastReceivedAt ?? null,
@@ -61,6 +62,7 @@ export function useManpowerMembers() {
   return useSuspenseQuery(manpowerMembersQuery).data as {
     telegram_id: string; name: string; company: string | null;
     role: "SUB" | "HDEC"; is_active: boolean; note: string | null;
+    position: string | null; dept: string | null;
   }[];
 }
 

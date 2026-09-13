@@ -551,9 +551,11 @@ export type Database = {
         Row: {
           company: string | null
           created_at: string
+          dept: string | null
           is_active: boolean
           name: string
           note: string | null
+          position: string | null
           role: string
           telegram_id: string
           updated_at: string
@@ -561,9 +563,11 @@ export type Database = {
         Insert: {
           company?: string | null
           created_at?: string
+          dept?: string | null
           is_active?: boolean
           name: string
           note?: string | null
+          position?: string | null
           role?: string
           telegram_id: string
           updated_at?: string
@@ -571,9 +575,11 @@ export type Database = {
         Update: {
           company?: string | null
           created_at?: string
+          dept?: string | null
           is_active?: boolean
           name?: string
           note?: string | null
+          position?: string | null
           role?: string
           telegram_id?: string
           updated_at?: string
@@ -1254,6 +1260,7 @@ export type Database = {
           plumber: number | null
           report_date: string | null
           reporter_name: string | null
+          reporter_tg_id: string | null
           safety_officer: number | null
           scaffolder: number | null
           shift: string | null
@@ -1261,6 +1268,7 @@ export type Database = {
           staff: number | null
           submitted_at: string | null
           subtotal: number | null
+          superseded_count: number | null
           worker: number | null
         }
         Relationships: []
@@ -1270,12 +1278,16 @@ export type Database = {
           company: string | null
           diff: number | null
           hdec_counter: string | null
+          hdec_counter_tg_id: string | null
+          hdec_superseded: number | null
           location: string | null
           report_date: string | null
           reported: number | null
           result: string | null
           shift: string | null
           sub_reporter: string | null
+          sub_reporter_tg_id: string | null
+          sub_superseded: number | null
           verified: number | null
         }
         Relationships: []
