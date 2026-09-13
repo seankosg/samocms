@@ -74,6 +74,11 @@
   --color-ncr-progress-plan: var(--ncr-progress-plan);
   --color-ncr-progress-actual: var(--ncr-progress-actual);
   --color-ncr-progress-over: var(--ncr-progress-over);
+  --color-ncr-stage-low: var(--ncr-stage-low);
+  --color-ncr-stage-mid: var(--ncr-stage-mid);
+  --color-ncr-stage-high: var(--ncr-stage-high);
+  --color-ncr-stage-max: var(--ncr-stage-max);
+  --color-ncr-stage-strong-foreground: var(--ncr-stage-strong-foreground);
 }
 
 :root {
@@ -133,6 +138,11 @@
   --ncr-progress-plan: oklch(0.72 0.015 255);
   --ncr-progress-actual: oklch(0.2 0.015 255);
   --ncr-progress-over: oklch(0.52 0.16 145);
+  --ncr-stage-low: oklch(0.95 0.025 255);
+  --ncr-stage-mid: oklch(0.84 0.075 255);
+  --ncr-stage-high: oklch(0.67 0.15 255);
+  --ncr-stage-max: oklch(0.49 0.2 264);
+  --ncr-stage-strong-foreground: oklch(0.985 0.003 247);
 }
 
 .dark {
@@ -191,6 +201,11 @@
   --ncr-progress-plan: oklch(0.52 0.015 255);
   --ncr-progress-actual: oklch(0.94 0.008 255);
   --ncr-progress-over: oklch(0.72 0.16 145);
+  --ncr-stage-low: oklch(0.27 0.035 255);
+  --ncr-stage-mid: oklch(0.36 0.075 255);
+  --ncr-stage-high: oklch(0.52 0.14 255);
+  --ncr-stage-max: oklch(0.65 0.18 255);
+  --ncr-stage-strong-foreground: oklch(0.985 0.003 247);
 }
 
 @layer base {
