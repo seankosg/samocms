@@ -128,7 +128,7 @@ function NcrDashboardPage() {
             return (
               <button
                 key={st.n}
-                onClick={() => toList({ stage: st.stage, ...(search.docType ? { docType: search.docType } : {}), ...(search.sub ? { sub: search.sub } : {}) }}
+                onClick={() => toList({ stage: st.stage, ...(search.docType ? { docType: search.docType } : {}), ...(search.sub ? { sub: search.sub } : {}) }) }}
                 className="rounded-md border border-border bg-card p-2.5 text-left shadow-sm transition-colors hover:border-primary/50 hover:bg-accent/30"
               >
                 <p className="flex items-baseline justify-between">
