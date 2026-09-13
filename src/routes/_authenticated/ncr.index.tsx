@@ -26,6 +26,9 @@ const searchSchema = z.object({
   stage: z.string().optional(),
   status: z.string().optional(),
   q: z.string().optional(),
+  slot: z.string().optional(),
+  metric: z.string().optional(),
+  asOf: z.string().optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/ncr/")({
@@ -78,10 +81,29 @@ function NcrListPage() {
         if (search.stage === "Closed") { if (cur !== "Closed") return false; }
         else if (!cur.startsWith(search.stage)) return false;
       }
+      if (search.slot && search.metric) {
+        const slot = search.slot.toLowerCase() as SlotKey;
+        if (!SLOT_ORDER.includes(slot)) return false;
+        const d = dates(r);
+        const planned = d[planField(slot)];
+        const actual = d[actualField(slot)];
+        const due = !!planned && !!search.asOf && planned <= search.asOf;
+        if (search.metric === "plan" && !due) return false;
+        if (search.metric === "actual" && !actual) return false;
+        if (search.metric === "short" && !(due && !actual)) return false;
+        if (search.metric === "over" && !(!due && !!actual)) return false;
+        if (search.metric === "delay" && !isStartDelayed(d, slot, search.asOf ?? new Date().toISOString().slice(0, 10))) return false;
+      }
       if (q && ![r.doc_no, r.description, r.location, r.mic, r.pic, r.subcontractor].some((v) => (v ?? "").toLowerCase().includes(q))) return false;
       return true;
     });
   }, [items, search]);
+
+  const drillLabel = useMemo(() => {
+    if (!search.slot || !search.metric) return null;
+    const labels: Record<string, string> = { plan: "계획 도래", actual: "실적 입력", short: "계획 미달", over: "계획 초과", delay: "지연" };
+    return `${search.slot.toUpperCase()} · ${labels[search.metric] ?? search.metric}${search.asOf ? ` · 기준일 ${search.asOf}` : ""}`;
+  }, [search.slot, search.metric, search.asOf]);
 
   const canEditRow = (r: NcrItem) => {
     if (isAdmin) return true;
@@ -126,6 +148,12 @@ function NcrListPage() {
         actions={<Button size="sm" variant="outline" onClick={exportXlsx}><Download className="size-3.5" />엑셀</Button>}
       >
         {/* 필터 */}
+        {drillLabel && (
+          <div className="mb-3 flex items-center justify-between gap-3 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs">
+            <span><strong>대시보드 상세조건</strong> · {drillLabel} · {filtered.length.toLocaleString()}건</span>
+            <Button size="sm" variant="ghost" className="h-7" onClick={() => setSearch({ slot: undefined, metric: undefined, asOf: undefined })}>조건 해제</Button>
+          </div>
+        )}
         <div className="mb-3 space-y-2 rounded-md border border-border bg-card p-3">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="w-14 text-[11px] font-bold text-muted-foreground">문서종류</span>
