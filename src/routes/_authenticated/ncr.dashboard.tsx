@@ -128,7 +128,7 @@ function NcrDashboardPage() {
             return (
               <button
                 key={st.n}
-                onClick={() => toList({ stage: st.stage, ...(search.docType ? { docType: search.docType } : {}), ...(search.sub ? { sub: search.sub } : {}) }) }}
+                onClick={() => toList({ stage: st.stage, ...(search.docType ? { docType: search.docType } : {}), ...(search.sub ? { sub: search.sub } : {}) }) }
                 className="rounded-md border border-border bg-card p-2.5 text-left shadow-sm transition-colors hover:border-primary/50 hover:bg-accent/30"
               >
                 <p className="flex items-baseline justify-between">
@@ -162,7 +162,7 @@ function NcrDashboardPage() {
             return (
               <button
                 key={st.n}
-                onClick={() => toList({ stage: st.stage, ...(search.docType ? { docType: search.docType } : {}), ...(search.sub ? { sub: search.sub } : {}) }) })}
+                onClick={() => toList({ stage: st.stage, ...(search.docType ? { docType: search.docType } : {}), ...(search.sub ? { sub: search.sub } : {}) }) }
                 className={`rounded-md border p-2.5 text-left shadow-sm transition-colors ${total ? "border-destructive/50 bg-destructive/5 hover:bg-destructive/10" : "border-border bg-card hover:bg-accent/30"}`}
               >
                 <p className="flex items-baseline justify-between">
@@ -190,7 +190,7 @@ function NcrDashboardPage() {
           {stats.map((st) => (
             <button
               key={st.n}
-              onClick={() => toList({ stage: st.stage, ...(search.docType ? { docType: search.docType } : {}), ...(search.sub ? { sub: search.sub } : {}) }) })}
+              onClick={() => toList({ stage: st.stage, ...(search.docType ? { docType: search.docType } : {}), ...(search.sub ? { sub: search.sub } : {}) }) }
               className="rounded-md border border-border bg-card p-2.5 text-left shadow-sm transition-colors hover:border-primary/50 hover:bg-accent/30"
             >
               <p className="flex items-baseline justify-between">
@@ -201,7 +201,7 @@ function NcrDashboardPage() {
             </button>
           ))}
           <button
-            onClick={() => toList({ stage: "Closed", ...(search.docType ? { docType: search.docType } : {}), ...(search.sub ? { sub: search.sub } : {}) }) })}
+            onClick={() => toList({ stage: "Closed", ...(search.docType ? { docType: search.docType } : {}), ...(search.sub ? { sub: search.sub } : {}) }) }
             className="rounded-md border border-primary/40 bg-primary/5 p-2.5 text-left shadow-sm transition-colors hover:bg-primary/10"
           >
             <p className="flex items-baseline justify-between">
