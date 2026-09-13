@@ -343,12 +343,12 @@ export const getProgressForecast = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const c = context.supabase;
-    type R = { snapshot_date: string; discipline: string; milestone: string | null; planned_progress: number | null; actual_progress: number | null; manager: string | null };
+    type R = { snapshot_date: string; discipline: string; source_file: string | null; milestone: string | null; planned_progress: number | null; actual_progress: number | null; manager: string | null };
     const rows: R[] = [];
     for (let from = 0; ; from += 1000) {
       const { data: page, error } = await c
         .from("activity_snapshots")
-        .select("snapshot_date,discipline,milestone,planned_progress,actual_progress,manager")
+        .select("snapshot_date,discipline,source_file,milestone,planned_progress,actual_progress,manager")
         .order("snapshot_date")
         .range(from, from + 999);
       if (error) throw new Error(error.message);
@@ -359,10 +359,11 @@ export const getProgressForecast = createServerFn({ method: "GET" })
     for (const r of rows) {
       const manager = String(r.manager ?? "").replace(/\s+/g, " ").trim().toLowerCase();
       if (manager === "hm" || manager === "발주처") continue; // 발주처 담당 항목은 예측 대상에서 제외
+      const discipline = r.source_file === "Permit" ? "Permit" : r.discipline;
       const rawMilestone = String(r.milestone ?? "").trim();
       const match = rawMilestone.match(/^M\s*\.?\s*(\d{1,2})$/i);
       const milestone = match ? `M${Number(match[1])}` : rawMilestone || "미지정";
-      const key = `${r.discipline}|${milestone}|${r.snapshot_date}`;
+      const key = `${discipline}|${milestone}|${r.snapshot_date}`;
       const cur = agg.get(key) ?? { p: 0, a: 0, n: 0 };
       cur.p += Number(r.planned_progress ?? 0);
       cur.a += Number(r.actual_progress ?? 0);
