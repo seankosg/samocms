@@ -31,6 +31,7 @@ export function useHiddenActivities(enabled: boolean) {
 }
 
 
+/** 공종×날짜별 스냅샷 평균 — 진행도 예측선용 */
 export function useProgressForecast() {
   return useQuery({
     queryKey: ["progress-forecast"],
