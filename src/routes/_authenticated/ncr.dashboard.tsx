@@ -34,6 +34,15 @@ const dates = (r: NcrItem) => r as unknown as NcrDates;
 
 const progressRate = (value: number, total: number) => total > 0 ? Math.round((value / total) * 100) : 0;
 
+const currentStageTone = (value: number, max: number) => {
+  if (value === 0 || max === 0) return "bg-muted/30 text-muted-foreground hover:bg-muted/50";
+  const ratio = value / max;
+  if (ratio <= 0.25) return "bg-ncr-stage-low text-foreground hover:bg-ncr-stage-mid";
+  if (ratio <= 0.5) return "bg-ncr-stage-mid text-foreground hover:bg-ncr-stage-high";
+  if (ratio <= 0.75) return "bg-ncr-stage-high text-ncr-stage-strong-foreground hover:bg-ncr-stage-max";
+  return "bg-ncr-stage-max text-ncr-stage-strong-foreground hover:bg-ncr-stage-max";
+};
+
 function ProgressMetric({ plan, actual, total, onDrill }: { plan: number; actual: number; total: number; onDrill: (metric: "plan" | "actual" | "short" | "over") => void }) {
   const planRate = progressRate(plan, total);
   const actualRate = progressRate(actual, total);
@@ -101,6 +110,7 @@ function NcrDashboardPage() {
   }), [filtered, asOf]);
 
   const closed = filtered.filter((r) => currentStage(dates(r)) === "Closed").length;
+  const maxCurrent = Math.max(0, ...stats.map((st) => st.cur));
 
   const chip = (label: string, active: boolean, onClick: () => void) => (
     <Button
@@ -214,8 +224,8 @@ function NcrDashboardPage() {
               </div>
 
               <div className="grid grid-cols-[140px_repeat(9,minmax(0,1fr))_100px]">
-                 <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><ClipboardList className="size-4 text-ncr-plan" /><span className="text-left"><strong className="block text-xs">현재단계</strong><small className="text-[9px] text-muted-foreground">자동 산출</small></span></Button>
-                {stats.map((st) => <Button key={st.n} variant="ghost" onClick={() => toList({ stage: st.stage })} className="h-auto min-w-0 rounded-none border-r border-border px-2 py-3 hover:bg-ncr-plan-soft"><span><strong className={`block text-xl ${st.cur ? "text-ncr-plan" : "text-muted-foreground"}`}>{st.cur}</strong><small className="text-[9px] font-medium text-muted-foreground">건</small></span></Button>)}
+                 <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><ClipboardList className="size-4 text-ncr-plan" /><span className="text-left"><strong className="block text-xs">현재단계</strong><small className="text-[9px] text-muted-foreground">자동 산출</small><span className="mt-1.5 flex items-center gap-1 text-[8px] font-medium text-muted-foreground"><span>적음</span><i className="size-2 bg-ncr-stage-low" /><i className="size-2 bg-ncr-stage-mid" /><i className="size-2 bg-ncr-stage-high" /><i className="size-2 bg-ncr-stage-max" /><span>많음</span></span></span></Button>
+                {stats.map((st) => <Button key={st.n} variant="ghost" onClick={() => toList({ stage: st.stage })} aria-label={`${st.stage} 현재단계 ${st.cur}건`} className={`h-auto min-w-0 rounded-none border-r border-border px-2 py-3 transition-colors ${currentStageTone(st.cur, maxCurrent)}`}><span><strong className="block text-xl">{st.cur}</strong><small className="text-[9px] font-semibold opacity-80">건</small></span></Button>)}
                 <Button variant="ghost" onClick={() => toList({ stage: "Closed" })} className="h-auto rounded-none bg-ncr-actual-soft px-2 py-3 hover:bg-ncr-actual-soft"><span><strong className="block text-xl text-ncr-actual">{closed}</strong><small className="text-[9px] font-medium text-ncr-actual">완료</small></span></Button>
               </div>
             </div>
