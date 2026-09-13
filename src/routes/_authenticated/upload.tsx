@@ -222,30 +222,65 @@ function UploadPage() {
       <Dialog open={!!pending} onOpenChange={(o) => { if (!o) setPending(null); }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><AlertTriangle className="size-4 text-chart-2" />기존 자료와 행 수가 다릅니다</DialogTitle>
-            <DialogDescription>적용하면 해당 공종의 기존 자료가 새 파일로 교체됩니다. 파일별로 적용 여부를 선택하세요.</DialogDescription>
+            <DialogTitle className="flex items-center gap-2"><AlertTriangle className="size-4 text-chart-2" />업로드 내용 확인</DialogTitle>
+            <DialogDescription>
+              기존 항목은 번호 기준으로 갱신되고, 파일에서 빠진 항목은 삭제되지 않고 보관(숨김)됩니다. 파일별로 적용 여부를 선택하세요.
+            </DialogDescription>
           </DialogHeader>
           <div className="max-h-[50vh] space-y-3 overflow-auto">
             {(pending ?? []).map((j) => {
-              const delta = j.incoming - j.existing;
-              const same = delta === 0;
+              const isSchedule = j.payload.kind === "schedule";
+              const hideWarn = isSchedule && j.existing > 0 && j.removed.length / j.existing >= 0.3;
+              const staleWarn = isSchedule && j.fileDate && j.prevFileDate && j.fileDate < j.prevFileDate;
+              const fixError = jobFixError(j);
               return (
-                <div key={j.id} className={`rounded-md border p-3 text-xs ${same ? "border-border" : "border-chart-2/60 bg-chart-2/5"}`}>
+                <div key={j.id} className={`rounded-md border p-3 text-xs ${j.conflicts.length ? "border-destructive/60 bg-destructive/5" : "border-border"}`}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <strong className="text-sm">{j.label}</strong>
                       <span className="ml-2 text-muted-foreground">{j.fileName}</span>
                     </div>
                     <span className="font-semibold">
-                      기존 {j.existing.toLocaleString()}행 → 새 파일 {j.incoming.toLocaleString()}행{" "}
-                      {!same && <span className={delta > 0 ? "text-primary" : "text-destructive"}>({delta > 0 ? "+" : ""}{delta})</span>}
+                      기존 {j.existing.toLocaleString()}행 → 새 파일 {j.incoming.toLocaleString()}행
                     </span>
                   </div>
-                  {(j.added.length > 0 || j.removed.length > 0) && (
-                    <p className="mt-1.5 text-[11px] text-muted-foreground">
-                      신규 항목 {j.added.length}건{j.added.length ? ` (예: ${j.added.slice(0, 5).join(", ")})` : ""} · 사라진 항목 {j.removed.length}건
-                      {j.removed.length ? ` (예: ${j.removed.slice(0, 5).join(", ")})` : ""}
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    신규 {j.added.length}건{j.added.length ? ` (예: ${j.added.slice(0, 5).join(", ")})` : ""}
+                    {isSchedule && <> · 갱신 {j.changed.toLocaleString()}건</>}
+                    {" "}· 보관 예정 {j.removed.length}건{j.removed.length ? ` (예: ${j.removed.slice(0, 5).join(", ")})` : ""}
+                  </p>
+                  {hideWarn && (
+                    <p className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-destructive">
+                      <EyeOff className="size-3.5" />기존 항목의 30% 이상이 보관 처리됩니다. 파일이 맞는지 다시 확인해 주세요.
                     </p>
+                  )}
+                  {staleWarn && (
+                    <p className="mt-1.5 text-[11px] font-semibold text-chart-2">
+                      이 파일의 기준일({fmtDate(j.fileDate)})이 이미 반영된 기준일({fmtDate(j.prevFileDate)})보다 과거입니다. 구버전 파일이 아닌지 확인해 주세요.
+                    </p>
+                  )}
+                  {j.conflicts.length > 0 && (
+                    <div className="mt-2 rounded-md border border-destructive/40 bg-card p-2">
+                      <p className="font-semibold text-destructive">Activity No 중복·누락 {j.conflicts.length}건 — 새 번호를 지정해야 적용할 수 있습니다</p>
+                      <div className="mt-2 space-y-2">
+                        {j.conflicts.map((c) => (
+                          <div key={c.index} className="flex flex-wrap items-center gap-2">
+                            <span className="min-w-0 flex-1 truncate text-muted-foreground" title={c.activity}>
+                              {c.kind === "duplicate" ? `중복 "${c.originalNo}"` : "번호 없음"} — {c.activity}
+                              {c.building ? ` (${c.building}${c.room ? ` ${c.room}` : ""})` : ""}
+                            </span>
+                            <Input
+                              className="h-7 w-28 text-xs"
+                              placeholder="새 번호"
+                              value={(fixes[j.id] ?? {})[c.index] ?? ""}
+                              onChange={(e) => setFixes((f) => ({ ...f, [j.id]: { ...(f[j.id] ?? {}), [c.index]: e.target.value } }))}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <p className="mt-2 text-[10px] text-muted-foreground">여기서 지정한 번호는 이번 업로드에만 적용됩니다. 원본 엑셀 파일도 함께 수정해 주세요.</p>
+                      {fixError && <p className="mt-1 text-[11px] font-semibold text-destructive">{fixError}</p>}
+                    </div>
                   )}
                   <div className="mt-2 flex gap-2">
                     <Button size="sm" variant={skip[j.id] ? "outline" : "default"} onClick={() => setSkip((s) => ({ ...s, [j.id]: false }))}>이 파일 적용</Button>
@@ -257,7 +292,9 @@ function UploadPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPending(null)}>전체 취소</Button>
-            <Button onClick={confirmPending}>선택한 파일 적용</Button>
+            <Button onClick={confirmPending} disabled={blockedIds.length > 0 || (pending ?? []).every((j) => skip[j.id])}>
+              선택한 파일 적용
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
