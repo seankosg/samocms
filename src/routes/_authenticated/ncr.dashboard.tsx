@@ -148,7 +148,7 @@ function NcrDashboardPage() {
                 <div className="mt-2 h-1 overflow-hidden rounded bg-muted">
                   <div className="h-full bg-primary" style={{ width: `${pct ?? 0}%` }} />
                 </div>
-                <p className="mt-1 text-right text-[9px] text-muted-foreground">A / P{` · `}{pct ?? 0}%</p>
+                <p className="mt-1 text-right text-[9px] text-muted-foreground">A / P · {pct ?? 0}%</p>
               </button>
             );
           })}
