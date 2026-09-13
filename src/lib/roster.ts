@@ -1,9 +1,10 @@
 /** 파일 종류(slot) → 담당 업무(scope) */
-export const SCOPES = ["arch", "elec", "mech", "permit", "design", "management", "safety", "external"] as const;
+export const SCOPES = ["arch", "interior", "elec", "mech", "permit", "design", "management", "safety", "external"] as const;
 export type Scope = (typeof SCOPES)[number];
 
 export const SCOPE_LABEL: Record<string, string> = {
-  arch: "건축 (Arch·Int)",
+  arch: "건축 (Arch)",
+  interior: "내장 (Int)",
   elec: "전기 (Elec)",
   mech: "설비 (Mech)",
   permit: "공무 (Permit)",
