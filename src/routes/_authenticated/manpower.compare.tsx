@@ -12,6 +12,7 @@ import { manpowerRangeQuery, useManpower } from "@/lib/use-manpower";
 import { RESULT_ORDER, addDays, fmtDay, riyadhToday, verificationStats, type CompareRow } from "@/lib/manpower-model";
 import { MP, RESULT_LABEL } from "@/lib/manpower-i18n";
 import { CompareDiffCharts } from "@/components/manpower/compare-diff-charts";
+import { MultiSelectFilter, matchMulti } from "@/components/column-filter";
 
 const search = z.object({
   day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
@@ -47,6 +48,10 @@ const TONE: Record<CompareRow["result"], string> = {
   "NOT COUNTED": "bg-muted text-muted-foreground",
 };
 
+type ColumnFilterKey = "company" | "location" | "shift" | "reported" | "verified" | "diff" | "result" | "sub_reporter" | "hdec_counter";
+
+const columnValue = (row: CompareRow, key: ColumnFilterKey): unknown => row[key];
+
 function ComparePage() {
   const s = Route.useSearch();
   const navigate = Route.useNavigate();
@@ -56,14 +61,31 @@ function ComparePage() {
   const { compare } = useManpower(from, day);
   const [q, setQ] = useState("");
   const [exportOpen, setExportOpen] = useState(false);
+  const [columnFilters, setColumnFilters] = useState<Partial<Record<ColumnFilterKey, string[]>>>({});
 
   const rows = useMemo(() => compare.filter((r) => r.report_date === day), [compare, day]);
   const stats = useMemo(() => verificationStats(rows), [rows]);
-  const shown = useMemo(
-    () => rows
-      .filter((r) => (filter === "ALL" || r.result === filter) && (!q || `${r.company} ${r.location}`.toLowerCase().includes(q.toLowerCase())))
-      .sort((a, b) => RESULT_ORDER[a.result] - RESULT_ORDER[b.result] || a.company.localeCompare(b.company) || a.location.localeCompare(b.location)),
+  const searchedRows = useMemo(
+    () => rows.filter((r) => (filter === "ALL" || r.result === filter) && (!q || `${r.company} ${r.location}`.toLowerCase().includes(q.toLowerCase()))),
     [rows, filter, q],
+  );
+  const facet = useCallback((key: ColumnFilterKey) => {
+    const counts = new Map<string, number>();
+    for (const row of searchedRows) {
+      const value = String(columnValue(row, key) ?? "").trim();
+      const token = value || "__EMPTY__";
+      counts.set(token, (counts.get(token) ?? 0) + 1);
+    }
+    return [...counts].map(([value, count]) => ({ value, count }));
+  }, [searchedRows]);
+  const setColumnFilter = (key: ColumnFilterKey, value: string[] | undefined) =>
+    setColumnFilters((current) => ({ ...current, [key]: value }));
+  const shown = useMemo(
+    () => searchedRows
+      .filter((r) => (Object.entries(columnFilters) as [ColumnFilterKey, string[] | undefined][])
+        .every(([key, selected]) => matchMulti(columnValue(r, key), selected)))
+      .sort((a, b) => RESULT_ORDER[a.result] - RESULT_ORDER[b.result] || a.company.localeCompare(b.company) || a.location.localeCompare(b.location)),
+    [searchedRows, columnFilters],
   );
 
   const exportRows = useCallback((): ExportRow[] => shown.map((r) => ({
@@ -145,11 +167,15 @@ function ComparePage() {
           <caption className="sr-only">협력사 보고와 HDEC 재집계 대조</caption>
           <thead className="bg-muted/60">
             <tr className="[&>th]:border-b [&>th]:border-border [&>th]:px-2 [&>th]:py-2 [&>th]:text-left">
-               <th scope="col">Company</th><th scope="col">Location</th><th scope="col">Shift</th>
-               <th scope="col" className="!text-right">Subcon Report</th>
-               <th scope="col" className="!text-right">HDEC Recount</th>
-               <th scope="col" className="!text-right">Difference</th>
-               <th scope="col">Result</th><th scope="col">Reporter</th><th scope="col">HDEC Counter</th>
+               <th scope="col"><span className="flex items-center gap-1">Company <MultiSelectFilter options={facet("company")} selected={columnFilters.company ?? []} onChange={(v) => setColumnFilter("company", v)} /></span></th>
+               <th scope="col"><span className="flex items-center gap-1">Location <MultiSelectFilter options={facet("location")} selected={columnFilters.location ?? []} onChange={(v) => setColumnFilter("location", v)} /></span></th>
+               <th scope="col"><span className="flex items-center gap-1">Shift <MultiSelectFilter options={facet("shift")} selected={columnFilters.shift ?? []} onChange={(v) => setColumnFilter("shift", v)} /></span></th>
+               <th scope="col"><span className="flex items-center justify-end gap-1">Subcon Report <MultiSelectFilter options={facet("reported")} selected={columnFilters.reported ?? []} onChange={(v) => setColumnFilter("reported", v)} /></span></th>
+               <th scope="col"><span className="flex items-center justify-end gap-1">HDEC Recount <MultiSelectFilter options={facet("verified")} selected={columnFilters.verified ?? []} onChange={(v) => setColumnFilter("verified", v)} /></span></th>
+               <th scope="col"><span className="flex items-center justify-end gap-1">Difference <MultiSelectFilter options={facet("diff")} selected={columnFilters.diff ?? []} onChange={(v) => setColumnFilter("diff", v)} /></span></th>
+               <th scope="col"><span className="flex items-center gap-1">Result <MultiSelectFilter options={facet("result")} selected={columnFilters.result ?? []} onChange={(v) => setColumnFilter("result", v)} /></span></th>
+               <th scope="col"><span className="flex items-center gap-1">Reporter <MultiSelectFilter options={facet("sub_reporter")} selected={columnFilters.sub_reporter ?? []} onChange={(v) => setColumnFilter("sub_reporter", v)} /></span></th>
+               <th scope="col"><span className="flex items-center gap-1">HDEC Counter <MultiSelectFilter options={facet("hdec_counter")} selected={columnFilters.hdec_counter ?? []} onChange={(v) => setColumnFilter("hdec_counter", v)} /></span></th>
             </tr>
           </thead>
           <tbody>
