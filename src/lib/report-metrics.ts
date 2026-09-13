@@ -1,4 +1,4 @@
-import { avgOf, dayDiff, isDone, isLate, KPI_SLOTS, milestoneDates, MSDEF, planAt, SLOT_LABEL, type Row } from "./schedule-model";
+import { avgOf, dayDiff, isClientOwned, isDone, isLate, KPI_SLOTS, milestoneDates, MSDEF, planAt, SLOT_LABEL, type Row } from "./schedule-model";
 import { stageDone, type TcItem } from "./tc-model";
 import { buildTcForecast, buildTcForecastSummary } from "./tc-forecast";
 
@@ -165,8 +165,7 @@ function calcForecast(series: ForecastSeries[], sel: Row[]): FcCalc {
   const end = sel.reduce<string | null>((acc, r) => (r.e && (!acc || r.e > acc) ? r.e : acc), null) ?? last.date;
   const days: string[] = [];
   for (let t = toTs(hist[0]!.date); t <= toTs(end); t += DAY) days.push(toDate(t));
-  const pc = planCurveOf(sel, days);
-  const planDone = days.find((d) => (pc.get(d) ?? 0) >= 0.999) ?? end;
+  const planDone = end;
   const diffDays = forecastEnd ? Math.round((toTs(forecastEnd) - toTs(planDone)) / DAY) : null;
   return { actual: last.actual, slope, planDone, forecastEnd, diffDays, itemCount: sel.length };
 }
@@ -190,7 +189,7 @@ export function buildForecastFacts(
   tcItems: TcItem[],
   base: string,
 ): string {
-  const eligible = rows.filter((r) => r.mgr !== "HM"); // 발주처(HM) 담당 항목 제외
+  const eligible = rows.filter((r) => !isClientOwned(r.mgr)); // 발주처 담당 항목 제외
   const l: string[] = [];
 
   const all = calcForecast(series, eligible);
