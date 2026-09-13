@@ -209,7 +209,7 @@ export function ProgressRiskAnalysis({ rows, tcItems = [], base = null }: { rows
   const all = useMemo((): Record<RowDimension, GroupMetric[]> => ({
     dept: aggregate(rows, "dept"),
     bldg: aggregate(rows, "bldg"),
-    mgr: aggregate(rows, "mgr"),
+    mgr: aggregate(rows.filter((r) => r.mgr !== "이승한"), "mgr"),
     sub: aggregate(rows, "sub"),
     ms: aggregate(rows, "ms"),
   }), [rows]);
