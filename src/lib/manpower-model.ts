@@ -33,7 +33,30 @@ export type Card = {
   reporter_name: string | null;
   submitted_at: string | null;
   n_rows: number;
+  reporter_tg_id?: string | null;
+  superseded_count?: number;
 };
+
+export type MemberInfo = { telegram_id: string; name: string; dept: string | null; position: string | null };
+export type MemberMap = Map<string, MemberInfo>;
+export const toMemberMap = (members: MemberInfo[]): MemberMap => new Map(members.map((m) => [m.telegram_id, m]));
+
+/** 입력자 표기 — 텔레그램 ID로 명부를 찾아 「이름 · 부서」, 없으면 기록 원문 + 미등록 표시 */
+export function reporterLabel(members: MemberMap, tgId: string | null | undefined, rawName: string | null | undefined) {
+  const hit = tgId ? members.get(tgId) : undefined;
+  if (hit) return { text: hit.dept ? `${hit.name} · ${hit.dept}` : hit.name, registered: true, member: hit };
+  return { text: rawName ?? "—", registered: false, member: undefined };
+}
+
+/** 부서별 색 점 클래스 */
+export const DEPT_DOT: Record<string, string> = {
+  "건축 (Arch)": "bg-sky-500",
+  "내장 (Int)": "bg-cyan-500",
+  "전기 (Elec)": "bg-amber-500",
+  "설비 (Mech)": "bg-emerald-500",
+  "안전 (HSE)": "bg-rose-500",
+};
+export const deptDot = (dept: string | null | undefined) => (dept && DEPT_DOT[dept]) || "bg-muted-foreground/50";
 
 export type CompareRow = {
   company: string;
@@ -46,6 +69,10 @@ export type CompareRow = {
   result: "MATCH" | "DIFF" | "HDEC ONLY" | "NOT COUNTED";
   sub_reporter: string | null;
   hdec_counter: string | null;
+  sub_reporter_tg_id?: string | null;
+  hdec_counter_tg_id?: string | null;
+  sub_superseded?: number;
+  hdec_superseded?: number;
 };
 
 export type CompanyMaster = {
