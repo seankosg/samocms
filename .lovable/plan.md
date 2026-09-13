@@ -8,10 +8,19 @@
 
 출면기록 관리자 명부에 「직책」과 「부서(담당 공종)」 칸을 추가하고, 첨부해 주신 명단의 현대건설 외국인 직원 22명을 반영합니다. 텔레그램 ID가 이미 등록된 분들과 모두 일치해 새로 만들지 않고 값만 채웁니다.
 
-- 건축(Arch/Int) 3명: Chathuranga, Sher Ali, Tharanga
-- 설비(Mech) 3명: Janaka, Nazeer, Shaheer
-- 전기(Elec) 3명: Medhan, Harshana, Hari
-- 안전(HSE) 13명: Anfas, Mohammad Mohsin(이상 Staff), Mohamed Rimzan, Ramesh, Samapath, Muhammad Usman, Ashrar Ali, Wasif Abbasi, Rizwan Ullah, SHAHZEB, Wahab, Sahibzada Asgher, shahzeb ali(이상 Officer)
+변환 규칙:
+
+| 첨부파일 표기 | 저장할 부서 표기 |
+|---|---|
+| 건축(Arch/Int) | 건축 (Arch) |
+| 설비(Mech) | 설비 (Mech) |
+| 전기(Elec) | 전기 (Elec) |
+| 안전(HSE) | 안전 |
+
+- 건축 3명: Chathuranga, Sher Ali, Tharanga
+- 설비 3명: Janaka, Nazeer, Shaheer
+- 전기 3명: Medhan, Harshana, Hari
+- 안전 13명: Anfas, Mohammad Mohsin(이상 Staff), Mohamed Rimzan, Ramesh, Samapath, Muhammad Usman, Ashrar Ali, Wasif Abbasi, Rizwan Ullah, SHAHZEB, Wahab, Sahibzada Asgher, shahzeb ali(이상 Officer)
 
 한국 직원은 기존 CMS 사용자 정보의 팀·직책을 그대로 가져와 채웁니다.
 
