@@ -169,6 +169,13 @@
       "when": 1789282104096,
       "tag": "0023_activities_full_unique_source_no",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1789283533395,
+      "tag": "0024_bot_reads_active_masters_only",
+      "breakpoints": true
     }
   ]
 }
