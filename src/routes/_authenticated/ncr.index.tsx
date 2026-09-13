@@ -14,7 +14,7 @@ import { useNcrItems, ncrQuery } from "@/lib/use-ncr";
 import { updateNcrItem, type NcrItem } from "@/lib/ncr.functions";
 import {
   PS_NUMS, PS_LABEL, SLOT_ORDER, slotCode, psOfSlot, planField, actualField,
-  currentStage, skippedSlots, type SlotKey, type NcrDates,
+  currentStage, skippedSlots, isStartDelayed, type SlotKey, type NcrDates,
 } from "@/lib/ncr-model";
 import { useAuth } from "@/lib/use-auth";
 import { fmtDate } from "@/lib/schedule-model";
@@ -93,6 +93,13 @@ function NcrListPage() {
         if (search.metric === "short" && !(due && !actual)) return false;
         if (search.metric === "over" && !(!due && !!actual)) return false;
         if (search.metric === "delay" && !isStartDelayed(d, slot, search.asOf ?? new Date().toISOString().slice(0, 10))) return false;
+        if (search.metric === "delayBoth") {
+          const n = psOfSlot(slot);
+          const start = `ps${n}s` as SlotKey;
+          const finish = `ps${n}f` as SlotKey;
+          const cutoff = search.asOf ?? new Date().toISOString().slice(0, 10);
+          if (!isStartDelayed(d, start, cutoff) && !isStartDelayed(d, finish, cutoff)) return false;
+        }
       }
       if (q && ![r.doc_no, r.description, r.location, r.mic, r.pic, r.subcontractor].some((v) => (v ?? "").toLowerCase().includes(q))) return false;
       return true;
@@ -101,7 +108,7 @@ function NcrListPage() {
 
   const drillLabel = useMemo(() => {
     if (!search.slot || !search.metric) return null;
-    const labels: Record<string, string> = { plan: "계획 도래", actual: "실적 입력", short: "계획 미달", over: "계획 초과", delay: "지연" };
+    const labels: Record<string, string> = { plan: "계획 도래", actual: "실적 입력", short: "계획 미달", over: "계획 초과", delay: "지연", delayBoth: "Start/Finish 지연" };
     return `${search.slot.toUpperCase()} · ${labels[search.metric] ?? search.metric}${search.asOf ? ` · 기준일 ${search.asOf}` : ""}`;
   }, [search.slot, search.metric, search.asOf]);
 
