@@ -67,7 +67,7 @@ function NcrDashboardPage() {
       const c = currentStage(d);
       if (c.startsWith(`PS${n}`)) cur += 1;
     }
-    return { n, sPlan, sAct, fPlan, fAct, sDelay, fDelay, cur };
+    return { n, stage: "PS" + n, sPlan, sAct, fPlan, fAct, sDelay, fDelay, cur };
   }), [filtered, asOf]);
 
   const closed = filtered.filter((r) => currentStage(dates(r)) === "Closed").length;
@@ -128,7 +128,7 @@ function NcrDashboardPage() {
             return (
               <button
                 key={st.n}
-                onClick={() => toList({ stage: `PS${st.n}`, ...(search.docType ? { docType: search.docType } : {}), ...(search.sub ? { sub: search.sub } : {}) }}
+                onClick={() => toList({ stage: st.stage, ...(search.docType ? { docType: search.docType } : {}), ...(search.sub ? { sub: search.sub } : {}) }}
                 className="rounded-md border border-border bg-card p-2.5 text-left shadow-sm transition-colors hover:border-primary/50 hover:bg-accent/30"
               >
                 <p className="flex items-baseline justify-between">
@@ -162,7 +162,7 @@ function NcrDashboardPage() {
             return (
               <button
                 key={st.n}
-                onClick={() => toList({ stage: `PS${st.n}`, ...(search.docType ? { docType: search.docType } : {}), ...(search.sub ? { sub: search.sub } : {}) })}
+                onClick={() => toList({ stage: st.stage, ...(search.docType ? { docType: search.docType } : {}), ...(search.sub ? { sub: search.sub } : {}) })}
                 className={`rounded-md border p-2.5 text-left shadow-sm transition-colors ${total ? "border-destructive/50 bg-destructive/5 hover:bg-destructive/10" : "border-border bg-card hover:bg-accent/30"}`}
               >
                 <p className="flex items-baseline justify-between">
@@ -190,7 +190,7 @@ function NcrDashboardPage() {
           {stats.map((st) => (
             <button
               key={st.n}
-              onClick={() => toList({ stage: `PS${st.n}`, ...(search.docType ? { docType: search.docType } : {}), ...(search.sub ? { sub: search.sub } : {}) })}
+              onClick={() => toList({ stage: st.stage, ...(search.docType ? { docType: search.docType } : {}), ...(search.sub ? { sub: search.sub } : {}) })}
               className="rounded-md border border-border bg-card p-2.5 text-left shadow-sm transition-colors hover:border-primary/50 hover:bg-accent/30"
             >
               <p className="flex items-baseline justify-between">
