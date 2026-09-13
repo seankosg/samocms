@@ -129,11 +129,16 @@ function UploadPage() {
           const res = await importTcItems({ data: { discipline: job.payload.disc, fileName: job.fileName, fileDate: job.payload.fileDate, rows: job.payload.rows } });
           done.push(`${job.label} ${res.inserted}건`);
         } else {
+          // 확인창에서 지정한 번호(중복·빈 값 해소분)를 반영합니다.
+          const fixedRows = job.payload.rows.map((r, i) => {
+            const ov = (fixes[job.id] ?? {})[i];
+            return ov ? { ...r, activity_no: ov.trim() } : r;
+          });
           const res = await importActivities({ data: {
             sourceFile: job.payload.slot, fileName: job.fileName, fileDate: job.payload.fileDate,
-            rev: job.payload.rev, rows: job.payload.rows,
+            rev: job.payload.rev, rows: fixedRows,
           } });
-          done.push(`${job.label} ${res.inserted}건`);
+          done.push(`${job.label} ${res.inserted}건${res.hidden ? ` (보관 ${res.hidden}건)` : ""}`);
         }
       }
       await qc.invalidateQueries({ queryKey: ["project"] });
@@ -153,10 +158,10 @@ function UploadPage() {
     setBusy(true);
     try {
       const jobs = await buildJobs(list);
-      const changed = jobs.filter((j) => j.existing !== j.incoming);
       setBusy(false);
-      if (changed.length) { setSkip({}); setPending(jobs); }
-      else await runJobs(jobs);
+      setFixes({});
+      setSkip({});
+      setPending(jobs);
     } catch (e) {
       setBusy(false);
       toast.error("파일을 읽지 못했습니다", { description: e instanceof Error ? e.message : "파일을 확인해 주세요." });
@@ -165,8 +170,20 @@ function UploadPage() {
     }
   };
 
+  /** 확인창의 번호 지정값 — job.id → 행 index → 새 번호 */
+  const [fixes, setFixes] = useState<Record<string, Record<number, string>>>({});
+
+  /** 해당 작업의 모든 번호 충돌이 유효하게 해소됐는지 */
+  const jobFixError = (j: Job): string | null => {
+    if (j.payload.kind !== "schedule" || !j.conflicts.length) return null;
+    return validateNoOverrides(j.payload.rows, fixes[j.id] ?? {}, j.existingNos);
+  };
+
+  const blockedIds = (pending ?? []).filter((j) => !skip[j.id] && jobFixError(j)).map((j) => j.id);
+
   const confirmPending = async () => {
     const jobs = (pending ?? []).filter((j) => !skip[j.id]);
+    if (jobs.some((j) => jobFixError(j))) return;
     setPending(null);
     await runJobs(jobs);
   };
