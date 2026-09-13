@@ -11,6 +11,7 @@ import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { projectQuery, useProject } from "@/lib/use-project";
+import { useNcrItems } from "@/lib/use-ncr";
 import { parseScheduleFile, sourceKeyFromFileName, findNoConflicts, validateNoOverrides, type NoConflict } from "@/lib/import-schedule";
 import { isTcWorkbook, metaFromFileName, parseTcWorkbook, type TcImportRow } from "@/lib/import-tc";
 import { isNcrWorkbook, parseNcrWorkbook, type NcrImportRow } from "@/lib/import-ncr";
@@ -52,7 +53,7 @@ type Job = {
     | { kind: "tc"; disc: "Mech" | "Elec"; fileDate: string | null; rows: TcImportRow[] }
     | { kind: "ncr"; fileDate: string | null; rows: NcrImportRow[] };
   /** NCR: 단계 순서 위반으로 반려될 행 미리보기 */
-  rejected: { docNo: string; reasons: { ko: string; en: string }[] }[];
+  rejected: { docNo: string; reasons: string[] }[];
 };
 
 /** Row(화면용)를 파일 행과 비교 가능한 지문으로 변환합니다. */
@@ -72,6 +73,7 @@ const diffKeys = (before: string[], after: string[]) => {
 
 function UploadPage() {
   const { rows, tcItems, batches, base } = useProject();
+  const ncrItems = useNcrItems();
   const { canEdit, canWrite, scopes, isAdmin } = useAuth();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -93,7 +95,7 @@ function UploadPage() {
         const before = ncrItems.map((i) => i.doc_no);
         const after = parsed.rows.map((r) => r.doc_no);
         const rejected = parsed.rows
-          .map((r) => ({ docNo: r.doc_no, reasons: sequenceViolations(r.dates) }))
+          .map((r) => ({ docNo: r.doc_no, reasons: sequenceViolations(r).map((v) => v.reason) }))
           .filter((r) => r.reasons.length > 0);
         jobs.push({
           id: `ncr-${file.name}`, label: "NCR·OR·SOR", fileName: file.name,
@@ -155,7 +157,7 @@ function UploadPage() {
           if (res.rejected.length) {
             const first = res.rejected[0]!;
             toast.warning(`NCR 반려 ${res.rejected.length}건`, {
-              description: `${first.docNo}: ${first.reasons[0]?.ko ?? ""}${res.rejected.length > 1 ? ` 외 ${res.rejected.length - 1}건` : ""} — 해당 행만 제외하고 나머지는 반영됐습니다.`,
+              description: `${first.docNo}: ${first.reasons[0] ?? ""}${res.rejected.length > 1 ? ` 외 ${res.rejected.length - 1}건` : ""} — 해당 행만 제외하고 나머지는 반영됐습니다.`,
             });
           }
         } else {
