@@ -65,18 +65,37 @@ export const importActivities = createServerFn({ method: "POST" })
       }
     }
 
+    // 번호 없는 행은 업데이트 방식에서 식별할 수 없어 거절합니다. (중복은 업로드 화면에서 사전 해소)
+    const noNum = rows.filter((r) => !(r.activity_no ?? "").trim());
+    if (noNum.length) {
+      throw new Error(`Activity No가 비어 있는 행이 ${noNum.length}건 있습니다. 업로드 확인창에서 번호를 지정해 주세요.`);
+    }
+
     const rows = data.rows.map((r) => {
       const incoming = (r.manager ?? "").trim();
       const kept = incoming || prevManagers.get(`${r.discipline}|${r.activity_no ?? ""}|${r.activity}`) || null;
-      return { ...r, manager: kept, source_file: data.sourceFile };
+      return { ...r, manager: kept, source_file: data.sourceFile, baseline_date: data.fileDate ?? null, hidden_at: null, hidden_source_date: null };
     });
 
-    const { error: delError } = await supabaseAdmin.from("activities").delete().eq("source_file", data.sourceFile);
-    if (delError) throw new Error(delError.message);
+    // 같은 Activity No의 기존 행은 갱신(파일 값 우선), 없는 번호는 새로 추가합니다.
+    const { error: upError } = await supabaseAdmin
+      .from("activities")
+      .upsert(rows as never, { onConflict: "source_file,activity_no" });
+    if (upError) throw new Error(upError.message);
 
-
-    const { error: insError } = await supabaseAdmin.from("activities").insert(rows);
-    if (insError) throw new Error(insError.message);
+    // 파일에서 사라진 번호는 삭제하지 않고 숨김(보관) 처리합니다.
+    const nowIso = new Date().toISOString();
+    const prevRows = await supabaseAdmin.from("activities").select("id, activity_no, baseline_date").eq("source_file", data.sourceFile);
+    if (prevRows.error) throw new Error(prevRows.error.message);
+    const incomingNos = new Set(rows.map((r) => r.activity_no));
+    const hideIds = (prevRows.data ?? []).filter((p) => p.activity_no && !incomingNos.has(p.activity_no)).map((p) => p.id as number);
+    if (hideIds.length) {
+      const { error: hideError } = await supabaseAdmin
+        .from("activities")
+        .update({ hidden_at: nowIso, hidden_source_date: data.fileDate ?? null } as never)
+        .in("id", hideIds);
+      if (hideError) throw new Error(hideError.message);
+    }
 
     // 업로드 배치 기록
     const batch = await supabaseAdmin
