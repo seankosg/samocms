@@ -28,6 +28,7 @@ import { Route as AuthenticatedManpowerIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedManpowerAdminRouteImport } from './routes/_authenticated/manpower.admin'
 import { Route as AuthenticatedManpowerCompareRouteImport } from './routes/_authenticated/manpower.compare'
 import { Route as AuthenticatedManpowerTrendRouteImport } from './routes/_authenticated/manpower.trend'
+import { Route as AuthenticatedNcrIndexRouteImport } from './routes/_authenticated/ncr.index'
 import { Route as AuthenticatedTcElecRouteImport } from './routes/_authenticated/tc.elec'
 import { Route as AuthenticatedTcListRouteImport } from './routes/_authenticated/tc.list'
 import { Route as AuthenticatedTcMechRouteImport } from './routes/_authenticated/tc.mech'
@@ -139,6 +140,11 @@ const AuthenticatedManpowerTrendRoute =
     path: '/manpower/trend',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedNcrIndexRoute = AuthenticatedNcrIndexRouteImport.update({
+  id: '/ncr/',
+  path: '/ncr/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedTcElecRoute = AuthenticatedTcElecRouteImport.update({
   id: '/tc/elec',
   path: '/tc/elec',
@@ -213,6 +219,7 @@ export interface FileRoutesByFullPath {
   '/api/public/safety-report': typeof ApiPublicSafetyReportRoute
   '/api/public/version': typeof ApiPublicVersionRoute
   '/manpower/': typeof AuthenticatedManpowerIndexRoute
+  '/ncr/': typeof AuthenticatedNcrIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -242,6 +249,7 @@ export interface FileRoutesByTo {
   '/api/public/safety-report': typeof ApiPublicSafetyReportRoute
   '/api/public/version': typeof ApiPublicVersionRoute
   '/manpower': typeof AuthenticatedManpowerIndexRoute
+  '/ncr': typeof AuthenticatedNcrIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -273,6 +281,7 @@ export interface FileRoutesById {
   '/api/public/safety-report': typeof ApiPublicSafetyReportRoute
   '/api/public/version': typeof ApiPublicVersionRoute
   '/_authenticated/manpower/': typeof AuthenticatedManpowerIndexRoute
+  '/_authenticated/ncr/': typeof AuthenticatedNcrIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -304,6 +313,7 @@ export interface FileRouteTypes {
     | '/api/public/safety-report'
     | '/api/public/version'
     | '/manpower/'
+    | '/ncr/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -333,6 +343,7 @@ export interface FileRouteTypes {
     | '/api/public/safety-report'
     | '/api/public/version'
     | '/manpower'
+    | '/ncr'
   id:
     | '__root__'
     | '/'
@@ -363,6 +374,7 @@ export interface FileRouteTypes {
     | '/api/public/safety-report'
     | '/api/public/version'
     | '/_authenticated/manpower/'
+    | '/_authenticated/ncr/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -511,6 +523,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedManpowerTrendRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ncr/': {
+      id: '/_authenticated/ncr/'
+      path: '/ncr'
+      fullPath: '/ncr/'
+      preLoaderRoute: typeof AuthenticatedNcrIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/tc/elec': {
       id: '/_authenticated/tc/elec'
       path: '/tc/elec'
@@ -598,6 +617,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTcMechRoute: typeof AuthenticatedTcMechRoute
   AuthenticatedTcProgressRoute: typeof AuthenticatedTcProgressRoute
   AuthenticatedManpowerIndexRoute: typeof AuthenticatedManpowerIndexRoute
+  AuthenticatedNcrIndexRoute: typeof AuthenticatedNcrIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -621,6 +641,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTcMechRoute: AuthenticatedTcMechRoute,
   AuthenticatedTcProgressRoute: AuthenticatedTcProgressRoute,
   AuthenticatedManpowerIndexRoute: AuthenticatedManpowerIndexRoute,
+  AuthenticatedNcrIndexRoute: AuthenticatedNcrIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
