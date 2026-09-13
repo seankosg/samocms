@@ -71,6 +71,9 @@
   --color-ncr-delay-soft: var(--ncr-delay-soft);
   --color-ncr-matrix: var(--ncr-matrix);
   --color-ncr-matrix-foreground: var(--ncr-matrix-foreground);
+  --color-ncr-progress-plan: var(--ncr-progress-plan);
+  --color-ncr-progress-actual: var(--ncr-progress-actual);
+  --color-ncr-progress-over: var(--ncr-progress-over);
 }
 
 :root {
@@ -127,6 +130,9 @@
   --ncr-delay-soft: oklch(0.96 0.035 27);
   --ncr-matrix: oklch(0.22 0.035 255);
   --ncr-matrix-foreground: oklch(0.96 0.008 255);
+  --ncr-progress-plan: oklch(0.72 0.015 255);
+  --ncr-progress-actual: oklch(0.2 0.015 255);
+  --ncr-progress-over: oklch(0.52 0.16 145);
 }
 
 .dark {
@@ -182,6 +188,9 @@
   --ncr-delay-soft: oklch(0.27 0.06 25);
   --ncr-matrix: oklch(0.16 0.025 255);
   --ncr-matrix-foreground: oklch(0.96 0.008 255);
+  --ncr-progress-plan: oklch(0.52 0.015 255);
+  --ncr-progress-actual: oklch(0.94 0.008 255);
+  --ncr-progress-over: oklch(0.72 0.16 145);
 }
 
 @layer base {

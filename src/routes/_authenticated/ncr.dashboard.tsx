@@ -32,23 +32,29 @@ export const Route = createFileRoute("/_authenticated/ncr/dashboard")({
 
 const dates = (r: NcrItem) => r as unknown as NcrDates;
 
-const achievementRate = (actual: number, plan: number) => plan > 0 ? Math.round((actual / plan) * 100) : null;
+const progressRate = (value: number, total: number) => total > 0 ? Math.round((value / total) * 100) : 0;
 
-function ProgressMetric({ plan, actual }: { plan: number; actual: number }) {
-  const rate = achievementRate(actual, plan);
+function ProgressMetric({ plan, actual, total, onDrill }: { plan: number; actual: number; total: number; onDrill: (metric: "plan" | "actual" | "short" | "over") => void }) {
+  const planRate = progressRate(plan, total);
+  const actualRate = progressRate(actual, total);
+  const gap = actualRate - planRate;
+  const gapMetric = gap < 0 ? "short" : "over";
   return (
-    <div className="min-w-0 px-2.5 py-3">
+    <div className="min-w-0 px-2 py-2.5">
       <div className="flex items-center justify-between gap-2 text-[11px]">
-        <span className="font-semibold text-ncr-plan">P <strong className="text-sm">{plan}</strong>건</span>
-        <span className="font-semibold text-ncr-actual">A <strong className="text-sm">{actual}</strong>건</span>
+        <Button variant="ghost" size="sm" onClick={() => onDrill("plan")} className="h-6 min-w-0 px-1 font-semibold text-muted-foreground">P <strong className="ml-1 text-sm">{plan}</strong>건</Button>
+        <Button variant="ghost" size="sm" onClick={() => onDrill("actual")} className="h-6 min-w-0 px-1 font-semibold text-ncr-progress-actual">A <strong className="ml-1 text-sm">{actual}</strong>건</Button>
       </div>
-      <div className="mt-2 flex items-center gap-2">
-        <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
-          <div className="h-full rounded-full bg-ncr-actual transition-[width]" style={{ width: `${Math.min(rate ?? 0, 100)}%` }} />
-        </div>
-        <strong className={`w-10 text-right text-sm ${rate == null ? "text-muted-foreground" : "text-ncr-plan"}`}>
-          {rate == null ? "—" : `${rate}%`}
-        </strong>
+      <div className="mt-1.5 flex items-center gap-1.5">
+        <Button variant="ghost" onClick={() => onDrill("plan")} className="relative h-3 min-w-0 flex-1 overflow-hidden rounded-full bg-muted p-0" aria-label={`계획 진도율 ${planRate}%`}>
+          <span className="absolute inset-y-0 left-0 bg-ncr-progress-plan" style={{ width: `${planRate}%` }} />
+          <span className="absolute inset-y-[3px] left-0 bg-ncr-progress-actual" style={{ width: `${actualRate}%` }} />
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => onDrill("plan")} className="h-6 px-1 text-[9px] font-bold text-muted-foreground">P {planRate}%</Button>
+        <Button variant="ghost" size="sm" onClick={() => onDrill("actual")} className="h-6 px-1 text-[9px] font-bold text-ncr-progress-actual">A {actualRate}%</Button>
+        <Button variant="ghost" size="sm" onClick={() => onDrill(gapMetric)} className={`h-6 px-1 text-[9px] font-bold ${gap < 0 ? "text-ncr-delay" : gap > 0 ? "text-ncr-progress-over" : "text-muted-foreground"}`}>
+          {gap > 0 ? "+" : ""}{gap}%p
+        </Button>
       </div>
     </div>
   );
@@ -109,7 +115,9 @@ function NcrDashboardPage() {
     </Button>
   );
 
-  const toList = (params: Record<string, string>) => goList({ to: "/ncr", search: params });
+  const baseListSearch = { ...(search.docType ? { docType: search.docType } : {}), ...(search.team ? { team: search.team } : {}), ...(search.sub ? { sub: search.sub } : {}) };
+  const toList = (params: Record<string, string>) => goList({ to: "/ncr", search: { ...baseListSearch, ...params } });
+  const drill = (slot: SlotKey, metric: string) => toList({ slot: slot.toUpperCase(), metric, asOf });
 
   return (
     <AdminGate title="NCR 대시보드" desc="준공 준비 기능은 현재 관리자(Admin)에게만 제공됩니다.">
@@ -155,16 +163,16 @@ function NcrDashboardPage() {
           </div>
           </div>
           <div className="grid grid-cols-2 border-t border-border bg-muted/30">
-            <div className="flex items-center gap-3 border-r border-border px-4 py-2.5">
+            <Button variant="ghost" onClick={() => toList({})} className="h-auto rounded-none border-r border-border px-4 py-2.5">
               <ClipboardList className="size-4 text-ncr-plan" />
               <span className="text-[11px] text-muted-foreground">대상 문서</span>
               <strong className="ml-auto text-lg">{filtered.length.toLocaleString()}<small className="ml-1 text-[10px] font-medium text-muted-foreground">건</small></strong>
-            </div>
-            <div className="flex items-center gap-3 px-4 py-2.5">
+            </Button>
+            <Button variant="ghost" onClick={() => toList({ stage: "Closed" })} className="h-auto rounded-none px-4 py-2.5">
               <CheckCircle2 className="size-4 text-ncr-actual" />
               <span className="text-[11px] text-muted-foreground">종결 완료</span>
               <strong className="ml-auto text-lg text-ncr-actual">{closed}<small className="ml-1 text-[10px] font-medium">건</small></strong>
-            </div>
+            </Button>
           </div>
         </div>
 
@@ -182,30 +190,31 @@ function NcrDashboardPage() {
               </div>
 
               <div className="grid grid-cols-[140px_repeat(9,minmax(0,1fr))_100px] border-b border-border">
-                <div className="sticky left-0 z-10 flex items-center gap-2 border-r border-border bg-card px-3"><Target className="size-4 text-ncr-plan" /><span><strong className="block text-xs">Progress</strong><small className="text-[9px] text-muted-foreground">Start</small></span></div>
-                {stats.map((st) => <Button key={st.n} variant="ghost" onClick={() => toList({ stage: st.stage })} className="h-auto min-w-0 rounded-none border-r border-border p-0 hover:bg-ncr-plan-soft"><ProgressMetric plan={st.sPlan} actual={st.sAct} /></Button>)}
+                 <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><Target className="size-4 text-ncr-plan" /><span className="text-left"><strong className="block text-xs">Progress</strong><small className="text-[9px] text-muted-foreground">Start</small></span></Button>
+                 {stats.map((st) => { const slot = `ps${st.n}s` as SlotKey; return <div key={st.n} className="min-w-0 border-r border-border hover:bg-ncr-plan-soft"><ProgressMetric plan={st.sPlan} actual={st.sAct} total={filtered.length} onDrill={(metric) => drill(slot, metric)} /></div>; })}
                 <div className="bg-muted/20" />
               </div>
 
               <div className="grid grid-cols-[140px_repeat(9,minmax(0,1fr))_100px] border-b-4 border-ncr-matrix/10">
-                <div className="sticky left-0 z-10 flex items-center gap-2 border-r border-border bg-card px-3"><Flag className="size-4 text-ncr-actual" /><span><strong className="block text-xs">Progress</strong><small className="text-[9px] text-muted-foreground">Finish</small></span></div>
-                {stats.map((st) => <Button key={st.n} variant="ghost" onClick={() => toList({ stage: st.stage })} className="h-auto min-w-0 rounded-none border-r border-border p-0 hover:bg-ncr-actual-soft"><ProgressMetric plan={st.fPlan} actual={st.fAct} /></Button>)}
+                 <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><Flag className="size-4 text-ncr-actual" /><span className="text-left"><strong className="block text-xs">Progress</strong><small className="text-[9px] text-muted-foreground">Finish</small></span></Button>
+                 {stats.map((st) => { const slot = `ps${st.n}f` as SlotKey; return <div key={st.n} className="min-w-0 border-r border-border hover:bg-ncr-actual-soft"><ProgressMetric plan={st.fPlan} actual={st.fAct} total={filtered.length} onDrill={(metric) => drill(slot, metric)} /></div>; })}
                 <div className="bg-muted/20" />
               </div>
 
               <div className="grid grid-cols-[140px_repeat(9,minmax(0,1fr))_100px] border-b-4 border-ncr-matrix/10">
-                <div className="sticky left-0 z-10 flex items-center gap-2 border-r border-border bg-card px-3"><CircleAlert className="size-4 text-ncr-delay" /><span><strong className="block text-xs">지연 현황</strong><small className="text-[9px] text-muted-foreground">{asOf.replace(/-/g, ".")}</small></span></div>
+                 <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><CircleAlert className="size-4 text-ncr-delay" /><span className="text-left"><strong className="block text-xs">지연 현황</strong><small className="text-[9px] text-muted-foreground">{asOf.replace(/-/g, ".")}</small></span></Button>
                 {stats.map((st) => {
                   const total = st.sDelay + st.fDelay;
-                  return <Button key={st.n} variant="ghost" onClick={() => toList({ stage: st.stage })} className={`h-auto min-w-0 rounded-none border-r border-border px-2 py-3 ${total ? "bg-ncr-delay-soft hover:bg-ncr-delay-soft" : "hover:bg-muted/50"}`}>
-                    <span className="block w-full"><strong className={`block text-xl ${total ? "text-ncr-delay" : "text-muted-foreground"}`}>{total}</strong><span className="mt-1 flex justify-between text-[9px] text-muted-foreground"><span>Start <b className={st.sDelay ? "text-ncr-delay" : ""}>{st.sDelay}</b></span><span>Finish <b className={st.fDelay ? "text-ncr-delay" : ""}>{st.fDelay}</b></span></span></span>
-                  </Button>;
+                  return <div key={st.n} className={`min-w-0 border-r border-border px-2 py-2 ${total ? "bg-ncr-delay-soft" : ""}`}>
+                    <Button variant="ghost" size="sm" onClick={() => drill(`ps${st.n}s` as SlotKey, "delayBoth")} className={`mx-auto block h-7 px-2 text-xl font-bold ${total ? "text-ncr-delay" : "text-muted-foreground"}`}>{total}</Button>
+                    <span className="mt-1 flex justify-between text-[9px] text-muted-foreground"><Button variant="ghost" size="sm" onClick={() => drill(`ps${st.n}s` as SlotKey, "delay")} className="h-5 px-1 text-[9px]">Start <b className={st.sDelay ? "ml-1 text-ncr-delay" : "ml-1"}>{st.sDelay}</b></Button><Button variant="ghost" size="sm" onClick={() => drill(`ps${st.n}f` as SlotKey, "delay")} className="h-5 px-1 text-[9px]">Finish <b className={st.fDelay ? "ml-1 text-ncr-delay" : "ml-1"}>{st.fDelay}</b></Button></span>
+                  </div>;
                 })}
                 <div className="bg-muted/20" />
               </div>
 
               <div className="grid grid-cols-[140px_repeat(9,minmax(0,1fr))_100px]">
-                <div className="sticky left-0 z-10 flex items-center gap-2 border-r border-border bg-card px-3"><ClipboardList className="size-4 text-ncr-plan" /><span><strong className="block text-xs">현재단계</strong><small className="text-[9px] text-muted-foreground">자동 산출</small></span></div>
+                 <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><ClipboardList className="size-4 text-ncr-plan" /><span className="text-left"><strong className="block text-xs">현재단계</strong><small className="text-[9px] text-muted-foreground">자동 산출</small></span></Button>
                 {stats.map((st) => <Button key={st.n} variant="ghost" onClick={() => toList({ stage: st.stage })} className="h-auto min-w-0 rounded-none border-r border-border px-2 py-3 hover:bg-ncr-plan-soft"><span><strong className={`block text-xl ${st.cur ? "text-ncr-plan" : "text-muted-foreground"}`}>{st.cur}</strong><small className="text-[9px] font-medium text-muted-foreground">건</small></span></Button>)}
                 <Button variant="ghost" onClick={() => toList({ stage: "Closed" })} className="h-auto rounded-none bg-ncr-actual-soft px-2 py-3 hover:bg-ncr-actual-soft"><span><strong className="block text-xl text-ncr-actual">{closed}</strong><small className="text-[9px] font-medium text-ncr-actual">완료</small></span></Button>
               </div>
