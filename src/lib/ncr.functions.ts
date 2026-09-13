@@ -81,9 +81,10 @@ export const importNcrItems = createServerFn({ method: "POST" })
     const seen = new Set<string>();
 
     for (const r of data.rows) {
-      const key = r.doc_no.trim();
+      const rec = r as Record<string, string | null>;
+      const key = (rec["doc_no"] ?? "").trim();
       if (seen.has(key)) {
-        rejected.push({ docNo: key, description: r.description, reasons: [`문서번호 "${key}"가 파일 안에서 중복됩니다 / Duplicate doc no in file`] });
+        rejected.push({ docNo: key, description: rec["description"], reasons: [`문서번호 "${key}"가 파일 안에서 중복됩니다 / Duplicate doc no in file`] });
         continue;
       }
       seen.add(key);
@@ -91,11 +92,11 @@ export const importNcrItems = createServerFn({ method: "POST" })
       const dates = r as unknown as Record<DateField, string | null>;
       const violations = sequenceViolations(dates);
       if (violations.length) {
-        rejected.push({ docNo: key, description: r.description, reasons: violations.map((v) => v.reason) });
+        rejected.push({ docNo: key, description: rec["description"], reasons: violations.map((v) => v.reason) });
         continue;
       }
 
-      const subRaw = (r.subcontractor ?? "").trim();
+      const subRaw = (rec["subcontractor"] ?? "").trim();
       let sub: string | null = subRaw || null;
       if (subRaw) {
         const hit = aliasMap.get(normCompanyKey(subRaw));
@@ -122,7 +123,7 @@ export const importNcrItems = createServerFn({ method: "POST" })
     // 파일에서 사라진 문서는 보관(숨김) 처리
     const prev = await supabaseAdmin.from("ncr_items").select("id, doc_no").is("hidden_at", null);
     if (prev.error) throw new Error(prev.error.message);
-    const incoming = new Set(valid.map((r) => r.doc_no as string));
+    const incoming = new Set(valid.map((r) => r["doc_no"] as string));
     const hideIds = (prev.data ?? []).filter((p) => !incoming.has(p.doc_no)).map((p) => p.id as number);
     if (hideIds.length) {
       const { error: hideError } = await supabaseAdmin
