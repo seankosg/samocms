@@ -15,7 +15,7 @@
 | 건축(Arch/Int) | 건축 (Arch) |
 | 설비(Mech) | 설비 (Mech) |
 | 전기(Elec) | 전기 (Elec) |
-| 안전(HSE) | 안전 |
+| 안전(HSE) | 안전 (HSE) |
 
 - 건축 3명: Chathuranga, Sher Ali, Tharanga
 - 설비 3명: Janaka, Nazeer, Shaheer
