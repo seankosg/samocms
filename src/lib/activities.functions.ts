@@ -51,10 +51,29 @@ export const importActivities = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertCanEdit(context as never, data.sourceFile);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const rows = data.rows.map((r) => ({ ...r, manager: r.manager ?? null, source_file: data.sourceFile }));
+    // 기존 담당자 보존: 업로드 파일에 「담당」 값이 없으면 이전에 저장된 담당자를 유지합니다.
+    const prevManagers = new Map<string, string>();
+    {
+      const { data: prev, error } = await supabaseAdmin
+        .from("activities")
+        .select("discipline, activity_no, activity, manager")
+        .eq("source_file", data.sourceFile);
+      if (error) throw new Error(error.message);
+      for (const p of prev ?? []) {
+        const m = (p.manager ?? "").trim();
+        if (m) prevManagers.set(`${p.discipline}|${p.activity_no ?? ""}|${p.activity}`, m);
+      }
+    }
+
+    const rows = data.rows.map((r) => {
+      const incoming = (r.manager ?? "").trim();
+      const kept = incoming || prevManagers.get(`${r.discipline}|${r.activity_no ?? ""}|${r.activity}`) || null;
+      return { ...r, manager: kept, source_file: data.sourceFile };
+    });
 
     const { error: delError } = await supabaseAdmin.from("activities").delete().eq("source_file", data.sourceFile);
     if (delError) throw new Error(delError.message);
+
 
     const { error: insError } = await supabaseAdmin.from("activities").insert(rows);
     if (insError) throw new Error(insError.message);
