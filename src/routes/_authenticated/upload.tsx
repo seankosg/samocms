@@ -3,14 +3,15 @@ import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
-import { AlertTriangle, FileSpreadsheet, Loader2, UploadCloud } from "lucide-react";
+import { AlertTriangle, EyeOff, FileSpreadsheet, Loader2, UploadCloud } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/use-auth";
 import { SCOPE_LABEL } from "@/lib/roster";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { projectQuery, useProject } from "@/lib/use-project";
-import { parseScheduleFile, sourceKeyFromFileName } from "@/lib/import-schedule";
+import { parseScheduleFile, sourceKeyFromFileName, findNoConflicts, validateNoOverrides, type NoConflict } from "@/lib/import-schedule";
 import { isTcWorkbook, metaFromFileName, parseTcWorkbook, type TcImportRow } from "@/lib/import-tc";
 import { importActivities } from "@/lib/activities.functions";
 import { importTcItems } from "@/lib/project.functions";
@@ -38,10 +39,22 @@ type Job = {
   incoming: number;
   added: string[];
   removed: string[];
+  changed: number;
+  conflicts: NoConflict[];
+  existingNos: string[];
+  fileDate: string | null;
+  prevFileDate: string | null;
   payload:
     | { kind: "schedule"; slot: string; fileDate: string | null; rev: number | null; rows: ImportRow[] }
     | { kind: "tc"; disc: "Mech" | "Elec"; fileDate: string | null; rows: TcImportRow[] };
 };
+
+/** Row(화면용)를 파일 행과 비교 가능한 지문으로 변환합니다. */
+const rowFinger = (r: { no: string | null; dept: string; bldgRaw: string | null; bldg: string | null; room: string | null; scope: string | null; ms: string | null; sub: string | null; act: string; unit: string | null; done: number | null; tot: number | null; pc: number | null; s: string | null; e: string | null; pred: string | null; succ: string | null }) =>
+  [r.dept, r.bldgRaw ?? r.bldg ?? "", r.room ?? "", r.scope ?? "", r.ms ?? "", r.sub ?? "", r.act, r.unit ?? "", r.done ?? "", r.tot ?? "", r.pc ?? "", r.s ?? "", r.e ?? "", r.pred ?? "", r.succ ?? ""].join("|");
+
+const importFinger = (r: ImportRow) =>
+  [r.discipline, r.building ?? "", r.room ?? "", r.work_scope ?? "", r.milestone ?? "", r.subcontractor ?? "", r.activity, r.unit ?? "", r.done_quantity ?? "", r.total_quantity ?? "", r.actual_progress ?? "", r.start_date ?? "", r.finish_date ?? "", r.predecessor ?? "", r.successor ?? ""].join("|");
 
 const diffKeys = (before: string[], after: string[]) => {
   const b = new Set(before), a = new Set(after);
