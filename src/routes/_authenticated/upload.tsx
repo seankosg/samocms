@@ -13,8 +13,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { projectQuery, useProject } from "@/lib/use-project";
 import { parseScheduleFile, sourceKeyFromFileName, findNoConflicts, validateNoOverrides, type NoConflict } from "@/lib/import-schedule";
 import { isTcWorkbook, metaFromFileName, parseTcWorkbook, type TcImportRow } from "@/lib/import-tc";
+import { isNcrWorkbook, parseNcrWorkbook, type NcrImportRow } from "@/lib/import-ncr";
+import { sequenceViolations } from "@/lib/ncr-model";
 import { importActivities } from "@/lib/activities.functions";
 import { importTcItems } from "@/lib/project.functions";
+import { importNcrItems } from "@/lib/ncr.functions";
 import type { ImportRow } from "@/lib/import-schedule";
 import { dayDiff, fmtDate, SLOTS, SLOT_LABEL } from "@/lib/schedule-model";
 
@@ -46,7 +49,10 @@ type Job = {
   prevFileDate: string | null;
   payload:
     | { kind: "schedule"; slot: string; fileDate: string | null; rev: number | null; rows: ImportRow[] }
-    | { kind: "tc"; disc: "Mech" | "Elec"; fileDate: string | null; rows: TcImportRow[] };
+    | { kind: "tc"; disc: "Mech" | "Elec"; fileDate: string | null; rows: TcImportRow[] }
+    | { kind: "ncr"; fileDate: string | null; rows: NcrImportRow[] };
+  /** NCR: 단계 순서 위반으로 반려될 행 미리보기 */
+  rejected: { docNo: string; reasons: { ko: string; en: string }[] }[];
 };
 
 /** Row(화면용)를 파일 행과 비교 가능한 지문으로 변환합니다. */
