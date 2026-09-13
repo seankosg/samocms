@@ -1,8 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { useMemo, useState } from "react";
+import { CheckCircle2, CircleAlert, ClipboardList, Flag, Target } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { AdminGate } from "@/components/manpower/admin-gate";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNcrItems, ncrQuery } from "@/lib/use-ncr";
 import type { NcrItem } from "@/lib/ncr.functions";
@@ -29,6 +31,28 @@ export const Route = createFileRoute("/_authenticated/ncr/dashboard")({
 });
 
 const dates = (r: NcrItem) => r as unknown as NcrDates;
+
+const achievementRate = (actual: number, plan: number) => plan > 0 ? Math.round((actual / plan) * 100) : null;
+
+function ProgressMetric({ plan, actual }: { plan: number; actual: number }) {
+  const rate = achievementRate(actual, plan);
+  return (
+    <div className="min-w-0 px-2.5 py-3">
+      <div className="flex items-center justify-between gap-2 text-[11px]">
+        <span className="font-semibold text-ncr-plan">P <strong className="text-sm">{plan}</strong>건</span>
+        <span className="font-semibold text-ncr-actual">A <strong className="text-sm">{actual}</strong>건</span>
+      </div>
+      <div className="mt-2 flex items-center gap-2">
+        <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
+          <div className="h-full rounded-full bg-ncr-actual transition-[width]" style={{ width: `${Math.min(rate ?? 0, 100)}%` }} />
+        </div>
+        <strong className={`w-10 text-right text-sm ${rate == null ? "text-muted-foreground" : "text-ncr-plan"}`}>
+          {rate == null ? "—" : `${rate}%`}
+        </strong>
+      </div>
+    </div>
+  );
+}
 
 function NcrDashboardPage() {
   const items = useNcrItems();
@@ -73,13 +97,16 @@ function NcrDashboardPage() {
   const closed = filtered.filter((r) => currentStage(dates(r)) === "Closed").length;
 
   const chip = (label: string, active: boolean, onClick: () => void) => (
-    <button
+    <Button
       key={label}
+      type="button"
+      size="sm"
+      variant={active ? "default" : "outline"}
       onClick={onClick}
-      className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:bg-accent"}`}
+      className="h-7 rounded-full px-3 text-[11px] font-semibold"
     >
       {label}
-    </button>
+    </Button>
   );
 
   const toList = (params: Record<string, string>) => goList({ to: "/ncr", search: params });
@@ -96,8 +123,19 @@ function NcrDashboardPage() {
           </label>
         }
       >
-        {/* 필터 */}
-        <div className="mb-3 space-y-2 rounded-md border border-border bg-card p-3">
+        <div className="mb-4 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-ncr-matrix px-4 py-3 text-ncr-matrix-foreground">
+            <div>
+              <p className="text-sm font-bold">NCR Operational Progress Matrix</p>
+              <p className="mt-0.5 text-[11px] opacity-70">PS1~PS9 계획 · 실적 · 지연 · 현재단계 비교</p>
+            </div>
+            <div className="flex items-center gap-4 text-[11px] font-semibold">
+              <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-ncr-plan" />계획</span>
+              <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-ncr-actual" />실적·완료</span>
+              <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-ncr-delay" />지연</span>
+            </div>
+          </div>
+          <div className="space-y-2 p-3">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="w-14 text-[11px] font-bold text-muted-foreground">문서종류</span>
             {chip("전체", !search.docType, () => setSearch({ docType: undefined }))}
@@ -114,102 +152,66 @@ function NcrDashboardPage() {
             <span className="w-14 text-[11px] font-bold text-muted-foreground">협력사</span>
             {chip("전체", !search.sub, () => setSearch({ sub: undefined }))}
             {facets.subs.map((t) => chip(t, search.sub === t, () => setSearch({ sub: search.sub === t ? undefined : t })))}
-            <span className="ml-auto text-[11px] text-muted-foreground">
-              대상 <b className="text-foreground">{filtered.length.toLocaleString()}</b>건 · 종결 <b className="text-primary">{closed}</b>건
-            </span>
+          </div>
+          </div>
+          <div className="grid grid-cols-2 border-t border-border bg-muted/30">
+            <div className="flex items-center gap-3 border-r border-border px-4 py-2.5">
+              <ClipboardList className="size-4 text-ncr-plan" />
+              <span className="text-[11px] text-muted-foreground">대상 문서</span>
+              <strong className="ml-auto text-lg">{filtered.length.toLocaleString()}<small className="ml-1 text-[10px] font-medium text-muted-foreground">건</small></strong>
+            </div>
+            <div className="flex items-center gap-3 px-4 py-2.5">
+              <CheckCircle2 className="size-4 text-ncr-actual" />
+              <span className="text-[11px] text-muted-foreground">종결 완료</span>
+              <strong className="ml-auto text-lg text-ncr-actual">{closed}<small className="ml-1 text-[10px] font-medium">건</small></strong>
+            </div>
           </div>
         </div>
 
-        {/* 1행 — Progress Stage (PS별 Start/Finish 계획·실적) */}
-        <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Progress Stage — Start / Finish 계획(P) 대비 실적(A)</p>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 xl:grid-cols-9">
-          {stats.map((st) => {
-            const pct = st.fPlan ? Math.round((st.fAct / Math.max(st.fPlan, st.fAct)) * 100) : null;
-            return (
-              <button
-                key={st.n}
-                onClick={() => toList({ stage: st.stage, ...(search.docType ? { docType: search.docType } : {}), ...(search.sub ? { sub: search.sub } : {}) }) }
-                className="rounded-md border border-border bg-card p-2.5 text-left shadow-sm transition-colors hover:border-primary/50 hover:bg-accent/30"
-              >
-                <p className="flex items-baseline justify-between">
-                  <strong className="text-xs">PS{st.n}</strong>
-                  <span className="truncate text-[9px] text-muted-foreground">{PS_LABEL[st.n]}</span>
-                </p>
-                <div className="mt-2 space-y-1.5 text-[10px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-muted-foreground">Start</span>
-                    <span><b>{st.sAct}</b><span className="text-muted-foreground"> / {st.sPlan}</span></span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-muted-foreground">Finish</span>
-                    <span><b className="text-primary">{st.fAct}</b><span className="text-muted-foreground"> / {st.fPlan}</span></span>
-                  </div>
-                </div>
-                <div className="mt-2 h-1 overflow-hidden rounded bg-muted">
-                  <div className="h-full bg-primary" style={{ width: `${pct ?? 0}%` }} />
-                </div>
-                <p className="mt-1 text-right text-[9px] text-muted-foreground">A / P · {pct ?? 0}%</p>
-              </button>
-            );
-          })}
-        </div>
+        <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+          <div className="overflow-x-auto">
+            <div className="min-w-[1160px]">
+              <div className="grid grid-cols-[140px_repeat(9,minmax(0,1fr))_100px] border-b border-border bg-muted/50">
+                <div className="sticky left-0 z-10 flex items-center border-r border-border bg-muted px-3 py-3 text-[10px] font-bold uppercase text-muted-foreground">구분</div>
+                {stats.map((st) => (
+                  <Button key={st.n} variant="ghost" onClick={() => toList({ stage: st.stage })} className="h-auto min-w-0 rounded-none border-r border-border px-2 py-2.5 hover:bg-ncr-plan-soft">
+                    <span className="block min-w-0 text-center"><strong className="block text-sm text-foreground">PS{st.n}</strong><small className="mt-0.5 block truncate text-[9px] font-medium text-muted-foreground">{PS_LABEL[st.n]}</small></span>
+                  </Button>
+                ))}
+                <div className="grid place-items-center px-2 text-xs font-bold text-ncr-actual">Closed</div>
+              </div>
 
-        {/* 2행 — 지연 현황 */}
-        <p className="mb-1.5 mt-4 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">지연 현황 — 기준일({asOf.replace(/-/g, ".")}) 경과 & 실적 없음</p>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 xl:grid-cols-9">
-          {stats.map((st) => {
-            const total = st.sDelay + st.fDelay;
-            return (
-              <button
-                key={st.n}
-                onClick={() => toList({ stage: st.stage, ...(search.docType ? { docType: search.docType } : {}), ...(search.sub ? { sub: search.sub } : {}) }) }
-                className={`rounded-md border p-2.5 text-left shadow-sm transition-colors ${total ? "border-destructive/50 bg-destructive/5 hover:bg-destructive/10" : "border-border bg-card hover:bg-accent/30"}`}
-              >
-                <p className="flex items-baseline justify-between">
-                  <strong className="text-xs">PS{st.n}</strong>
-                  <b className={`text-lg ${total ? "text-destructive" : "text-muted-foreground"}`}>{total}</b>
-                </p>
-                <div className="mt-1.5 space-y-1 text-[10px]">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Start 지연</span>
-                    <b className={st.sDelay ? "text-destructive" : "text-muted-foreground"}>{st.sDelay}</b>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Finish 지연</span>
-                    <b className={st.fDelay ? "text-destructive" : "text-muted-foreground"}>{st.fDelay}</b>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+              <div className="grid grid-cols-[140px_repeat(9,minmax(0,1fr))_100px] border-b border-border">
+                <div className="sticky left-0 z-10 flex items-center gap-2 border-r border-border bg-card px-3"><Target className="size-4 text-ncr-plan" /><span><strong className="block text-xs">Progress</strong><small className="text-[9px] text-muted-foreground">Start</small></span></div>
+                {stats.map((st) => <Button key={st.n} variant="ghost" onClick={() => toList({ stage: st.stage })} className="h-auto min-w-0 rounded-none border-r border-border p-0 hover:bg-ncr-plan-soft"><ProgressMetric plan={st.sPlan} actual={st.sAct} /></Button>)}
+                <div className="bg-muted/20" />
+              </div>
 
-        {/* 3행 — 현재단계 분포 */}
-        <p className="mb-1.5 mt-4 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">현재단계 — 자동 산출된 Current Stage 기준 건수</p>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 xl:grid-cols-10">
-          {stats.map((st) => (
-            <button
-              key={st.n}
-              onClick={() => toList({ stage: st.stage, ...(search.docType ? { docType: search.docType } : {}), ...(search.sub ? { sub: search.sub } : {}) }) }
-              className="rounded-md border border-border bg-card p-2.5 text-left shadow-sm transition-colors hover:border-primary/50 hover:bg-accent/30"
-            >
-              <p className="flex items-baseline justify-between">
-                <strong className="text-xs">PS{st.n}</strong>
-                <b className={`text-lg ${st.cur ? "text-chart-4" : "text-muted-foreground"}`}>{st.cur}</b>
-              </p>
-              <p className="mt-1 truncate text-[9px] text-muted-foreground">{PS_LABEL[st.n]}</p>
-            </button>
-          ))}
-          <button
-            onClick={() => toList({ stage: "Closed", ...(search.docType ? { docType: search.docType } : {}), ...(search.sub ? { sub: search.sub } : {}) }) }
-            className="rounded-md border border-primary/40 bg-primary/5 p-2.5 text-left shadow-sm transition-colors hover:bg-primary/10"
-          >
-            <p className="flex items-baseline justify-between">
-              <strong className="text-xs">Closed</strong>
-              <b className="text-lg text-primary">{closed}</b>
-            </p>
-            <p className="mt-1 text-[9px] text-muted-foreground">종결 완료</p>
-          </button>
+              <div className="grid grid-cols-[140px_repeat(9,minmax(0,1fr))_100px] border-b-4 border-ncr-matrix/10">
+                <div className="sticky left-0 z-10 flex items-center gap-2 border-r border-border bg-card px-3"><Flag className="size-4 text-ncr-actual" /><span><strong className="block text-xs">Progress</strong><small className="text-[9px] text-muted-foreground">Finish</small></span></div>
+                {stats.map((st) => <Button key={st.n} variant="ghost" onClick={() => toList({ stage: st.stage })} className="h-auto min-w-0 rounded-none border-r border-border p-0 hover:bg-ncr-actual-soft"><ProgressMetric plan={st.fPlan} actual={st.fAct} /></Button>)}
+                <div className="bg-muted/20" />
+              </div>
+
+              <div className="grid grid-cols-[140px_repeat(9,minmax(0,1fr))_100px] border-b-4 border-ncr-matrix/10">
+                <div className="sticky left-0 z-10 flex items-center gap-2 border-r border-border bg-card px-3"><CircleAlert className="size-4 text-ncr-delay" /><span><strong className="block text-xs">지연 현황</strong><small className="text-[9px] text-muted-foreground">{asOf.replace(/-/g, ".")}</small></span></div>
+                {stats.map((st) => {
+                  const total = st.sDelay + st.fDelay;
+                  return <Button key={st.n} variant="ghost" onClick={() => toList({ stage: st.stage })} className={`h-auto min-w-0 rounded-none border-r border-border px-2 py-3 ${total ? "bg-ncr-delay-soft hover:bg-ncr-delay-soft" : "hover:bg-muted/50"}`}>
+                    <span className="block w-full"><strong className={`block text-xl ${total ? "text-ncr-delay" : "text-muted-foreground"}`}>{total}</strong><span className="mt-1 flex justify-between text-[9px] text-muted-foreground"><span>Start <b className={st.sDelay ? "text-ncr-delay" : ""}>{st.sDelay}</b></span><span>Finish <b className={st.fDelay ? "text-ncr-delay" : ""}>{st.fDelay}</b></span></span></span>
+                  </Button>;
+                })}
+                <div className="bg-muted/20" />
+              </div>
+
+              <div className="grid grid-cols-[140px_repeat(9,minmax(0,1fr))_100px]">
+                <div className="sticky left-0 z-10 flex items-center gap-2 border-r border-border bg-card px-3"><ClipboardList className="size-4 text-ncr-plan" /><span><strong className="block text-xs">현재단계</strong><small className="text-[9px] text-muted-foreground">자동 산출</small></span></div>
+                {stats.map((st) => <Button key={st.n} variant="ghost" onClick={() => toList({ stage: st.stage })} className="h-auto min-w-0 rounded-none border-r border-border px-2 py-3 hover:bg-ncr-plan-soft"><span><strong className={`block text-xl ${st.cur ? "text-ncr-plan" : "text-muted-foreground"}`}>{st.cur}</strong><small className="text-[9px] font-medium text-muted-foreground">건</small></span></Button>)}
+                <Button variant="ghost" onClick={() => toList({ stage: "Closed" })} className="h-auto rounded-none bg-ncr-actual-soft px-2 py-3 hover:bg-ncr-actual-soft"><span><strong className="block text-xl text-ncr-actual">{closed}</strong><small className="text-[9px] font-medium text-ncr-actual">완료</small></span></Button>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-border bg-muted/30 px-4 py-2 text-[10px] text-muted-foreground">각 수치 영역을 누르면 해당 Progress Stage의 NCR 리스트로 이동합니다.</div>
         </div>
       </AppShell>
     </AdminGate>
