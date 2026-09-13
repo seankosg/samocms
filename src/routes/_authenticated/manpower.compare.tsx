@@ -200,3 +200,23 @@ function ComparePage() {
     </AppShell>
   );
 }
+
+/** 입력자 칸 — 「이름 · 부서」(부서 색 점), 미등록이면 표시, 재제출 이력 뱃지 */
+function ReporterCell({ source, row, memberMap }: { source: "SUB" | "HDEC"; row: CompareRow; memberMap: Map<string, { telegram_id: string; name: string; dept: string | null; position: string | null }> }) {
+  const tg = source === "SUB" ? row.sub_reporter_tg_id : row.hdec_counter_tg_id;
+  const raw = source === "SUB" ? row.sub_reporter : row.hdec_counter;
+  const superseded = (source === "SUB" ? row.sub_superseded : row.hdec_superseded) ?? 0;
+  const who = reporterLabel(memberMap, tg, raw);
+  if (!who.text || who.text === "—") return <>—</>;
+  return (
+    <span className="inline-flex flex-wrap items-center gap-1">
+      {who.member?.dept && <span className={`inline-block size-1.5 rounded-full ${deptDot(who.member.dept)}`} aria-hidden />}
+      <span>{who.text}</span>
+      {!who.registered && <span className="text-[10px] text-muted-foreground/70">(미등록)</span>}
+      <CardHistoryButton
+        source={source} company={row.company} report_date={row.report_date}
+        location={row.location} shift={row.shift} memberMap={memberMap} superseded={superseded}
+      />
+    </span>
+  );
+}

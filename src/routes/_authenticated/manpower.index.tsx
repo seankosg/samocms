@@ -13,7 +13,7 @@ import { useAuth } from "@/lib/use-auth";
 import { manpowerRangeQuery, useManpower } from "@/lib/use-manpower";
 import {
   TRADES, cardMismatch, compliance, fmtDay, riyadhToday, riyadhTime,
-  toDaily, tradeTotals, type Card as MpCard, type Source,
+  toDaily, tradeTotals, reporterLabel, type Card as MpCard, type Source,
 } from "@/lib/manpower-model";
 
 /** 매트릭스 인원 합산 대상 직종 (나머지 직종은 제외) */
@@ -88,7 +88,7 @@ function ManpowerPage() {
   const navigate = Route.useNavigate();
   const day = s.day ?? riyadhToday();
   const source: Source = s.src ?? "SUB";
-  const { cards, companies, locations, settings, cutoff, lastReceivedAt, reminderLog } = useManpower(day, day);
+  const { cards, companies, locations, settings, cutoff, lastReceivedAt, reminderLog, memberMap } = useManpower(day, day);
   /** 오늘 미보고 알림이 발송된 횟수 (협력사별) */
   const reminderCount = useMemo(() => {
     const m = new Map<string, number>();
@@ -124,9 +124,9 @@ function ManpowerPage() {
       구분: c.source, 협력사: c.company, 보고일: c.report_date, 장소: c.location, 조: c.shift,
       Staff: c.staff, Safety: c.safety_officer, Operator: c.operator, Worker: c.worker,
       Electrician: c.electrician, Scaffolder: c.scaffolder, Plumber: c.plumber, 소계: c.subtotal,
-      보고자: c.reporter_name, 보고시각: c.submitted_at ? riyadhTime(c.submitted_at) : "",
+      보고자: reporterLabel(memberMap, c.reporter_tg_id, c.reporter_name).text, 보고시각: c.submitted_at ? riyadhTime(c.submitted_at) : "",
     },
-  })), [shown]);
+  })), [shown, memberMap]);
 
   /** 매트릭스 1개 시트 (2단 헤더 + 그룹 병합 + 합계행) */
   const matrixSheet = useCallback((): ExtraSheet => {
