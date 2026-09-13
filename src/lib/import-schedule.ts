@@ -151,3 +151,59 @@ export function parseScheduleFile(buffer: ArrayBuffer, fileName: string): { rows
   if (!rows.length) throw new Error(`"${fileName}"에서 읽을 수 있는 공정 데이터가 없습니다.`);
   return { rows, fileDate };
 }
+
+/** Activity No 충돌(중복·빈 값) 한 건 — 업로드 확인창에서 사용자가 번호를 지정해 해소합니다. */
+export type NoConflict = {
+  /** 파싱된 rows 배열 내 위치 */
+  index: number;
+  /** 파일 안의 원래 번호(빈 값이면 null) */
+  originalNo: string | null;
+  activity: string;
+  building: string | null;
+  room: string | null;
+  kind: "duplicate" | "missing";
+};
+
+/** 같은 파일 안에서 Activity No 중복·빈 값을 찾아냅니다. */
+export function findNoConflicts(rows: ImportRow[]): NoConflict[] {
+  const byNo = new Map<string, number[]>();
+  const out: NoConflict[] = [];
+  rows.forEach((r, index) => {
+    const no = (r.activity_no ?? "").trim();
+    if (!no) {
+      out.push({ index, originalNo: null, activity: r.activity, building: r.building, room: r.room, kind: "missing" });
+      return;
+    }
+    const list = byNo.get(no) ?? [];
+    list.push(index);
+    byNo.set(no, list);
+  });
+  byNo.forEach((idxs, no) => {
+    if (idxs.length < 2) return;
+    idxs.forEach((index) => {
+      const r = rows[index]!;
+      out.push({ index, originalNo: no, activity: r.activity, building: r.building, room: r.room, kind: "duplicate" });
+    });
+  });
+  return out.sort((a, b) => a.index - b.index);
+}
+
+/** 입력된 번호가 파일 안과 DB(해당 공종)에서 모두 유일한지 검사합니다. */
+export function validateNoOverrides(
+  rows: ImportRow[],
+  overrides: Record<number, string>,
+  existingNos: string[],
+): string | null {
+  const taken = new Set(existingNos.map((s) => s.trim()).filter(Boolean));
+  const fixed = rows.map((r, i) => (overrides[i] ?? r.activity_no ?? "").trim());
+  const seen = new Set<string>();
+  for (let i = 0; i < fixed.length; i += 1) {
+    const no = fixed[i]!;
+    if (!no) return `${i + 1}번째 행의 번호가 비어 있습니다.`;
+    if (seen.has(no)) return `번호 "${no}"가 파일 안에서 중복됩니다.`;
+    seen.add(no);
+    if (overrides[i] !== undefined && taken.has(no)) return `번호 "${no}"는 이미 등록된 항목입니다. 다른 번호를 지정해 주세요.`;
+  }
+  return null;
+}
+

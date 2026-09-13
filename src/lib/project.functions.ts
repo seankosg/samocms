@@ -45,6 +45,37 @@ export const getProjectData = createServerFn({ method: "GET" })
   };
 });
 
+/** 숨김(보관) 처리된 공정 항목 — 공정리스트 「숨김 항목 보기」 전용 */
+export const getHiddenActivities = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("activities")
+      .select("*")
+      .not("hidden_at", "is", null)
+      .order("source_file")
+      .order("activity_no");
+    if (error) throw new Error(error.message);
+    return data;
+  });
+
+/** 숨김 항목 되살리기 — 담당 공종만 */
+export const unhideActivity = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const cur = await context.supabase.from("activities").select("source_file").eq("id", data.id).single();
+    if (cur.error) throw new Error("항목을 찾을 수 없습니다.");
+    await assertCanEdit(context as never, cur.data.source_file);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("activities")
+      .update({ hidden_at: null, hidden_source_date: null } as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const setBaselineDate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(d))
