@@ -1,9 +1,9 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import * as XLSX from "xlsx";
 import { Download } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { ExportDialog, type ExportRow } from "@/components/export-dialog";
 
 import { Kpi } from "@/routes/_authenticated/manpower.index";
 import { Button } from "@/components/ui/button";
@@ -55,6 +55,7 @@ function ComparePage() {
   const from = chartFrom(day, s.cmpFrom);
   const { compare } = useManpower(from, day);
   const [q, setQ] = useState("");
+  const [exportOpen, setExportOpen] = useState(false);
 
   const rows = useMemo(() => compare.filter((r) => r.report_date === day), [compare, day]);
   const stats = useMemo(() => verificationStats(rows), [rows]);
@@ -65,15 +66,28 @@ function ComparePage() {
     [rows, filter, q],
   );
 
-  const exportXlsx = () => {
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(shown.map((r) => ({
-      협력사: r.company, 보고일: r.report_date, 장소: r.location, 조: r.shift,
-      협력사보고: r.reported, HDEC재집계: r.verified, 차이: r.diff, 판정: RESULT_LABEL[r.result],
-      보고자: r.sub_reporter, HDEC확인자: r.hdec_counter,
-    }))), "검증대조");
-    XLSX.writeFile(wb, `HMMME_출면검증_${day.replace(/-/g, "")}.xlsx`);
-  };
+  const exportRows = useCallback((): ExportRow[] => shown.map((r) => ({
+    group: r.company,
+    rec: {
+      Company: r.company,
+      "Report Date": r.report_date,
+      Location: r.location,
+      Shift: r.shift,
+      "Subcon Report": r.reported,
+      "HDEC Recount": r.verified,
+      Difference: r.diff,
+      Result: r.result,
+      Reporter: r.sub_reporter,
+      "HDEC Counter": r.hdec_counter,
+    },
+  })), [shown]);
+
+  const exportStamp = useMemo(() => {
+    const value = new Date(`${day}T00:00:00Z`);
+    const dd = String(value.getUTCDate()).padStart(2, "0");
+    const mmm = value.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+    return `${dd}-${mmm}-${value.getUTCFullYear()}`;
+  }, [day]);
 
   const setResult = (v: string) => navigate({ search: (p) => ({ ...p, result: v as never }), replace: true });
 
@@ -88,7 +102,6 @@ function ComparePage() {
             className="h-8 w-[150px] text-xs" />
           <span className="text-xs text-muted-foreground">~</span>
           <Input type="date" aria-label="보고일" value={day} onChange={(e) => navigate({ search: (p) => ({ ...p, day: e.target.value }), replace: true })} className="h-8 w-[150px] text-xs" />
-          <Button size="sm" variant="outline" onClick={exportXlsx}><Download className="size-3.5" />엑셀</Button>
         </>
       }
     >
@@ -109,6 +122,22 @@ function ComparePage() {
           </button>
         ))}
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="협력사·장소 검색" className="h-8 max-w-[200px] text-xs" />
+        <Button size="sm" onClick={() => setExportOpen(true)} className="ml-auto">
+          <Download className="size-3.5" />XLSX
+        </Button>
+        <ExportDialog
+          open={exportOpen}
+          onOpenChange={setExportOpen}
+          title="Manpower Check 내보내기"
+          getRows={exportRows}
+          fileBase="Manpower Check"
+          sheetName="Manpower Check"
+          docLabel="Manpower Verification Check"
+          subtitle={`Report Date: ${exportStamp} · Filtered Records: ${shown.length.toLocaleString()}`}
+          dateStamp={exportStamp}
+          singleSuffix="Subcon"
+          groupAfterStamp
+        />
       </div>
 
       <section className="overflow-x-auto rounded-md border border-border">
@@ -116,11 +145,11 @@ function ComparePage() {
           <caption className="sr-only">협력사 보고와 HDEC 재집계 대조</caption>
           <thead className="bg-muted/60">
             <tr className="[&>th]:border-b [&>th]:border-border [&>th]:px-2 [&>th]:py-2 [&>th]:text-left">
-              <th scope="col">{MP.company}</th><th scope="col">{MP.location}</th><th scope="col">{MP.shift}</th>
-              <th scope="col" className="!text-right">{MP.reported}</th>
-              <th scope="col" className="!text-right">{MP.verified}</th>
-              <th scope="col" className="!text-right">{MP.diff}</th>
-              <th scope="col">{MP.result}</th><th scope="col">{MP.reporter}</th><th scope="col">{MP.counter}</th>
+               <th scope="col">Company</th><th scope="col">Location</th><th scope="col">Shift</th>
+               <th scope="col" className="!text-right">Subcon Report</th>
+               <th scope="col" className="!text-right">HDEC Recount</th>
+               <th scope="col" className="!text-right">Difference</th>
+               <th scope="col">Result</th><th scope="col">Reporter</th><th scope="col">HDEC Counter</th>
             </tr>
           </thead>
           <tbody>
