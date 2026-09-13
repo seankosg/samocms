@@ -79,6 +79,8 @@ const memberSchema = z.object({
   role: z.enum(["SUB", "HDEC"]),
   is_active: z.boolean(),
   note: z.string().max(300).nullable().optional(),
+  position: z.string().max(40).nullable().optional(),
+  dept: z.string().max(60).nullable().optional(),
 });
 
 /** 봇 사용자 추가·수정 (관리자 전용) */
@@ -97,6 +99,8 @@ export const saveManpowerMember = createServerFn({ method: "POST" })
         role: data.role,
         is_active: data.is_active,
         note: data.note ?? null,
+        position: data.position ?? null,
+        dept: data.dept ?? null,
         updated_at: new Date().toISOString(),
       }, { onConflict: "telegram_id" });
     if (error) throw new Error(error.message);
@@ -116,6 +120,31 @@ export const setManpowerMemberActive = createServerFn({ method: "POST" })
       .eq("telegram_id", data.telegram_id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+/** 카드 제출 이력 — ACTIVE + SUPERSEDED 전부, 제출시각 내림차순 */
+export const getCardHistory = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      source: z.enum(["SUB", "HDEC"]),
+      company: z.string().min(1),
+      report_date: dateStr,
+      location: z.string().min(1),
+      shift: z.string().min(1),
+    }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("manpower_entries")
+      .select("id, status, reporter_name, reporter_tg_id, submitted_at, staff, safety_officer, operator, worker, electrician, scaffolder, plumber, subtotal")
+      .eq("source", data.source)
+      .eq("company", data.company)
+      .eq("report_date", data.report_date)
+      .eq("location", data.location)
+      .eq("shift", data.shift)
+      .order("submitted_at", { ascending: false, nullsFirst: false });
+    if (error) throw new Error(error.message);
+    return rows ?? [];
   });
 
 const importSchema = z.object({
