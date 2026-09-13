@@ -15,6 +15,7 @@ export type NcrImportRow = {
   subcontractor: string | null;
   status: string | null;
   current_stage_file: string | null;
+  response_status: string | null;
 } & Record<DateField, string | null>;
 
 const text = (v: unknown): string | null => {
@@ -37,11 +38,11 @@ const iso = (v: unknown): string | null => {
 /** NCR 마스터 워크북 여부 — 시트에 「Current Stage」 + 「PS1S」 헤더가 있으면 NCR로 인식 */
 export function isNcrWorkbook(wb: XLSX.WorkBook): boolean {
   return wb.SheetNames.some((name) => {
-    const grid = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[name]!, { header: 1, blankrows: false, raw: true });
-    return grid.slice(0, 12).some((row) => {
-      const cells = (row ?? []).map((c) => String(c ?? "").trim());
-      return cells.includes("Current Stage") && cells.includes("PS1S");
-    });
+    const sheet = wb.Sheets[name];
+    if (!sheet) return false;
+    const grid = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, blankrows: false, raw: true });
+    const cells = grid.slice(0, 12).flatMap((row) => (row ?? []).map((c) => String(c ?? "").trim()));
+    return cells.includes("Current Stage") && cells.includes("PS1S");
   });
 }
 
@@ -50,11 +51,11 @@ export function parseNcrWorkbook(buffer: ArrayBuffer, fileName: string): { rows:
   const wb = XLSX.read(buffer, { type: "array" });
   const sheetName =
     wb.SheetNames.find((n) => {
-      const grid = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[n]!, { header: 1, blankrows: false, raw: true });
-      return grid.slice(0, 12).some((row) => {
-        const cells = (row ?? []).map((c) => String(c ?? "").trim());
-        return cells.includes("Current Stage") && cells.includes("PS1S");
-      });
+      const sheet = wb.Sheets[n];
+      if (!sheet) return false;
+      const grid = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, blankrows: false, raw: true });
+      const cells = grid.slice(0, 12).flatMap((row) => (row ?? []).map((c) => String(c ?? "").trim()));
+      return cells.includes("Current Stage") && cells.includes("PS1S");
     }) ?? wb.SheetNames[0]!;
   const grid = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[sheetName]!, { header: 1, blankrows: false, raw: true });
 
@@ -113,6 +114,7 @@ export function parseNcrWorkbook(buffer: ArrayBuffer, fileName: string): { rows:
       subcontractor: text(r[10]),
       status: text(r[11]),
       current_stage_file: text(r[12]),
+      response_status: text(r[49]),
       ...(stage as Record<DateField, string | null>),
     });
   }

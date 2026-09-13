@@ -668,6 +668,7 @@ export type Database = {
           ps9f_p: string | null
           ps9s_a: string | null
           ps9s_p: string | null
+          response_status: string | null
           ser_no: string | null
           source_file: string | null
           status: string | null
@@ -725,6 +726,7 @@ export type Database = {
           ps9f_p?: string | null
           ps9s_a?: string | null
           ps9s_p?: string | null
+          response_status?: string | null
           ser_no?: string | null
           source_file?: string | null
           status?: string | null
@@ -782,6 +784,7 @@ export type Database = {
           ps9f_p?: string | null
           ps9s_a?: string | null
           ps9s_p?: string | null
+          response_status?: string | null
           ser_no?: string | null
           source_file?: string | null
           status?: string | null

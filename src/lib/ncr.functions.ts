@@ -39,6 +39,7 @@ let rowSchema = z.object({
   subcontractor: z.string().nullable(),
   status: z.string().nullable(),
   current_stage_file: z.string().nullable(),
+  response_status: z.string().nullable(),
 }) as z.ZodObject<any>;
 for (const s of SLOT_ORDER) {
   rowSchema = rowSchema.extend({ [planField(s)]: dateStr, [actualField(s)]: dateStr });
@@ -162,6 +163,7 @@ const patchBase = z
     pic: z.string().nullable(),
     subcontractor: z.string().nullable(),
     status: z.string().nullable(),
+    response_status: z.string().nullable(),
   })
   .partial() as z.ZodObject<any>;
 let patchSchema = patchBase;

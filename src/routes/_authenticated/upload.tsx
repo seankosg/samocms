@@ -88,7 +88,7 @@ function UploadPage() {
     for (const file of list) {
       const buf = await file.arrayBuffer();
       const meta = metaFromFileName(file.name);
-      const wb = XLSX.read(buf, { type: "array", bookSheets: true });
+      const wb = XLSX.read(buf, { type: "array" });
       if (isNcrWorkbook(wb)) {
         if (!isAdmin) throw new Error("NCR 자료는 관리자만 업로드할 수 있습니다.");
         const parsed = parseNcrWorkbook(buf, file.name);

@@ -183,6 +183,13 @@
       "when": 1789286669587,
       "tag": "0025_create_ncr_items",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1789297800454,
+      "tag": "0026_add_ncr_response_status",
+      "breakpoints": true
     }
   ]
 }
