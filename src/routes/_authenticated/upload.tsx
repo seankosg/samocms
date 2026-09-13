@@ -3,14 +3,15 @@ import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
-import { AlertTriangle, FileSpreadsheet, Loader2, UploadCloud } from "lucide-react";
+import { AlertTriangle, EyeOff, FileSpreadsheet, Loader2, UploadCloud } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/use-auth";
 import { SCOPE_LABEL } from "@/lib/roster";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { projectQuery, useProject } from "@/lib/use-project";
-import { parseScheduleFile, sourceKeyFromFileName } from "@/lib/import-schedule";
+import { parseScheduleFile, sourceKeyFromFileName, findNoConflicts, validateNoOverrides, type NoConflict } from "@/lib/import-schedule";
 import { isTcWorkbook, metaFromFileName, parseTcWorkbook, type TcImportRow } from "@/lib/import-tc";
 import { importActivities } from "@/lib/activities.functions";
 import { importTcItems } from "@/lib/project.functions";
@@ -20,7 +21,7 @@ import { dayDiff, fmtDate, SLOTS, SLOT_LABEL } from "@/lib/schedule-model";
 export const Route = createFileRoute("/_authenticated/upload")({
   head: () => ({ meta: [
     { title: "데이터 업로드 | HMMME PROJECT CMS" },
-    { name: "description", content: "공정표와 시운전 워크북을 올리면 공종별 데이터가 최신 파일로 교체됩니다." },
+    { name: "description", content: "공정표와 시운전 워크북을 올리면 공종별 데이터가 번호 기준으로 갱신됩니다." },
     { property: "og:title", content: "HMMME 공정 데이터 업로드" },
     { property: "og:description", content: "Arch · Elec · Mech · Int · Permit · T&C 워크북 업로드." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
@@ -38,10 +39,22 @@ type Job = {
   incoming: number;
   added: string[];
   removed: string[];
+  changed: number;
+  conflicts: NoConflict[];
+  existingNos: string[];
+  fileDate: string | null;
+  prevFileDate: string | null;
   payload:
     | { kind: "schedule"; slot: string; fileDate: string | null; rev: number | null; rows: ImportRow[] }
     | { kind: "tc"; disc: "Mech" | "Elec"; fileDate: string | null; rows: TcImportRow[] };
 };
+
+/** Row(화면용)를 파일 행과 비교 가능한 지문으로 변환합니다. */
+const rowFinger = (r: { no: string | null; dept: string; bldgRaw: string | null; bldg: string | null; room: string | null; scope: string | null; ms: string | null; sub: string | null; act: string; unit: string | null; done: number | null; tot: number | null; pc: number | null; s: string | null; e: string | null; pred: string | null; succ: string | null }) =>
+  [r.dept, r.bldgRaw ?? r.bldg ?? "", r.room ?? "", r.scope ?? "", r.ms ?? "", r.sub ?? "", r.act, r.unit ?? "", r.done ?? "", r.tot ?? "", r.pc ?? "", r.s ?? "", r.e ?? "", r.pred ?? "", r.succ ?? ""].join("|");
+
+const importFinger = (r: ImportRow) =>
+  [r.discipline, r.building ?? "", r.room ?? "", r.work_scope ?? "", r.milestone ?? "", r.subcontractor ?? "", r.activity, r.unit ?? "", r.done_quantity ?? "", r.total_quantity ?? "", r.actual_progress ?? "", r.start_date ?? "", r.finish_date ?? "", r.predecessor ?? "", r.successor ?? ""].join("|");
 
 const diffKeys = (before: string[], after: string[]) => {
   const b = new Set(before), a = new Set(after);
@@ -77,18 +90,30 @@ function UploadPage() {
         jobs.push({
           id: `tc-${disc}-${file.name}`, label: `${disc.toUpperCase()} T&C`, fileName: file.name,
           existing: before.length, incoming: parsed.length, ...diffKeys(before, after),
+          changed: 0, conflicts: [], existingNos: [], fileDate: meta.date, prevFileDate: null,
           payload: { kind: "tc", disc, fileDate: meta.date, rows: parsed },
         });
       } else {
         const slot = sourceKeyFromFileName(file.name);
         if (!canEdit(slot)) throw new Error(`${SLOT_LABEL[slot] ?? slot} 자료를 업로드할 권한이 없습니다.`);
         const parsed = parseScheduleFile(buf, file.name);
-        const before = rows.filter((r) => r.slot === slot).map((r, i) => r.no ?? `#${i}`);
-        const after = parsed.rows.map((r, i) => r.activity_no ?? `#${i}`);
+        const existingRows = rows.filter((r) => r.slot === slot);
+        const existingNos = existingRows.map((r) => r.no).filter((v): v is string => !!v);
+        const byNo = new Map(existingRows.map((r) => [r.no, r]));
+        const fileDate = parsed.fileDate ?? meta.date;
+        const prevFileDate = batches.find((b) => b.kind === "schedule" && b.slot === slot)?.file_date ?? null;
+        let changed = 0;
+        for (const r of parsed.rows) {
+          const cur = r.activity_no ? byNo.get(r.activity_no) : undefined;
+          if (cur && rowFinger(cur) !== importFinger(r)) changed += 1;
+        }
+        const conflicts = findNoConflicts(parsed.rows);
         jobs.push({
           id: `s-${slot}-${file.name}`, label: SLOT_LABEL[slot] ?? slot, fileName: file.name,
-          existing: before.length, incoming: parsed.rows.length, ...diffKeys(before, after),
-          payload: { kind: "schedule", slot, fileDate: parsed.fileDate ?? meta.date, rev: meta.rev, rows: parsed.rows.map((r) => ({ ...r, source_file: slot })) },
+          existing: existingNos.length, incoming: parsed.rows.length,
+          ...diffKeys(existingNos, parsed.rows.map((r) => r.activity_no).filter((v): v is string => !!v)),
+          changed, conflicts, existingNos, fileDate, prevFileDate,
+          payload: { kind: "schedule", slot, fileDate, rev: meta.rev, rows: parsed.rows.map((r) => ({ ...r, source_file: slot })) },
         });
       }
     }
@@ -104,11 +129,16 @@ function UploadPage() {
           const res = await importTcItems({ data: { discipline: job.payload.disc, fileName: job.fileName, fileDate: job.payload.fileDate, rows: job.payload.rows } });
           done.push(`${job.label} ${res.inserted}건`);
         } else {
+          // 확인창에서 지정한 번호(중복·빈 값 해소분)를 반영합니다.
+          const fixedRows = job.payload.rows.map((r, i) => {
+            const ov = (fixes[job.id] ?? {})[i];
+            return ov ? { ...r, activity_no: ov.trim() } : r;
+          });
           const res = await importActivities({ data: {
             sourceFile: job.payload.slot, fileName: job.fileName, fileDate: job.payload.fileDate,
-            rev: job.payload.rev, rows: job.payload.rows,
+            rev: job.payload.rev, rows: fixedRows,
           } });
-          done.push(`${job.label} ${res.inserted}건`);
+          done.push(`${job.label} ${res.inserted}건${res.hidden ? ` (보관 ${res.hidden}건)` : ""}`);
         }
       }
       await qc.invalidateQueries({ queryKey: ["project"] });
@@ -128,10 +158,10 @@ function UploadPage() {
     setBusy(true);
     try {
       const jobs = await buildJobs(list);
-      const changed = jobs.filter((j) => j.existing !== j.incoming);
       setBusy(false);
-      if (changed.length) { setSkip({}); setPending(jobs); }
-      else await runJobs(jobs);
+      setFixes({});
+      setSkip({});
+      setPending(jobs);
     } catch (e) {
       setBusy(false);
       toast.error("파일을 읽지 못했습니다", { description: e instanceof Error ? e.message : "파일을 확인해 주세요." });
@@ -140,8 +170,20 @@ function UploadPage() {
     }
   };
 
+  /** 확인창의 번호 지정값 — job.id → 행 index → 새 번호 */
+  const [fixes, setFixes] = useState<Record<string, Record<number, string>>>({});
+
+  /** 해당 작업의 모든 번호 충돌이 유효하게 해소됐는지 */
+  const jobFixError = (j: Job): string | null => {
+    if (j.payload.kind !== "schedule" || !j.conflicts.length) return null;
+    return validateNoOverrides(j.payload.rows, fixes[j.id] ?? {}, j.existingNos);
+  };
+
+  const blockedIds = (pending ?? []).filter((j) => !skip[j.id] && jobFixError(j)).map((j) => j.id);
+
   const confirmPending = async () => {
     const jobs = (pending ?? []).filter((j) => !skip[j.id]);
+    if (jobs.some((j) => jobFixError(j))) return;
     setPending(null);
     await runJobs(jobs);
   };
@@ -157,7 +199,7 @@ function UploadPage() {
   ];
 
   return (
-    <AppShell title="데이터 업로드" desc={`기준일 ${fmtDate(base)} · 공종 파일을 올리면 해당 공종만 교체됩니다`}>
+    <AppShell title="데이터 업로드" desc={`기준일 ${fmtDate(base)} · 공종 파일을 올리면 번호 기준으로 갱신되고, 빠진 항목은 보관됩니다`}>
       <input ref={fileRef} type="file" accept=".xlsx,.xls" multiple className="hidden" aria-label="업로드 파일 선택" onChange={(e) => handle(e.target.files)} />
 
       <div
@@ -180,30 +222,65 @@ function UploadPage() {
       <Dialog open={!!pending} onOpenChange={(o) => { if (!o) setPending(null); }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><AlertTriangle className="size-4 text-chart-2" />기존 자료와 행 수가 다릅니다</DialogTitle>
-            <DialogDescription>적용하면 해당 공종의 기존 자료가 새 파일로 교체됩니다. 파일별로 적용 여부를 선택하세요.</DialogDescription>
+            <DialogTitle className="flex items-center gap-2"><AlertTriangle className="size-4 text-chart-2" />업로드 내용 확인</DialogTitle>
+            <DialogDescription>
+              기존 항목은 번호 기준으로 갱신되고, 파일에서 빠진 항목은 삭제되지 않고 보관(숨김)됩니다. 파일별로 적용 여부를 선택하세요.
+            </DialogDescription>
           </DialogHeader>
           <div className="max-h-[50vh] space-y-3 overflow-auto">
             {(pending ?? []).map((j) => {
-              const delta = j.incoming - j.existing;
-              const same = delta === 0;
+              const isSchedule = j.payload.kind === "schedule";
+              const hideWarn = isSchedule && j.existing > 0 && j.removed.length / j.existing >= 0.3;
+              const staleWarn = isSchedule && j.fileDate && j.prevFileDate && j.fileDate < j.prevFileDate;
+              const fixError = jobFixError(j);
               return (
-                <div key={j.id} className={`rounded-md border p-3 text-xs ${same ? "border-border" : "border-chart-2/60 bg-chart-2/5"}`}>
+                <div key={j.id} className={`rounded-md border p-3 text-xs ${j.conflicts.length ? "border-destructive/60 bg-destructive/5" : "border-border"}`}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <strong className="text-sm">{j.label}</strong>
                       <span className="ml-2 text-muted-foreground">{j.fileName}</span>
                     </div>
                     <span className="font-semibold">
-                      기존 {j.existing.toLocaleString()}행 → 새 파일 {j.incoming.toLocaleString()}행{" "}
-                      {!same && <span className={delta > 0 ? "text-primary" : "text-destructive"}>({delta > 0 ? "+" : ""}{delta})</span>}
+                      기존 {j.existing.toLocaleString()}행 → 새 파일 {j.incoming.toLocaleString()}행
                     </span>
                   </div>
-                  {(j.added.length > 0 || j.removed.length > 0) && (
-                    <p className="mt-1.5 text-[11px] text-muted-foreground">
-                      신규 항목 {j.added.length}건{j.added.length ? ` (예: ${j.added.slice(0, 5).join(", ")})` : ""} · 사라진 항목 {j.removed.length}건
-                      {j.removed.length ? ` (예: ${j.removed.slice(0, 5).join(", ")})` : ""}
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    신규 {j.added.length}건{j.added.length ? ` (예: ${j.added.slice(0, 5).join(", ")})` : ""}
+                    {isSchedule && <> · 갱신 {j.changed.toLocaleString()}건</>}
+                    {" "}· 보관 예정 {j.removed.length}건{j.removed.length ? ` (예: ${j.removed.slice(0, 5).join(", ")})` : ""}
+                  </p>
+                  {hideWarn && (
+                    <p className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-destructive">
+                      <EyeOff className="size-3.5" />기존 항목의 30% 이상이 보관 처리됩니다. 파일이 맞는지 다시 확인해 주세요.
                     </p>
+                  )}
+                  {staleWarn && (
+                    <p className="mt-1.5 text-[11px] font-semibold text-chart-2">
+                      이 파일의 기준일({fmtDate(j.fileDate)})이 이미 반영된 기준일({fmtDate(j.prevFileDate)})보다 과거입니다. 구버전 파일이 아닌지 확인해 주세요.
+                    </p>
+                  )}
+                  {j.conflicts.length > 0 && (
+                    <div className="mt-2 rounded-md border border-destructive/40 bg-card p-2">
+                      <p className="font-semibold text-destructive">Activity No 중복·누락 {j.conflicts.length}건 — 새 번호를 지정해야 적용할 수 있습니다</p>
+                      <div className="mt-2 space-y-2">
+                        {j.conflicts.map((c) => (
+                          <div key={c.index} className="flex flex-wrap items-center gap-2">
+                            <span className="min-w-0 flex-1 truncate text-muted-foreground" title={c.activity}>
+                              {c.kind === "duplicate" ? `중복 "${c.originalNo}"` : "번호 없음"} — {c.activity}
+                              {c.building ? ` (${c.building}${c.room ? ` ${c.room}` : ""})` : ""}
+                            </span>
+                            <Input
+                              className="h-7 w-28 text-xs"
+                              placeholder="새 번호"
+                              value={(fixes[j.id] ?? {})[c.index] ?? ""}
+                              onChange={(e) => setFixes((f) => ({ ...f, [j.id]: { ...(f[j.id] ?? {}), [c.index]: e.target.value } }))}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <p className="mt-2 text-[10px] text-muted-foreground">여기서 지정한 번호는 이번 업로드에만 적용됩니다. 원본 엑셀 파일도 함께 수정해 주세요.</p>
+                      {fixError && <p className="mt-1 text-[11px] font-semibold text-destructive">{fixError}</p>}
+                    </div>
                   )}
                   <div className="mt-2 flex gap-2">
                     <Button size="sm" variant={skip[j.id] ? "outline" : "default"} onClick={() => setSkip((s) => ({ ...s, [j.id]: false }))}>이 파일 적용</Button>
@@ -215,7 +292,9 @@ function UploadPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPending(null)}>전체 취소</Button>
-            <Button onClick={confirmPending}>선택한 파일 적용</Button>
+            <Button onClick={confirmPending} disabled={blockedIds.length > 0 || (pending ?? []).every((j) => skip[j.id])}>
+              선택한 파일 적용
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

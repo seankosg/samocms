@@ -1,6 +1,6 @@
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { getPrevActuals, getProgressForecast, getProgressHistory, getProjectData } from "./project.functions";
+import { getHiddenActivities, getPrevActuals, getProgressForecast, getProgressHistory, getProjectData } from "./project.functions";
 import { applyBaseline, toRow } from "./schedule-model";
 
 
@@ -19,6 +19,17 @@ export function useProgressHistory(opts: { itemKey?: string; discipline?: string
     refetchInterval: 5 * 60_000, // 일일 스냅샷(자동 채움 포함) 반영을 위한 자동 갱신
   });
 }
+
+/** 숨김(보관) 처리된 공정 항목 — 「숨김 항목 보기」 */
+export function useHiddenActivities(enabled: boolean) {
+  return useQuery({
+    queryKey: ["hidden-activities"],
+    queryFn: () => getHiddenActivities(),
+    enabled,
+    staleTime: 60_000,
+  });
+}
+
 
 /** 공종×날짜별 스냅샷 평균 — 진행도 예측선용 */
 export function useProgressForecast() {
