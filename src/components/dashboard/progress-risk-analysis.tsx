@@ -225,7 +225,7 @@ export function ProgressRiskAnalysis({ rows, tcItems = [], base = null }: { rows
 
   const progress = progressDimension === "tc"
     ? pTc
-    : [...all[progressDimension]].sort((a, b) => b.total - a.total);
+    : [...all[progressDimension]].sort((a, b) => b.late - a.late || b.total - a.total || a.label.localeCompare(b.label));
   const risks = [...(riskDimension === "tc" ? rTc : all[riskDimension])]
     .filter((group) => group.late > 0)
     .sort((a, b) => b.long - a.long || b.maxDelayDays - a.maxDelayDays || b.avgGap - a.avgGap)
