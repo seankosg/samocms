@@ -37,6 +37,7 @@ const docTitle = (base: string, docLabel?: string, group?: string) =>
 /** QAIL Snag Raw Data 내보내기의 Output 섹션 UI를 이식한 공통 내보내기 다이얼로그 */
 export function ExportDialog({
   open, onOpenChange, title, getRows, fileBase, sheetName, docLabel, subtitle, extraSheets,
+  dateStamp, singleSuffix, groupAfterStamp = false,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -50,6 +51,12 @@ export function ExportDialog({
   subtitle?: string;
   /** 단일 파일 모드에서 함께 저장할 추가 시트 */
   extraSheets?: () => ExtraSheet[];
+  /** 파일명 날짜 문자열 (기본: YYYYMMDD) */
+  dateStamp?: string;
+  /** 단일 파일명 끝에 붙일 구분명 */
+  singleSuffix?: string;
+  /** 협력사별 파일명을 fileBase_date_group 순서로 생성 */
+  groupAfterStamp?: boolean;
 }) {
   const bookOf = (recs: Record<string, unknown>[], group?: string) => {
     const wb = XLSX.utils.book_new();
@@ -71,7 +78,11 @@ export function ExportDialog({
     try {
       const rows = getRows();
       if (!rows.length) { toast.error("내보낼 행이 없습니다.", { id }); return; }
-      const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      const stamp = dateStamp ?? new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      const singleName = [fileBase, stamp, singleSuffix].filter(Boolean).join("_");
+      const groupName = (group: string) => groupAfterStamp
+        ? `${fileBase}_${stamp}_${sanitize(group)}`
+        : `${fileBase}_${sanitize(group)}_${stamp}`;
 
       if (mode === "single") {
         const wb = bookOf(rows.map((r) => r.rec));
@@ -85,7 +96,7 @@ export function ExportDialog({
             ex.name,
           );
         }
-        XLSX.writeFile(wb, `${fileBase}_${stamp}.xlsx`);
+        XLSX.writeFile(wb, `${singleName}.xlsx`);
         toast.success(`${rows.length.toLocaleString()}건 내보내기 완료`, { id });
       } else {
         const groups = new Map<string, Record<string, unknown>[]>();
@@ -99,13 +110,13 @@ export function ExportDialog({
           const zip = new JSZip();
           for (const [k, recs] of groups) {
             const buf = XLSX.write(bookOf(recs, k), { bookType: "xlsx", type: "array" }) as ArrayBuffer;
-            zip.file(`${fileBase}_${sanitize(k)}.xlsx`, buf);
+            zip.file(`${groupName(k)}.xlsx`, buf);
           }
           downloadBlob(await zip.generateAsync({ type: "blob" }), `${fileBase}_협력사별_${stamp}.zip`);
           toast.success(`${groups.size}개 협력사 → ZIP 다운로드`, { id });
         } else {
           for (const [k, recs] of groups) {
-            XLSX.writeFile(bookOf(recs, k), `${fileBase}_${sanitize(k)}_${stamp}.xlsx`);
+            XLSX.writeFile(bookOf(recs, k), `${groupName(k)}.xlsx`);
             await new Promise((r) => setTimeout(r, 0));
           }
           toast.success(`${groups.size}개 파일 다운로드`, { id });
