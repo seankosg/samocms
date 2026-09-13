@@ -65,6 +65,14 @@ const NAV = [
   ] },
 ] as const;
 
+/** 준공 준비(Close-out) — 관리자 전용 */
+const CLOSEOUT_NAV = [
+  { group: "준공 준비", items: [
+    { to: "/ncr/dashboard", label: "NCR 대시보드", icon: ClipboardCheck },
+    { to: "/ncr", label: "NCR 리스트", icon: FileWarning },
+  ] },
+] as const;
+
 const DATA_NAV = [
   { group: "데이터", items: [{ to: "/upload", label: "업로드", icon: UploadCloud }] },
 ] as const;
