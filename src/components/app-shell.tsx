@@ -6,7 +6,7 @@ import * as XLSX from "xlsx";
 import {
   AlertTriangle, BarChart3, CalendarClock, TrendingUp, CalendarDays, ChevronLeft, Download, FileText, ListChecks,
   LogOut, Menu, MoreVertical, Network, PanelLeft, Settings, Sparkles, Table2, UploadCloud, Users, Wrench, Zap,
-  UserCheck, GitCompare, LineChart, Contact, ShieldAlert,
+  UserCheck, GitCompare, LineChart, Contact, ShieldAlert, ClipboardCheck, FileWarning,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ROLE_LABEL, useAuth } from "@/lib/use-auth";
@@ -127,7 +127,7 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
     XLSX.writeFile(wb, `HMMME_통합_공정_${base.replace(/-/g, "")}.xlsx`);
   };
 
-  const groups = [...NAV, ...(isAdmin ? ADMIN_NAV : isSafetyLead ? SAFETY_NAV : []), ...DATA_NAV];
+  const groups = [...NAV, ...(isAdmin ? CLOSEOUT_NAV : []), ...(isAdmin ? ADMIN_NAV : isSafetyLead ? SAFETY_NAV : []), ...DATA_NAV];
 
   const userBadge = (expanded: boolean) => (
     <div className="flex items-center gap-2 rounded-md bg-accent/40 px-2 py-1.5">
