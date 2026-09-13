@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import { planField, actualField, SLOT_ORDER, type DateField } from "./ncr-model";
+import { planField, actualField, PS_NUMS, type DateField } from "./ncr-model";
 
 export type NcrImportRow = {
   ser_no: string | null;
@@ -90,11 +90,14 @@ export function parseNcrWorkbook(buffer: ArrayBuffer, fileName: string): { rows:
     const desc = text(r[3]);
     if (!docNo && !desc) continue;
     if (!docNo) continue; // 문서번호 없는 행은 식별 불가 — 건너뜀
+    // 단계별 4열 = [Start Plan, Start Actual, Finish Plan, Finish Actual]
     const stage: Partial<Record<DateField, string | null>> = {};
-    SLOT_ORDER.forEach((s, idx) => {
+    PS_NUMS.forEach((n, idx) => {
       const base = 13 + idx * 4;
-      stage[planField(s)] = iso(r[base]);
-      stage[actualField(s)] = iso(r[base + 1]);
+      stage[planField(`ps${n}s`)] = iso(r[base]);
+      stage[actualField(`ps${n}s`)] = iso(r[base + 1]);
+      stage[planField(`ps${n}f`)] = iso(r[base + 2]);
+      stage[actualField(`ps${n}f`)] = iso(r[base + 3]);
     });
     rows.push({
       ser_no: text(r[0]),
