@@ -229,6 +229,7 @@ function UploadPage() {
       key: `t-${s}`, label: `${s.toUpperCase()} T&C`, sub: "T&C",
       count: tcItems.filter((i) => i.discipline === s).length, batch: latestOf("tc", s),
     })),
+    ...(isAdmin ? [{ key: "ncr", label: "NCR·OR·SOR", sub: "준공 준비", count: ncrItems.length, batch: latestOf("ncr", "-") ?? batches.find((b) => b.kind === "ncr") ?? null }] : []),
   ];
 
   return (
@@ -315,6 +316,16 @@ function UploadPage() {
                       {fixError && <p className="mt-1 text-[11px] font-semibold text-destructive">{fixError}</p>}
                     </div>
                   )}
+                  {j.rejected.length > 0 && (
+                    <div className="mt-2 rounded-md border border-chart-2/50 bg-chart-2/5 p-2">
+                      <p className="font-semibold text-chart-2">단계 순서 위반으로 반려 예정 {j.rejected.length}건 — 해당 행만 제외되고 나머지는 정상 반영됩니다</p>
+                      <ul className="mt-1.5 max-h-32 space-y-1 overflow-auto text-[11px] text-muted-foreground">
+                        {j.rejected.map((r) => (
+                          <li key={r.docNo}><b className="text-foreground">{r.docNo}</b> — {r.reasons[0]}{r.reasons.length > 1 ? ` 외 ${r.reasons.length - 1}건` : ""}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   <div className="mt-2 flex gap-2">
                     <Button size="sm" variant={skip[j.id] ? "outline" : "default"} onClick={() => setSkip((s) => ({ ...s, [j.id]: false }))}>이 파일 적용</Button>
                     <Button size="sm" variant={skip[j.id] ? "default" : "outline"} onClick={() => setSkip((s) => ({ ...s, [j.id]: true }))}>건너뛰기</Button>
@@ -362,7 +373,7 @@ function UploadPage() {
             <tbody>
               {batches.map((b) => (
                 <tr key={b.id} className="border-b border-border">
-                  <td className="px-3 py-1.5">{b.kind === "tc" ? "T&C" : "공정표"}</td>
+                  <td className="px-3 py-1.5">{b.kind === "tc" ? "T&C" : b.kind === "ncr" ? "NCR" : "공정표"}</td>
                   <td className="px-3 py-1.5">{SLOT_LABEL[b.slot] ?? b.slot}</td>
                   <td className="max-w-[320px] truncate px-3 py-1.5">{b.file_name}</td>
                   <td className="px-3 py-1.5">{fmtDate(b.file_date)}</td>
