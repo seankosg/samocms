@@ -19,7 +19,7 @@ export const getManpower = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ from: dateStr, to: dateStr }).parse(d))
   .handler(async ({ data, context }) => {
     const c = context.supabase;
-    const [cards, compare, companies, locations, calendar, plan, settings, log, lastEntry, reminders] = await Promise.all([
+    const [cards, compare, companies, locations, calendar, plan, settings, log, lastEntry, reminders, members] = await Promise.all([
       c.from("v_manpower_cards").select("*").gte("report_date", data.from).lte("report_date", data.to),
       c.from("v_manpower_compare").select("*").gte("report_date", data.from).lte("report_date", data.to),
       c.from("manpower_companies").select("*").order("sort_order"),
@@ -31,8 +31,10 @@ export const getManpower = createServerFn({ method: "GET" })
       c.from("manpower_entries").select("synced_at").order("synced_at", { ascending: false }).limit(1),
       // 오늘 발송된 미보고 알림 로그 (봇이 mode='reminder' 로 기록, warnings 에 {date, missing[], ...})
       c.from("manpower_ingest_log").select("warnings").eq("mode", "reminder").filter("warnings->>date", "eq", data.to),
+      // 입력자 표기용 명부 (텔레그램 ID → 이름·부서)
+      c.from("manpower_members").select("telegram_id, name, dept, position"),
     ]);
-    const err = cards.error ?? compare.error ?? companies.error ?? locations.error ?? calendar.error ?? plan.error ?? settings.error ?? log.error ?? lastEntry.error ?? reminders.error;
+    const err = cards.error ?? compare.error ?? companies.error ?? locations.error ?? calendar.error ?? plan.error ?? settings.error ?? log.error ?? lastEntry.error ?? reminders.error ?? members.error;
     if (err) throw new Error(err.message);
     const settingMap: Record<string, string> = {};
     (settings.data ?? []).forEach((s: { key: string; value: string | null }) => {
@@ -52,6 +54,7 @@ export const getManpower = createServerFn({ method: "GET" })
       settings: settingMap,
       ingestLog: log.data ?? [],
       lastReceivedAt: candidates.at(-1) ?? null,
+      members: members.data ?? [],
       reminderLog: (reminders.data ?? [])
         .map((r: { warnings: unknown }) => r.warnings)
         .filter((w): w is { missing?: string[] } => !!w && typeof w === "object"),
