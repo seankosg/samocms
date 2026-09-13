@@ -124,7 +124,19 @@ export function MembersPanel() {
                 </Select>
               </Field>
 
-              <Field id="nt" label="비고"><Input id="nt" value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} className="h-8 text-xs" /></Field>
+               <Field id="ps" label="직책"><Input id="ps" value={draft.position} onChange={(e) => setDraft({ ...draft, position: e.target.value })} placeholder="Staff / Officer 등" className="h-8 text-xs" /></Field>
+               <Field id="dp" label="부서">
+                 <Select value={draft.dept || "__none__"} onValueChange={(v) => setDraft({ ...draft, dept: v === "__none__" ? "" : v })}>
+                   <SelectTrigger id="dp" className="h-8 text-xs"><SelectValue placeholder="부서 선택" /></SelectTrigger>
+                   <SelectContent>
+                     <SelectItem value="__none__">없음</SelectItem>
+                     {DEPTS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                     {draft.dept && !DEPTS.includes(draft.dept) && <SelectItem value={draft.dept}>{draft.dept}</SelectItem>}
+                   </SelectContent>
+                 </Select>
+                 <p className="text-[11px] text-muted-foreground">출면 화면에 「이름 · 부서」로 표시됩니다.</p>
+               </Field>
+               <Field id="nt" label="비고"><Input id="nt" value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} className="h-8 text-xs" /></Field>
               <div className="flex items-center gap-2">
                 <Switch id="ac" checked={draft.is_active} onCheckedChange={(v) => setDraft({ ...draft, is_active: v })} />
                 <Label htmlFor="ac" className="text-xs">사용</Label>
