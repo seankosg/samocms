@@ -2,14 +2,25 @@
 
 현재 출면 화면은 값을 낸 사람을 기록에 적힌 텔레그램 표시 이름 그대로만 보여 줍니다(예: `황태언 HDEC`, `건웅 장`, `Chathuranga HDEC`). 등록된 정식 이름·부서와 다르고, HDEC 재점검처럼 같은 카드를 여러 명이 입력해 마지막 값만 살아 있는 경우 누가 낸 값인지 알 수 없습니다.
 
-## 1) 직원 명부에 직책·부서 추가
+## 1) 직원 명부에 직책·부서 추가 — 부서 표기 일관성
+
+부서 표기는 **CMS 사용자관리의 담당공종 표기를 기준**으로 합니다. 첨부파일 표기를 기준표에 맞춰 변환해 저장합니다.
 
 출면기록 관리자 명부에 「직책」과 「부서(담당 공종)」 칸을 추가하고, 첨부해 주신 명단의 현대건설 외국인 직원 22명을 반영합니다. 텔레그램 ID가 이미 등록된 분들과 모두 일치해 새로 만들지 않고 값만 채웁니다.
 
-- 건축(Arch/Int) 3명: Chathuranga, Sher Ali, Tharanga
-- 설비(Mech) 3명: Janaka, Nazeer, Shaheer
-- 전기(Elec) 3명: Medhan, Harshana, Hari
-- 안전(HSE) 13명: Anfas, Mohammad Mohsin(이상 Staff), Mohamed Rimzan, Ramesh, Samapath, Muhammad Usman, Ashrar Ali, Wasif Abbasi, Rizwan Ullah, SHAHZEB, Wahab, Sahibzada Asgher, shahzeb ali(이상 Officer)
+변환 규칙:
+
+| 첨부파일 표기 | 저장할 부서 표기 |
+|---|---|
+| 건축(Arch/Int) | 건축 (Arch) |
+| 설비(Mech) | 설비 (Mech) |
+| 전기(Elec) | 전기 (Elec) |
+| 안전(HSE) | 안전 |
+
+- 건축 3명: Chathuranga, Sher Ali, Tharanga
+- 설비 3명: Janaka, Nazeer, Shaheer
+- 전기 3명: Medhan, Harshana, Hari
+- 안전 13명: Anfas, Mohammad Mohsin(이상 Staff), Mohamed Rimzan, Ramesh, Samapath, Muhammad Usman, Ashrar Ali, Wasif Abbasi, Rizwan Ullah, SHAHZEB, Wahab, Sahibzada Asgher, shahzeb ali(이상 Officer)
 
 한국 직원은 기존 CMS 사용자 정보의 팀·직책을 그대로 가져와 채웁니다.
 
