@@ -616,6 +616,180 @@ export type Database = {
         }
         Relationships: []
       }
+      ncr_items: {
+        Row: {
+          created_at: string
+          current_stage_file: string | null
+          description: string | null
+          doc_no: string
+          doc_type: string | null
+          file_date: string | null
+          hidden_at: string | null
+          hidden_source_date: string | null
+          id: number
+          issued_by: string | null
+          issued_date: string | null
+          location: string | null
+          mic: string | null
+          pic: string | null
+          ps1f_a: string | null
+          ps1f_p: string | null
+          ps1s_a: string | null
+          ps1s_p: string | null
+          ps2f_a: string | null
+          ps2f_p: string | null
+          ps2s_a: string | null
+          ps2s_p: string | null
+          ps3f_a: string | null
+          ps3f_p: string | null
+          ps3s_a: string | null
+          ps3s_p: string | null
+          ps4f_a: string | null
+          ps4f_p: string | null
+          ps4s_a: string | null
+          ps4s_p: string | null
+          ps5f_a: string | null
+          ps5f_p: string | null
+          ps5s_a: string | null
+          ps5s_p: string | null
+          ps6f_a: string | null
+          ps6f_p: string | null
+          ps6s_a: string | null
+          ps6s_p: string | null
+          ps7f_a: string | null
+          ps7f_p: string | null
+          ps7s_a: string | null
+          ps7s_p: string | null
+          ps8f_a: string | null
+          ps8f_p: string | null
+          ps8s_a: string | null
+          ps8s_p: string | null
+          ps9f_a: string | null
+          ps9f_p: string | null
+          ps9s_a: string | null
+          ps9s_p: string | null
+          ser_no: string | null
+          source_file: string | null
+          status: string | null
+          subcontractor: string | null
+          team: string | null
+        }
+        Insert: {
+          created_at?: string
+          current_stage_file?: string | null
+          description?: string | null
+          doc_no: string
+          doc_type?: string | null
+          file_date?: string | null
+          hidden_at?: string | null
+          hidden_source_date?: string | null
+          id?: never
+          issued_by?: string | null
+          issued_date?: string | null
+          location?: string | null
+          mic?: string | null
+          pic?: string | null
+          ps1f_a?: string | null
+          ps1f_p?: string | null
+          ps1s_a?: string | null
+          ps1s_p?: string | null
+          ps2f_a?: string | null
+          ps2f_p?: string | null
+          ps2s_a?: string | null
+          ps2s_p?: string | null
+          ps3f_a?: string | null
+          ps3f_p?: string | null
+          ps3s_a?: string | null
+          ps3s_p?: string | null
+          ps4f_a?: string | null
+          ps4f_p?: string | null
+          ps4s_a?: string | null
+          ps4s_p?: string | null
+          ps5f_a?: string | null
+          ps5f_p?: string | null
+          ps5s_a?: string | null
+          ps5s_p?: string | null
+          ps6f_a?: string | null
+          ps6f_p?: string | null
+          ps6s_a?: string | null
+          ps6s_p?: string | null
+          ps7f_a?: string | null
+          ps7f_p?: string | null
+          ps7s_a?: string | null
+          ps7s_p?: string | null
+          ps8f_a?: string | null
+          ps8f_p?: string | null
+          ps8s_a?: string | null
+          ps8s_p?: string | null
+          ps9f_a?: string | null
+          ps9f_p?: string | null
+          ps9s_a?: string | null
+          ps9s_p?: string | null
+          ser_no?: string | null
+          source_file?: string | null
+          status?: string | null
+          subcontractor?: string | null
+          team?: string | null
+        }
+        Update: {
+          created_at?: string
+          current_stage_file?: string | null
+          description?: string | null
+          doc_no?: string
+          doc_type?: string | null
+          file_date?: string | null
+          hidden_at?: string | null
+          hidden_source_date?: string | null
+          id?: never
+          issued_by?: string | null
+          issued_date?: string | null
+          location?: string | null
+          mic?: string | null
+          pic?: string | null
+          ps1f_a?: string | null
+          ps1f_p?: string | null
+          ps1s_a?: string | null
+          ps1s_p?: string | null
+          ps2f_a?: string | null
+          ps2f_p?: string | null
+          ps2s_a?: string | null
+          ps2s_p?: string | null
+          ps3f_a?: string | null
+          ps3f_p?: string | null
+          ps3s_a?: string | null
+          ps3s_p?: string | null
+          ps4f_a?: string | null
+          ps4f_p?: string | null
+          ps4s_a?: string | null
+          ps4s_p?: string | null
+          ps5f_a?: string | null
+          ps5f_p?: string | null
+          ps5s_a?: string | null
+          ps5s_p?: string | null
+          ps6f_a?: string | null
+          ps6f_p?: string | null
+          ps6s_a?: string | null
+          ps6s_p?: string | null
+          ps7f_a?: string | null
+          ps7f_p?: string | null
+          ps7s_a?: string | null
+          ps7s_p?: string | null
+          ps8f_a?: string | null
+          ps8f_p?: string | null
+          ps8s_a?: string | null
+          ps8s_p?: string | null
+          ps9f_a?: string | null
+          ps9f_p?: string | null
+          ps9s_a?: string | null
+          ps9s_p?: string | null
+          ser_no?: string | null
+          source_file?: string | null
+          status?: string | null
+          subcontractor?: string | null
+          team?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
