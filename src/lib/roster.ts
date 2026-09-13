@@ -16,7 +16,8 @@ export const SCOPE_LABEL: Record<string, string> = {
 
 export function slotScope(slot: string): string {
   const s = (slot || "").toLowerCase();
-  if (s === "arch" || s === "int") return "arch";
+  if (s === "arch") return "arch";
+  if (s === "int") return "interior";
   if (s === "elec") return "elec";
   if (s === "mech") return "mech";
   if (s === "permit" || s === "ms") return "permit";
