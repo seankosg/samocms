@@ -87,7 +87,22 @@ function UploadPage() {
       const buf = await file.arrayBuffer();
       const meta = metaFromFileName(file.name);
       const wb = XLSX.read(buf, { type: "array", bookSheets: true });
-      if (isTcWorkbook(wb)) {
+      if (isNcrWorkbook(wb)) {
+        if (!isAdmin) throw new Error("NCR 자료는 관리자만 업로드할 수 있습니다.");
+        const parsed = parseNcrWorkbook(buf, file.name);
+        const before = ncrItems.map((i) => i.doc_no);
+        const after = parsed.rows.map((r) => r.doc_no);
+        const rejected = parsed.rows
+          .map((r) => ({ docNo: r.doc_no, reasons: sequenceViolations(r.dates) }))
+          .filter((r) => r.reasons.length > 0);
+        jobs.push({
+          id: `ncr-${file.name}`, label: "NCR·OR·SOR", fileName: file.name,
+          existing: before.length, incoming: parsed.rows.length, ...diffKeys(before, after),
+          changed: 0, conflicts: [], existingNos: [], fileDate: parsed.fileDate ?? meta.date,
+          prevFileDate: batches.find((b) => b.kind === "ncr")?.file_date ?? null, rejected,
+          payload: { kind: "ncr", fileDate: parsed.fileDate ?? meta.date, rows: parsed.rows },
+        });
+      } else if (isTcWorkbook(wb)) {
         const disc = meta.disc === "Elec" ? "Elec" : "Mech";
         if (!canEdit(disc)) throw new Error(`${disc} T&C 자료를 업로드할 권한이 없습니다.`);
         const parsed = parseTcWorkbook(buf, file.name);
@@ -96,7 +111,7 @@ function UploadPage() {
         jobs.push({
           id: `tc-${disc}-${file.name}`, label: `${disc.toUpperCase()} T&C`, fileName: file.name,
           existing: before.length, incoming: parsed.length, ...diffKeys(before, after),
-          changed: 0, conflicts: [], existingNos: [], fileDate: meta.date, prevFileDate: null,
+          changed: 0, conflicts: [], existingNos: [], fileDate: meta.date, prevFileDate: null, rejected: [],
           payload: { kind: "tc", disc, fileDate: meta.date, rows: parsed },
         });
       } else {
@@ -118,7 +133,7 @@ function UploadPage() {
           id: `s-${slot}-${file.name}`, label: SLOT_LABEL[slot] ?? slot, fileName: file.name,
           existing: existingNos.length, incoming: parsed.rows.length,
           ...diffKeys(existingNos, parsed.rows.map((r) => r.activity_no).filter((v): v is string => !!v)),
-          changed, conflicts, existingNos, fileDate, prevFileDate,
+          changed, conflicts, existingNos, fileDate, prevFileDate, rejected: [],
           payload: { kind: "schedule", slot, fileDate, rev: meta.rev, rows: parsed.rows.map((r) => ({ ...r, source_file: slot })) },
         });
       }
@@ -134,6 +149,15 @@ function UploadPage() {
         if (job.payload.kind === "tc") {
           const res = await importTcItems({ data: { discipline: job.payload.disc, fileName: job.fileName, fileDate: job.payload.fileDate, rows: job.payload.rows } });
           done.push(`${job.label} ${res.inserted}건`);
+        } else if (job.payload.kind === "ncr") {
+          const res = await importNcrItems({ data: { fileName: job.fileName, fileDate: job.payload.fileDate, rows: job.payload.rows } });
+          done.push(`${job.label} ${res.inserted}건${res.hidden ? ` (보관 ${res.hidden}건)` : ""}${res.rejected.length ? ` (반려 ${res.rejected.length}건)` : ""}`);
+          if (res.rejected.length) {
+            const first = res.rejected[0]!;
+            toast.warning(`NCR 반려 ${res.rejected.length}건`, {
+              description: `${first.docNo}: ${first.reasons[0]?.ko ?? ""}${res.rejected.length > 1 ? ` 외 ${res.rejected.length - 1}건` : ""} — 해당 행만 제외하고 나머지는 반영됐습니다.`,
+            });
+          }
         } else {
           // 확인창에서 지정한 번호(중복·빈 값 해소분)를 반영합니다.
           const fixedRows = job.payload.rows.map((r, i) => {
@@ -149,6 +173,7 @@ function UploadPage() {
       }
       await qc.invalidateQueries({ queryKey: ["project"] });
       await qc.invalidateQueries({ queryKey: ["progress-history"] });
+      await qc.invalidateQueries({ queryKey: ["ncr-items"] });
       if (done.length) toast.success("업로드 반영 완료", { description: done.join(" · ") });
       else toast.info("적용된 파일이 없습니다");
     } catch (e) {
