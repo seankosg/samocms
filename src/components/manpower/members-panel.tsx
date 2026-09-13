@@ -12,8 +12,9 @@ import { useManpowerMembers, useManpowerMasters } from "@/lib/use-manpower";
 import { saveManpowerMember, setManpowerMemberActive } from "@/lib/manpower.functions";
 import { MP } from "@/lib/manpower-i18n";
 
-type Draft = { telegram_id: string; name: string; company: string; role: "SUB" | "HDEC"; is_active: boolean; note: string };
-const empty: Draft = { telegram_id: "", name: "", company: "", role: "SUB", is_active: true, note: "" };
+type Draft = { telegram_id: string; name: string; company: string; role: "SUB" | "HDEC"; is_active: boolean; note: string; position: string; dept: string };
+const empty: Draft = { telegram_id: "", name: "", company: "", role: "SUB", is_active: true, note: "", position: "", dept: "" };
+const DEPTS = ["건축 (Arch)", "내장 (Int)", "전기 (Elec)", "설비 (Mech)", "안전 (HSE)", "공무 (Permit)"];
 
 /** 출면기록 관리자(봇 사용자) 설정 패널 — 「출면관리」 페이지의 탭 본문. */
 export function MembersPanel() {
@@ -34,7 +35,7 @@ export function MembersPanel() {
   );
 
   const save = useMutation({
-    mutationFn: (d: Draft) => saveManpowerMember({ data: { ...d, company: d.company || null, note: d.note || null } }),
+    mutationFn: (d: Draft) => saveManpowerMember({ data: { ...d, company: d.company || null, note: d.note || null, position: d.position || null, dept: d.dept || null } }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["manpower-members"] }); setDraft(null); toast.success("저장되었습니다"); },
     onError: (e: Error) => toast.error("저장 실패", { description: e.message }),
   });
@@ -58,7 +59,7 @@ export function MembersPanel() {
           <thead className="bg-muted/60">
             <tr className="[&>th]:border-b [&>th]:border-border [&>th]:px-2 [&>th]:py-2 [&>th]:text-left">
               <th scope="col">이름</th><th scope="col">텔레그램 ID</th><th scope="col">{MP.company}</th>
-              <th scope="col">구분</th><th scope="col">사용</th><th scope="col">비고</th><th scope="col" />
+               <th scope="col">구분</th><th scope="col">직책</th><th scope="col">부서</th><th scope="col">사용</th><th scope="col">비고</th><th scope="col" />
             </tr>
           </thead>
           <tbody>
@@ -68,20 +69,22 @@ export function MembersPanel() {
                 <td className="font-mono text-muted-foreground">{m.telegram_id}</td>
                 <td>{m.company ?? "—"}</td>
                 <td>{m.role === "HDEC" ? "HDEC" : "협력사"}</td>
-                <td>
+                 <td className="text-muted-foreground">{m.position ?? "—"}</td>
+                 <td className="text-muted-foreground">{m.dept ?? "—"}</td>
+                 <td>
                   <Switch checked={m.is_active} aria-label={`${m.name} 사용 여부`}
                     onCheckedChange={(v) => toggle.mutate({ telegram_id: m.telegram_id, is_active: v })} />
                 </td>
                 <td className="max-w-[240px] truncate text-muted-foreground">{m.note ?? ""}</td>
                 <td className="text-right">
                   <Button size="sm" variant="ghost" className="h-7 text-xs"
-                    onClick={() => setDraft({ telegram_id: m.telegram_id, name: m.name, company: m.company ?? "", role: m.role, is_active: m.is_active, note: m.note ?? "" })}>
+                    onClick={() => setDraft({ telegram_id: m.telegram_id, name: m.name, company: m.company ?? "", role: m.role, is_active: m.is_active, note: m.note ?? "", position: m.position ?? "", dept: m.dept ?? "" })}>
                     수정
                   </Button>
                 </td>
               </tr>
             ))}
-            {!shown.length && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">등록된 사용자가 없습니다.</td></tr>}
+            {!shown.length && <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">등록된 사용자가 없습니다.</td></tr>}
           </tbody>
         </table>
       </div>
