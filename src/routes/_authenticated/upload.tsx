@@ -90,18 +90,30 @@ function UploadPage() {
         jobs.push({
           id: `tc-${disc}-${file.name}`, label: `${disc.toUpperCase()} T&C`, fileName: file.name,
           existing: before.length, incoming: parsed.length, ...diffKeys(before, after),
+          changed: 0, conflicts: [], existingNos: [], fileDate: meta.date, prevFileDate: null,
           payload: { kind: "tc", disc, fileDate: meta.date, rows: parsed },
         });
       } else {
         const slot = sourceKeyFromFileName(file.name);
         if (!canEdit(slot)) throw new Error(`${SLOT_LABEL[slot] ?? slot} 자료를 업로드할 권한이 없습니다.`);
         const parsed = parseScheduleFile(buf, file.name);
-        const before = rows.filter((r) => r.slot === slot).map((r, i) => r.no ?? `#${i}`);
-        const after = parsed.rows.map((r, i) => r.activity_no ?? `#${i}`);
+        const existingRows = rows.filter((r) => r.slot === slot);
+        const existingNos = existingRows.map((r) => r.no).filter((v): v is string => !!v);
+        const byNo = new Map(existingRows.map((r) => [r.no, r]));
+        const fileDate = parsed.fileDate ?? meta.date;
+        const prevFileDate = batches.find((b) => b.kind === "schedule" && b.slot === slot)?.file_date ?? null;
+        let changed = 0;
+        for (const r of parsed.rows) {
+          const cur = r.activity_no ? byNo.get(r.activity_no) : undefined;
+          if (cur && rowFinger(cur) !== importFinger(r)) changed += 1;
+        }
+        const conflicts = findNoConflicts(parsed.rows);
         jobs.push({
           id: `s-${slot}-${file.name}`, label: SLOT_LABEL[slot] ?? slot, fileName: file.name,
-          existing: before.length, incoming: parsed.rows.length, ...diffKeys(before, after),
-          payload: { kind: "schedule", slot, fileDate: parsed.fileDate ?? meta.date, rev: meta.rev, rows: parsed.rows.map((r) => ({ ...r, source_file: slot })) },
+          existing: existingNos.length, incoming: parsed.rows.length,
+          ...diffKeys(existingNos, parsed.rows.map((r) => r.activity_no).filter((v): v is string => !!v)),
+          changed, conflicts, existingNos, fileDate, prevFileDate,
+          payload: { kind: "schedule", slot, fileDate, rev: meta.rev, rows: parsed.rows.map((r) => ({ ...r, source_file: slot })) },
         });
       }
     }
