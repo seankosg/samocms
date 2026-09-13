@@ -192,8 +192,12 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: Arial, "Noto Sans KR", sans-serif;
+    font-family: "Figtree", "Noto Sans KR", Arial, sans-serif;
     letter-spacing: 0;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Outfit", "Noto Sans KR", Arial, sans-serif;
   }
 }
 
