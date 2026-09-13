@@ -25,6 +25,8 @@ export type Database = {
           discipline: string
           done_quantity: number | null
           finish_date: string | null
+          hidden_at: string | null
+          hidden_source_date: string | null
           id: number
           manager: string | null
           milestone: string | null
@@ -49,6 +51,8 @@ export type Database = {
           discipline: string
           done_quantity?: number | null
           finish_date?: string | null
+          hidden_at?: string | null
+          hidden_source_date?: string | null
           id?: number
           manager?: string | null
           milestone?: string | null
@@ -73,6 +77,8 @@ export type Database = {
           discipline?: string
           done_quantity?: number | null
           finish_date?: string | null
+          hidden_at?: string | null
+          hidden_source_date?: string | null
           id?: number
           manager?: string | null
           milestone?: string | null
