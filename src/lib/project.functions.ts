@@ -24,7 +24,7 @@ export const getProjectData = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
   const c = context.supabase;
   const [acts, tc, manual, batches, settings] = await Promise.all([
-    c.from("activities").select("*").order("id"),
+    c.from("activities").select("*").is("hidden_at", null).order("id"),
     c.from("tc_items").select("*").order("id"),
     c.from("tc_manual").select("*"),
     c.from("import_batches").select("*").order("created_at", { ascending: false }),

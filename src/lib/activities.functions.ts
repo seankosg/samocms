@@ -158,7 +158,7 @@ export const importActivities = createServerFn({ method: "POST" })
       if (error) console.error("refresh_activity_daily", d, error.message);
     }
 
-    return { sourceFile: data.sourceFile, inserted: rows.length, batchId: batch.data.id, snapshots: snaps.length };
+    return { sourceFile: data.sourceFile, inserted: rows.length, batchId: batch.data.id, snapshots: snaps.length, hidden: hideIds.length };
   });
 
 const activityPatch = z
