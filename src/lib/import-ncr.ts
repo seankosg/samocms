@@ -115,7 +115,7 @@ export function parseNcrWorkbook(buffer: ArrayBuffer, fileName: string): { rows:
       subcontractor: text(r[10]),
       status: text(r[11]),
       current_stage_file: text(r[12]),
-      response_status: text(r[49]),
+      response_status: text(r[respCol]),
       ...(stage as Record<DateField, string | null>),
     });
   }
