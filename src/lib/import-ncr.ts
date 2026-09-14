@@ -83,7 +83,8 @@ export function parseNcrWorkbook(buffer: ArrayBuffer, fileName: string): { rows:
     fileDate = m ? `${m[1]}-${m[2]}-${m[3]}` : null;
   }
 
-  // 기본 13열 + PS1~PS9 × (Plan Start, Actual Start, Plan Finish, Actual Finish) = 49열
+  // 기본 13열 + PS1~PS8 × (Plan Start, Actual Start, Plan Finish, Actual Finish) = 45열, 그 다음 Response Status
+  const respCol = 13 + PS_NUMS.length * 4;
   const rows: NcrImportRow[] = [];
   for (let i = head + 3; i < grid.length; i += 1) {
     const r = grid[i] ?? [];
@@ -114,7 +115,7 @@ export function parseNcrWorkbook(buffer: ArrayBuffer, fileName: string): { rows:
       subcontractor: text(r[10]),
       status: text(r[11]),
       current_stage_file: text(r[12]),
-      response_status: text(r[49]),
+      response_status: text(r[respCol]),
       ...(stage as Record<DateField, string | null>),
     });
   }
