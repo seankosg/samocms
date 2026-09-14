@@ -189,11 +189,11 @@ export function buildTcForecastSummary(
   const rows: TcForecastSummaryRow[] = [];
   for (const k of keys) {
     const m = buildTcForecast(items, { stage, team: k.team, bldg: k.bldg, base });
-    if (!m) { rows.push({ key: k.key, label: k.label, actual: null, slope: null, planDone: null, forecastEnd: null, diffDays: null, itemCount: 0 }); continue; }
+    if (!m) { rows.push({ key: k.key, label: k.label, actual: null, slope: null, planDone: null, forecastEnd: null, actualDoneDate: null, diffDays: null, itemCount: 0 }); continue; }
     rows.push({
       key: k.key, label: k.label,
       actual: m.lastActual, slope: m.slope,
-      planDone: m.planDoneDate, forecastEnd: m.forecastEnd, diffDays: m.diffDays,
+      planDone: m.planDoneDate, forecastEnd: m.forecastEnd, actualDoneDate: m.actualDoneDate, diffDays: m.diffDays,
       itemCount: m.itemCount,
     });
   }
