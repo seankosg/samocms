@@ -215,10 +215,10 @@ const resultBadge = (result: CompareRow["hse_result"]) =>
   result ? <span className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${TONE[result]}`}>{RESULT_LABEL[result]}</span> : <span className="text-muted-foreground">—</span>;
 
 /** 입력자 칸 — 「이름 · 부서」(부서 색 점), 미등록이면 표시, 재제출 이력 뱃지 */
-function ReporterCell({ source, row, memberMap }: { source: "SUB" | "HDEC"; row: CompareRow; memberMap: Map<string, { telegram_id: string; name: string; dept: string | null; position: string | null }> }) {
-  const tg = source === "SUB" ? row.sub_reporter_tg_id : row.hdec_counter_tg_id;
-  const raw = source === "SUB" ? row.sub_reporter : row.hdec_counter;
-  const superseded = (source === "SUB" ? row.sub_superseded : row.hdec_superseded) ?? 0;
+function ReporterCell({ source, group, row, memberMap }: { source: "SUB" | "HDEC"; group?: "HSE" | "EXE"; row: CompareRow; memberMap: Map<string, { telegram_id: string; name: string; dept: string | null; position: string | null }> }) {
+  const tg = source === "SUB" ? row.sub_reporter_tg_id : group === "HSE" ? row.hse_counter_tg_id : group === "EXE" ? row.exe_counter_tg_id : row.hdec_counter_tg_id;
+  const raw = source === "SUB" ? row.sub_reporter : group === "HSE" ? row.hse_counter : group === "EXE" ? row.exe_counter : row.hdec_counter;
+  const superseded = (source === "SUB" ? row.sub_superseded : group === "HSE" ? row.hse_superseded : group === "EXE" ? row.exe_superseded : row.hdec_superseded) ?? 0;
   const who = reporterLabel(memberMap, tg, raw);
   if (!who.text || who.text === "—") return <>—</>;
   return (
@@ -228,7 +228,7 @@ function ReporterCell({ source, row, memberMap }: { source: "SUB" | "HDEC"; row:
       {!who.registered && <span className="text-[10px] text-muted-foreground/70">(미등록)</span>}
       <CardHistoryButton
         source={source} company={row.company} report_date={row.report_date}
-        location={row.location} shift={row.shift} memberMap={memberMap} superseded={superseded}
+        location={row.location} shift={row.shift} memberMap={memberMap} superseded={superseded} group={group}
       />
     </span>
   );
