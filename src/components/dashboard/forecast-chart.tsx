@@ -163,6 +163,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
         disc: r.key,
         slope: r.slope,
         forecastEnd: r.forecastEnd,
+        actualDone: r.actualDoneDate,
         diffDays: r.diffDays,
         planDone: r.planDone,
         actual: r.actual,
@@ -185,19 +186,21 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
         ? eligibleRows.filter((r) => milestone === "ALL" || (r.ms ?? "미지정") === milestone)
         : eligibleRows;
       const sel = disc === "ALL" ? scopedRows : scopedRows.filter((r) => r.slot === disc);
-      if (hist.length === 0 || sel.length === 0) return { disc, slope: null, forecastEnd: null, diffDays: null, planDone: null as string | null, actual: null as number | null };
+      if (hist.length === 0 || sel.length === 0) return { disc, slope: null, forecastEnd: null, actualDone: null, diffDays: null, planDone: null as string | null, actual: null as number | null };
       const last = hist[hist.length - 1]!;
       const slope = slopeOf(hist);
+      // 실적 최초 100% 도달일 — 도달 시 예측 완료일을 실제 완료일로 고정
+      const actualDone = hist.find((h) => h.actual >= 0.999)?.date ?? null;
       let forecastEnd: string | null = null;
-      if (slope != null && slope > 1e-6 && last.actual < 0.999) {
+      if (!actualDone && slope != null && slope > 1e-6 && last.actual < 0.999) {
         forecastEnd = toDate(toTs(last.date) + Math.ceil(Math.min(365, (1 - last.actual) / slope)) * DAY);
-      } else if (last.actual >= 0.999) forecastEnd = last.date;
+      } else if (actualDone) forecastEnd = actualDone;
       const end = sel.reduce<string | null>((acc, r) => (r.e && (!acc || r.e > acc) ? r.e : acc), null) ?? last.date;
       const days: string[] = [];
       for (let t = toTs(hist[0]!.date); t <= toTs(end); t += DAY) days.push(toDate(t));
       const planDone = end;
       const diffDays = forecastEnd ? Math.round((toTs(forecastEnd) - toTs(planDone)) / DAY) : null;
-      return { disc, slope, forecastEnd, diffDays, planDone, actual: last.actual };
+      return { disc, slope, forecastEnd, actualDone, diffDays, planDone, actual: last.actual };
     });
   }, [data, eligibleRows, milestone, milestoneDiscs, mode, tcItems, tcStage, tcTeam, base]);
 
