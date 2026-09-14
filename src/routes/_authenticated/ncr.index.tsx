@@ -85,14 +85,10 @@ function NcrListPage() {
         const slot = search.slot.toLowerCase() as SlotKey;
         if (!SLOT_ORDER.includes(slot)) return false;
         const d = dates(r);
-        if (search.metric === "noplanAll") {
-          if (!SLOT_ORDER.every((s) => !d[planField(s)])) return false;
-          return true;
-        }
+        if (search.metric === "noplanAll" && !SLOT_ORDER.every((s) => !d[planField(s)])) return false;
         if (search.metric === "noplan") {
           const n = psOfSlot(slot);
           if (d[planField(`ps${n}s` as SlotKey)] || d[planField(`ps${n}f` as SlotKey)]) return false;
-          return true;
         }
         const planned = d[planField(slot)];
         const actual = d[actualField(slot)];
