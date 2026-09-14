@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { useMemo, useState } from "react";
-import { CalendarOff, CheckCircle2, CircleAlert, ClipboardList, Flag, Target } from "lucide-react";
+import { CalendarOff, CheckCircle2, CircleAlert, ClipboardList, Flag, Play, Target } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { AdminGate } from "@/components/manpower/admin-gate";
 import { Button } from "@/components/ui/button";
@@ -94,7 +94,7 @@ function NcrDashboardPage() {
   const stats = useMemo(() => PS_NUMS.map((n) => {
     const s = `ps${n}s` as SlotKey;
     const f = `ps${n}f` as SlotKey;
-    let sPlan = 0, sAct = 0, fPlan = 0, fAct = 0, sDelay = 0, fDelay = 0, cur = 0, noPlan = 0;
+    let sPlan = 0, sAct = 0, fPlan = 0, fAct = 0, sDelay = 0, fDelay = 0, cur = 0, noPlan = 0, ongoing = 0, ongoingDelay = 0;
     for (const r of filtered) {
       const d = dates(r);
       if (!d[planField(s)] && !d[planField(f)]) noPlan += 1;
@@ -104,10 +104,15 @@ function NcrDashboardPage() {
       if (d[actualField(f)]) fAct += 1;
       if (isStartDelayed(d, s, asOf)) sDelay += 1;
       if (isStartDelayed(d, f, asOf)) fDelay += 1;
+      if (d[actualField(s)] && !d[actualField(f)]) {
+        ongoing += 1;
+        const fPlan = d[planField(f)];
+        if (fPlan && fPlan < asOf) ongoingDelay += 1;
+      }
       const c = currentStage(d);
       if (c.startsWith(`PS${n}`)) cur += 1;
     }
-    return { n, stage: "PS" + n, sPlan, sAct, fPlan, fAct, sDelay, fDelay, cur, noPlan };
+    return { n, stage: "PS" + n, sPlan, sAct, fPlan, fAct, sDelay, fDelay, cur, noPlan, ongoing, ongoingDelay };
   }), [filtered, asOf]);
 
   const closed = filtered.filter((r) => currentStage(dates(r)) === "Closed").length;
@@ -207,8 +212,27 @@ function NcrDashboardPage() {
                 <div className="bg-muted/20" />
               </div>
 
+              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b border-border">
+                  <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><Play className="size-4 text-ncr-progress-actual" /><span className="text-left"><strong className="block text-xs">Progress</strong><small className="text-[9px] text-muted-foreground">On-going</small></span></Button>
+                  {stats.map((st) => {
+                    const slot = `ps${st.n}s` as SlotKey;
+                    return <div key={st.n} className={`min-w-0 border-r border-border px-2 py-2 ${st.ongoing ? "bg-ncr-plan-soft/60" : ""}`}>
+                      <Button variant="ghost" size="sm" onClick={() => drill(slot, "ongoing")} className={`mx-auto block h-7 px-2 text-xl font-bold ${st.ongoing ? "text-ncr-progress-actual" : "text-muted-foreground"}`}>{st.ongoing}</Button>
+                      <span className="mt-1 flex items-center justify-center gap-1 text-[9px] text-muted-foreground">
+                        <Button variant="ghost" size="sm" onClick={() => drill(slot, "ongoing")} className="h-5 px-1 text-[9px]">시작 후 미완료</Button>
+                        {st.ongoingDelay > 0 && (
+                          <Button variant="ghost" size="sm" onClick={() => drill(slot, "ongoingDelay")} className="h-5 px-1 text-[9px] font-bold text-ncr-delay" title="완료 계획일이 지났는데 아직 진행 중">
+                            완료계획 경과 <b className="ml-0.5">{st.ongoingDelay}</b>
+                          </Button>
+                        )}
+                      </span>
+                    </div>;
+                  })}
+                  <div className="bg-muted/20" />
+              </div>
+
               <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b-4 border-ncr-matrix/10">
-                 <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><Flag className="size-4 text-ncr-actual" /><span className="text-left"><strong className="block text-xs">Progress</strong><small className="text-[9px] text-muted-foreground">Finish</small></span></Button>
+                  <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><Flag className="size-4 text-ncr-actual" /><span className="text-left"><strong className="block text-xs">Progress</strong><small className="text-[9px] text-muted-foreground">Finish</small></span></Button>
                  {stats.map((st) => { const slot = `ps${st.n}f` as SlotKey; return <div key={st.n} className="min-w-0 border-r border-border hover:bg-ncr-actual-soft"><ProgressMetric plan={st.fPlan} actual={st.fAct} total={filtered.length} onDrill={(metric) => drill(slot, metric)} /></div>; })}
                 <div className="bg-muted/20" />
               </div>
