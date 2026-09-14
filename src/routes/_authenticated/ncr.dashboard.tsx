@@ -1,14 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { useMemo, useState } from "react";
-import { CheckCircle2, CircleAlert, ClipboardList, Flag, Target } from "lucide-react";
+import { CalendarOff, CheckCircle2, CircleAlert, ClipboardList, Flag, Target } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { AdminGate } from "@/components/manpower/admin-gate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNcrItems, ncrQuery } from "@/lib/use-ncr";
 import type { NcrItem } from "@/lib/ncr.functions";
-import { PS_NUMS, PS_LABEL, planField, actualField, currentStage, isStartDelayed, type SlotKey, type NcrDates } from "@/lib/ncr-model";
+import { PS_NUMS, PS_LABEL, SLOT_ORDER, planField, actualField, currentStage, isStartDelayed, type SlotKey, type NcrDates } from "@/lib/ncr-model";
 
 const searchSchema = z.object({
   docType: z.string().optional(),
@@ -94,9 +94,10 @@ function NcrDashboardPage() {
   const stats = useMemo(() => PS_NUMS.map((n) => {
     const s = `ps${n}s` as SlotKey;
     const f = `ps${n}f` as SlotKey;
-    let sPlan = 0, sAct = 0, fPlan = 0, fAct = 0, sDelay = 0, fDelay = 0, cur = 0;
+    let sPlan = 0, sAct = 0, fPlan = 0, fAct = 0, sDelay = 0, fDelay = 0, cur = 0, noPlan = 0;
     for (const r of filtered) {
       const d = dates(r);
+      if (!d[planField(s)] && !d[planField(f)]) noPlan += 1;
       if (d[planField(s)] && d[planField(s)]! <= asOf) sPlan += 1;
       if (d[actualField(s)]) sAct += 1;
       if (d[planField(f)] && d[planField(f)]! <= asOf) fPlan += 1;
@@ -106,10 +107,11 @@ function NcrDashboardPage() {
       const c = currentStage(d);
       if (c.startsWith(`PS${n}`)) cur += 1;
     }
-    return { n, stage: "PS" + n, sPlan, sAct, fPlan, fAct, sDelay, fDelay, cur };
+    return { n, stage: "PS" + n, sPlan, sAct, fPlan, fAct, sDelay, fDelay, cur, noPlan };
   }), [filtered, asOf]);
 
   const closed = filtered.filter((r) => currentStage(dates(r)) === "Closed").length;
+  const noPlanTotal = filtered.filter((r) => { const d = dates(r); return SLOT_ORDER.every((s) => !d[planField(s)]); }).length;
   const maxCurrent = Math.max(0, ...stats.map((st) => st.cur));
 
   const chip = (label: string, active: boolean, onClick: () => void) => (
@@ -189,7 +191,7 @@ function NcrDashboardPage() {
         <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
           <div className="overflow-x-auto">
             <div className="min-w-[1160px]">
-              <div className="grid grid-cols-[140px_repeat(9,minmax(0,1fr))_100px] border-b border-border bg-muted/50">
+              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b border-border bg-muted/50">
                 <div className="sticky left-0 z-10 flex items-center border-r border-border bg-muted px-3 py-3 text-[10px] font-bold uppercase text-muted-foreground">구분</div>
                 {stats.map((st) => (
                   <Button key={st.n} variant="ghost" onClick={() => toList({ stage: st.stage })} className="h-auto min-w-0 rounded-none border-r border-border px-2 py-2.5 hover:bg-ncr-plan-soft">
@@ -199,19 +201,19 @@ function NcrDashboardPage() {
                 <div className="grid place-items-center px-2 text-xs font-bold text-ncr-actual">Closed</div>
               </div>
 
-              <div className="grid grid-cols-[140px_repeat(9,minmax(0,1fr))_100px] border-b border-border">
+              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b border-border">
                  <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><Target className="size-4 text-ncr-plan" /><span className="text-left"><strong className="block text-xs">Progress</strong><small className="text-[9px] text-muted-foreground">Start</small></span></Button>
                  {stats.map((st) => { const slot = `ps${st.n}s` as SlotKey; return <div key={st.n} className="min-w-0 border-r border-border hover:bg-ncr-plan-soft"><ProgressMetric plan={st.sPlan} actual={st.sAct} total={filtered.length} onDrill={(metric) => drill(slot, metric)} /></div>; })}
                 <div className="bg-muted/20" />
               </div>
 
-              <div className="grid grid-cols-[140px_repeat(9,minmax(0,1fr))_100px] border-b-4 border-ncr-matrix/10">
+              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b-4 border-ncr-matrix/10">
                  <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><Flag className="size-4 text-ncr-actual" /><span className="text-left"><strong className="block text-xs">Progress</strong><small className="text-[9px] text-muted-foreground">Finish</small></span></Button>
                  {stats.map((st) => { const slot = `ps${st.n}f` as SlotKey; return <div key={st.n} className="min-w-0 border-r border-border hover:bg-ncr-actual-soft"><ProgressMetric plan={st.fPlan} actual={st.fAct} total={filtered.length} onDrill={(metric) => drill(slot, metric)} /></div>; })}
                 <div className="bg-muted/20" />
               </div>
 
-              <div className="grid grid-cols-[140px_repeat(9,minmax(0,1fr))_100px] border-b-4 border-ncr-matrix/10">
+              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b-4 border-ncr-matrix/10">
                  <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><CircleAlert className="size-4 text-ncr-delay" /><span className="text-left"><strong className="block text-xs">지연 현황</strong><small className="text-[9px] text-muted-foreground">{asOf.replace(/-/g, ".")}</small></span></Button>
                 {stats.map((st) => {
                   const total = st.sDelay + st.fDelay;
@@ -223,10 +225,24 @@ function NcrDashboardPage() {
                 <div className="bg-muted/20" />
               </div>
 
-              <div className="grid grid-cols-[140px_repeat(9,minmax(0,1fr))_100px]">
+              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b-4 border-ncr-matrix/10">
                  <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><ClipboardList className="size-4 text-ncr-plan" /><span className="text-left"><strong className="block text-xs">현재단계</strong><small className="text-[9px] text-muted-foreground">자동 산출</small><span className="mt-1.5 flex items-center gap-1 text-[8px] font-medium text-muted-foreground"><span>적음</span><i className="size-2 bg-ncr-stage-low" /><i className="size-2 bg-ncr-stage-mid" /><i className="size-2 bg-ncr-stage-high" /><i className="size-2 bg-ncr-stage-max" /><span>많음</span></span></span></Button>
                 {stats.map((st) => <Button key={st.n} variant="ghost" onClick={() => toList({ stage: st.stage })} aria-label={`${st.stage} 현재단계 ${st.cur}건`} className={`h-auto min-w-0 rounded-none border-r border-border px-2 py-3 transition-colors ${currentStageTone(st.cur, maxCurrent)}`}><span><strong className="block text-xl">{st.cur}</strong><small className="text-[9px] font-semibold opacity-80">건</small></span></Button>)}
                 <Button variant="ghost" onClick={() => toList({ stage: "Closed" })} className="h-auto rounded-none bg-ncr-actual-soft px-2 py-3 hover:bg-ncr-actual-soft"><span><strong className="block text-xl text-ncr-actual">{closed}</strong><small className="text-[9px] font-medium text-ncr-actual">완료</small></span></Button>
+              </div>
+
+              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px]">
+                 <div className="sticky left-0 z-10 flex items-center gap-2 border-r border-border bg-muted px-3 py-2.5"><CalendarOff className="size-4 text-muted-foreground" /><span className="text-left"><strong className="block text-xs">계획 미수립</strong><small className="text-[9px] text-muted-foreground">계획일 없음</small></span></div>
+                {stats.map((st) => (
+                  <div key={st.n} className={`min-w-0 border-r border-border px-2 py-2.5 text-center ${st.noPlan ? "bg-muted/60" : ""}`}>
+                    <strong className={`block text-lg ${st.noPlan ? "text-foreground" : "text-muted-foreground/50"}`}>{st.noPlan}</strong>
+                    <small className="text-[9px] font-medium text-muted-foreground">건</small>
+                  </div>
+                ))}
+                <div className={`px-2 py-2.5 text-center ${noPlanTotal ? "bg-muted/60" : ""}`}>
+                  <strong className={`block text-lg ${noPlanTotal ? "text-foreground" : "text-muted-foreground/50"}`}>{noPlanTotal}</strong>
+                  <small className="text-[9px] font-medium text-muted-foreground">전 단계</small>
+                </div>
               </div>
             </div>
           </div>
