@@ -203,7 +203,7 @@ function NcrDashboardPage() {
                     <span className="block min-w-0 text-center"><strong className="block text-sm text-foreground">PS{st.n}</strong><small className="mt-0.5 block truncate text-[10px] font-medium text-foreground/50">{PS_LABEL[st.n]}</small></span>
                   </Button>
                 ))}
-                <div className="grid place-items-center px-2 text-xs font-bold text-ncr-actual">Closed</div>
+                <Button variant="ghost" onClick={() => toList({ stage: "Closed" })} className="h-auto rounded-none px-2 text-xs font-bold text-ncr-actual">Closed</Button>
               </div>
 
               <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b border-border">
