@@ -610,7 +610,17 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
               </tr>
             </thead>
             <tbody>
-              {summary.map((s) => {
+              {(() => {
+                // 「전체」 행의 예측 완료일은 하위 항목 중 가장 늦은 날로 통일 (카드와 동일 기준)
+                const latestSubEnd = summary
+                  .filter((s) => s.disc !== "ALL" && s.forecastEnd)
+                  .reduce<string | null>((acc, s) => (!acc || s.forecastEnd! > acc ? s.forecastEnd! : acc), null);
+                return summary.map((s) => {
+                const isAll = s.disc === "ALL";
+                const dispForecastEnd = isAll && !s.actualDone && latestSubEnd ? latestSubEnd : s.forecastEnd;
+                const dispDiffDays = isAll && !s.actualDone && latestSubEnd && s.planDone
+                  ? Math.round((toTs(latestSubEnd) - toTs(s.planDone)) / DAY)
+                  : s.diffDays;
                 const isActive = mode === "discipline" ? s.disc === tab : mode === "milestone" ? s.disc === milestoneDisc : s.disc === tcBldg || (tcTeam === "ALL" && s.disc === tcTeam);
                 const label = mode === "tc"
                   ? (s.disc === "ALL" || s.disc === "Mech" || s.disc === "Elec" ? (s.disc === "Mech" ? "MECH" : s.disc === "Elec" ? "ELEC" : "전체") : s.disc)
