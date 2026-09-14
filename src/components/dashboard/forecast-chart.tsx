@@ -540,6 +540,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
                 <th className="text-right">현재 실적</th>
                 <th className="text-right">최근 속도</th>
                 <th className="text-right">계획 완료</th>
+                <th className="text-right">실제 완료</th>
                 <th className="text-right">예측 완료</th>
                 <th className="text-right">판정</th>
               </tr>
@@ -574,7 +575,8 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
                     <td className="text-right">{s.actual == null ? "—" : `${pct1(s.actual)}%`}</td>
                     <td className="text-right">{s.slope == null ? "—" : `${(s.slope * 100).toFixed(1)}%p/일`}</td>
                     <td className="text-right">{s.planDone ? fmtD(s.planDone) : "—"}</td>
-                    <td className="text-right font-semibold">{s.forecastEnd ? fmtD(s.forecastEnd) : "—"}</td>
+                    <td className={`text-right font-semibold ${s.actualDone ? "text-chart-2" : ""}`}>{s.actualDone ? fmtD(s.actualDone) : "—"}</td>
+                    <td className="text-right font-semibold">{s.actualDone ? "—" : s.forecastEnd ? fmtD(s.forecastEnd) : "—"}</td>
                     <td className={`text-right font-bold ${s.diffDays == null || s.diffDays === 0 ? "text-muted-foreground" : s.diffDays > 0 ? "text-destructive" : "text-chart-2"}`}>
                       {s.diffDays == null ? "—" : s.diffDays === 0 ? "정상" : s.diffDays > 0 ? `${s.diffDays}일 지연` : `${Math.abs(s.diffDays)}일 선행`}
                     </td>
