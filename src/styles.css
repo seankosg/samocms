@@ -69,6 +69,8 @@
   --color-ncr-actual-soft: var(--ncr-actual-soft);
   --color-ncr-delay: var(--ncr-delay);
   --color-ncr-delay-soft: var(--ncr-delay-soft);
+  --color-ncr-upcoming: var(--ncr-upcoming);
+  --color-ncr-upcoming-soft: var(--ncr-upcoming-soft);
   --color-ncr-matrix: var(--ncr-matrix);
   --color-ncr-matrix-foreground: var(--ncr-matrix-foreground);
   --color-ncr-progress-plan: var(--ncr-progress-plan);
@@ -133,6 +135,8 @@
   --ncr-actual-soft: oklch(0.96 0.035 145);
   --ncr-delay: oklch(0.56 0.22 27);
   --ncr-delay-soft: oklch(0.96 0.035 27);
+  --ncr-upcoming: oklch(0.6 0.16 62);
+  --ncr-upcoming-soft: oklch(0.96 0.05 75);
   --ncr-matrix: oklch(0.22 0.035 255);
   --ncr-matrix-foreground: oklch(0.96 0.008 255);
   --ncr-progress-plan: oklch(0.50 0.18 264);
@@ -196,6 +200,8 @@
   --ncr-actual-soft: oklch(0.27 0.05 145);
   --ncr-delay: oklch(0.7 0.19 25);
   --ncr-delay-soft: oklch(0.27 0.06 25);
+  --ncr-upcoming: oklch(0.78 0.15 70);
+  --ncr-upcoming-soft: oklch(0.28 0.05 70);
   --ncr-matrix: oklch(0.16 0.025 255);
   --ncr-matrix-foreground: oklch(0.96 0.008 255);
   --ncr-progress-plan: oklch(0.72 0.14 258);
