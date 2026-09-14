@@ -650,13 +650,13 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
                     <td className="text-right">{s.slope == null ? "—" : `${(s.slope * 100).toFixed(1)}%p/일`}</td>
                     <td className="text-right">{s.planDone ? fmtD(s.planDone) : "—"}</td>
                     <td className={`text-right font-semibold ${s.actualDone ? "text-chart-2" : ""}`}>{s.actualDone ? fmtD(s.actualDone) : "—"}</td>
-                    <td className="text-right font-semibold">{s.actualDone ? "—" : s.forecastEnd ? fmtD(s.forecastEnd) : "—"}</td>
-                    <td className={`text-right font-bold ${s.diffDays == null || s.diffDays === 0 ? "text-muted-foreground" : s.diffDays > 0 ? "text-destructive" : "text-chart-2"}`}>
-                      {s.diffDays == null ? "—" : s.diffDays === 0 ? "정상" : s.diffDays > 0 ? `${s.diffDays}일 지연` : `${Math.abs(s.diffDays)}일 선행`}
+                    <td className="text-right font-semibold">{s.actualDone ? "—" : dispForecastEnd ? fmtD(dispForecastEnd) : "—"}</td>
+                    <td className={`text-right font-bold ${dispDiffDays == null || dispDiffDays === 0 ? "text-muted-foreground" : dispDiffDays > 0 ? "text-destructive" : "text-chart-2"}`}>
+                      {dispDiffDays == null ? "—" : dispDiffDays === 0 ? "정상" : dispDiffDays > 0 ? `${dispDiffDays}일 지연` : `${Math.abs(dispDiffDays)}일 선행`}
                     </td>
                   </tr>
                 );
-              })}
+              });})()}
             </tbody>
           </table>
         </>
