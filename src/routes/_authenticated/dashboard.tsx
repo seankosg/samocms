@@ -402,39 +402,55 @@ function TrendCard() {
   const { data, isLoading } = useProgressHistory();
   const { base } = useProject();
   const series = data?.series ?? [];
+  const [open, setOpen] = useState(false);
   return (
-    <Card title="진도 추이 · 일일 진도율 (기록 기반)">
-      {isLoading ? (
-        <p className="text-xs text-muted-foreground">불러오는 중…</p>
-      ) : series.length === 0 ? (
-        <p className="text-xs text-muted-foreground">아직 저장된 기록이 없습니다. 파일을 업로드하면 기록이 쌓입니다.</p>
-      ) : (
-        <>
-          <table className="w-full text-left text-xs">
-            <thead className="border-b text-muted-foreground">
-              <tr><th className="py-2">기록일</th><th className="text-right">항목수</th><th className="text-right">계획</th><th className="text-right">실적</th><th className="text-right">차이</th><th className="text-right">일일 진도율</th></tr>
-            </thead>
-            <tbody>
-              {series.map((s) => (
-                <tr key={s.date} className="border-b border-border/60">
-                  <td className="py-2 font-semibold">
-                    {s.date === base ? <Drill to="/schedule">{s.date}</Drill> : <span title="과거 기록일 — 현재 목록은 기준일 자료만 표시합니다">{s.date}</span>}
-                  </td>
-                  <td className="text-right">{s.date === base ? <Drill to="/schedule" search={{ hasProgress: true }}>{s.count}</Drill> : s.count}</td>
-                  <td className="text-right">{pct1(s.planned)}%</td>
-                  <td className="text-right font-semibold">{pct1(s.actual)}%</td>
-                  <td className={`text-right ${gapCls(s.actual - s.planned)}`}>{sign(s.actual - s.planned)}{pct1(Math.abs(s.actual - s.planned))}%p</td>
-                  <td className="text-right">{s.dailyRate == null ? "—" : `${pct1(s.dailyRate)}%p/일`}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {series.length < 2 && (
-            <p className="mt-2 text-xs text-muted-foreground">기록 시점이 1개라 아직 변화량을 계산할 수 없습니다. 다음 업데이트 파일을 올리면 추이가 표시됩니다.</p>
-          )}
-        </>
-      )}
-    </Card>
+    <section className="mt-6">
+      <div className="min-w-0 rounded-md border border-border bg-card shadow-sm">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex w-full items-center justify-between px-4 py-3 text-left"
+          aria-expanded={open}
+        >
+          <span className="text-xs font-bold text-muted-foreground">진도 추이 · 일일 진도율 (기록 기반)</span>
+          <span className="text-[11px] text-muted-foreground">{open ? "접기" : "펼치기"}</span>
+        </button>
+        {open && (
+          <div className="border-t border-border px-4 py-3">
+            {isLoading ? (
+              <p className="text-xs text-muted-foreground">불러오는 중…</p>
+            ) : series.length === 0 ? (
+              <p className="text-xs text-muted-foreground">아직 저장된 기록이 없습니다. 파일을 업로드하면 기록이 쌓입니다.</p>
+            ) : (
+              <>
+                <table className="w-full text-left text-xs">
+                  <thead className="border-b text-muted-foreground">
+                    <tr><th className="py-2">기록일</th><th className="text-right">항목수</th><th className="text-right">계획</th><th className="text-right">실적</th><th className="text-right">차이</th><th className="text-right">일일 진도율</th></tr>
+                  </thead>
+                  <tbody>
+                    {series.map((s) => (
+                      <tr key={s.date} className="border-b border-border/60">
+                        <td className="py-2 font-semibold">
+                          {s.date === base ? <Drill to="/schedule">{s.date}</Drill> : <span title="과거 기록일 — 현재 목록은 기준일 자료만 표시합니다">{s.date}</span>}
+                        </td>
+                        <td className="text-right">{s.date === base ? <Drill to="/schedule" search={{ hasProgress: true }}>{s.count}</Drill> : s.count}</td>
+                        <td className="text-right">{pct1(s.planned)}%</td>
+                        <td className="text-right font-semibold">{pct1(s.actual)}%</td>
+                        <td className={`text-right ${gapCls(s.actual - s.planned)}`}>{sign(s.actual - s.planned)}{pct1(Math.abs(s.actual - s.planned))}%p</td>
+                        <td className="text-right">{s.dailyRate == null ? "—" : `${pct1(s.dailyRate)}%p/일`}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {series.length < 2 && (
+                  <p className="mt-2 text-xs text-muted-foreground">기록 시점이 1개라 아직 변화량을 계산할 수 없습니다. 다음 업데이트 파일을 올리면 추이가 표시됩니다.</p>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
