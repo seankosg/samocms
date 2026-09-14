@@ -131,19 +131,11 @@ function NcrListPage() {
   };
 
   const exportXlsx = () => {
+    // 임포트 엑셀과 동일한 컬럼 순서로 내보냅니다.
     const rows = filtered.map((r) => {
-      const base: Record<string, unknown> = {
-        SerNo: r.ser_no, "Doc Type": r.doc_type, "Doc No.": r.doc_no, Description: r.description,
-        Location: r.location, "Issued By": r.issued_by, "Issue Date": r.issued_date, Team: r.team,
-        MIC: r.mic, PIC: r.pic, Subcontractor: r.subcontractor, Status: r.status,
-        "Current Stage(자동)": currentStage(dates(r)), "Current Stage(원본)": r.current_stage_file,
-        "Response Status": r.response_status,
-      };
-      for (const s of SLOT_ORDER) {
-        base[`${slotCode(s)} Plan`] = r[planField(s)];
-        base[`${slotCode(s)} Actual`] = r[actualField(s)];
-      }
-      return base;
+      const out: Record<string, unknown> = {};
+      for (const c of NCR_COLUMNS) out[c.groupId ? `${c.groupId} ${c.label}` : c.label] = cellValue(r, c.key);
+      return out;
     });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "NCR");
