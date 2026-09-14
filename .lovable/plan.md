@@ -15,7 +15,7 @@
 | 기존 | 변경 |
 |---|---|
 | HDEC Recount | **HDEC HSE Count** / **HDEC Exe Count** |
-| Difference | **Difference (HSE)** / **Difference (EXE)** |
+| Difference | **Diff (HSE)** / **Diff (EXE)** |
 | Result | **Result (HSE)** / **Result (EXE)** — 두 판정을 따로 표시 |
 | HDEC Counter | **HSE Counter** / **EXE Counter** |
 
