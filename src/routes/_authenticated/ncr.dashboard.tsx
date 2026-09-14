@@ -51,7 +51,7 @@ function ProgressMetric({ plan, actual, total, onDrill }: { plan: number; actual
   return (
     <div className="min-w-0 px-2 py-2.5">
       <div className="flex items-center justify-between gap-2 text-[11px]">
-        <Button variant="ghost" size="sm" onClick={() => onDrill("plan")} className="h-6 min-w-0 px-1 font-semibold text-foreground/70">P <strong className="ml-1 text-sm text-foreground">{plan}</strong>건</Button>
+        <Button variant="ghost" size="sm" onClick={() => onDrill("plan")} className="h-6 min-w-0 px-1 font-semibold text-ncr-progress-plan">P <strong className="ml-1 text-sm">{plan}</strong>건</Button>
         <Button variant="ghost" size="sm" onClick={() => onDrill("actual")} className="h-6 min-w-0 px-1 font-semibold text-ncr-progress-actual">A <strong className="ml-1 text-sm">{actual}</strong>건</Button>
       </div>
       <div className="mt-1.5 flex items-center gap-1.5">
@@ -59,7 +59,7 @@ function ProgressMetric({ plan, actual, total, onDrill }: { plan: number; actual
           <span className="absolute inset-y-0 left-0 bg-ncr-progress-plan" style={{ width: `${planRate}%` }} />
           <span className="absolute inset-y-[3px] left-0 bg-ncr-progress-actual" style={{ width: `${actualRate}%` }} />
         </Button>
-        <Button variant="ghost" size="sm" onClick={() => onDrill("plan")} className="h-6 px-1 text-[10px] font-bold text-foreground/60">P {planRate}%</Button>
+        <Button variant="ghost" size="sm" onClick={() => onDrill("plan")} className="h-6 px-1 text-[10px] font-bold text-ncr-progress-plan">P {planRate}%</Button>
         <Button variant="ghost" size="sm" onClick={() => onDrill("actual")} className="h-6 px-1 text-[10px] font-bold text-ncr-progress-actual">A {actualRate}%</Button>
         <Button variant="ghost" size="sm" onClick={() => onDrill(gapMetric)} className={`h-6 px-1 text-[10px] font-bold ${gap < 0 ? "text-ncr-delay" : gap > 0 ? "text-ncr-progress-over" : "text-foreground/60"}`}>
           {gap > 0 ? "+" : ""}{gap}%p
