@@ -186,6 +186,7 @@ function NcrDashboardPage() {
             <div className="flex items-center gap-4 text-[11px] font-semibold">
               <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-ncr-plan" />계획</span>
               <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-ncr-actual" />실적·완료</span>
+              <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-ncr-upcoming" />임박</span>
               <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-ncr-delay" />지연</span>
             </div>
           </div>
