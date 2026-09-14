@@ -256,16 +256,20 @@ function NcrDashboardPage() {
               </div>
 
               <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px]">
-                 <div className="sticky left-0 z-10 flex items-center gap-2 border-r border-border bg-muted px-3 py-2.5"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide text-foreground">No Plan</strong><small className="text-[10px] text-foreground/50">계획일 없음</small></span></div>
+                 <Button variant="ghost" onClick={() => drill("ps1s", "noplanAll")} className="sticky left-0 z-10 h-auto items-center gap-2 rounded-none border-r border-border bg-muted px-3 py-2.5 hover:bg-muted"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide text-foreground">No Plan</strong><small className="text-[10px] text-foreground/50">계획일 없음</small></span></Button>
                 {stats.map((st) => (
-                  <div key={st.n} className={`min-w-0 border-r border-border px-2 py-2.5 text-center ${st.noPlan ? "bg-muted/60" : ""}`}>
-                    <strong className={`block text-lg ${st.noPlan ? "text-foreground" : "text-foreground/35"}`}>{st.noPlan}</strong>
-                    <small className="text-[10px] font-medium text-foreground/50">건</small>
+                  <div key={st.n} className={`min-w-0 border-r border-border text-center ${st.noPlan ? "bg-muted/60" : ""}`}>
+                    <Button variant="ghost" onClick={() => drill(`ps${st.n}s` as SlotKey, "noplan")} aria-label={`PS${st.n} 계획 미수립 ${st.noPlan}건`} className="h-auto w-full flex-col gap-0 rounded-none px-2 py-2.5">
+                      <strong className={`block text-lg ${st.noPlan ? "text-foreground" : "text-foreground/35"}`}>{st.noPlan}</strong>
+                      <small className="text-[10px] font-medium text-foreground/50">건</small>
+                    </Button>
                   </div>
                 ))}
-                <div className={`px-2 py-2.5 text-center ${noPlanTotal ? "bg-muted/60" : ""}`}>
-                  <strong className={`block text-lg ${noPlanTotal ? "text-foreground" : "text-foreground/35"}`}>{noPlanTotal}</strong>
-                  <small className="text-[10px] font-medium text-foreground/50">전 단계</small>
+                <div className={`text-center ${noPlanTotal ? "bg-muted/60" : ""}`}>
+                  <Button variant="ghost" onClick={() => drill("ps1s", "noplanAll")} aria-label={`전 단계 계획 미수립 ${noPlanTotal}건`} className="h-auto w-full flex-col gap-0 rounded-none px-2 py-2.5">
+                    <strong className={`block text-lg ${noPlanTotal ? "text-foreground" : "text-foreground/35"}`}>{noPlanTotal}</strong>
+                    <small className="text-[10px] font-medium text-foreground/50">전 단계</small>
+                  </Button>
                 </div>
               </div>
             </div>
