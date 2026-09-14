@@ -119,6 +119,16 @@ function NcrListPage() {
           const cutoff = search.asOf ?? new Date().toISOString().slice(0, 10);
           if (!isStartDelayed(d, start, cutoff) && !isStartDelayed(d, finish, cutoff)) return false;
         }
+        if (search.metric === "upcoming" || search.metric === "upcomingBoth") {
+          const cutoff = search.asOf ?? new Date().toISOString().slice(0, 10);
+          const win = Math.max(1, Number(search.within) || 7);
+          if (search.metric === "upcoming") {
+            if (!isUpcoming(d, slot, cutoff, win)) return false;
+          } else {
+            const n = psOfSlot(slot);
+            if (!isUpcoming(d, `ps${n}s` as SlotKey, cutoff, win) && !isUpcoming(d, `ps${n}f` as SlotKey, cutoff, win)) return false;
+          }
+        }
         if (search.metric === "ongoing" || search.metric === "ongoingDelay") {
           const n = psOfSlot(slot);
           const start = `ps${n}s` as SlotKey;
