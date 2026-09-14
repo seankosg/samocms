@@ -184,7 +184,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
     }
 
     const diffDays = forecastEnd ? Math.round((toTs(forecastEnd) - toTs(planDoneDate)) / DAY) : null;
-    return { hist, days, planCurve, forecastCurve, slope, planDoneDate, hmPlanDoneDate, forecastEnd, actualDoneDate, diffDays, lastDate, lastActual, itemCount: sel.length };
+    return { hist, days, planCurve, forecastCurve, slope, planDoneDate, hmPlanDoneDate, forecastEnd, forecastEndBy, actualDoneDate, diffDays, lastDate, lastActual, itemCount: sel.length };
   }, [data, eligibleRows, milestone, milestoneDisc, mode, rows, tab, tcItems, tcStage, tcTeam, tcBldg, base]);
 
   // 공종별 요약 표 데이터
