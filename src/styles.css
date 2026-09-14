@@ -135,8 +135,8 @@
   --ncr-delay-soft: oklch(0.96 0.035 27);
   --ncr-matrix: oklch(0.22 0.035 255);
   --ncr-matrix-foreground: oklch(0.96 0.008 255);
-  --ncr-progress-plan: oklch(0.72 0.015 255);
-  --ncr-progress-actual: oklch(0.2 0.015 255);
+  --ncr-progress-plan: oklch(0.50 0.18 264);
+  --ncr-progress-actual: oklch(0.48 0.15 145);
   --ncr-progress-over: oklch(0.52 0.16 145);
   --ncr-stage-low: oklch(0.95 0.025 255);
   --ncr-stage-mid: oklch(0.84 0.075 255);
@@ -198,8 +198,8 @@
   --ncr-delay-soft: oklch(0.27 0.06 25);
   --ncr-matrix: oklch(0.16 0.025 255);
   --ncr-matrix-foreground: oklch(0.96 0.008 255);
-  --ncr-progress-plan: oklch(0.52 0.015 255);
-  --ncr-progress-actual: oklch(0.94 0.008 255);
+  --ncr-progress-plan: oklch(0.72 0.14 258);
+  --ncr-progress-actual: oklch(0.76 0.16 145);
   --ncr-progress-over: oklch(0.72 0.16 145);
   --ncr-stage-low: oklch(0.24 0.03 255);
   --ncr-stage-mid: oklch(0.30 0.06 255);

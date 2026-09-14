@@ -51,7 +51,7 @@ function ProgressMetric({ plan, actual, total, onDrill }: { plan: number; actual
   return (
     <div className="min-w-0 px-2 py-2.5">
       <div className="flex items-center justify-between gap-2 text-[11px]">
-        <Button variant="ghost" size="sm" onClick={() => onDrill("plan")} className="h-6 min-w-0 px-1 font-semibold text-foreground/70">P <strong className="ml-1 text-sm text-foreground">{plan}</strong>건</Button>
+        <Button variant="ghost" size="sm" onClick={() => onDrill("plan")} className="h-6 min-w-0 px-1 font-semibold text-ncr-progress-plan">P <strong className="ml-1 text-sm">{plan}</strong>건</Button>
         <Button variant="ghost" size="sm" onClick={() => onDrill("actual")} className="h-6 min-w-0 px-1 font-semibold text-ncr-progress-actual">A <strong className="ml-1 text-sm">{actual}</strong>건</Button>
       </div>
       <div className="mt-1.5 flex items-center gap-1.5">
@@ -59,7 +59,7 @@ function ProgressMetric({ plan, actual, total, onDrill }: { plan: number; actual
           <span className="absolute inset-y-0 left-0 bg-ncr-progress-plan" style={{ width: `${planRate}%` }} />
           <span className="absolute inset-y-[3px] left-0 bg-ncr-progress-actual" style={{ width: `${actualRate}%` }} />
         </Button>
-        <Button variant="ghost" size="sm" onClick={() => onDrill("plan")} className="h-6 px-1 text-[10px] font-bold text-foreground/60">P {planRate}%</Button>
+        <Button variant="ghost" size="sm" onClick={() => onDrill("plan")} className="h-6 px-1 text-[10px] font-bold text-ncr-progress-plan">P {planRate}%</Button>
         <Button variant="ghost" size="sm" onClick={() => onDrill("actual")} className="h-6 px-1 text-[10px] font-bold text-ncr-progress-actual">A {actualRate}%</Button>
         <Button variant="ghost" size="sm" onClick={() => onDrill(gapMetric)} className={`h-6 px-1 text-[10px] font-bold ${gap < 0 ? "text-ncr-delay" : gap > 0 ? "text-ncr-progress-over" : "text-foreground/60"}`}>
           {gap > 0 ? "+" : ""}{gap}%p
@@ -203,7 +203,7 @@ function NcrDashboardPage() {
                     <span className="block min-w-0 text-center"><strong className="block text-sm text-foreground">PS{st.n}</strong><small className="mt-0.5 block truncate text-[10px] font-medium text-foreground/50">{PS_LABEL[st.n]}</small></span>
                   </Button>
                 ))}
-                <div className="grid place-items-center px-2 text-xs font-bold text-ncr-actual">Closed</div>
+                <Button variant="ghost" onClick={() => toList({ stage: "Closed" })} className="h-auto rounded-none px-2 text-xs font-bold text-ncr-actual">Closed</Button>
               </div>
 
               <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b border-border">
@@ -256,16 +256,20 @@ function NcrDashboardPage() {
               </div>
 
               <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px]">
-                 <div className="sticky left-0 z-10 flex items-center gap-2 border-r border-border bg-muted px-3 py-2.5"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide text-foreground">No Plan</strong><small className="text-[10px] text-foreground/50">계획일 없음</small></span></div>
+                 <Button variant="ghost" onClick={() => drill("ps1s", "noplanAll")} className="sticky left-0 z-10 h-auto items-center gap-2 rounded-none border-r border-border bg-muted px-3 py-2.5 hover:bg-muted"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide text-foreground">No Plan</strong><small className="text-[10px] text-foreground/50">계획일 없음</small></span></Button>
                 {stats.map((st) => (
-                  <div key={st.n} className={`min-w-0 border-r border-border px-2 py-2.5 text-center ${st.noPlan ? "bg-muted/60" : ""}`}>
-                    <strong className={`block text-lg ${st.noPlan ? "text-foreground" : "text-foreground/35"}`}>{st.noPlan}</strong>
-                    <small className="text-[10px] font-medium text-foreground/50">건</small>
+                  <div key={st.n} className={`min-w-0 border-r border-border text-center ${st.noPlan ? "bg-muted/60" : ""}`}>
+                    <Button variant="ghost" onClick={() => drill(`ps${st.n}s` as SlotKey, "noplan")} aria-label={`PS${st.n} 계획 미수립 ${st.noPlan}건`} className="h-auto w-full flex-col gap-0 rounded-none px-2 py-2.5">
+                      <strong className={`block text-lg ${st.noPlan ? "text-foreground" : "text-foreground/35"}`}>{st.noPlan}</strong>
+                      <small className="text-[10px] font-medium text-foreground/50">건</small>
+                    </Button>
                   </div>
                 ))}
-                <div className={`px-2 py-2.5 text-center ${noPlanTotal ? "bg-muted/60" : ""}`}>
-                  <strong className={`block text-lg ${noPlanTotal ? "text-foreground" : "text-foreground/35"}`}>{noPlanTotal}</strong>
-                  <small className="text-[10px] font-medium text-foreground/50">전 단계</small>
+                <div className={`text-center ${noPlanTotal ? "bg-muted/60" : ""}`}>
+                  <Button variant="ghost" onClick={() => drill("ps1s", "noplanAll")} aria-label={`전 단계 계획 미수립 ${noPlanTotal}건`} className="h-auto w-full flex-col gap-0 rounded-none px-2 py-2.5">
+                    <strong className={`block text-lg ${noPlanTotal ? "text-foreground" : "text-foreground/35"}`}>{noPlanTotal}</strong>
+                    <small className="text-[10px] font-medium text-foreground/50">전 단계</small>
+                  </Button>
                 </div>
               </div>
             </div>
