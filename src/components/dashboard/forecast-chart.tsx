@@ -113,16 +113,19 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
     const lastDate = hist[hist.length - 1]!.date;
     const lastActual = hist[hist.length - 1]!.actual;
 
+    // 실적 최초 100% 도달일 — 도달 후에는 예측을 중단하고 완료일을 고정
+    const actualDoneDate = hist.find((h) => h.actual >= 0.999)?.date ?? null;
+
     const planEndRow = sel.reduce<string | null>((acc, r) => (r.e && (!acc || r.e > acc) ? r.e : acc), null);
     const planEnd = planEndRow ?? lastDate;
 
     const slope = slopeOf(hist);
     let forecastEnd: string | null = null;
-    if (slope != null && slope > 1e-6 && lastActual < 0.999) {
+    if (!actualDoneDate && slope != null && slope > 1e-6 && lastActual < 0.999) {
       const days = Math.min(365, (1 - lastActual) / slope);
       forecastEnd = toDate(toTs(lastDate) + Math.ceil(days) * DAY);
-    } else if (lastActual >= 0.999) {
-      forecastEnd = lastDate;
+    } else if (actualDoneDate) {
+      forecastEnd = actualDoneDate;
     }
 
     const endDate = [planEnd, forecastEnd].filter((d): d is string => !!d).reduce((a, b) => (b > a ? b : a), lastDate);
@@ -138,9 +141,9 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
     const hmPlanEnd = hmRows.reduce<string | null>((acc, r) => (r.e && (!acc || r.e > acc) ? r.e : acc), null);
     const hmPlanDoneDate = hmPlanEnd ? (days.find((d) => (planCurveOf(hmRows, days).get(d) ?? 0) >= 0.999) ?? hmPlanEnd) : null;
 
-    // 예측 곡선 (마지막 기록 이후)
+    // 예측 곡선 (마지막 기록 이후) — 완료 확정 시 생성하지 않음
     const forecastCurve = new Map<string, number>();
-    if (slope != null && slope > 1e-6) {
+    if (!actualDoneDate && slope != null && slope > 1e-6) {
       for (const d of days) {
         if (d <= lastDate) continue;
         const v = lastActual + slope * ((toTs(d) - toTs(lastDate)) / DAY);
@@ -149,7 +152,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
     }
 
     const diffDays = forecastEnd ? Math.round((toTs(forecastEnd) - toTs(planDoneDate)) / DAY) : null;
-    return { hist, days, planCurve, forecastCurve, slope, planDoneDate, hmPlanDoneDate, forecastEnd, diffDays, lastDate, lastActual, itemCount: sel.length };
+    return { hist, days, planCurve, forecastCurve, slope, planDoneDate, hmPlanDoneDate, forecastEnd, actualDoneDate, diffDays, lastDate, lastActual, itemCount: sel.length };
   }, [data, eligibleRows, milestone, milestoneDisc, mode, rows, tab, tcItems, tcStage, tcTeam, tcBldg, base]);
 
   // 공종별 요약 표 데이터
