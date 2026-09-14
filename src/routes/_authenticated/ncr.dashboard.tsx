@@ -209,16 +209,21 @@ function NcrDashboardPage() {
             {facets.subs.map((t) => chip(t, search.sub === t, () => setSearch({ sub: search.sub === t ? undefined : t })))}
           </div>
           </div>
-          <div className="grid grid-cols-2 border-t border-border bg-muted/30">
+          <div className="grid grid-cols-3 border-t border-border bg-muted/30">
             <Button variant="ghost" onClick={() => toList({})} className="h-auto rounded-none border-r border-border px-4 py-2.5">
               <ClipboardList className="size-4 text-ncr-plan" />
               <span className="text-[11px] text-muted-foreground">대상 문서</span>
               <strong className="ml-auto text-lg">{filtered.length.toLocaleString()}<small className="ml-1 text-[10px] font-medium text-muted-foreground">건</small></strong>
             </Button>
-            <Button variant="ghost" onClick={() => toList({ stage: "Closed" })} className="h-auto rounded-none px-4 py-2.5">
+            <Button variant="ghost" onClick={() => toList({ stage: "Closed" })} className="h-auto rounded-none border-r border-border px-4 py-2.5">
               <CheckCircle2 className="size-4 text-ncr-actual" />
               <span className="text-[11px] text-muted-foreground">종결 완료</span>
               <strong className="ml-auto text-lg text-ncr-actual">{closed}<small className="ml-1 text-[10px] font-medium">건</small></strong>
+            </Button>
+            <Button variant="ghost" onClick={() => toList({})} className="h-auto rounded-none px-4 py-2.5">
+              <ClipboardList className="size-4 text-ncr-delay" />
+              <span className="text-[11px] text-muted-foreground">잔여 문서</span>
+              <strong className="ml-auto text-lg text-ncr-delay">{(filtered.length - closed).toLocaleString()}<small className="ml-1 text-[10px] font-medium">건</small></strong>
             </Button>
           </div>
         </div>
