@@ -16,7 +16,7 @@ type Props = {
   /** 대체된 이전 제출 횟수 (0이면 표시하지 않음) */
   superseded?: number;
   /** HDEC일 때 HSE/EXE 그룹 중 어느 이력인지 */
-  group?: "HSE" | "EXE";
+  group?: "HSE" | "EXE" | undefined;
   className?: string;
 };
 
