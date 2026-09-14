@@ -53,7 +53,7 @@ function NcrListPage() {
   const navigate = useNavigate({ from: Route.fullPath });
   const { isAdmin, profile } = useAuth();
   const qc = useQueryClient();
-  const [open, setOpen] = useState<Record<number, boolean>>({});
+  
 
   const setSearch = (patch: Partial<z.infer<typeof searchSchema>>) =>
     navigate({ search: { ...search, ...patch }, replace: true });
