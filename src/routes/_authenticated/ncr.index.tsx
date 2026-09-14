@@ -29,7 +29,21 @@ const searchSchema = z.object({
   slot: z.string().optional(),
   metric: z.string().optional(),
   asOf: z.string().optional(),
+  within: z.string().optional(),
 });
+
+const addDays = (iso: string, days: number) => {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+};
+
+/** 임계치(일) 안에 계획일이 도래하지만 아직 실적이 없는 슬롯 = Early Alert */
+export const isUpcoming = (d: NcrDates, slot: SlotKey, asOf: string, withinDays: number) => {
+  const planned = d[planField(slot)];
+  if (!planned || d[actualField(slot)]) return false;
+  return planned > asOf && planned <= addDays(asOf, withinDays);
+};
 
 export const Route = createFileRoute("/_authenticated/ncr/")({
   validateSearch: (s) => searchSchema.parse(s),
