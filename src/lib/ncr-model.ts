@@ -1,8 +1,8 @@
 /** NCR/OR/SOR 단계별(Progress Stage) 관리 공용 모델 — 화면·파서·서버가 같은 규칙을 공유합니다. */
 
-export const PS_NUMS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
+export const PS_NUMS = [1, 2, 3, 4, 5, 6, 7, 8] as const;
 
-/** 슬롯 순서: PS1S → PS1F → … → PS9S → PS9F */
+/** 슬롯 순서: PS1S → PS1F → … → PS8S → PS8F */
 export const SLOT_ORDER = PS_NUMS.flatMap((n) => [`ps${n}s`, `ps${n}f`] as const);
 export type SlotKey = (typeof SLOT_ORDER)[number];
 export type DateField = `${SlotKey}_p` | `${SlotKey}_a`;
@@ -12,11 +12,10 @@ export const PS_LABEL: Record<number, string> = {
   2: "MST 제출(협력사)",
   3: "MST 제출(감리)",
   4: "MST 승인",
-  5: "시정작업 착수",
-  6: "시정작업 완료",
-  7: "검사",
-  8: "종결요청 제출",
-  9: "회신",
+  5: "시정작업",
+  6: "검사",
+  7: "종결요청 제출",
+  8: "회신",
 };
 
 /** 슬롯 코드 → 표시 코드 (ps3s → PS3S) */
