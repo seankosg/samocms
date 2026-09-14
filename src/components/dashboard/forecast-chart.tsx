@@ -86,7 +86,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
     if (mode === "tc") {
       const m = buildTcForecast(tcItems, { stage: tcStage, team: tcTeam, bldg: tcBldg, base });
       if (!m) return null;
-      return { ...m, hmPlanDoneDate: null as string | null };
+      return { ...m, hmPlanDoneDate: null as string | null, forecastEndBy: null as string | null };
     }
     const series = data?.series ?? [];
     if (series.length === 0) return null;
