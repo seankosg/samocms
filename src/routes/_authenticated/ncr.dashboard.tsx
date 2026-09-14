@@ -267,6 +267,21 @@ function NcrDashboardPage() {
               </div>
 
               <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b-4 border-ncr-matrix/10">
+                 <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide">Upcoming</strong><small className="text-[9px] text-muted-foreground">{within}일 이내 · 미착수</small></span></Button>
+                {stats.map((st) => {
+                  const total = st.upS + st.upF;
+                  return <div key={st.n} className={`min-w-0 border-r border-border px-2 py-2 ${total ? "bg-ncr-upcoming-soft" : ""}`}>
+                    <Button variant="ghost" size="sm" onClick={() => drill(`ps${st.n}s` as SlotKey, "upcomingBoth")} className={`mx-auto block h-7 px-2 text-xl font-bold ${total ? "text-ncr-upcoming" : "text-foreground/40"}`}>{total}</Button>
+                    <span className="mt-1 flex justify-between text-[10px] text-foreground/50">
+                      <Button variant="ghost" size="sm" onClick={() => drill(`ps${st.n}s` as SlotKey, "upcoming")} className="h-5 px-1 text-[10px]">Start <b className={st.upS ? "ml-1 text-ncr-upcoming" : "ml-1"}>{st.upS}</b></Button>
+                      <Button variant="ghost" size="sm" onClick={() => drill(`ps${st.n}f` as SlotKey, "upcoming")} className="h-5 px-1 text-[10px]">Finish <b className={st.upF ? "ml-1 text-ncr-upcoming" : "ml-1"}>{st.upF}</b></Button>
+                    </span>
+                  </div>;
+                })}
+                <div className="bg-muted/20" />
+              </div>
+
+              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b-4 border-ncr-matrix/10">
                  <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide">In Delay</strong><small className="text-[9px] text-muted-foreground">{asOf.replace(/-/g, ".")}</small></span></Button>
                 {stats.map((st) => {
                   const total = st.sDelay + st.fDelay;
