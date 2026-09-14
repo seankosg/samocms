@@ -89,6 +89,15 @@ function ComparePage() {
     [searchedRows, columnFilters],
   );
 
+  const totals = useMemo(() => {
+    const sum = (pick: (r: CompareRow) => number | null | undefined) =>
+      shown.reduce((acc, r) => acc + (pick(r) ?? 0), 0);
+    const reported = sum((r) => r.reported);
+    const hse = sum((r) => r.hse_verified);
+    const exe = sum((r) => r.exe_verified);
+    return { reported, hse, exe, hseDiff: hse - reported, exeDiff: exe - reported };
+  }, [shown]);
+
   const exportRows = useCallback((): ExportRow[] => shown.map((r) => ({
     group: r.company,
     rec: {
@@ -148,6 +157,16 @@ function ComparePage() {
             <span className="ml-1 opacity-70">{v === "ALL" ? rows.length : rows.filter((r) => r.result === v).length}</span>
           </button>
         ))}
+        <span className="inline-flex h-8 items-center gap-1 rounded-md border border-border px-2 text-xs">
+          협력사
+          {(columnFilters.company?.length ?? 0) > 0 && (
+            <>
+              <span className="rounded bg-primary/10 px-1 text-[10px] font-semibold text-primary">{columnFilters.company?.length}</span>
+              <button type="button" className="cursor-pointer text-[10px] text-muted-foreground underline" onClick={() => setColumnFilter("company", undefined)}>전체 해제</button>
+            </>
+          )}
+          <MultiSelectFilter options={facet("company")} selected={columnFilters.company ?? []} onChange={(v) => setColumnFilter("company", v)} />
+        </span>
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="협력사·장소 검색" className="h-8 max-w-[200px] text-xs" />
         <Button size="sm" onClick={() => setExportOpen(true)} className="ml-auto">
           <Download className="size-3.5" />XLSX
@@ -188,6 +207,17 @@ function ComparePage() {
             </tr>
           </thead>
           <tbody>
+            {!!shown.length && (
+              <tr className="bg-muted/40 font-bold [&>td]:border-b [&>td]:border-border [&>td]:px-2 [&>td]:py-1.5">
+                <td>Total · {shown.length}건</td><td /><td />
+                <td className="text-right">{totals.reported.toLocaleString()}</td>
+                <td className="text-right">{totals.hse.toLocaleString()}</td>
+                <td className="text-right">{totals.exe.toLocaleString()}</td>
+                <td className={`text-right ${diffTone(totals.hseDiff)}`}>{fmtDiff(totals.hseDiff)}</td>
+                <td className={`text-right ${diffTone(totals.exeDiff)}`}>{fmtDiff(totals.exeDiff)}</td>
+                <td /><td /><td /><td /><td />
+              </tr>
+            )}
             {shown.map((r, i) => (
               <tr key={i} className="[&>td]:border-b [&>td]:border-border/60 [&>td]:px-2 [&>td]:py-1.5">
                 <td className="font-medium">{r.company}</td><td>{r.location}</td><td>{r.shift}</td>
