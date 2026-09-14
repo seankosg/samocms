@@ -37,4 +37,4 @@
 - `v_manpower_compare` 재정의: SUB 카드에 위 뷰를 HSE·EXE로 두 번 LEFT JOIN 해 `hse_verified/exe_verified`, `hse_diff/exe_diff`, `hse_result/exe_result`, `hse_counter(_tg_id)/exe_counter(_tg_id)`, `hse_superseded/exe_superseded` 추가. 기존 `verified/diff/result/hdec_counter*`는 대표값(HSE 우선, 없으면 EXE)으로 유지해 다른 화면·차트가 깨지지 않게 합니다. HDEC만 있는 카드도 FULL JOIN으로 계속 나옵니다.
 - `manpower-model.ts`: `CompareRow`에 새 필드 추가, `verificationStats`는 대표값 사용(그대로), HSE/EXE 판정용 헬퍼 추가.
 - `getCardHistory`에 선택 파라미터 `group: "HSE" | "EXE"` 추가 — HDEC일 때 해당 그룹 확인자의 기록만 반환(명부 dept 기준 필터). `card-history.tsx`는 `group`을 쿼리 키와 인자에 반영.
-- `manpower.compare.tsx`: 열 정의·필터 키·XLSX 열(`HDEC HSE Count`, `Difference (HSE)`, `Result (HSE)`, `HDEC Exe Count`, `Difference (EXE)`, `Result (EXE)`, `HSE Counter`, `EXE Counter`) 갱신, `ReporterCell`에 `group` prop 추가.
+- `manpower.compare.tsx`: 열 정의·필터 키·XLSX 열(`HDEC HSE Count`, `Diff (HSE)`, `Result (HSE)`, `HDEC Exe Count`, `Diff (EXE)`, `Result (EXE)`, `HSE Counter`, `EXE Counter`) 갱신, `ReporterCell`에 `group` prop 추가.
