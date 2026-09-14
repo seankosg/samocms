@@ -1277,9 +1277,21 @@ export type Database = {
         Row: {
           company: string | null
           diff: number | null
+          exe_counter: string | null
+          exe_counter_tg_id: string | null
+          exe_diff: number | null
+          exe_result: string | null
+          exe_superseded: number | null
+          exe_verified: number | null
           hdec_counter: string | null
           hdec_counter_tg_id: string | null
           hdec_superseded: number | null
+          hse_counter: string | null
+          hse_counter_tg_id: string | null
+          hse_diff: number | null
+          hse_result: string | null
+          hse_superseded: number | null
+          hse_verified: number | null
           location: string | null
           report_date: string | null
           reported: number | null
@@ -1310,6 +1322,21 @@ export type Database = {
           staff: number | null
           total: number | null
           worker: number | null
+        }
+        Relationships: []
+      }
+      v_manpower_hdec_groups: {
+        Row: {
+          company: string | null
+          grp: string | null
+          location: string | null
+          report_date: string | null
+          reporter_name: string | null
+          reporter_tg_id: string | null
+          shift: string | null
+          submitted_at: string | null
+          subtotal: number | null
+          superseded_count: number | null
         }
         Relationships: []
       }
