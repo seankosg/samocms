@@ -88,6 +88,7 @@ function NcrDashboardPage() {
   const navigate = useNavigate({ from: Route.fullPath });
   const goList = useNavigate();
   const [asOf, setAsOf] = useState(() => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)); // 제다 기준 오늘
+  const [within, setWithin] = useState(7); // Early Alert 임계치(일)
 
   const setSearch = (patch: Partial<z.infer<typeof searchSchema>>) =>
     navigate({ search: { ...search, ...patch }, replace: true });
