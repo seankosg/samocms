@@ -125,8 +125,9 @@ function NcrListPage() {
 
   const drillLabel = useMemo(() => {
     if (!search.slot || !search.metric) return null;
-    const labels: Record<string, string> = { plan: "계획 도래", actual: "실적 입력", short: "계획 미달", over: "계획 초과", delay: "지연", delayBoth: "Start/Finish 지연", ongoing: "진행 중", ongoingDelay: "진행 중(완료계획 경과)" };
-    return `${search.slot.toUpperCase()} · ${labels[search.metric] ?? search.metric}${search.asOf ? ` · 기준일 ${search.asOf}` : ""}`;
+    const labels: Record<string, string> = { plan: "계획 도래", actual: "실적 입력", short: "계획 미달", over: "계획 초과", delay: "지연", delayBoth: "Start/Finish 지연", ongoing: "진행 중", ongoingDelay: "진행 중(완료계획 경과)", noplan: "계획 미수립", noplanAll: "전 단계 계획 미수립" };
+    const scope = search.metric === "noplanAll" ? "전체" : `PS${psOfSlot(search.slot.toLowerCase() as SlotKey)}`;
+    return `${scope} · ${labels[search.metric] ?? search.metric}${search.asOf && search.metric !== "noplan" && search.metric !== "noplanAll" ? ` · 기준일 ${search.asOf}` : ""}`;
   }, [search.slot, search.metric, search.asOf]);
 
   const canEditRow = (r: NcrItem) => {
