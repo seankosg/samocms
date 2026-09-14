@@ -161,10 +161,20 @@ function NcrDashboardPage() {
         title="NCR 대시보드"
         desc={`PS1~PS8 단계별 진행 · 지연 · 현재단계 현황 — 카드를 누르면 해당 리스트로 이동합니다`}
         actions={
-          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            기준일
-            <Input type="date" value={asOf} onChange={(e) => e.target.value && setAsOf(e.target.value)} className="h-8 w-36 text-xs" />
-          </label>
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              기준일
+              <Input type="date" value={asOf} onChange={(e) => e.target.value && setAsOf(e.target.value)} className="h-8 w-36 text-xs" />
+            </label>
+            <label className="flex items-center gap-1.5 text-xs text-muted-foreground" title="기준일로부터 이 일수 안에 계획일이 도래하는 미착수 항목을 Upcoming으로 표시합니다.">
+              Upcoming 임계치
+              <Input type="number" min={1} max={180} value={within} onChange={(e) => setWithin(Math.max(1, Math.min(180, Number(e.target.value) || 1)))} className="h-8 w-20 text-xs" />
+              <span className="text-[11px]">일</span>
+              {[3, 7, 14, 30].map((d) => (
+                <Button key={d} type="button" size="sm" variant={within === d ? "default" : "outline"} onClick={() => setWithin(d)} className="h-7 rounded-full px-2 text-[11px] font-semibold">{d}</Button>
+              ))}
+            </label>
+          </div>
         }
       >
         <div className="mb-4 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
