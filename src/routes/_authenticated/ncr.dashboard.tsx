@@ -197,10 +197,10 @@ function NcrDashboardPage() {
           <div className="overflow-x-auto">
             <div className="min-w-[1160px]">
               <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b border-border bg-muted/50">
-                <div className="sticky left-0 z-10 flex items-center border-r border-border bg-muted px-3 py-3 text-[10px] font-bold uppercase text-muted-foreground">구분</div>
+                <div className="sticky left-0 z-10 flex items-center border-r border-border bg-muted px-3 py-3 text-[11px] font-bold uppercase text-foreground/70">구분</div>
                 {stats.map((st) => (
                   <Button key={st.n} variant="ghost" onClick={() => toList({ stage: st.stage })} className="h-auto min-w-0 rounded-none border-r border-border px-2 py-2.5 hover:bg-ncr-plan-soft">
-                    <span className="block min-w-0 text-center"><strong className="block text-sm text-foreground">PS{st.n}</strong><small className="mt-0.5 block truncate text-[9px] font-medium text-muted-foreground">{PS_LABEL[st.n]}</small></span>
+                    <span className="block min-w-0 text-center"><strong className="block text-sm text-foreground">PS{st.n}</strong><small className="mt-0.5 block truncate text-[10px] font-medium text-foreground/50">{PS_LABEL[st.n]}</small></span>
                   </Button>
                 ))}
                 <div className="grid place-items-center px-2 text-xs font-bold text-ncr-actual">Closed</div>
@@ -250,13 +250,13 @@ function NcrDashboardPage() {
               </div>
 
               <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b-4 border-ncr-matrix/10">
-                 <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><ClipboardList className="size-4 text-ncr-plan" /><span className="text-left"><strong className="block text-xs uppercase">Current Stage</strong><small className="text-[9px] text-muted-foreground">자동 산출</small><span className="mt-1.5 flex items-center gap-1 text-[8px] font-medium text-muted-foreground"><span>적음</span><i className="size-2 bg-ncr-stage-low" /><i className="size-2 bg-ncr-stage-mid" /><i className="size-2 bg-ncr-stage-high" /><i className="size-2 bg-ncr-stage-max" /><span>많음</span></span></span></Button>
+                 <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><ClipboardList className="size-4 text-ncr-plan" /><span className="text-left"><strong className="block text-xs uppercase text-foreground">Current Stage</strong><small className="text-[10px] text-foreground/50">자동 산출</small><span className="mt-1.5 flex items-center gap-1 text-[8px] font-medium text-foreground/50"><span>적음</span><i className="size-2 bg-ncr-stage-low" /><i className="size-2 bg-ncr-stage-mid" /><i className="size-2 bg-ncr-stage-high" /><i className="size-2 bg-ncr-stage-max" /><span>많음</span></span></span></Button>
                 {stats.map((st) => <Button key={st.n} variant="ghost" onClick={() => toList({ stage: st.stage })} aria-label={`${st.stage} Current Stage ${st.cur}건`} className={`h-auto min-w-0 rounded-none border-r border-border px-2 py-3 transition-colors ${currentStageTone(st.cur, maxCurrent)}`}><span><strong className="block text-xl">{st.cur}</strong><small className="text-[10px] font-semibold opacity-90">건</small></span></Button>)}
                 <Button variant="ghost" onClick={() => toList({ stage: "Closed" })} className="h-auto rounded-none bg-ncr-actual-soft px-2 py-3 hover:bg-ncr-actual-soft"><span><strong className="block text-xl text-ncr-actual">{closed}</strong><small className="text-[9px] font-medium text-ncr-actual">완료</small></span></Button>
               </div>
 
               <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px]">
-                 <div className="sticky left-0 z-10 flex items-center gap-2 border-r border-border bg-muted px-3 py-2.5"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide">No Plan</strong><small className="text-[9px] text-muted-foreground">계획일 없음</small></span></div>
+                 <div className="sticky left-0 z-10 flex items-center gap-2 border-r border-border bg-muted px-3 py-2.5"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide text-foreground">No Plan</strong><small className="text-[10px] text-foreground/50">계획일 없음</small></span></div>
                 {stats.map((st) => (
                   <div key={st.n} className={`min-w-0 border-r border-border px-2 py-2.5 text-center ${st.noPlan ? "bg-muted/60" : ""}`}>
                     <strong className={`block text-lg ${st.noPlan ? "text-foreground" : "text-foreground/35"}`}>{st.noPlan}</strong>
