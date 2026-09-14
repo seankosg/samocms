@@ -207,6 +207,17 @@ function ComparePage() {
             </tr>
           </thead>
           <tbody>
+            {!!shown.length && (
+              <tr className="bg-muted/40 font-bold [&>td]:border-b [&>td]:border-border [&>td]:px-2 [&>td]:py-1.5">
+                <td>Total · {shown.length}건</td><td /><td />
+                <td className="text-right">{totals.reported.toLocaleString()}</td>
+                <td className="text-right">{totals.hse.toLocaleString()}</td>
+                <td className="text-right">{totals.exe.toLocaleString()}</td>
+                <td className={`text-right ${diffTone(totals.hseDiff)}`}>{fmtDiff(totals.hseDiff)}</td>
+                <td className={`text-right ${diffTone(totals.exeDiff)}`}>{fmtDiff(totals.exeDiff)}</td>
+                <td /><td /><td /><td /><td />
+              </tr>
+            )}
             {shown.map((r, i) => (
               <tr key={i} className="[&>td]:border-b [&>td]:border-border/60 [&>td]:px-2 [&>td]:py-1.5">
                 <td className="font-medium">{r.company}</td><td>{r.location}</td><td>{r.shift}</td>
