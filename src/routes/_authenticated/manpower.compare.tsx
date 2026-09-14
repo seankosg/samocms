@@ -157,6 +157,16 @@ function ComparePage() {
             <span className="ml-1 opacity-70">{v === "ALL" ? rows.length : rows.filter((r) => r.result === v).length}</span>
           </button>
         ))}
+        <span className="inline-flex h-8 items-center gap-1 rounded-md border border-border px-2 text-xs">
+          협력사
+          {(columnFilters.company?.length ?? 0) > 0 && (
+            <>
+              <span className="rounded bg-primary/10 px-1 text-[10px] font-semibold text-primary">{columnFilters.company?.length}</span>
+              <button type="button" className="cursor-pointer text-[10px] text-muted-foreground underline" onClick={() => setColumnFilter("company", undefined)}>전체 해제</button>
+            </>
+          )}
+          <MultiSelectFilter options={facet("company")} selected={columnFilters.company ?? []} onChange={(v) => setColumnFilter("company", v)} />
+        </span>
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="협력사·장소 검색" className="h-8 max-w-[200px] text-xs" />
         <Button size="sm" onClick={() => setExportOpen(true)} className="ml-auto">
           <Download className="size-3.5" />XLSX
