@@ -181,10 +181,16 @@ export const updateNcrItem = createServerFn({ method: "POST" })
 
     const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
     if (!isAdmin) {
-      const prof = await context.supabase.from("profiles").select("full_name").eq("id", context.userId).maybeSingle();
+      const prof = await context.supabase
+        .from("profiles")
+        .select("full_name,team")
+        .eq("id", context.userId)
+        .maybeSingle();
       const me = (prof.data?.full_name ?? "").trim();
+      // 사업지원2팀은 MIC와 동일한 수정 권한
+      const isSupport2 = (prof.data?.team ?? "").trim() === "사업지원2팀";
       const owners = [cur.data.mic, cur.data.pic].map((v: string | null) => (v ?? "").trim()).filter(Boolean);
-      if (!me || !owners.includes(me)) {
+      if (!isSupport2 && (!me || !owners.includes(me))) {
         throw new Error("본인이 담당(MIC/PIC)인 항목만 수정할 수 있습니다 / Only the MIC or PIC of this item can edit it.");
       }
     }

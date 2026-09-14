@@ -157,6 +157,8 @@ function NcrListPage() {
 
   const canEditRow = (r: NcrItem) => {
     if (isAdmin) return true;
+    // 사업지원2팀은 MIC와 동일한 수정 권한
+    if (profile?.team === "사업지원2팀") return true;
     const me = (profile?.full_name ?? "").trim();
     return !!me && [r.mic, r.pic].some((v) => (v ?? "").trim() === me);
   };
