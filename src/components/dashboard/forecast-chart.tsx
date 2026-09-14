@@ -396,8 +396,13 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
           {/* 범례 */}
           <div className="mb-1 flex flex-wrap gap-x-4 text-[11px] text-muted-foreground">
             <span><i className="mr-1 inline-block h-0.5 w-4 align-middle bg-primary" />실적</span>
-            <span><i className="mr-1 inline-block h-0.5 w-4 border-t-2 border-dashed border-primary align-middle" />예측</span>
+            {!model.actualDoneDate && (
+              <span><i className="mr-1 inline-block h-0.5 w-4 border-t-2 border-dashed border-primary align-middle" />예측</span>
+            )}
             <span><i className="mr-1 inline-block h-0.5 w-4 align-middle bg-muted-foreground" />계획</span>
+            {model.actualDoneDate && (
+              <span><i className="mr-1 inline-block h-0.5 w-4 align-middle bg-chart-2" />실제 완료</span>
+            )}
           </div>
 
           <div className="overflow-x-auto">
@@ -451,11 +456,19 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
                 </g>
               )}
 
-              {/* 예측 완료일 마커 */}
-              {model.forecastEnd && model.forecastEnd !== model.planDoneDate && (
+              {/* 예측 완료일 마커 — 완료 확정 시에는 실제 완료일 마커로 대체 */}
+              {model.forecastEnd && model.forecastEnd !== model.planDoneDate && !model.actualDoneDate && (
                 <g>
                   <line x1={xi(model.forecastEnd)} x2={xi(model.forecastEnd)} y1={padT} y2={H - padB} stroke="var(--primary)" strokeWidth={1.2} strokeDasharray="4 3" />
                   <text x={xi(model.forecastEnd)} y={padT - 8} textAnchor="middle" fontSize={9} fontWeight={700} fill="var(--primary)">예측완료 {fmtD(model.forecastEnd)}</text>
+                </g>
+              )}
+
+              {/* 실제 완료일 마커 (실적 100% 도달 시 고정) */}
+              {model.actualDoneDate && (
+                <g>
+                  <line x1={xi(model.actualDoneDate)} x2={xi(model.actualDoneDate)} y1={padT} y2={H - padB} stroke="var(--chart-2)" strokeWidth={1.6} />
+                  <text x={xi(model.actualDoneDate)} y={padT - 8} textAnchor="middle" fontSize={9} fontWeight={700} fill="var(--chart-2)">실제완료 {fmtD(model.actualDoneDate)}</text>
                 </g>
               )}
 
