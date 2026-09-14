@@ -39,7 +39,7 @@ const currentStageTone = (value: number, max: number) => {
   const ratio = value / max;
   if (ratio <= 0.25) return "bg-ncr-stage-low text-foreground hover:bg-ncr-stage-mid";
   if (ratio <= 0.5) return "bg-ncr-stage-mid text-foreground hover:bg-ncr-stage-high";
-  if (ratio <= 0.75) return "bg-ncr-stage-high text-ncr-stage-strong-foreground hover:bg-ncr-stage-max";
+  if (ratio <= 0.75) return "bg-ncr-stage-high text-foreground hover:bg-ncr-stage-max";
   return "bg-ncr-stage-max text-ncr-stage-strong-foreground hover:bg-ncr-stage-max";
 };
 
