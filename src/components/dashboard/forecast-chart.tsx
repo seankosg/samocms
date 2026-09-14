@@ -632,7 +632,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
                     : { disc: tcTeam, bldg: s.disc }),
                 } as never) : null;
                 return (
-                  <tr key={s.disc} className={`border-b border-border/60 ${isActive ? "bg-muted/50" : ""}`}>
+                  <tr key={s.disc} className={`border-b border-border/60 ${isAll ? "bg-muted font-bold" : isActive ? "bg-muted/50" : ""}`}>
                     <td className="py-1.5 font-semibold">
                       {mode === "tc" && tcSearch ? (
                         <Link to="/tc/list" search={tcSearch} className="cursor-pointer rounded underline-offset-2 hover:text-primary hover:underline">{label}</Link>
