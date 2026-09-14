@@ -125,11 +125,13 @@ function NcrDashboardPage() {
         const fPlan = d[planField(f)];
         if (fPlan && fPlan < asOf) ongoingDelay += 1;
       }
+      if (isUpcoming(d, s, asOf, upLimit)) upS += 1;
+      if (isUpcoming(d, f, asOf, upLimit)) upF += 1;
       const c = currentStage(d);
       if (c.startsWith(`PS${n}`)) cur += 1;
     }
-    return { n, stage: "PS" + n, sPlan, sAct, fPlan, fAct, sDelay, fDelay, cur, noPlan, ongoing, ongoingDelay };
-  }), [filtered, asOf]);
+    return { n, stage: "PS" + n, sPlan, sAct, fPlan, fAct, sDelay, fDelay, cur, noPlan, ongoing, ongoingDelay, upS, upF };
+  }), [filtered, asOf, upLimit]);
 
   const closed = filtered.filter((r) => currentStage(dates(r)) === "Closed").length;
   const noPlanTotal = filtered.filter((r) => { const d = dates(r); return SLOT_ORDER.every((s) => !d[planField(s)]); }).length;
