@@ -69,6 +69,8 @@ export interface TcForecastModel {
   slope: number | null;
   planDoneDate: string;
   forecastEnd: string | null;
+  /** 실적 100% 최초 도달일 (도달 전이면 null) */
+  actualDoneDate: string | null;
   diffDays: number | null;
   lastDate: string;
   lastActual: number;
@@ -127,12 +129,14 @@ export function buildTcForecast(items: TcItem[], opts: TcForecastOptions): TcFor
   if (hist.length < 2) return null;
 
   const slope = slopeOf(hist);
+  // 실적 100% 도달 시: 실제 완료일 확정(전체 단위 실적일 중 가장 늦은 날), 예측 중단
+  const actualDoneDate = lastActual >= 0.999 ? (lastActDate ?? base) : null;
   let forecastEnd: string | null = null;
   if (slope != null && slope > 1e-6 && lastActual < 0.999) {
     const days = Math.min(365, (1 - lastActual) / slope);
     forecastEnd = toDate(toTs(base) + Math.ceil(days) * DAY);
-  } else if (lastActual >= 0.999) {
-    forecastEnd = lastActDate ?? base;
+  } else if (actualDoneDate) {
+    forecastEnd = actualDoneDate;
   }
 
   const endDate = [planDoneDate, forecastEnd, base].filter((d): d is string => !!d)
@@ -143,7 +147,7 @@ export function buildTcForecast(items: TcItem[], opts: TcForecastOptions): TcFor
   const planCurve = new Map<string, number>();
   const forecastCurve = new Map<string, number>();
   for (const d of days) planCurve.set(d, planCum(d));
-  if (slope != null && slope > 1e-6) {
+  if (!actualDoneDate && slope != null && slope > 1e-6) {
     for (const d of days) {
       if (d <= base) continue;
       const v = lastActual + slope * ((toTs(d) - toTs(base)) / DAY);
@@ -152,7 +156,7 @@ export function buildTcForecast(items: TcItem[], opts: TcForecastOptions): TcFor
   }
 
   const diffDays = forecastEnd ? Math.round((toTs(forecastEnd) - toTs(planDoneDate)) / DAY) : null;
-  return { hist, days, planCurve, forecastCurve, slope, planDoneDate, forecastEnd, diffDays, lastDate, lastActual, itemCount: total };
+  return { hist, days, planCurve, forecastCurve, slope, planDoneDate, forecastEnd, actualDoneDate, diffDays, lastDate, lastActual, itemCount: total };
 }
 
 /** 요약표용: 선택 팀 내 건물별(또는 팀 전체 시 팀별) 모델 요약 */
@@ -163,6 +167,7 @@ export interface TcForecastSummaryRow {
   slope: number | null;
   planDone: string | null;
   forecastEnd: string | null;
+  actualDoneDate: string | null;
   diffDays: number | null;
   itemCount: number;
 }
@@ -184,11 +189,11 @@ export function buildTcForecastSummary(
   const rows: TcForecastSummaryRow[] = [];
   for (const k of keys) {
     const m = buildTcForecast(items, { stage, team: k.team, bldg: k.bldg, base });
-    if (!m) { rows.push({ key: k.key, label: k.label, actual: null, slope: null, planDone: null, forecastEnd: null, diffDays: null, itemCount: 0 }); continue; }
+    if (!m) { rows.push({ key: k.key, label: k.label, actual: null, slope: null, planDone: null, forecastEnd: null, actualDoneDate: null, diffDays: null, itemCount: 0 }); continue; }
     rows.push({
       key: k.key, label: k.label,
       actual: m.lastActual, slope: m.slope,
-      planDone: m.planDoneDate, forecastEnd: m.forecastEnd, diffDays: m.diffDays,
+      planDone: m.planDoneDate, forecastEnd: m.forecastEnd, actualDoneDate: m.actualDoneDate, diffDays: m.diffDays,
       itemCount: m.itemCount,
     });
   }

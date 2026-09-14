@@ -113,16 +113,19 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
     const lastDate = hist[hist.length - 1]!.date;
     const lastActual = hist[hist.length - 1]!.actual;
 
+    // 실적 최초 100% 도달일 — 도달 후에는 예측을 중단하고 완료일을 고정
+    const actualDoneDate = hist.find((h) => h.actual >= 0.999)?.date ?? null;
+
     const planEndRow = sel.reduce<string | null>((acc, r) => (r.e && (!acc || r.e > acc) ? r.e : acc), null);
     const planEnd = planEndRow ?? lastDate;
 
     const slope = slopeOf(hist);
     let forecastEnd: string | null = null;
-    if (slope != null && slope > 1e-6 && lastActual < 0.999) {
+    if (!actualDoneDate && slope != null && slope > 1e-6 && lastActual < 0.999) {
       const days = Math.min(365, (1 - lastActual) / slope);
       forecastEnd = toDate(toTs(lastDate) + Math.ceil(days) * DAY);
-    } else if (lastActual >= 0.999) {
-      forecastEnd = lastDate;
+    } else if (actualDoneDate) {
+      forecastEnd = actualDoneDate;
     }
 
     const endDate = [planEnd, forecastEnd].filter((d): d is string => !!d).reduce((a, b) => (b > a ? b : a), lastDate);
@@ -138,9 +141,9 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
     const hmPlanEnd = hmRows.reduce<string | null>((acc, r) => (r.e && (!acc || r.e > acc) ? r.e : acc), null);
     const hmPlanDoneDate = hmPlanEnd ? (days.find((d) => (planCurveOf(hmRows, days).get(d) ?? 0) >= 0.999) ?? hmPlanEnd) : null;
 
-    // 예측 곡선 (마지막 기록 이후)
+    // 예측 곡선 (마지막 기록 이후) — 완료 확정 시 생성하지 않음
     const forecastCurve = new Map<string, number>();
-    if (slope != null && slope > 1e-6) {
+    if (!actualDoneDate && slope != null && slope > 1e-6) {
       for (const d of days) {
         if (d <= lastDate) continue;
         const v = lastActual + slope * ((toTs(d) - toTs(lastDate)) / DAY);
@@ -149,7 +152,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
     }
 
     const diffDays = forecastEnd ? Math.round((toTs(forecastEnd) - toTs(planDoneDate)) / DAY) : null;
-    return { hist, days, planCurve, forecastCurve, slope, planDoneDate, hmPlanDoneDate, forecastEnd, diffDays, lastDate, lastActual, itemCount: sel.length };
+    return { hist, days, planCurve, forecastCurve, slope, planDoneDate, hmPlanDoneDate, forecastEnd, actualDoneDate, diffDays, lastDate, lastActual, itemCount: sel.length };
   }, [data, eligibleRows, milestone, milestoneDisc, mode, rows, tab, tcItems, tcStage, tcTeam, tcBldg, base]);
 
   // 공종별 요약 표 데이터
@@ -160,6 +163,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
         disc: r.key,
         slope: r.slope,
         forecastEnd: r.forecastEnd,
+        actualDone: r.actualDoneDate,
         diffDays: r.diffDays,
         planDone: r.planDone,
         actual: r.actual,
@@ -182,19 +186,21 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
         ? eligibleRows.filter((r) => milestone === "ALL" || (r.ms ?? "미지정") === milestone)
         : eligibleRows;
       const sel = disc === "ALL" ? scopedRows : scopedRows.filter((r) => r.slot === disc);
-      if (hist.length === 0 || sel.length === 0) return { disc, slope: null, forecastEnd: null, diffDays: null, planDone: null as string | null, actual: null as number | null };
+      if (hist.length === 0 || sel.length === 0) return { disc, slope: null, forecastEnd: null, actualDone: null, diffDays: null, planDone: null as string | null, actual: null as number | null };
       const last = hist[hist.length - 1]!;
       const slope = slopeOf(hist);
+      // 실적 최초 100% 도달일 — 도달 시 예측 완료일을 실제 완료일로 고정
+      const actualDone = hist.find((h) => h.actual >= 0.999)?.date ?? null;
       let forecastEnd: string | null = null;
-      if (slope != null && slope > 1e-6 && last.actual < 0.999) {
+      if (!actualDone && slope != null && slope > 1e-6 && last.actual < 0.999) {
         forecastEnd = toDate(toTs(last.date) + Math.ceil(Math.min(365, (1 - last.actual) / slope)) * DAY);
-      } else if (last.actual >= 0.999) forecastEnd = last.date;
+      } else if (actualDone) forecastEnd = actualDone;
       const end = sel.reduce<string | null>((acc, r) => (r.e && (!acc || r.e > acc) ? r.e : acc), null) ?? last.date;
       const days: string[] = [];
       for (let t = toTs(hist[0]!.date); t <= toTs(end); t += DAY) days.push(toDate(t));
       const planDone = end;
       const diffDays = forecastEnd ? Math.round((toTs(forecastEnd) - toTs(planDone)) / DAY) : null;
-      return { disc, slope, forecastEnd, diffDays, planDone, actual: last.actual };
+      return { disc, slope, forecastEnd, actualDone, diffDays, planDone, actual: last.actual };
     });
   }, [data, eligibleRows, milestone, milestoneDiscs, mode, tcItems, tcStage, tcTeam, base]);
 
@@ -320,6 +326,8 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
             const planNow = model.planCurve.get(model.lastDate) ?? 0;
             const gap = model.lastActual - planNow;
             const late = gap < 0;
+            const done = model.actualDoneDate;
+            const doneDiff = done ? Math.round((toTs(done) - toTs(model.planDoneDate)) / DAY) : null;
             return (
               <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                 <div className="rounded-lg border bg-card px-3 py-2">
@@ -340,14 +348,32 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
                     {late ? "지연" : "선행"}
                   </span>
                 </div>
-                <div className="rounded-lg border bg-card px-3 py-2">
-                  <p className="text-[11px] text-muted-foreground">최근 속도</p>
-                  <p className="text-lg font-bold leading-tight">{model.slope != null ? `${(model.slope * 100).toFixed(1)}%p/일` : "—"}</p>
-                  <p className="mt-0.5 text-[10px] text-muted-foreground">최근 {Math.min(14, model.hist.length)}개 기록</p>
-                </div>
+                {done ? (
+                  <div className="rounded-lg border border-chart-2/40 bg-chart-2/10 px-3 py-2">
+                    <p className="text-[11px] text-muted-foreground">실제 완료일</p>
+                    <p className="text-lg font-bold leading-tight text-chart-2">{fmtD(done)}</p>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                      계획 대비{" "}
+                      {doneDiff == null || doneDiff === 0 ? "동일" : doneDiff > 0 ? <b className="text-destructive">{doneDiff}일 지연</b> : <b className="text-chart-2">{Math.abs(doneDiff)}일 선행</b>}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border bg-card px-3 py-2">
+                    <p className="text-[11px] text-muted-foreground">최근 속도</p>
+                    <p className="text-lg font-bold leading-tight">{model.slope != null ? `${(model.slope * 100).toFixed(1)}%p/일` : "—"}</p>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">최근 {Math.min(14, model.hist.length)}개 기록</p>
+                  </div>
+                )}
                 <div className="col-span-2 rounded-lg border bg-card px-3 py-2 sm:col-span-1">
-                  <p className="text-[11px] text-muted-foreground">완료 전망</p>
-                  {model.forecastEnd ? (
+                  <p className="text-[11px] text-muted-foreground">{done ? "완료 확정" : "완료 전망"}</p>
+                  {done ? (
+                    <>
+                      <p className="text-lg font-bold leading-tight text-chart-2">{fmtD(done)}</p>
+                      <p className="mt-0.5 text-[10px] text-muted-foreground">
+                        예측 완료 {model.forecastEnd ? fmtD(model.forecastEnd) : "—"} · 계획 완료 {fmtD(model.planDoneDate)}
+                      </p>
+                    </>
+                  ) : model.forecastEnd ? (
                     <>
                       <p className="text-lg font-bold leading-tight text-primary">{fmtD(model.forecastEnd)}</p>
                       <p className="mt-0.5 text-[10px] text-muted-foreground">
@@ -370,8 +396,13 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
           {/* 범례 */}
           <div className="mb-1 flex flex-wrap gap-x-4 text-[11px] text-muted-foreground">
             <span><i className="mr-1 inline-block h-0.5 w-4 align-middle bg-primary" />실적</span>
-            <span><i className="mr-1 inline-block h-0.5 w-4 border-t-2 border-dashed border-primary align-middle" />예측</span>
+            {!model.actualDoneDate && (
+              <span><i className="mr-1 inline-block h-0.5 w-4 border-t-2 border-dashed border-primary align-middle" />예측</span>
+            )}
             <span><i className="mr-1 inline-block h-0.5 w-4 align-middle bg-muted-foreground" />계획</span>
+            {model.actualDoneDate && (
+              <span><i className="mr-1 inline-block h-0.5 w-4 align-middle bg-chart-2" />실제 완료</span>
+            )}
           </div>
 
           <div className="overflow-x-auto">
@@ -425,11 +456,19 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
                 </g>
               )}
 
-              {/* 예측 완료일 마커 */}
-              {model.forecastEnd && model.forecastEnd !== model.planDoneDate && (
+              {/* 예측 완료일 마커 — 완료 확정 시에는 실제 완료일 마커로 대체 */}
+              {model.forecastEnd && model.forecastEnd !== model.planDoneDate && !model.actualDoneDate && (
                 <g>
                   <line x1={xi(model.forecastEnd)} x2={xi(model.forecastEnd)} y1={padT} y2={H - padB} stroke="var(--primary)" strokeWidth={1.2} strokeDasharray="4 3" />
                   <text x={xi(model.forecastEnd)} y={padT - 8} textAnchor="middle" fontSize={9} fontWeight={700} fill="var(--primary)">예측완료 {fmtD(model.forecastEnd)}</text>
+                </g>
+              )}
+
+              {/* 실제 완료일 마커 (실적 100% 도달 시 고정) */}
+              {model.actualDoneDate && (
+                <g>
+                  <line x1={xi(model.actualDoneDate)} x2={xi(model.actualDoneDate)} y1={padT} y2={H - padB} stroke="var(--chart-2)" strokeWidth={1.6} />
+                  <text x={xi(model.actualDoneDate)} y={padT - 8} textAnchor="middle" fontSize={9} fontWeight={700} fill="var(--chart-2)">실제완료 {fmtD(model.actualDoneDate)}</text>
                 </g>
               )}
 
@@ -501,6 +540,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
                 <th className="text-right">현재 실적</th>
                 <th className="text-right">최근 속도</th>
                 <th className="text-right">계획 완료</th>
+                <th className="text-right">실제 완료</th>
                 <th className="text-right">예측 완료</th>
                 <th className="text-right">판정</th>
               </tr>
@@ -535,7 +575,8 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
                     <td className="text-right">{s.actual == null ? "—" : `${pct1(s.actual)}%`}</td>
                     <td className="text-right">{s.slope == null ? "—" : `${(s.slope * 100).toFixed(1)}%p/일`}</td>
                     <td className="text-right">{s.planDone ? fmtD(s.planDone) : "—"}</td>
-                    <td className="text-right font-semibold">{s.forecastEnd ? fmtD(s.forecastEnd) : "—"}</td>
+                    <td className={`text-right font-semibold ${s.actualDone ? "text-chart-2" : ""}`}>{s.actualDone ? fmtD(s.actualDone) : "—"}</td>
+                    <td className="text-right font-semibold">{s.actualDone ? "—" : s.forecastEnd ? fmtD(s.forecastEnd) : "—"}</td>
                     <td className={`text-right font-bold ${s.diffDays == null || s.diffDays === 0 ? "text-muted-foreground" : s.diffDays > 0 ? "text-destructive" : "text-chart-2"}`}>
                       {s.diffDays == null ? "—" : s.diffDays === 0 ? "정상" : s.diffDays > 0 ? `${s.diffDays}일 지연` : `${Math.abs(s.diffDays)}일 선행`}
                     </td>
