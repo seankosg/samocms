@@ -96,6 +96,15 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
           m.forecastEnd = latest.end;
           m.diffDays = Math.round((toTs(latest.end) - toTs(m.planDoneDate)) / DAY);
           forecastEndBy = latest.key;
+          // 가로축이 새 완료일보다 짧으면 연장 (계획 곡선은 완료 이후 100% 유지)
+          const lastDay = m.days[m.days.length - 1]!;
+          if (latest.end > lastDay) {
+            for (let t = toTs(lastDay) + DAY; t <= toTs(latest.end); t += DAY) {
+              const d = toDate(t);
+              m.days.push(d);
+              m.planCurve.set(d, 1);
+            }
+          }
         }
       }
       return { ...m, hmPlanDoneDate: null as string | null, forecastEndBy };
@@ -436,7 +445,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
                       </p>
                       {model.forecastEndBy && (
                         <p className="mt-0.5 text-[10px] text-muted-foreground">
-                          공종별 최종 완료일 기준 · {SLOT_LABEL[model.forecastEndBy] ?? model.forecastEndBy}
+                          {mode === "tc" ? "팀·건물별 최종 완료일 기준" : "공종별 최종 완료일 기준"} · {SLOT_LABEL[model.forecastEndBy] ?? model.forecastEndBy}
                         </p>
                       )}
                     </>
