@@ -32,6 +32,19 @@ export const Route = createFileRoute("/_authenticated/ncr/dashboard")({
 
 const dates = (r: NcrItem) => r as unknown as NcrDates;
 
+const addDays = (iso: string, days: number) => {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+};
+
+/** 임계치(일) 안에 계획일이 도래하지만 아직 실적이 없는 슬롯 */
+const isUpcoming = (d: NcrDates, slot: SlotKey, asOf: string, limit: string) => {
+  const planned = d[planField(slot)];
+  if (!planned || d[actualField(slot)]) return false;
+  return planned > asOf && planned <= limit;
+};
+
 const progressRate = (value: number, total: number) => total > 0 ? Math.round((value / total) * 100) : 0;
 
 const currentStageTone = (value: number, max: number) => {
@@ -75,6 +88,7 @@ function NcrDashboardPage() {
   const navigate = useNavigate({ from: Route.fullPath });
   const goList = useNavigate();
   const [asOf, setAsOf] = useState(() => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)); // 제다 기준 오늘
+  const [within, setWithin] = useState(7); // Early Alert 임계치(일)
 
   const setSearch = (patch: Partial<z.infer<typeof searchSchema>>) =>
     navigate({ search: { ...search, ...patch }, replace: true });
@@ -91,10 +105,12 @@ function NcrDashboardPage() {
     return true;
   }), [items, search]);
 
+  const upLimit = useMemo(() => addDays(asOf, Math.max(1, within)), [asOf, within]);
+
   const stats = useMemo(() => PS_NUMS.map((n) => {
     const s = `ps${n}s` as SlotKey;
     const f = `ps${n}f` as SlotKey;
-    let sPlan = 0, sAct = 0, fPlan = 0, fAct = 0, sDelay = 0, fDelay = 0, cur = 0, noPlan = 0, ongoing = 0, ongoingDelay = 0;
+    let sPlan = 0, sAct = 0, fPlan = 0, fAct = 0, sDelay = 0, fDelay = 0, cur = 0, noPlan = 0, ongoing = 0, ongoingDelay = 0, upS = 0, upF = 0;
     for (const r of filtered) {
       const d = dates(r);
       if (!d[planField(s)] && !d[planField(f)]) noPlan += 1;
@@ -109,11 +125,13 @@ function NcrDashboardPage() {
         const fPlan = d[planField(f)];
         if (fPlan && fPlan < asOf) ongoingDelay += 1;
       }
+      if (isUpcoming(d, s, asOf, upLimit)) upS += 1;
+      if (isUpcoming(d, f, asOf, upLimit)) upF += 1;
       const c = currentStage(d);
       if (c.startsWith(`PS${n}`)) cur += 1;
     }
-    return { n, stage: "PS" + n, sPlan, sAct, fPlan, fAct, sDelay, fDelay, cur, noPlan, ongoing, ongoingDelay };
-  }), [filtered, asOf]);
+    return { n, stage: "PS" + n, sPlan, sAct, fPlan, fAct, sDelay, fDelay, cur, noPlan, ongoing, ongoingDelay, upS, upF };
+  }), [filtered, asOf, upLimit]);
 
   const closed = filtered.filter((r) => currentStage(dates(r)) === "Closed").length;
   const noPlanTotal = filtered.filter((r) => { const d = dates(r); return SLOT_ORDER.every((s) => !d[planField(s)]); }).length;
@@ -134,7 +152,8 @@ function NcrDashboardPage() {
 
   const baseListSearch = { ...(search.docType ? { docType: search.docType } : {}), ...(search.team ? { team: search.team } : {}), ...(search.sub ? { sub: search.sub } : {}) };
   const toList = (params: Record<string, string>) => goList({ to: "/ncr", search: { ...baseListSearch, ...params } });
-  const drill = (slot: SlotKey, metric: string) => toList({ slot: slot.toUpperCase(), metric, asOf });
+  const drill = (slot: SlotKey, metric: string) =>
+    toList({ slot: slot.toUpperCase(), metric, asOf, ...(metric.startsWith("upcoming") ? { within: String(Math.max(1, within)) } : {}) });
 
   return (
     <AdminGate title="NCR 대시보드" desc="준공 준비 기능은 현재 관리자(Admin)에게만 제공됩니다.">
@@ -142,10 +161,20 @@ function NcrDashboardPage() {
         title="NCR 대시보드"
         desc={`PS1~PS8 단계별 진행 · 지연 · 현재단계 현황 — 카드를 누르면 해당 리스트로 이동합니다`}
         actions={
-          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            기준일
-            <Input type="date" value={asOf} onChange={(e) => e.target.value && setAsOf(e.target.value)} className="h-8 w-36 text-xs" />
-          </label>
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              기준일
+              <Input type="date" value={asOf} onChange={(e) => e.target.value && setAsOf(e.target.value)} className="h-8 w-36 text-xs" />
+            </label>
+            <label className="flex items-center gap-1.5 text-xs text-muted-foreground" title="기준일로부터 이 일수 안에 계획일이 도래하는 미착수 항목을 Upcoming으로 표시합니다.">
+              Upcoming 임계치
+              <Input type="number" min={1} max={180} value={within} onChange={(e) => setWithin(Math.max(1, Math.min(180, Number(e.target.value) || 1)))} className="h-8 w-20 text-xs" />
+              <span className="text-[11px]">일</span>
+              {[3, 7, 14, 30].map((d) => (
+                <Button key={d} type="button" size="sm" variant={within === d ? "default" : "outline"} onClick={() => setWithin(d)} className="h-7 rounded-full px-2 text-[11px] font-semibold">{d}</Button>
+              ))}
+            </label>
+          </div>
         }
       >
         <div className="mb-4 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
@@ -157,6 +186,7 @@ function NcrDashboardPage() {
             <div className="flex items-center gap-4 text-[11px] font-semibold">
               <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-ncr-plan" />계획</span>
               <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-ncr-actual" />실적·완료</span>
+              <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-ncr-upcoming" />임박</span>
               <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-ncr-delay" />지연</span>
             </div>
           </div>
@@ -234,6 +264,21 @@ function NcrDashboardPage() {
               <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b-4 border-ncr-matrix/10">
                   <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide">Finish</strong></span></Button>
                  {stats.map((st) => { const slot = `ps${st.n}f` as SlotKey; return <div key={st.n} className="min-w-0 border-r border-border hover:bg-ncr-actual-soft"><ProgressMetric plan={st.fPlan} actual={st.fAct} total={filtered.length} onDrill={(metric) => drill(slot, metric)} /></div>; })}
+                <div className="bg-muted/20" />
+              </div>
+
+              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b-4 border-ncr-matrix/10">
+                 <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide">Upcoming</strong><small className="text-[9px] text-muted-foreground">{within}일 이내 · 미착수</small></span></Button>
+                {stats.map((st) => {
+                  const total = st.upS + st.upF;
+                  return <div key={st.n} className={`min-w-0 border-r border-border px-2 py-2 ${total ? "bg-ncr-upcoming-soft" : ""}`}>
+                    <Button variant="ghost" size="sm" onClick={() => drill(`ps${st.n}s` as SlotKey, "upcomingBoth")} className={`mx-auto block h-7 px-2 text-xl font-bold ${total ? "text-ncr-upcoming" : "text-foreground/40"}`}>{total}</Button>
+                    <span className="mt-1 flex justify-between text-[10px] text-foreground/50">
+                      <Button variant="ghost" size="sm" onClick={() => drill(`ps${st.n}s` as SlotKey, "upcoming")} className="h-5 px-1 text-[10px]">Start <b className={st.upS ? "ml-1 text-ncr-upcoming" : "ml-1"}>{st.upS}</b></Button>
+                      <Button variant="ghost" size="sm" onClick={() => drill(`ps${st.n}f` as SlotKey, "upcoming")} className="h-5 px-1 text-[10px]">Finish <b className={st.upF ? "ml-1 text-ncr-upcoming" : "ml-1"}>{st.upF}</b></Button>
+                    </span>
+                  </div>;
+                })}
                 <div className="bg-muted/20" />
               </div>
 
