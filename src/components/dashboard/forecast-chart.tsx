@@ -86,7 +86,28 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
     if (mode === "tc") {
       const m = buildTcForecast(tcItems, { stage: tcStage, team: tcTeam, bldg: tcBldg, base });
       if (!m) return null;
-      return { ...m, hmPlanDoneDate: null as string | null, forecastEndBy: null as string | null };
+      // 팀 또는 건물이 「전체」이면 완료 전망은 하위 그룹(팀별/건물별) 예측 완료일 중 가장 늦은 날
+      let forecastEndBy: string | null = null;
+      if (!m.actualDoneDate && (tcTeam === "ALL" || tcBldg === "ALL")) {
+        const srows = buildTcForecastSummary(tcItems, { stage: tcStage, team: tcTeam, base });
+        const ends = srows.filter((r) => r.itemCount > 0 && r.forecastEnd).map((r) => ({ key: r.label, end: r.forecastEnd! }));
+        if (ends.length > 0) {
+          const latest = ends.reduce((a, b) => (b.end > a.end ? b : a));
+          m.forecastEnd = latest.end;
+          m.diffDays = Math.round((toTs(latest.end) - toTs(m.planDoneDate)) / DAY);
+          forecastEndBy = latest.key;
+          // 가로축이 새 완료일보다 짧으면 연장 (계획 곡선은 완료 이후 100% 유지)
+          const lastDay = m.days[m.days.length - 1]!;
+          if (latest.end > lastDay) {
+            for (let t = toTs(lastDay) + DAY; t <= toTs(latest.end); t += DAY) {
+              const d = toDate(t);
+              m.days.push(d);
+              m.planCurve.set(d, 1);
+            }
+          }
+        }
+      }
+      return { ...m, hmPlanDoneDate: null as string | null, forecastEndBy };
     }
     const series = data?.series ?? [];
     if (series.length === 0) return null;
@@ -128,14 +149,20 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
       forecastEnd = actualDoneDate;
     }
 
-    // 전체 보기: 완료 전망은 공종별 예측 완료일 중 가장 늦은 날 (평균 속도가 느린 공종을 과소평가하는 것 방지)
+    // 전체 보기: 완료 전망은 하위 공종별 예측 완료일 중 가장 늦은 날 (평균 속도가 느린 공종을 과소평가하는 것 방지)
     let forecastEndBy: string | null = null;
-    if (mode === "discipline" && tab === "ALL" && !actualDoneDate) {
+    const groupSlots: string[] | null =
+      mode === "discipline" && tab === "ALL" ? [...KPI_SLOTS]
+      : mode === "milestone" && milestoneDisc === "ALL"
+        ? KPI_SLOTS.filter((disc) => series.some((s) => s.disc === disc && (milestone === "ALL" || s.ms === milestone)))
+        : null;
+    if (groupSlots && !actualDoneDate) {
       const ends: { slot: string; end: string }[] = [];
-      for (const slot of KPI_SLOTS) {
+      for (const slot of groupSlots) {
         const bd = new Map<string, { a: number; n: number }>();
         for (const s of series) {
           if (s.disc !== slot) continue;
+          if (mode === "milestone" && milestone !== "ALL" && s.ms !== milestone) continue;
           const cur = bd.get(s.date) ?? { a: 0, n: 0 };
           cur.a += s.actual * s.count; cur.n += s.count;
           bd.set(s.date, cur);
@@ -418,7 +445,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
                       </p>
                       {model.forecastEndBy && (
                         <p className="mt-0.5 text-[10px] text-muted-foreground">
-                          공종별 최종 완료일 기준 · {SLOT_LABEL[model.forecastEndBy] ?? model.forecastEndBy}
+                          {mode === "tc" ? "팀·건물별 최종 완료일 기준" : "공종별 최종 완료일 기준"} · {SLOT_LABEL[model.forecastEndBy] ?? model.forecastEndBy}
                         </p>
                       )}
                     </>
