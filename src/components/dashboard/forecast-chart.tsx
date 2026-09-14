@@ -128,6 +128,38 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
       forecastEnd = actualDoneDate;
     }
 
+    // 전체 보기: 완료 전망은 공종별 예측 완료일 중 가장 늦은 날 (평균 속도가 느린 공종을 과소평가하는 것 방지)
+    let forecastEndBy: string | null = null;
+    if (mode === "discipline" && tab === "ALL" && !actualDoneDate) {
+      const ends: { slot: string; end: string }[] = [];
+      for (const slot of KPI_SLOTS) {
+        const bd = new Map<string, { a: number; n: number }>();
+        for (const s of series) {
+          if (s.disc !== slot) continue;
+          const cur = bd.get(s.date) ?? { a: 0, n: 0 };
+          cur.a += s.actual * s.count; cur.n += s.count;
+          bd.set(s.date, cur);
+        }
+        const h: Hist[] = [...bd.entries()].sort((x, y) => x[0].localeCompare(y[0]))
+          .map(([date, v]) => ({ date, planned: 0, actual: v.a / v.n }));
+        if (h.length === 0) continue;
+        const last = h[h.length - 1]!;
+        const done = h.find((x) => x.actual >= 0.999)?.date ?? null;
+        const sl = slopeOf(h);
+        let end: string | null = null;
+        if (done) end = done;
+        else if (sl != null && sl > 1e-6 && last.actual < 0.999) {
+          end = toDate(toTs(last.date) + Math.ceil(Math.min(365, (1 - last.actual) / sl)) * DAY);
+        }
+        if (end) ends.push({ slot, end });
+      }
+      if (ends.length > 0) {
+        const latest = ends.reduce((a, b) => (b.end > a.end ? b : a));
+        forecastEnd = latest.end;
+        forecastEndBy = latest.slot;
+      }
+    }
+
     const endDate = [planEnd, forecastEnd].filter((d): d is string => !!d).reduce((a, b) => (b > a ? b : a), lastDate);
     const days: string[] = [];
     for (let t = toTs(firstDate); t <= toTs(endDate); t += DAY) days.push(toDate(t));
