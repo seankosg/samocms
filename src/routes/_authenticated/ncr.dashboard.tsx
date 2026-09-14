@@ -105,10 +105,12 @@ function NcrDashboardPage() {
     return true;
   }), [items, search]);
 
+  const upLimit = useMemo(() => addDays(asOf, Math.max(1, within)), [asOf, within]);
+
   const stats = useMemo(() => PS_NUMS.map((n) => {
     const s = `ps${n}s` as SlotKey;
     const f = `ps${n}f` as SlotKey;
-    let sPlan = 0, sAct = 0, fPlan = 0, fAct = 0, sDelay = 0, fDelay = 0, cur = 0, noPlan = 0, ongoing = 0, ongoingDelay = 0;
+    let sPlan = 0, sAct = 0, fPlan = 0, fAct = 0, sDelay = 0, fDelay = 0, cur = 0, noPlan = 0, ongoing = 0, ongoingDelay = 0, upS = 0, upF = 0;
     for (const r of filtered) {
       const d = dates(r);
       if (!d[planField(s)] && !d[planField(f)]) noPlan += 1;
