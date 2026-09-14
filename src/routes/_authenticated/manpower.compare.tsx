@@ -89,6 +89,15 @@ function ComparePage() {
     [searchedRows, columnFilters],
   );
 
+  const totals = useMemo(() => {
+    const sum = (pick: (r: CompareRow) => number | null | undefined) =>
+      shown.reduce((acc, r) => acc + (pick(r) ?? 0), 0);
+    const reported = sum((r) => r.reported);
+    const hse = sum((r) => r.hse_verified);
+    const exe = sum((r) => r.exe_verified);
+    return { reported, hse, exe, hseDiff: hse - reported, exeDiff: exe - reported };
+  }, [shown]);
+
   const exportRows = useCallback((): ExportRow[] => shown.map((r) => ({
     group: r.company,
     rec: {
