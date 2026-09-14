@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/ncr/")({
   validateSearch: (s) => searchSchema.parse(s),
   head: () => ({ meta: [
     { title: "NCR 리스트 | HMMME PROJECT CMS" },
-    { name: "description", content: "NCR·OR·SOR 문서의 PS1~PS9 단계별 계획·실적을 관리합니다." },
+    { name: "description", content: "NCR·OR·SOR 문서의 PS1~PS8 단계별 계획·실적을 관리합니다." },
     { property: "og:title", content: "HMMME NCR 리스트" },
     { property: "og:description", content: "부적합·관찰·안전 문서의 단계별 진행 현황 리스트." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
@@ -152,7 +152,7 @@ function NcrListPage() {
     <AdminGate title="NCR 리스트" desc="준공 준비 기능은 현재 관리자(Admin)에게만 제공됩니다.">
       <AppShell
         title="NCR 리스트"
-        desc={`NCR · OR · SOR ${filtered.length.toLocaleString()}건 (전체 ${items.length.toLocaleString()}건) · 행을 펼치면 PS1~PS9 단계별 계획/실적을 수정할 수 있습니다`}
+        desc={`NCR · OR · SOR ${filtered.length.toLocaleString()}건 (전체 ${items.length.toLocaleString()}건) · 행을 펼치면 PS1~PS8 단계별 계획/실적을 수정할 수 있습니다`}
         actions={<Button size="sm" variant="outline" onClick={exportXlsx}><Download className="size-3.5" />엑셀</Button>}
       >
         {/* 필터 */}

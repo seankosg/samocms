@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/ncr/dashboard")({
   validateSearch: (s) => searchSchema.parse(s),
   head: () => ({ meta: [
     { title: "NCR 대시보드 | HMMME PROJECT CMS" },
-    { name: "description", content: "NCR·OR·SOR의 PS1~PS9 단계별 진행·지연·현재단계 현황을 한눈에 봅니다." },
+    { name: "description", content: "NCR·OR·SOR의 PS1~PS8 단계별 진행·지연·현재단계 현황을 한눈에 봅니다." },
     { property: "og:title", content: "HMMME NCR 대시보드" },
     { property: "og:description", content: "준공 준비 문서의 단계별 진행·지연 KPI." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
@@ -133,7 +133,7 @@ function NcrDashboardPage() {
     <AdminGate title="NCR 대시보드" desc="준공 준비 기능은 현재 관리자(Admin)에게만 제공됩니다.">
       <AppShell
         title="NCR 대시보드"
-        desc={`PS1~PS9 단계별 진행 · 지연 · 현재단계 현황 — 카드를 누르면 해당 리스트로 이동합니다`}
+        desc={`PS1~PS8 단계별 진행 · 지연 · 현재단계 현황 — 카드를 누르면 해당 리스트로 이동합니다`}
         actions={
           <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
             기준일
@@ -145,7 +145,7 @@ function NcrDashboardPage() {
           <div className="flex flex-wrap items-center justify-between gap-3 bg-ncr-matrix px-4 py-3 text-ncr-matrix-foreground">
             <div>
               <p className="text-sm font-bold">NCR Operational Progress Matrix</p>
-              <p className="mt-0.5 text-[11px] opacity-70">PS1~PS9 계획 · 실적 · 지연 · 현재단계 비교</p>
+              <p className="mt-0.5 text-[11px] opacity-70">PS1~PS8 계획 · 실적 · 지연 · 현재단계 비교</p>
             </div>
             <div className="flex items-center gap-4 text-[11px] font-semibold">
               <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-ncr-plan" />계획</span>
