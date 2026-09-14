@@ -12,7 +12,10 @@ export function useAuth() {
   /** 안전관리팀 팀장 — 안전리포트 설정 접근 가능 */
   const isSafetyLead =
     profile?.team === "안전관리팀" && String(profile?.position ?? "").includes("팀장");
+  /** 사업지원2팀 — 준공준비(NCR) 항목을 MIC와 동일하게 수정 가능 */
+  const isSupport2 = profile?.team === "사업지원2팀";
   return {
+    isSupport2,
     ...q,
     me: q.data ?? null,
     profile,
