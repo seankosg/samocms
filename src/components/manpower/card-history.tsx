@@ -15,6 +15,8 @@ type Props = {
   memberMap: MemberMap;
   /** 대체된 이전 제출 횟수 (0이면 표시하지 않음) */
   superseded?: number;
+  /** HDEC일 때 HSE/EXE 그룹 중 어느 이력인지 */
+  group?: "HSE" | "EXE" | undefined;
   className?: string;
 };
 
@@ -26,7 +28,7 @@ const TRADE_KEYS = [
 type Entry = Awaited<ReturnType<typeof getCardHistory>>[number];
 
 /** 카드 제출 이력 — 대체된 보고가 있을 때 나타나는 뱃지 + 상세 대화상자 */
-export function CardHistoryButton({ source, company, report_date, location, shift, memberMap, superseded = 0, className }: Props) {
+export function CardHistoryButton({ source, company, report_date, location, shift, memberMap, superseded = 0, group, className }: Props) {
   const [open, setOpen] = useState(false);
   if (!superseded) return null;
   return (
@@ -44,10 +46,10 @@ export function CardHistoryButton({ source, company, report_date, location, shif
           <DialogHeader>
             <DialogTitle className="text-sm">제출 이력</DialogTitle>
             <DialogDescription className="text-xs">
-              {company} · {location} · {shift} · {fmtDay(report_date)}
+              {company} · {location} · {shift} · {fmtDay(report_date)}{source === "HDEC" && group ? ` · ${group}` : ""}
             </DialogDescription>
           </DialogHeader>
-          <CardHistoryBody source={source} company={company} report_date={report_date} location={location} shift={shift} memberMap={memberMap} />
+          <CardHistoryBody source={source} company={company} report_date={report_date} location={location} shift={shift} memberMap={memberMap} group={group} />
         </DialogContent>
       </Dialog>
     </>
@@ -56,8 +58,8 @@ export function CardHistoryButton({ source, company, report_date, location, shif
 
 function CardHistoryBody(props: Omit<Props, "superseded">) {
   const { data, isPending, error } = useQuery({
-    queryKey: ["manpower-history", props.source, props.company, props.report_date, props.location, props.shift],
-    queryFn: () => getCardHistory({ data: { source: props.source, company: props.company, report_date: props.report_date, location: props.location, shift: props.shift } }),
+    queryKey: ["manpower-history", props.source, props.company, props.report_date, props.location, props.shift, props.group ?? ""],
+    queryFn: () => getCardHistory({ data: { source: props.source, company: props.company, report_date: props.report_date, location: props.location, shift: props.shift, group: props.group } }),
   });
   if (isPending) return <p className="p-4 text-xs text-muted-foreground">불러오는 중…</p>;
   if (error) return <p role="alert" className="p-4 text-xs text-destructive">이력을 불러오지 못했습니다. {(error as Error).message}</p>;

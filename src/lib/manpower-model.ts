@@ -73,7 +73,24 @@ export type CompareRow = {
   hdec_counter_tg_id?: string | null;
   sub_superseded?: number;
   hdec_superseded?: number;
+  // HSE / EXE 그룹 분리
+  hse_verified?: number | null;
+  hse_diff?: number | null;
+  hse_result?: "MATCH" | "DIFF" | "HDEC ONLY" | null;
+  hse_counter?: string | null;
+  hse_counter_tg_id?: string | null;
+  hse_superseded?: number | null;
+  exe_verified?: number | null;
+  exe_diff?: number | null;
+  exe_result?: "MATCH" | "DIFF" | "HDEC ONLY" | null;
+  exe_counter?: string | null;
+  exe_counter_tg_id?: string | null;
+  exe_superseded?: number | null;
 };
+
+/** 한 그룹의 차이를 화면용으로 정리 — verified가 없으면 null */
+export const groupDiff = (verified: number | null | undefined, reported: number | null) =>
+  verified == null || reported == null ? null : verified - reported;
 
 export type CompanyMaster = {
   name: string;

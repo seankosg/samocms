@@ -122,7 +122,8 @@ export const setManpowerMemberActive = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** 카드 제출 이력 — ACTIVE + SUPERSEDED 전부, 제출시각 내림차순 */
+/** 카드 제출 이력 — ACTIVE + SUPERSEDED 전부, 제출시각 내림차순.
+ *  HDEC일 때 group(“HSE”|“EXE”)을 주면 해당 그룹 확인자의 기록만 반환한다. */
 export const getCardHistory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
@@ -132,19 +133,36 @@ export const getCardHistory = createServerFn({ method: "GET" })
       report_date: dateStr,
       location: z.string().min(1),
       shift: z.string().min(1),
+      group: z.enum(["HSE", "EXE"]).optional(),
     }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: rows, error } = await context.supabase
+    let q = context.supabase
       .from("manpower_entries")
       .select("id, status, reporter_name, reporter_tg_id, submitted_at, staff, safety_officer, operator, worker, electrician, scaffolder, plumber, subtotal")
       .eq("source", data.source)
       .eq("company", data.company)
       .eq("report_date", data.report_date)
       .eq("location", data.location)
-      .eq("shift", data.shift)
-      .order("submitted_at", { ascending: false, nullsFirst: false });
+      .eq("shift", data.shift);
+    const { data: rows, error } = await q.order("submitted_at", { ascending: false, nullsFirst: false });
     if (error) throw new Error(error.message);
-    return rows ?? [];
+    let out = rows ?? [];
+    // HDEC 그룹 필터 — 확인자 부서 기준
+    if (data.source === "HDEC" && data.group) {
+      const tgIds = [...new Set(out.map((r: { reporter_tg_id?: string | null }) => r.reporter_tg_id).filter(Boolean) as string[])];
+      const deptByTg = new Map<string, string | null>();
+      if (tgIds.length) {
+        const { data: mem } = await context.supabase
+          .from("manpower_members").select("telegram_id, dept").in("telegram_id", tgIds);
+        (mem ?? []).forEach((m: { telegram_id: string; dept: string | null }) => deptByTg.set(m.telegram_id, m.dept ?? null));
+      }
+      out = out.filter((r: { reporter_tg_id?: string | null }) => {
+        const dept = r.reporter_tg_id ? (deptByTg.get(r.reporter_tg_id) ?? null) : null;
+        const isHse = dept === "안전 (HSE)" || dept === "안전관리팀";
+        return data.group === "HSE" ? isHse : !isHse;
+      });
+    }
+    return out;
   });
 
 const importSchema = z.object({

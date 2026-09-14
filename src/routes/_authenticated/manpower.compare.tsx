@@ -49,7 +49,7 @@ const TONE: Record<CompareRow["result"], string> = {
   "NOT COUNTED": "bg-muted text-muted-foreground",
 };
 
-type ColumnFilterKey = "company" | "location" | "shift" | "reported" | "verified" | "diff" | "result" | "sub_reporter" | "hdec_counter";
+type ColumnFilterKey = "company" | "location" | "shift" | "reported" | "hse_verified" | "exe_verified" | "hse_diff" | "exe_diff" | "hse_result" | "exe_result" | "sub_reporter" | "hse_counter" | "exe_counter";
 
 const columnValue = (row: CompareRow, key: ColumnFilterKey): unknown => row[key];
 
@@ -97,11 +97,15 @@ function ComparePage() {
       Location: r.location,
       Shift: r.shift,
       "Subcon Report": r.reported,
-      "HDEC Recount": r.verified,
-      Difference: r.diff,
-      Result: r.result,
+      "HDEC HSE Count": r.hse_verified,
+      "HDEC Exe Count": r.exe_verified,
+      "Diff (HSE)": r.hse_diff,
+      "Diff (EXE)": r.exe_diff,
+      "Result (HSE)": r.hse_result,
+      "Result (EXE)": r.exe_result,
       Reporter: reporterLabel(memberMap, r.sub_reporter_tg_id, r.sub_reporter).text,
-      "HDEC Counter": reporterLabel(memberMap, r.hdec_counter_tg_id, r.hdec_counter).text,
+      "HSE Counter": reporterLabel(memberMap, r.hse_counter_tg_id, r.hse_counter).text,
+      "EXE Counter": reporterLabel(memberMap, r.exe_counter_tg_id, r.exe_counter).text,
     },
   })), [shown, memberMap]);
 
@@ -164,7 +168,7 @@ function ComparePage() {
       </div>
 
       <section className="overflow-x-auto rounded-md border border-border">
-        <table className="w-full min-w-[820px] text-xs">
+        <table className="w-full min-w-[1100px] text-xs">
           <caption className="sr-only">협력사 보고와 HDEC 재집계 대조</caption>
           <thead className="bg-muted/60">
             <tr className="[&>th]:border-b [&>th]:border-border [&>th]:px-2 [&>th]:py-2 [&>th]:text-left">
@@ -172,11 +176,15 @@ function ComparePage() {
                <th scope="col"><span className="flex items-center gap-1">Location <MultiSelectFilter options={facet("location")} selected={columnFilters.location ?? []} onChange={(v) => setColumnFilter("location", v)} /></span></th>
                <th scope="col"><span className="flex items-center gap-1">Shift <MultiSelectFilter options={facet("shift")} selected={columnFilters.shift ?? []} onChange={(v) => setColumnFilter("shift", v)} /></span></th>
                <th scope="col"><span className="flex items-center justify-end gap-1">Subcon Report <MultiSelectFilter options={facet("reported")} selected={columnFilters.reported ?? []} onChange={(v) => setColumnFilter("reported", v)} /></span></th>
-               <th scope="col"><span className="flex items-center justify-end gap-1">HDEC Recount <MultiSelectFilter options={facet("verified")} selected={columnFilters.verified ?? []} onChange={(v) => setColumnFilter("verified", v)} /></span></th>
-               <th scope="col"><span className="flex items-center justify-end gap-1">Difference <MultiSelectFilter options={facet("diff")} selected={columnFilters.diff ?? []} onChange={(v) => setColumnFilter("diff", v)} /></span></th>
-               <th scope="col"><span className="flex items-center gap-1">Result <MultiSelectFilter options={facet("result")} selected={columnFilters.result ?? []} onChange={(v) => setColumnFilter("result", v)} /></span></th>
+               <th scope="col"><span className="flex items-center justify-end gap-1">HDEC HSE Count <MultiSelectFilter options={facet("hse_verified")} selected={columnFilters.hse_verified ?? []} onChange={(v) => setColumnFilter("hse_verified", v)} /></span></th>
+               <th scope="col"><span className="flex items-center justify-end gap-1">HDEC Exe Count <MultiSelectFilter options={facet("exe_verified")} selected={columnFilters.exe_verified ?? []} onChange={(v) => setColumnFilter("exe_verified", v)} /></span></th>
+               <th scope="col"><span className="flex items-center justify-end gap-1">Diff (HSE) <MultiSelectFilter options={facet("hse_diff")} selected={columnFilters.hse_diff ?? []} onChange={(v) => setColumnFilter("hse_diff", v)} /></span></th>
+               <th scope="col"><span className="flex items-center justify-end gap-1">Diff (EXE) <MultiSelectFilter options={facet("exe_diff")} selected={columnFilters.exe_diff ?? []} onChange={(v) => setColumnFilter("exe_diff", v)} /></span></th>
+               <th scope="col"><span className="flex items-center gap-1">Result (HSE) <MultiSelectFilter options={facet("hse_result")} selected={columnFilters.hse_result ?? []} onChange={(v) => setColumnFilter("hse_result", v)} /></span></th>
+               <th scope="col"><span className="flex items-center gap-1">Result (EXE) <MultiSelectFilter options={facet("exe_result")} selected={columnFilters.exe_result ?? []} onChange={(v) => setColumnFilter("exe_result", v)} /></span></th>
                <th scope="col"><span className="flex items-center gap-1">Reporter <MultiSelectFilter options={facet("sub_reporter")} selected={columnFilters.sub_reporter ?? []} onChange={(v) => setColumnFilter("sub_reporter", v)} /></span></th>
-               <th scope="col"><span className="flex items-center gap-1">HDEC Counter <MultiSelectFilter options={facet("hdec_counter")} selected={columnFilters.hdec_counter ?? []} onChange={(v) => setColumnFilter("hdec_counter", v)} /></span></th>
+               <th scope="col"><span className="flex items-center gap-1">HSE Counter <MultiSelectFilter options={facet("hse_counter")} selected={columnFilters.hse_counter ?? []} onChange={(v) => setColumnFilter("hse_counter", v)} /></span></th>
+               <th scope="col"><span className="flex items-center gap-1">EXE Counter <MultiSelectFilter options={facet("exe_counter")} selected={columnFilters.exe_counter ?? []} onChange={(v) => setColumnFilter("exe_counter", v)} /></span></th>
             </tr>
           </thead>
           <tbody>
@@ -184,16 +192,18 @@ function ComparePage() {
               <tr key={i} className="[&>td]:border-b [&>td]:border-border/60 [&>td]:px-2 [&>td]:py-1.5">
                 <td className="font-medium">{r.company}</td><td>{r.location}</td><td>{r.shift}</td>
                 <td className="text-right">{r.reported ?? "—"}</td>
-                <td className="text-right">{r.verified ?? "—"}</td>
-                <td className={`text-right font-bold ${(r.diff ?? 0) < 0 ? "text-destructive" : (r.diff ?? 0) > 0 ? "text-emerald-600" : ""}`}>
-                  {r.diff == null ? "—" : r.diff > 0 ? `+${r.diff}` : r.diff}
-                </td>
-                <td><span className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${TONE[r.result]}`}>{RESULT_LABEL[r.result]}</span></td>
+                <td className="text-right">{r.hse_verified ?? "—"}</td>
+                <td className="text-right">{r.exe_verified ?? "—"}</td>
+                <td className={`text-right font-bold ${diffTone(r.hse_diff)}`}>{fmtDiff(r.hse_diff)}</td>
+                <td className={`text-right font-bold ${diffTone(r.exe_diff)}`}>{fmtDiff(r.exe_diff)}</td>
+                <td>{resultBadge(r.hse_result)}</td>
+                <td>{resultBadge(r.exe_result)}</td>
                 <td className="text-muted-foreground"><ReporterCell source="SUB" row={r} memberMap={memberMap} /></td>
-                 <td className="text-muted-foreground"><ReporterCell source="HDEC" row={r} memberMap={memberMap} /></td>
+                <td className="text-muted-foreground"><ReporterCell source="HDEC" group="HSE" row={r} memberMap={memberMap} /></td>
+                <td className="text-muted-foreground"><ReporterCell source="HDEC" group="EXE" row={r} memberMap={memberMap} /></td>
               </tr>
             ))}
-            {!shown.length && <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">해당 조건의 대조 자료가 없습니다.</td></tr>}
+            {!shown.length && <tr><td colSpan={13} className="p-6 text-center text-muted-foreground">해당 조건의 대조 자료가 없습니다.</td></tr>}
           </tbody>
         </table>
       </section>
@@ -201,11 +211,18 @@ function ComparePage() {
   );
 }
 
+const diffTone = (d: number | null | undefined) =>
+  d == null ? "" : d < 0 ? "text-destructive" : d > 0 ? "text-emerald-600" : "";
+const fmtDiff = (d: number | null | undefined) =>
+  d == null ? "—" : d > 0 ? `+${d}` : `${d}`;
+const resultBadge = (result: CompareRow["hse_result"]) =>
+  result ? <span className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${TONE[result]}`}>{RESULT_LABEL[result]}</span> : <span className="text-muted-foreground">—</span>;
+
 /** 입력자 칸 — 「이름 · 부서」(부서 색 점), 미등록이면 표시, 재제출 이력 뱃지 */
-function ReporterCell({ source, row, memberMap }: { source: "SUB" | "HDEC"; row: CompareRow; memberMap: Map<string, { telegram_id: string; name: string; dept: string | null; position: string | null }> }) {
-  const tg = source === "SUB" ? row.sub_reporter_tg_id : row.hdec_counter_tg_id;
-  const raw = source === "SUB" ? row.sub_reporter : row.hdec_counter;
-  const superseded = (source === "SUB" ? row.sub_superseded : row.hdec_superseded) ?? 0;
+function ReporterCell({ source, group, row, memberMap }: { source: "SUB" | "HDEC"; group?: "HSE" | "EXE"; row: CompareRow; memberMap: Map<string, { telegram_id: string; name: string; dept: string | null; position: string | null }> }) {
+  const tg = source === "SUB" ? row.sub_reporter_tg_id : group === "HSE" ? row.hse_counter_tg_id : group === "EXE" ? row.exe_counter_tg_id : row.hdec_counter_tg_id;
+  const raw = source === "SUB" ? row.sub_reporter : group === "HSE" ? row.hse_counter : group === "EXE" ? row.exe_counter : row.hdec_counter;
+  const superseded = (source === "SUB" ? row.sub_superseded : group === "HSE" ? row.hse_superseded : group === "EXE" ? row.exe_superseded : row.hdec_superseded) ?? 0;
   const who = reporterLabel(memberMap, tg, raw);
   if (!who.text || who.text === "—") return <>—</>;
   return (
@@ -215,7 +232,7 @@ function ReporterCell({ source, row, memberMap }: { source: "SUB" | "HDEC"; row:
       {!who.registered && <span className="text-[10px] text-muted-foreground/70">(미등록)</span>}
       <CardHistoryButton
         source={source} company={row.company} report_date={row.report_date}
-        location={row.location} shift={row.shift} memberMap={memberMap} superseded={superseded}
+        location={row.location} shift={row.shift} memberMap={memberMap} superseded={superseded} group={group}
       />
     </span>
   );
