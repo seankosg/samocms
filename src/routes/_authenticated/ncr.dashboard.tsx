@@ -152,7 +152,8 @@ function NcrDashboardPage() {
 
   const baseListSearch = { ...(search.docType ? { docType: search.docType } : {}), ...(search.team ? { team: search.team } : {}), ...(search.sub ? { sub: search.sub } : {}) };
   const toList = (params: Record<string, string>) => goList({ to: "/ncr", search: { ...baseListSearch, ...params } });
-  const drill = (slot: SlotKey, metric: string) => toList({ slot: slot.toUpperCase(), metric, asOf });
+  const drill = (slot: SlotKey, metric: string) =>
+    toList({ slot: slot.toUpperCase(), metric, asOf, ...(metric.startsWith("upcoming") ? { within: String(Math.max(1, within)) } : {}) });
 
   return (
     <AdminGate title="NCR 대시보드" desc="준공 준비 기능은 현재 관리자(Admin)에게만 제공됩니다.">
