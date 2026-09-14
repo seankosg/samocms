@@ -49,7 +49,7 @@ const TONE: Record<CompareRow["result"], string> = {
   "NOT COUNTED": "bg-muted text-muted-foreground",
 };
 
-type ColumnFilterKey = "company" | "location" | "shift" | "reported" | "verified" | "diff" | "result" | "sub_reporter" | "hdec_counter";
+type ColumnFilterKey = "company" | "location" | "shift" | "reported" | "hse_verified" | "exe_verified" | "hse_diff" | "exe_diff" | "hse_result" | "exe_result" | "sub_reporter" | "hse_counter" | "exe_counter";
 
 const columnValue = (row: CompareRow, key: ColumnFilterKey): unknown => row[key];
 
