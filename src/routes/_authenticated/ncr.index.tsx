@@ -100,6 +100,18 @@ function NcrListPage() {
           const cutoff = search.asOf ?? new Date().toISOString().slice(0, 10);
           if (!isStartDelayed(d, start, cutoff) && !isStartDelayed(d, finish, cutoff)) return false;
         }
+        if (search.metric === "ongoing" || search.metric === "ongoingDelay") {
+          const n = psOfSlot(slot);
+          const start = `ps${n}s` as SlotKey;
+          const finish = `ps${n}f` as SlotKey;
+          const ongoing = !!d[actualField(start)] && !d[actualField(finish)];
+          if (!ongoing) return false;
+          if (search.metric === "ongoingDelay") {
+            const cutoff = search.asOf ?? new Date().toISOString().slice(0, 10);
+            const fPlan = d[planField(finish)];
+            if (!fPlan || fPlan >= cutoff) return false;
+          }
+        }
       }
       if (q && ![r.doc_no, r.description, r.location, r.mic, r.pic, r.subcontractor, r.response_status].some((v) => (v ?? "").toLowerCase().includes(q))) return false;
       return true;
@@ -108,7 +120,7 @@ function NcrListPage() {
 
   const drillLabel = useMemo(() => {
     if (!search.slot || !search.metric) return null;
-    const labels: Record<string, string> = { plan: "계획 도래", actual: "실적 입력", short: "계획 미달", over: "계획 초과", delay: "지연", delayBoth: "Start/Finish 지연" };
+    const labels: Record<string, string> = { plan: "계획 도래", actual: "실적 입력", short: "계획 미달", over: "계획 초과", delay: "지연", delayBoth: "Start/Finish 지연", ongoing: "진행 중", ongoingDelay: "진행 중(완료계획 경과)" };
     return `${search.slot.toUpperCase()} · ${labels[search.metric] ?? search.metric}${search.asOf ? ` · 기준일 ${search.asOf}` : ""}`;
   }, [search.slot, search.metric, search.asOf]);
 
