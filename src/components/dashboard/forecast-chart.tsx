@@ -326,6 +326,8 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
             const planNow = model.planCurve.get(model.lastDate) ?? 0;
             const gap = model.lastActual - planNow;
             const late = gap < 0;
+            const done = model.actualDoneDate;
+            const doneDiff = done ? Math.round((toTs(done) - toTs(model.planDoneDate)) / DAY) : null;
             return (
               <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                 <div className="rounded-lg border bg-card px-3 py-2">
@@ -346,14 +348,32 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
                     {late ? "지연" : "선행"}
                   </span>
                 </div>
-                <div className="rounded-lg border bg-card px-3 py-2">
-                  <p className="text-[11px] text-muted-foreground">최근 속도</p>
-                  <p className="text-lg font-bold leading-tight">{model.slope != null ? `${(model.slope * 100).toFixed(1)}%p/일` : "—"}</p>
-                  <p className="mt-0.5 text-[10px] text-muted-foreground">최근 {Math.min(14, model.hist.length)}개 기록</p>
-                </div>
+                {done ? (
+                  <div className="rounded-lg border border-chart-2/40 bg-chart-2/10 px-3 py-2">
+                    <p className="text-[11px] text-muted-foreground">실제 완료일</p>
+                    <p className="text-lg font-bold leading-tight text-chart-2">{fmtD(done)}</p>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                      계획 대비{" "}
+                      {doneDiff == null || doneDiff === 0 ? "동일" : doneDiff > 0 ? <b className="text-destructive">{doneDiff}일 지연</b> : <b className="text-chart-2">{Math.abs(doneDiff)}일 선행</b>}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border bg-card px-3 py-2">
+                    <p className="text-[11px] text-muted-foreground">최근 속도</p>
+                    <p className="text-lg font-bold leading-tight">{model.slope != null ? `${(model.slope * 100).toFixed(1)}%p/일` : "—"}</p>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">최근 {Math.min(14, model.hist.length)}개 기록</p>
+                  </div>
+                )}
                 <div className="col-span-2 rounded-lg border bg-card px-3 py-2 sm:col-span-1">
-                  <p className="text-[11px] text-muted-foreground">완료 전망</p>
-                  {model.forecastEnd ? (
+                  <p className="text-[11px] text-muted-foreground">{done ? "완료 확정" : "완료 전망"}</p>
+                  {done ? (
+                    <>
+                      <p className="text-lg font-bold leading-tight text-chart-2">{fmtD(done)}</p>
+                      <p className="mt-0.5 text-[10px] text-muted-foreground">
+                        예측 완료 {model.forecastEnd ? fmtD(model.forecastEnd) : "—"} · 계획 완료 {fmtD(model.planDoneDate)}
+                      </p>
+                    </>
+                  ) : model.forecastEnd ? (
                     <>
                       <p className="text-lg font-bold leading-tight text-primary">{fmtD(model.forecastEnd)}</p>
                       <p className="mt-0.5 text-[10px] text-muted-foreground">
