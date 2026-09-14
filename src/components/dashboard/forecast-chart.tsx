@@ -610,7 +610,17 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
               </tr>
             </thead>
             <tbody>
-              {summary.map((s) => {
+              {(() => {
+                // 「전체」 행의 예측 완료일은 하위 항목 중 가장 늦은 날로 통일 (카드와 동일 기준)
+                const latestSubEnd = summary
+                  .filter((s) => s.disc !== "ALL" && s.forecastEnd)
+                  .reduce<string | null>((acc, s) => (!acc || s.forecastEnd! > acc ? s.forecastEnd! : acc), null);
+                return summary.map((s) => {
+                const isAll = s.disc === "ALL";
+                const dispForecastEnd = isAll && !s.actualDone && latestSubEnd ? latestSubEnd : s.forecastEnd;
+                const dispDiffDays = isAll && !s.actualDone && latestSubEnd && s.planDone
+                  ? Math.round((toTs(latestSubEnd) - toTs(s.planDone)) / DAY)
+                  : s.diffDays;
                 const isActive = mode === "discipline" ? s.disc === tab : mode === "milestone" ? s.disc === milestoneDisc : s.disc === tcBldg || (tcTeam === "ALL" && s.disc === tcTeam);
                 const label = mode === "tc"
                   ? (s.disc === "ALL" || s.disc === "Mech" || s.disc === "Elec" ? (s.disc === "Mech" ? "MECH" : s.disc === "Elec" ? "ELEC" : "전체") : s.disc)
@@ -622,7 +632,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
                     : { disc: tcTeam, bldg: s.disc }),
                 } as never) : null;
                 return (
-                  <tr key={s.disc} className={`border-b border-border/60 ${isActive ? "bg-muted/50" : ""}`}>
+                  <tr key={s.disc} className={`border-b border-border/60 ${isAll ? "bg-muted font-bold" : isActive ? "bg-muted/50" : ""}`}>
                     <td className="py-1.5 font-semibold">
                       {mode === "tc" && tcSearch ? (
                         <Link to="/tc/list" search={tcSearch} className="cursor-pointer rounded underline-offset-2 hover:text-primary hover:underline">{label}</Link>
@@ -640,13 +650,13 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
                     <td className="text-right">{s.slope == null ? "—" : `${(s.slope * 100).toFixed(1)}%p/일`}</td>
                     <td className="text-right">{s.planDone ? fmtD(s.planDone) : "—"}</td>
                     <td className={`text-right font-semibold ${s.actualDone ? "text-chart-2" : ""}`}>{s.actualDone ? fmtD(s.actualDone) : "—"}</td>
-                    <td className="text-right font-semibold">{s.actualDone ? "—" : s.forecastEnd ? fmtD(s.forecastEnd) : "—"}</td>
-                    <td className={`text-right font-bold ${s.diffDays == null || s.diffDays === 0 ? "text-muted-foreground" : s.diffDays > 0 ? "text-destructive" : "text-chart-2"}`}>
-                      {s.diffDays == null ? "—" : s.diffDays === 0 ? "정상" : s.diffDays > 0 ? `${s.diffDays}일 지연` : `${Math.abs(s.diffDays)}일 선행`}
+                    <td className="text-right font-semibold">{s.actualDone ? "—" : dispForecastEnd ? fmtD(dispForecastEnd) : "—"}</td>
+                    <td className={`text-right font-bold ${dispDiffDays == null || dispDiffDays === 0 ? "text-muted-foreground" : dispDiffDays > 0 ? "text-destructive" : "text-chart-2"}`}>
+                      {dispDiffDays == null ? "—" : dispDiffDays === 0 ? "정상" : dispDiffDays > 0 ? `${dispDiffDays}일 지연` : `${Math.abs(dispDiffDays)}일 선행`}
                     </td>
                   </tr>
                 );
-              })}
+              });})()}
             </tbody>
           </table>
         </>
