@@ -28,7 +28,7 @@ export const actualField = (s: SlotKey) => `${s}_a` as DateField;
 
 export type NcrDates = Record<DateField, string | null>;
 
-/** 현재단계 자동 산출: 실적일이 채워진 마지막 슬롯의 다음 슬롯. 전부 비면 PS1S, PS9F까지 채워지면 Closed */
+/** 현재단계 자동 산출: 실적일이 채워진 마지막 슬롯의 다음 슬롯. 전부 비면 PS1S, PS8F까지 채워지면 Closed */
 export function currentStage(row: NcrDates): string {
   let last = -1;
   SLOT_ORDER.forEach((s, i) => {
