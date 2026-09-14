@@ -1,23 +1,23 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
-import { ChevronDown, ChevronRight, Download, Search, AlertTriangle } from "lucide-react";
+import { Download, Search } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { AdminGate } from "@/components/manpower/admin-gate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { EditableCell } from "@/components/editable-cell";
+import { NcrRawTable, cellValue } from "@/components/ncr/ncr-raw-table";
+import { NCR_COLUMNS } from "@/lib/ncr-columns";
 import { useNcrItems, ncrQuery } from "@/lib/use-ncr";
 import { updateNcrItem, type NcrItem } from "@/lib/ncr.functions";
 import {
-  PS_NUMS, PS_LABEL, SLOT_ORDER, slotCode, psOfSlot, planField, actualField,
-  currentStage, skippedSlots, isStartDelayed, type SlotKey, type NcrDates,
+  PS_NUMS, SLOT_ORDER, psOfSlot, planField, actualField,
+  currentStage, isStartDelayed, type SlotKey, type NcrDates,
 } from "@/lib/ncr-model";
 import { useAuth } from "@/lib/use-auth";
-import { fmtDate } from "@/lib/schedule-model";
 
 const searchSchema = z.object({
   docType: z.string().optional(),
@@ -53,7 +53,7 @@ function NcrListPage() {
   const navigate = useNavigate({ from: Route.fullPath });
   const { isAdmin, profile } = useAuth();
   const qc = useQueryClient();
-  const [open, setOpen] = useState<Record<number, boolean>>({});
+  
 
   const setSearch = (patch: Partial<z.infer<typeof searchSchema>>) =>
     navigate({ search: { ...search, ...patch }, replace: true });
@@ -131,19 +131,11 @@ function NcrListPage() {
   };
 
   const exportXlsx = () => {
+    // 임포트 엑셀과 동일한 컬럼 순서로 내보냅니다.
     const rows = filtered.map((r) => {
-      const base: Record<string, unknown> = {
-        SerNo: r.ser_no, "Doc Type": r.doc_type, "Doc No.": r.doc_no, Description: r.description,
-        Location: r.location, "Issued By": r.issued_by, "Issue Date": r.issued_date, Team: r.team,
-        MIC: r.mic, PIC: r.pic, Subcontractor: r.subcontractor, Status: r.status,
-        "Current Stage(자동)": currentStage(dates(r)), "Current Stage(원본)": r.current_stage_file,
-        "Response Status": r.response_status,
-      };
-      for (const s of SLOT_ORDER) {
-        base[`${slotCode(s)} Plan`] = r[planField(s)];
-        base[`${slotCode(s)} Actual`] = r[actualField(s)];
-      }
-      return base;
+      const out: Record<string, unknown> = {};
+      for (const c of NCR_COLUMNS) out[c.groupId ? `${c.groupId} ${c.label}` : c.label] = cellValue(r, c.key);
+      return out;
     });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "NCR");
@@ -212,136 +204,14 @@ function NcrListPage() {
           </div>
         </div>
 
-        {/* 리스트 */}
-        <div className="rounded-md border border-border bg-card shadow-sm">
-          <div className="overflow-auto">
-            <table className="w-full min-w-[1100px] text-left text-xs">
-              <thead className="sticky top-0 z-10 bg-secondary text-secondary-foreground">
-                <tr>
-                  {["", "SerNo", "종류", "문서번호", "내용", "위치", "발행처", "발행일", "팀", "MIC", "PIC", "협력사", "상태", "현재단계", "Response Status"].map((h) => (
-                    <th key={h} className="border-b border-border px-2.5 py-2 font-bold whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((r) => {
-                  const cur = currentStage(dates(r));
-                  const skipped = skippedSlots(dates(r));
-                  const expanded = !!open[r.id];
-                  const editable = canEditRow(r);
-                  return (
-                    <FragmentRow
-                      key={r.id}
-                      r={r}
-                      cur={cur}
-                      skipped={skipped}
-                      expanded={expanded}
-                      editable={editable}
-                      saving={save.isPending}
-                      onToggle={() => setOpen((o) => ({ ...o, [r.id]: !o[r.id] }))}
-                      onSave={(patch) => save.mutate({ id: r.id, patch })}
-                    />
-                  );
-                })}
-                {!filtered.length && (
-                  <tr><td colSpan={15} className="px-3 py-10 text-center text-muted-foreground">조건에 맞는 항목이 없습니다.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        {/* 리스트 — 임포트 엑셀과 동일한 컬럼 순서 */}
+        <NcrRawTable
+          rows={filtered}
+          canEditRow={canEditRow}
+          saving={save.isPending}
+          onSave={(id, patch) => save.mutate({ id, patch })}
+        />
       </AppShell>
     </AdminGate>
   );
 }
-
-function FragmentRow({ r, cur, skipped, expanded, editable, saving, onToggle, onSave }: {
-  r: NcrItem;
-  cur: string;
-  skipped: SlotKey[];
-  expanded: boolean;
-  editable: boolean;
-  saving: boolean;
-  onToggle: () => void;
-  onSave: (patch: Record<string, string | null>) => void;
-}) {
-  const d = dates(r);
-  return (
-    <>
-      <tr className="border-b border-border align-top hover:bg-accent/30">
-        <td className="px-2 py-1.5">
-          <button onClick={onToggle} aria-label="단계 상세 펼치기" className="text-muted-foreground hover:text-foreground">
-            {expanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
-          </button>
-        </td>
-        <td className="px-2.5 py-1.5 text-muted-foreground">{r.ser_no ?? "-"}</td>
-        <td className="px-2.5 py-1.5 font-semibold">{r.doc_type ?? "-"}</td>
-        <td className="px-2.5 py-1.5 font-medium whitespace-nowrap">{r.doc_no}</td>
-        <td className="max-w-[320px] truncate px-2.5 py-1.5" title={r.description ?? ""}>{r.description ?? "-"}</td>
-        <td className="max-w-[140px] truncate px-2.5 py-1.5 text-muted-foreground">{r.location ?? "-"}</td>
-        <td className="px-2.5 py-1.5 whitespace-nowrap">{r.issued_by ?? "-"}</td>
-        <td className="px-2.5 py-1.5 whitespace-nowrap">{fmtDate(r.issued_date)}</td>
-        <td className="px-2.5 py-1.5">{r.team ?? "-"}</td>
-        <td className="px-2.5 py-1.5">{r.mic ?? "-"}</td>
-        <td className="px-2.5 py-1.5">{r.pic ?? "-"}</td>
-        <td className="px-2.5 py-1.5 whitespace-nowrap">{r.subcontractor ?? "-"}</td>
-        <td className="px-2.5 py-1.5">
-          <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${r.status === "Closed" ? "bg-primary/15 text-primary" : r.status === "Reject" ? "bg-destructive/15 text-destructive" : "bg-chart-2/15 text-chart-2"}`}>
-            {r.status ?? "-"}
-          </span>
-        </td>
-        <td className="px-2.5 py-1.5 whitespace-nowrap">
-          <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${cur === "Closed" ? "bg-primary/15 text-primary" : "bg-secondary text-secondary-foreground"}`}>{cur}</span>
-          {skipped.length > 0 && (
-            <span className="ml-1 rounded bg-chart-2/15 px-1.5 py-0.5 text-[10px] font-bold text-chart-2" title={`실적 없이 지나간 단계: ${skipped.map(slotCode).join(", ")}`}>
-              <AlertTriangle className="mr-0.5 inline size-3" />건너뜀 {skipped.length}
-            </span>
-          )}
-        </td>
-        <td className="px-2.5 py-1.5 whitespace-nowrap text-muted-foreground">{r.response_status ?? "-"}</td>
-      </tr>
-      {expanded && (
-        <tr className="border-b border-border bg-muted/30">
-          <td colSpan={15} className="px-3 py-3">
-            {!editable && <p className="mb-2 text-[11px] text-muted-foreground">이 행은 MIC/PIC 담당자 또는 관리자만 수정할 수 있습니다.</p>}
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-              {PS_NUMS.map((n) => {
-                const s = `ps${n}s` as SlotKey;
-                const f = `ps${n}f` as SlotKey;
-                const inCurrent = cur.startsWith(`PS${n}`);
-                return (
-                  <div key={n} className={`rounded-md border p-2 ${inCurrent ? "border-primary/60 bg-primary/5" : "border-border bg-card"}`}>
-                    <p className="mb-1.5 flex items-center justify-between text-[11px] font-bold">
-                      <span>PS{n} · {PS_LABEL[n]}</span>
-                      {skipped.includes(s) || skipped.includes(f) ? <span className="text-[9px] font-semibold text-chart-2">건너뜀</span> : null}
-                    </p>
-                    {([s, f] as const).map((slot) => (
-                      <div key={slot} className="mb-1 grid grid-cols-[34px_1fr_1fr] items-center gap-1 text-[10px]">
-                        <span className="font-bold text-muted-foreground">{slotCode(slot).slice(-2)}</span>
-                        {([planField(slot), actualField(slot)] as const).map((field, fi) => (
-                          <div key={field}>
-                            <span className="block text-[9px] text-muted-foreground">{fi === 0 ? "계획" : "실적"}</span>
-                            <EditableCell
-                              value={r[field]}
-                              kind="date"
-                              editable={editable}
-                              saving={saving}
-                              onSave={(v) => onSave({ [field]: v })}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-          </td>
-        </tr>
-      )}
-    </>
-  );
-}
-
-// 현재단계 뱃지에서 PS 번호 비교용 — 외부에서 참조하지 않지만 명시적으로 유지
-export const __stageOf = (cur: string) => (cur === "Closed" ? 10 : psOfSlot(cur.toLowerCase() as SlotKey));
