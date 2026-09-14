@@ -4,20 +4,20 @@ import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
-import { ChevronDown, ChevronRight, Download, Search, AlertTriangle } from "lucide-react";
+import { Download, Search } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { AdminGate } from "@/components/manpower/admin-gate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { EditableCell } from "@/components/editable-cell";
+import { NcrRawTable, cellValue } from "@/components/ncr/ncr-raw-table";
+import { NCR_COLUMNS } from "@/lib/ncr-columns";
 import { useNcrItems, ncrQuery } from "@/lib/use-ncr";
 import { updateNcrItem, type NcrItem } from "@/lib/ncr.functions";
 import {
-  PS_NUMS, PS_LABEL, SLOT_ORDER, slotCode, psOfSlot, planField, actualField,
-  currentStage, skippedSlots, isStartDelayed, type SlotKey, type NcrDates,
+  PS_NUMS, SLOT_ORDER, psOfSlot, planField, actualField,
+  currentStage, isStartDelayed, type SlotKey, type NcrDates,
 } from "@/lib/ncr-model";
 import { useAuth } from "@/lib/use-auth";
-import { fmtDate } from "@/lib/schedule-model";
 
 const searchSchema = z.object({
   docType: z.string().optional(),
