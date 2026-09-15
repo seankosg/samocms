@@ -51,6 +51,7 @@ const NAV = [
   { group: "발주처 업역", items: [
     { to: "/owner", label: "발주처 공정현황", icon: Building2 },
     { to: "/owner/list", label: "발주처 공정 리스트", icon: ListChecks },
+    { to: "/owner/network", label: "발주처 네트워크", icon: Network },
   ] },
   { group: "시운전 현황", items: [
     { to: "/tc/progress", label: "T&C Progress", icon: TrendingUp },
