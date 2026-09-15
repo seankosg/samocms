@@ -84,21 +84,61 @@ export function netNodes(rows: Row[]): NetNode[] {
       st: stOf(pl, pc, lateN > 0), late: lateN > 0, lateN, cnt: a.length,
       done: a.filter(isDone).length, roll: true, ms: k, pred: [], depts,
       rowIds: a.map((r) => r.id),
+      owner: a.every(isOwnerRow),
+      memberIds: a.map((r) => flat(r.no)).filter(Boolean),
     });
   });
   rows.filter((r) => bandOf(r) > 0).forEach((r) => {
     if (!r.no) return;
-    const late = isLate(r);
-    N.push({
-      id: flat(r.no), band: bandOf(r), nm: flat(r.act), sub: flat(r.no), s: r.s, e: r.e,
-      pl: r.pl, pc: r.pc, st: stOf(r.pl, r.pc, late), late, lateN: late ? 1 : 0,
-      cnt: 1, done: isDone(r) ? 1 : 0, ms: r.ms, dept: r.dept, depts: r.dept,
-      bldg: r.bldg, room: r.room, subc: r.sub, scope: r.scope,
-      predRaw: r.pred, succRaw: r.succ, pred: refList(r.pred),
-      mile: /^M\d+$/.test(String(r.no)), rowIds: [r.id],
-    });
+    N.push(activityNode(r, bandOf(r)));
   });
   return N;
+}
+
+/** 개별 활동 노드 하나 */
+function activityNode(r: Row, band: number): NetNode {
+  const late = isLate(r);
+  return {
+    id: flat(r.no), band, nm: flat(r.act), sub: flat(r.no), s: r.s, e: r.e,
+    pl: r.pl, pc: r.pc, st: stOf(r.pl, r.pc, late), late, lateN: late ? 1 : 0,
+    cnt: 1, done: isDone(r) ? 1 : 0, ms: r.ms, dept: r.dept, depts: r.dept,
+    bldg: r.bldg, room: r.room, subc: r.sub, scope: r.scope,
+    predRaw: r.pred, succRaw: r.succ, pred: refList(r.pred),
+    mile: /^M\d+$/.test(String(r.no)), rowIds: [r.id], owner: isOwnerRow(r),
+  };
+}
+
+/** 발주처 중심 보기 — 발주처 내부 부서를 레인으로, 물린 당사 항목은 참고 레인에 */
+export function ownerNodes(rows: Row[]) {
+  const owner = rows.filter(isOwnerRow).filter((r) => r.no);
+  const ownerNos = new Set(owner.map((r) => flat(r.no)));
+  const linkedNos = new Set<string>();
+  owner.forEach((r) => {
+    refList(r.pred).forEach((p) => linkedNos.add(p.id));
+    refList(r.succ).forEach((p) => linkedNos.add(p.id));
+  });
+  rows.forEach((r) => {
+    if (isOwnerRow(r) || !r.no) return;
+    const me = flat(r.no);
+    const touches = [...refList(r.pred), ...refList(r.succ)].some((p) => ownerNos.has(p.id));
+    if (touches) linkedNos.add(me);
+  });
+  const ctx = rows.filter((r) => !isOwnerRow(r) && r.no && linkedNos.has(flat(r.no)));
+
+  const depts = [...new Set(owner.map((r) => r.ownerDept ?? r.dept ?? "기타"))]
+    .sort((a, b) =>
+      owner.filter((r) => (r.ownerDept ?? r.dept) === b).length - owner.filter((r) => (r.ownerDept ?? r.dept) === a).length
+      || a.localeCompare(b, "ko"));
+  const laneIx = new Map(depts.map((d, i) => [d, i]));
+  const N = [
+    ...owner.map((r) => activityNode(r, laneIx.get(r.ownerDept ?? r.dept ?? "기타") ?? 0)),
+    ...ctx.map((r) => ({ ...activityNode(r, depts.length), ctx: true })),
+  ];
+  const lanes = [
+    ...depts.map((d) => ({ label: `발주처 · ${SLOT_LABEL[d] ?? d}`, color: "#6d28d9" })),
+    { label: "당사(HDEC) 연관 작업", color: "#64748b" },
+  ];
+  return { N, lanes };
 }
 
 /** 건물 · 룸 보기 — 건물이 레인, Room이 노드 */
