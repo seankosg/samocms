@@ -13,7 +13,6 @@ export function ManpowerKpiCard() {
   const cards = (data?.cards ?? []) as unknown as Card[];
   const companies = (data?.companies ?? []) as unknown as CompanyMaster[];
   const sub = cards.filter((c) => c.source === "SUB");
-  const hdec = cards.filter((c) => c.source === "HDEC");
   const daily = toDaily(sub);
   const total = daily.reduce((a, d) => a + d.total, 0);
   const shifts = [
@@ -22,19 +21,6 @@ export function ManpowerKpiCard() {
     { label: MP.night, value: daily.reduce((a, d) => a + d.night_total, 0), cls: "text-ncr-progress-actual" },
   ];
   const comp = compliance(cards, companies, day, data?.settings?.["manpower_cutoff_time"] ?? "09:00");
-
-  // 조별 협력사 vs 당사 차이
-  const shiftDiff = (shift: string) => {
-    const subSum = sub.filter((c) => c.shift === shift).reduce((a, c) => a + c.subtotal, 0);
-    const hdecSum = hdec.filter((c) => c.shift === shift).reduce((a, c) => a + c.subtotal, 0);
-    return { subSum, hdecSum, diff: hdecSum - subSum };
-  };
-  const diffRows = [
-    { label: MP.day, ...shiftDiff("Day Shift"), cls: "text-ncr-progress-plan" },
-    { label: MP.ot, ...shiftDiff("Overtime"), cls: "text-ncr-upcoming" },
-    { label: MP.night, ...shiftDiff("Night Shift"), cls: "text-ncr-progress-actual" },
-  ];
-  const diffTotal = diffRows.reduce((a, r) => a + r.diff, 0);
 
   // 건물별 집계 (화면에는 건물명으로 표시)
   const byBldg = new Map<string, number>();
@@ -63,39 +49,6 @@ export function ManpowerKpiCard() {
             <Cell label="보고 협력사" value={`${new Set(sub.map((c) => c.company)).size}/${companies.filter((c) => c.is_active).length}`} day={day} />
             <Cell label={MP.compliance} value={`${Math.round(comp.rate * 100)}%`} day={day} />
             <Cell label={MP.notReported} value={String(comp.missing.length)} day={day} />
-          </div>
-          {/* 조별 협력사 vs 당사 차이 */}
-          <div className="mt-3 border-t border-border pt-2">
-            <Link to="/manpower/compare" search={{ day }} className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground hover:text-primary">
-              출면 차이 · 당사 재집계 vs 협력사
-            </Link>
-            <div className="mt-1.5 grid grid-cols-3 gap-2">
-              {diffRows.map((r) => (
-                <div key={r.label} className="text-center">
-                  <p className={`text-sm font-bold ${r.cls}`}>{r.label}</p>
-                  <div className="mt-0.5 flex items-baseline justify-center gap-1.5 text-[11px]">
-                    <span className="text-muted-foreground">협력사</span>
-                    <span className="font-bold tabular-nums text-foreground">{isLoading ? "…" : r.subSum.toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-baseline justify-center gap-1.5 text-[11px]">
-                    <span className="text-muted-foreground">당사</span>
-                    <span className="font-bold tabular-nums text-foreground">{isLoading ? "…" : r.hdecSum.toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-baseline justify-center gap-1.5 text-[11px]">
-                    <span className="text-muted-foreground">차이</span>
-                    <span className={`font-bold tabular-nums ${r.diff === 0 ? "text-muted-foreground" : r.diff > 0 ? "text-primary" : "text-destructive"}`}>
-                      {isLoading ? "…" : (r.diff > 0 ? "+" : "") + r.diff.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="mt-1.5 text-right text-[10px] text-muted-foreground">
-              합계 차이{" "}
-              <span className={`font-bold ${diffTotal === 0 ? "text-muted-foreground" : diffTotal > 0 ? "text-primary" : "text-destructive"}`}>
-                {isLoading ? "…" : (diffTotal > 0 ? "+" : "") + diffTotal.toLocaleString()}
-              </span>
-            </p>
           </div>
         </>
       )}
@@ -152,7 +105,53 @@ export function ManpowerKpiCard() {
     </div>
   );
 
-  return <>{totalCard}{shiftCard}{bldgCard}</>;
+  // 출면 차이 카드 — 협력사(SUB) vs 당사(HDEC) 조별 집계
+  const hdec = cards.filter((c) => c.source === "HDEC");
+  const shiftDiff = (shift: string) => {
+    const subSum = sub.filter((c) => c.shift === shift).reduce((a, c) => a + c.subtotal, 0);
+    const hdecSum = hdec.filter((c) => c.shift === shift).reduce((a, c) => a + c.subtotal, 0);
+    return { subSum, hdecSum, diff: hdecSum - subSum };
+  };
+  const diffRows = [
+    { label: MP.day, ...shiftDiff("Day Shift"), cls: "text-ncr-progress-plan" },
+    { label: MP.ot, ...shiftDiff("Overtime"), cls: "text-ncr-upcoming" },
+    { label: MP.night, ...shiftDiff("Night Shift"), cls: "text-ncr-progress-actual" },
+  ];
+  const diffTotal = diffRows.reduce((a, r) => a + r.diff, 0);
+
+  const diffCard = (
+    <Link to="/manpower/compare" search={{ day }} className="rounded-md border border-border bg-card p-4 shadow-sm transition hover:border-primary/50">
+      <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">출면 차이 · 당사 재집계 vs 협력사 보고</p>
+      {isError ? (
+        <p className="mt-2 text-xs text-muted-foreground">출면 자료를 불러오지 못했습니다.</p>
+      ) : (
+        <>
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            {diffRows.map((r) => (
+              <div key={r.label} className="text-center">
+                <p className={`text-sm font-bold ${r.cls}`}>{r.label}</p>
+                <p className="mt-0.5 text-[10px] text-muted-foreground">협력사</p>
+                <p className="text-lg font-bold tabular-nums text-foreground">{isLoading ? "…" : r.subSum.toLocaleString()}</p>
+                <p className="mt-0.5 text-[10px] text-muted-foreground">당사</p>
+                <p className="text-lg font-bold tabular-nums text-foreground">{isLoading ? "…" : r.hdecSum.toLocaleString()}</p>
+                <p className="mt-0.5 text-[10px] text-muted-foreground">차이</p>
+                <p className={`text-lg font-bold tabular-nums ${r.diff === 0 ? "text-muted-foreground" : r.diff > 0 ? "text-primary" : "text-destructive"}`}>
+                  {isLoading ? "…" : (r.diff > 0 ? "+" : "") + r.diff.toLocaleString()}
+                </p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 text-right text-[11px] text-muted-foreground">
+            합계 차이 <span className={`font-bold ${diffTotal === 0 ? "text-muted-foreground" : diffTotal > 0 ? "text-primary" : "text-destructive"}`}>
+              {isLoading ? "…" : (diffTotal > 0 ? "+" : "") + diffTotal.toLocaleString()}
+            </span> · {fmtDay(day)}
+          </p>
+        </>
+      )}
+    </Link>
+  );
+
+  return <>{totalCard}{shiftCard}{bldgCard}{diffCard}</>;
 }
 
 const Cell = ({ label, value, day }: { label: string; value: string; day: string }) => (
