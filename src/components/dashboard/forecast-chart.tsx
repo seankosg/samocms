@@ -155,9 +155,9 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
     // 전체 보기: 완료 전망은 하위 공종별 예측 완료일 중 가장 늦은 날 (평균 속도가 느린 공종을 과소평가하는 것 방지)
     let forecastEndBy: string | null = null;
     const groupSlots: string[] | null =
-      mode === "discipline" && tab === "ALL" ? [...KPI_SLOTS]
+      mode === "discipline" && tab === "ALL" ? [...FC_SLOTS]
       : mode === "milestone" && milestoneDisc === "ALL"
-        ? KPI_SLOTS.filter((disc) => series.some((s) => s.disc === disc && (milestone === "ALL" || s.ms === milestone)))
+        ? FC_SLOTS.filter((disc) => series.some((s) => s.disc === disc && (milestone === "ALL" || s.ms === milestone)))
         : null;
     if (groupSlots && !actualDoneDate) {
       const ends: { slot: string; end: string }[] = [];
@@ -232,10 +232,11 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
       }));
     }
     const series = data?.series ?? [];
-    const summaryDiscs = mode === "milestone" ? (["ALL", ...milestoneDiscs] as string[]) : (["ALL", ...KPI_SLOTS] as string[]);
+    const summaryDiscs = mode === "milestone" ? (["ALL", ...milestoneDiscs] as string[]) : (["ALL", ...FC_SLOTS] as string[]);
     return summaryDiscs.map((disc) => {
       const byDate = new Map<string, { a: number; n: number }>();
       for (const s of series) {
+        if (s.disc === "Permit") continue; // 인허가 제외
         if (disc !== "ALL" && s.disc !== disc) continue;
         if (mode === "milestone" && milestone !== "ALL" && s.ms !== milestone) continue;
         const cur = byDate.get(s.date) ?? { a: 0, n: 0 };
