@@ -56,7 +56,9 @@ export function CompareDiffCharts({ rows, day }: { rows: CompareRow[]; day: stri
     <section className="mb-4">
       <Tabs value={shift} onValueChange={setShift} className="mb-2">
         <TabsList className="h-8">
-          {[["ALL", "전조"], ["Day Shift", "주간"], ["Overtime", "연장"], ["Night Shift", "야간"]].map(([value, label]) => <TabsTrigger key={value} value={value} className="h-6 px-3 text-xs">{label}</TabsTrigger>)}
+          {([[
+            "ALL", "전조",
+          ], ["Day Shift", "주간"], ["Overtime", "연장"], ["Night Shift", "야간"]] as const).map(([value, label]) => <TabsTrigger key={value} value={value} className="h-6 px-3 text-xs">{label}</TabsTrigger>)}
         </TabsList>
       </Tabs>
       <div className="grid gap-3 lg:grid-cols-2">
