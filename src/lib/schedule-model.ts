@@ -4,7 +4,9 @@ export type ActivityRow = Tables<"activities">;
 
 export const SLOTS = ["Arch", "Elec", "Mech", "Int", "Permit"] as const;
 export type Slot = (typeof SLOTS)[number];
-export const SLOT_LABEL: Record<string, string> = { Arch: "건축", Elec: "전기", Mech: "기계", Int: "내장", Permit: "인허가", MS: "인허가", Gas: "가스" };
+/** 발주처 업역 전용 공종 */
+export const OWNER_SLOT = "HMMME";
+export const SLOT_LABEL: Record<string, string> = { Arch: "건축", Elec: "전기", Mech: "기계", Int: "내장", Permit: "인허가", MS: "인허가", Gas: "가스", HMMME: "HMMME", HM: "HMMME" };
 export const KPI_SLOTS: Slot[] = ["Arch", "Int", "Elec", "Mech", "Permit"];
 
 export const MSDEF: Record<string, string> = {
