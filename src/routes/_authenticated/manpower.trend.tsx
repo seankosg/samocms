@@ -67,7 +67,7 @@ function TrendPage() {
 
   const groups = useMemo(() => [...new Set(cards.map(keyOf))].sort(), [cards, keyOf]);
   const [selected, setSelected] = useState<string[]>([]);
-  const [shift, setShift] = useState<"전체" | "주간" | "연장" | "야간">("전체");
+  const [shift, setShift] = useState<"전체" | "주간" | "연장" | "야간">("주간");
   useEffect(() => { setSelected([]); }, [dim]);
   const isAll = selected.length === 0;
   const shiftCode = shift === "주간" ? "Day Shift" : shift === "연장" ? "Overtime" : shift === "야간" ? "Night Shift" : null;
