@@ -322,7 +322,7 @@ export function NetworkView({ rows, search, onChange, base, forceMode }: { rows:
                     <line x1={bx + gdx + w} y1={by + BH / 2} x2={bx} y2={by + BH / 2} stroke="#dc2626" strokeWidth={1.4} strokeDasharray="4 3" markerEnd={`url(#ar_${n.st})`} />
                   </g>
                 )}
-                <line x1={x} y1={ly + 16} x2={x} y2={by} stroke={col} strokeWidth={1} opacity={n.owner ? 0.6 : 0.3} strokeWidth={n.owner ? 1.8 : 1} />
+                <line x1={x} y1={ly + 16} x2={x} y2={by} stroke={col} opacity={n.owner ? 0.6 : 0.3} strokeWidth={n.owner ? 1.8 : 1} />
                 <rect x={bx} y={by} width={w} height={BH} rx={4} fill={lock === n.id ? "#f4f9ff" : "#fff"}
                   stroke={n.owner ? OWNER_COLOR : st} strokeWidth={n.owner ? 2.2 : n.mile ? 2.2 : 1.3}
                   strokeDasharray={n.ctx ? "5 3" : undefined} />
