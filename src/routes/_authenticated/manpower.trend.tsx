@@ -102,15 +102,33 @@ function TrendPage() {
 
   const workDays = days.filter(isWorkday);
   const sum = days.reduce((s, d) => s + (subTotals.get(d) ?? 0), 0);
-  const avg = workDays.length ? sum / workDays.length : 0;
   const peakDay = days.reduce((best, d) => ((subTotals.get(d) ?? 0) > (subTotals.get(best) ?? 0) ? d : best), days[0] ?? from);
 
   const byGroup = useMemo(() => {
-    const m = new Map<string, number>();
-    cards.filter((c) => c.source === "SUB").forEach((c) => m.set(keyOf(c), (m.get(keyOf(c)) ?? 0) + c.subtotal));
-    return [...m.entries()].sort((a, b) => b[1] - a[1]);
+    const m = new Map<string, { total: number; day: number; ot: number; night: number }>();
+    cards.filter((c) => c.source === "SUB").forEach((c) => {
+      const key = keyOf(c);
+      const row = m.get(key) ?? { total: 0, day: 0, ot: 0, night: 0 };
+      row.total += c.subtotal;
+      if (c.shift === "Day Shift") row.day += c.subtotal;
+      else if (c.shift === "Overtime") row.ot += c.subtotal;
+      else if (c.shift === "Night Shift") row.night += c.subtotal;
+      m.set(key, row);
+    });
+    return [...m.entries()].sort((a, b) => b[1].total - a[1].total);
   }, [cards, keyOf]);
-  const groupSum = byGroup.reduce((a, x) => a + x[1], 0);
+  const groupSums = byGroup.reduce((a, [, x]) => ({ total: a.total + x.total, day: a.day + x.day, ot: a.ot + x.ot, night: a.night + x.night }), { total: 0, day: 0, ot: 0, night: 0 });
+  const selectedSub = useMemo(() => groupOnly.filter((c) => c.source === "SUB"), [groupOnly]);
+  const shiftSummary = useMemo(() => {
+    const make = (label: string, code?: string) => {
+      const rows = code ? selectedSub.filter((c) => c.shift === code) : selectedSub;
+      const total = rows.reduce((a, c) => a + c.subtotal, 0);
+      const reportDays = new Set(rows.filter((c) => c.subtotal > 0).map((c) => c.report_date)).size;
+      return { label, total, reportDays, avg: reportDays ? total / reportDays : 0 };
+    };
+    return [make("전조"), make("주간", "Day Shift"), make("연장", "Overtime"), make("야간", "Night Shift")];
+  }, [selectedSub]);
+  const allShiftSummary = shiftSummary[0] ?? { label: "전조", total: 0, reportDays: 0, avg: 0 };
 
   const exportXlsx = () => {
     const wb = XLSX.utils.book_new();
@@ -118,7 +136,7 @@ function TrendPage() {
       일자: days[i], 근무일: isWorkday(days[i]!) ? "Y" : "N",
       보고: r.보고, 재집계: r.재집계,
     }))), "출면추이");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(byGroup.map(([c, v]) => ({ [DIM_LABEL[dim]]: c, 연인원: v }))), DIM_LABEL[dim]);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(byGroup.map(([c, v]) => ({ [DIM_LABEL[dim]]: c, 연인원: v.total, 주간: v.day, 연장: v.ot, 야간: v.night }))), DIM_LABEL[dim]);
     XLSX.writeFile(wb, `HMMME_출면추이_${from.replace(/-/g, "")}_${to.replace(/-/g, "")}.xlsx`);
   };
 
@@ -144,8 +162,8 @@ function TrendPage() {
       }
     >
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="연인원" value={sum.toLocaleString()} sub={`${DIM_LABEL[dim]} · ${selLabel}`} />
-        <Kpi label="근무일 평균" value={avg.toFixed(1)} sub={`${workDays.length}일 기준`} />
+        <Kpi label="연인원" value={sum.toLocaleString()} sub={`${DIM_LABEL[dim]} · ${selLabel}`} breakdown={shiftSummary.slice(1).map((x) => ({ label: x.label, value: x.total.toLocaleString() }))} />
+        <Kpi label="일일투입평균" value={allShiftSummary.avg.toFixed(1)} sub={`실제 보고일 ${allShiftSummary.reportDays}일`} breakdown={shiftSummary.slice(1).map((x) => ({ label: x.label, value: x.avg.toFixed(1) }))} />
         <Kpi label="최대 투입일" value={String(subTotals.get(peakDay) ?? 0)} sub={peakDay} />
         <Kpi label={DIM_LABEL[dim].replace("별", " 수")} value={String(byGroup.length)} sub={byGroup[0] ? `최다 ${byGroup[0][0]}` : ""} />
       </div>
@@ -155,16 +173,12 @@ function TrendPage() {
           <button key={c} type="button" data-active={isAll ? c === "전체" : selected.includes(c)} className="ui-filter h-7 cursor-pointer rounded-md px-2.5 text-xs transition-colors"
             onClick={() => { if (c === "전체") { setSelected([]); return; } setSelected(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]); }}>{c}</button>
         ))}
-        {dim === "company" && (
-          <>
-            <span className="mx-1.5 h-4 w-px bg-border" aria-hidden />
-            <span className="text-xs font-semibold text-muted-foreground">조별</span>
-            {(["전체", "주간", "연장", "야간"] as const).map((sh) => (
-              <button key={sh} type="button" data-active={shift === sh} className="ui-filter h-7 cursor-pointer rounded-md px-2.5 text-xs transition-colors"
-                onClick={() => setShift(sh)}>{sh}</button>
-            ))}
-          </>
-        )}
+        <span className="mx-1.5 h-4 w-px bg-border" aria-hidden />
+        <span className="text-xs font-semibold text-muted-foreground">조별</span>
+        {(["전체", "주간", "연장", "야간"] as const).map((sh) => (
+          <button key={sh} type="button" data-active={shift === sh} className="ui-filter h-7 cursor-pointer rounded-md px-2.5 text-xs transition-colors"
+            onClick={() => setShift(sh)}>{sh}</button>
+        ))}
       </div>
 
       <section className="mb-6 rounded-md border border-border bg-card p-3">
@@ -188,12 +202,12 @@ function TrendPage() {
 
       <h2 className="mb-2 text-sm font-bold">{DIM_LABEL[dim]} 연인원</h2>
       <section className="overflow-x-auto rounded-md border border-border">
-        <table className="w-full min-w-[420px] text-xs">
+        <table className="w-full min-w-[820px] text-xs">
           <caption className="sr-only">{DIM_LABEL[dim]} 기간 연인원</caption>
           <thead className="bg-muted/60">
             <tr className="[&>th]:border-b [&>th]:border-border [&>th]:px-2 [&>th]:py-2 [&>th]:text-left">
-              <th scope="col">{DIM_LABEL[dim].replace("별", "")}</th><th scope="col" className="!text-right">연인원</th>
-              <th scope="col" className="!text-right">비중</th><th scope="col" className="!text-right">근무일 평균</th>
+              <th scope="col">{DIM_LABEL[dim].replace("별", "")}</th>
+              {(["총계", "주간", "연장", "야간"] as const).flatMap((label) => [<th key={`${label}-n`} scope="col" className="!text-right">{label}</th>, <th key={`${label}-p`} scope="col" className="!text-right">비중</th>])}
             </tr>
           </thead>
           <tbody>
@@ -201,12 +215,13 @@ function TrendPage() {
               <tr key={c} className={`cursor-pointer [&>td]:border-b [&>td]:border-border/60 [&>td]:px-2 [&>td]:py-1.5 ${isAll || selected.includes(c) ? "bg-primary/10" : "hover:bg-muted/40"}`}
                 onClick={() => setSelected(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c])}>
                 <td className="font-medium">{c}</td>
-                <td className="text-right font-bold">{v.toLocaleString()}</td>
-                <td className="text-right text-muted-foreground">{groupSum ? `${((v / groupSum) * 100).toFixed(1)}%` : "—"}</td>
-                <td className="text-right text-muted-foreground">{workDays.length ? (v / workDays.length).toFixed(1) : "—"}</td>
+                {(["total", "day", "ot", "night"] as const).flatMap((key) => [
+                  <td key={`${key}-n`} className={`text-right ${key === "total" ? "font-bold" : ""}`}>{v[key].toLocaleString()}</td>,
+                  <td key={`${key}-p`} className="text-right text-muted-foreground">{groupSums[key] ? `${((v[key] / groupSums[key]) * 100).toFixed(1)}%` : "—"}</td>,
+                ])}
               </tr>
             ))}
-            {!byGroup.length && <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">기간 내 보고가 없습니다.</td></tr>}
+            {!byGroup.length && <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">기간 내 보고가 없습니다.</td></tr>}
           </tbody>
         </table>
       </section>

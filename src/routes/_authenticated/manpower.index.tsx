@@ -130,29 +130,39 @@ function ManpowerPage() {
 
   /** 매트릭스 1개 시트 (2단 헤더 + 그룹 병합 + 합계행) */
   const matrixSheet = useCallback((): ExtraSheet => {
-    const head1: unknown[] = [matrixMode === "company" ? MP.company : MP.location, MP.total];
-    const head2: unknown[] = ["", ""];
+    const head1: unknown[] = [matrixMode === "company" ? MP.company : MP.location, "전체", "", "", ""];
+    const head2: unknown[] = ["", "연인원", MP.day, MP.ot, MP.night];
     matrix.cols.forEach((col) => {
       head1.push(col, "", "");
       MATRIX_SHIFTS.forEach((sh) => head2.push(MATRIX_SHIFT_LABEL[sh]));
     });
     const body = [...matrix.rows.entries()].map(([rowKey, row]) => {
-      const line: unknown[] = [rowKey, [...row.values()].reduce((a, c) => a + c.total, 0)];
+      const cells = [...row.values()];
+      const line: unknown[] = [
+        rowKey,
+        cells.reduce((a, c) => a + c.total, 0),
+        ...MATRIX_SHIFTS.map((sh) => cells.reduce((a, c) => a + c.byShift[sh], 0)),
+      ];
       matrix.cols.forEach((col) => MATRIX_SHIFTS.forEach((sh) => line.push(row.get(col)?.byShift[sh] || 0)));
       return line;
     });
-    const totalLine: unknown[] = ["합계", [...matrix.rows.values()].reduce((a, row) => a + [...row.values()].reduce((b, c) => b + c.total, 0), 0)];
+    const allCells = [...matrix.rows.values()].flatMap((row) => [...row.values()]);
+    const totalLine: unknown[] = [
+      "합계",
+      allCells.reduce((a, c) => a + c.total, 0),
+      ...MATRIX_SHIFTS.map((sh) => allCells.reduce((a, c) => a + c.byShift[sh], 0)),
+    ];
     matrix.cols.forEach((col) => MATRIX_SHIFTS.forEach((sh) =>
       totalLine.push([...matrix.rows.values()].reduce((a, row) => a + (row.get(col)?.byShift[sh] ?? 0), 0))));
     // 1단 헤더: 행 라벨/합계는 세로 병합, 각 열 그룹은 가로 3칸 병합
     const merges = [
       { r1: 0, c1: 0, r2: 1, c2: 0 },
-      { r1: 0, c1: 1, r2: 1, c2: 1 },
-      ...matrix.cols.map((_, i) => ({ r1: 0, c1: 2 + i * 3, r2: 0, c2: 4 + i * 3 })),
+      { r1: 0, c1: 1, r2: 0, c2: 4 },
+      ...matrix.cols.map((_, i) => ({ r1: 0, c1: 5 + i * 3, r2: 0, c2: 7 + i * 3 })),
     ];
     return {
       name: matrixMode === "company" ? "협력사×장소" : "장소×협력사",
-      aoa: [head1, head2, ...body, totalLine], headerRows: 2, merges, freezeCols: 2, minColWidth: 9,
+      aoa: [head1, head2, ...body, totalLine], headerRows: 2, merges, freezeCols: 5, minColWidth: 9,
       title: `출면 현황 - ${matrixMode === "company" ? "협력사 × 장소" : "장소 × 협력사"} (Worker·Elec·Plumb·Scaf)`,
       subtitle: `기준일 ${fmtDay(day)} · ${source === "SUB" ? MP.sub : MP.hdec}`,
     };
@@ -190,7 +200,7 @@ function ManpowerPage() {
   return (
     <AppShell
       title={MP.daily}
-      desc={`${fmtDay(day)} · ${source === "SUB" ? MP.sub : MP.hdec} · 총 ${totals.total.toLocaleString()}명 · 카드 ${shown.length}건${
+      desc={`${fmtDay(day)} · ${source === "SUB" ? MP.sub : MP.hdec} · 총 ${totals.total.toLocaleString()}명 · 주간 ${daily.reduce((a, d) => a + d.day_total, 0).toLocaleString()}명 · 연장 ${daily.reduce((a, d) => a + d.ot_total, 0).toLocaleString()}명 · 야간 ${daily.reduce((a, d) => a + d.night_total, 0).toLocaleString()}명 · 카드 ${shown.length}건${
         lastReceivedAt ? ` · 마지막 수신 ${new Date(lastReceivedAt).toLocaleString("ko-KR", { timeZone: "Asia/Riyadh", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}` : ""
       }`}
 
@@ -277,15 +287,18 @@ function ManpowerPage() {
         </Button>
       </div>
       <section className="overflow-x-auto rounded-lg border border-border shadow-sm">
-        <table className="w-full border-collapse text-xs tabular-nums" style={{ minWidth: 200 + matrix.cols.length * 3 * 64 }}>
+        <table className="w-full border-collapse text-xs tabular-nums" style={{ minWidth: 406 + matrix.cols.length * 3 * 64 }}>
           <caption className="sr-only">{matrixMode === "company" ? "협력사별 장소·조별 배치 인원" : "장소별 협력사·조별 배치 인원"}</caption>
           <thead>
             <tr className="bg-primary/10 [&>th]:border-b [&>th]:border-primary/20 [&>th]:px-2 [&>th]:py-2 [&>th]:text-center [&>th]:font-bold [&>th]:text-primary">
               <th scope="col" rowSpan={2} className="sticky left-0 z-10 w-[150px] min-w-[150px] bg-primary/10 !text-left shadow-[2px_0_0_0_hsl(var(--border))]">{matrixMode === "company" ? MP.company : MP.location}</th>
-              <th scope="col" rowSpan={2} className="sticky left-[150px] z-10 min-w-[72px] whitespace-nowrap border-l-2 border-primary/30 bg-primary/15 text-sm">{MP.total}</th>
+              <th scope="colgroup" colSpan={4} className="sticky left-[150px] z-10 whitespace-nowrap border-l-2 border-primary/30 bg-primary/15 text-sm">전체</th>
               {matrix.cols.map((col) => <th key={col} scope="colgroup" colSpan={3} className="whitespace-nowrap border-l-2 border-primary/20">{col}</th>)}
             </tr>
             <tr className="bg-muted/50 [&>th]:border-b-2 [&>th]:border-primary/30 [&>th]:px-2 [&>th]:py-1.5 [&>th]:text-right [&>th]:text-[11px] [&>th]:font-semibold">
+              {["연인원", MP.day, MP.ot, MP.night].map((label, i) => (
+                <th key={label} scope="col" className={`sticky z-10 min-w-[64px] bg-muted ${i === 0 ? "left-[150px] border-l-2 border-primary/30 text-primary" : i === 1 ? "left-[214px] text-sky-700 dark:text-sky-300" : i === 2 ? "left-[278px] text-amber-700 dark:text-amber-300" : "left-[342px] text-indigo-700 dark:text-indigo-300"}`}>{label}</th>
+              ))}
               {matrix.cols.map((col) =>
                 MATRIX_SHIFTS.map((sh, i) => (
                   <th key={`${col}-${sh}`} scope="col" className={`${i === 0 ? "border-l-2 border-primary/20" : ""} ${sh === "Day Shift" ? "text-sky-700 dark:text-sky-300" : sh === "Overtime" ? "text-amber-700 dark:text-amber-300" : "text-indigo-700 dark:text-indigo-300"}`}>{MATRIX_SHIFT_LABEL[sh]}</th>
@@ -295,7 +308,9 @@ function ManpowerPage() {
           </thead>
           <tbody>
             {[...matrix.rows.entries()].map(([rowKey, row], ri) => {
-              const rowTotal = [...row.values()].reduce((a, c) => a + c.total, 0);
+              const rowCells = [...row.values()];
+              const rowTotal = rowCells.reduce((a, c) => a + c.total, 0);
+              const rowShifts = MATRIX_SHIFTS.map((sh) => rowCells.reduce((a, c) => a + c.byShift[sh], 0));
               return (
                 <tr key={rowKey} className={`transition-colors hover:bg-primary/5 ${ri % 2 ? "bg-muted/20" : ""} [&>td]:border-b [&>td]:border-border/50 [&>td]:px-2 [&>td]:py-1.5 [&>td]:text-right [&>td:first-child]:text-left`}>
                   <td className={`sticky left-0 z-10 w-[150px] min-w-[150px] font-semibold shadow-[2px_0_0_0_hsl(var(--border))] ${ri % 2 ? "bg-muted/40" : "bg-card"}`}>
@@ -306,7 +321,8 @@ function ManpowerPage() {
                       </span>
                     )}
                   </td>
-                  <td className={`sticky left-[150px] z-10 min-w-[72px] border-l-2 border-primary/20 font-bold text-sm ${ri % 2 ? "bg-muted/40" : "bg-card"} ${rowTotal ? "" : "text-muted-foreground/40"}`}>{rowTotal || "–"}</td>
+                  <td className={`sticky left-[150px] z-10 min-w-[64px] border-l-2 border-primary/20 font-bold text-sm ${ri % 2 ? "bg-muted/40" : "bg-card"} ${rowTotal ? "" : "text-muted-foreground/40"}`}>{rowTotal || "–"}</td>
+                  {rowShifts.map((v, i) => <td key={MATRIX_SHIFTS[i]} className={`sticky z-10 min-w-[64px] font-semibold ${ri % 2 ? "bg-muted/40" : "bg-card"} ${i === 0 ? "left-[214px] text-sky-700 dark:text-sky-300" : i === 1 ? "left-[278px] text-amber-700 dark:text-amber-300" : "left-[342px] text-indigo-700 dark:text-indigo-300"}`}>{v || <span className="text-muted-foreground/30">–</span>}</td>)}
                   {matrix.cols.map((col) => {
                     const cell = row.get(col);
                     return MATRIX_SHIFTS.map((sh, i) => {
@@ -321,13 +337,17 @@ function ManpowerPage() {
                 </tr>
               );
             })}
-            {!matrix.rows.size && <tr><td colSpan={matrix.cols.length * 3 + 2} className="p-6 text-center text-muted-foreground">표시할 자료가 없습니다.</td></tr>}
+            {!matrix.rows.size && <tr><td colSpan={matrix.cols.length * 3 + 5} className="p-6 text-center text-muted-foreground">표시할 자료가 없습니다.</td></tr>}
             {matrix.rows.size > 0 && (
               <tr className="bg-primary/10 font-bold [&>td]:border-t-2 [&>td]:border-primary/30 [&>td]:px-2 [&>td]:py-2 [&>td]:text-right [&>td:first-child]:text-left">
                 <td className="sticky left-0 z-10 w-[150px] min-w-[150px] bg-primary/10 shadow-[2px_0_0_0_hsl(var(--border))]">합계</td>
-                <td className="sticky left-[150px] z-10 min-w-[72px] border-l-2 border-primary/30 bg-primary/15 text-sm font-extrabold">
+                <td className="sticky left-[150px] z-10 min-w-[64px] border-l-2 border-primary/30 bg-primary/15 text-sm font-extrabold">
                   {[...matrix.rows.values()].reduce((a, row) => a + [...row.values()].reduce((b, c) => b + c.total, 0), 0).toLocaleString()}
                 </td>
+                {MATRIX_SHIFTS.map((sh, i) => {
+                  const v = [...matrix.rows.values()].reduce((a, row) => a + [...row.values()].reduce((b, c) => b + c.byShift[sh], 0), 0);
+                  return <td key={sh} className={`sticky z-10 bg-primary/10 ${i === 0 ? "left-[214px] text-sky-700 dark:text-sky-300" : i === 1 ? "left-[278px] text-amber-700 dark:text-amber-300" : "left-[342px] text-indigo-700 dark:text-indigo-300"}`}>{v.toLocaleString()}</td>;
+                })}
                 {matrix.cols.map((col) =>
                   MATRIX_SHIFTS.map((sh, i) => {
                     const v = [...matrix.rows.values()].reduce((a, row) => a + (row.get(col)?.byShift[sh] ?? 0), 0);
@@ -355,11 +375,14 @@ function ManpowerPage() {
   );
 }
 
-export function Kpi({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: "ok" | "warn" }) {
+export function Kpi({ label, value, sub, tone, breakdown }: { label: string; value: string; sub?: string; tone?: "ok" | "warn"; breakdown?: { label: string; value: string }[] }) {
   return (
     <div className="rounded-md border border-border bg-card p-3">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className={`mt-1 text-2xl font-bold ${tone === "warn" ? "text-amber-600 dark:text-amber-400" : ""}`}>{value}</p>
+      <div className="mt-1 flex items-start justify-between gap-3">
+        <p className={`text-2xl font-bold ${tone === "warn" ? "text-amber-600 dark:text-amber-400" : ""}`}>{value}</p>
+        {breakdown && <div className="min-w-[112px] border-l border-border pl-2 text-[10px] tabular-nums">{breakdown.map((item) => <div key={item.label} className="flex justify-between gap-3"><span className="text-muted-foreground">{item.label}</span><strong>{item.value}</strong></div>)}</div>}
+      </div>
       {sub && <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{sub}</p>}
     </div>
   );

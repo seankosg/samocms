@@ -15,9 +15,14 @@ export function ManpowerKpiCard() {
   const sub = cards.filter((c) => c.source === "SUB");
   const daily = toDaily(sub);
   const total = daily.reduce((a, d) => a + d.total, 0);
+  const shifts = [
+    { label: "주간", value: daily.reduce((a, d) => a + d.day_total, 0) },
+    { label: "연장", value: daily.reduce((a, d) => a + d.ot_total, 0) },
+    { label: "야간", value: daily.reduce((a, d) => a + d.night_total, 0) },
+  ];
   const comp = compliance(cards, companies, day, data?.settings?.["manpower_cutoff_time"] ?? "09:00");
 
-  return (
+  const totalCard = (
     <div className="rounded-md border border-border bg-card p-4 shadow-sm transition hover:border-primary/50">
       <Link to="/manpower" search={{ day }} className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground hover:text-primary">
         <UserCheck className="size-3.5" />오늘 출면 · {fmtDay(day)}
@@ -40,7 +45,16 @@ export function ManpowerKpiCard() {
       )}
     </div>
   );
+  return <>{totalCard}{shifts.map((item) => <ShiftCard key={item.label} label={item.label} value={item.value} day={day} loading={isLoading} error={isError} />)}</>;
 }
+
+const ShiftCard = ({ label, value, day, loading, error }: { label: string; value: number; day: string; loading: boolean; error: boolean }) => (
+  <Link to="/manpower" search={{ day, src: "SUB" }} className="rounded-md border border-border bg-card p-4 shadow-sm transition hover:border-primary/50">
+    <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">오늘 출면 · {label}</p>
+    <p className="mt-1 text-2xl font-bold">{error ? "—" : loading ? "…" : `${value.toLocaleString()}명`}</p>
+    <p className="mt-2 text-[11px] text-muted-foreground">협력사 보고 · {fmtDay(day)}</p>
+  </Link>
+);
 
 const Cell = ({ label, value, day }: { label: string; value: string; day: string }) => (
   <Link to="/manpower" search={{ day, src: "SUB" }} className="rounded bg-muted/50 px-2 py-1.5 transition hover:bg-muted">
