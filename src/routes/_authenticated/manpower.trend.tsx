@@ -17,7 +17,7 @@ const TREND_DEFAULT_FROM = "2026-09-12";
 import { dateRange, riyadhToday, addDays, type Card as MpCard } from "@/lib/manpower-model";
 import { MP } from "@/lib/manpower-i18n";
 
-const DIMS = ["team", "building", "company"] as const;
+const DIMS = ["company", "building", "team"] as const;
 type Dim = (typeof DIMS)[number];
 const DIM_LABEL: Record<Dim, string> = { team: "팀별", building: "건물별", company: "협력사별" };
 
