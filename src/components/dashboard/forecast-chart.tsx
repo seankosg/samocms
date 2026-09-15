@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { useProgressForecast } from "@/lib/use-project";
-import { isOwnerRow, KPI_SLOTS, planAt, pct1, SLOT_LABEL, type Row } from "@/lib/schedule-model";
+import { isOwnerRow, KPI_SLOTS, OWNER_SLOT, planAt, pct1, SLOT_LABEL, type Row } from "@/lib/schedule-model";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { TcItem } from "@/lib/tc-model";
@@ -77,6 +77,8 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
   const sDisc = (s: { disc: string; dept?: string }) => (byDept ? (s.dept ?? s.disc) : s.disc);
   /** 그룹 표시 라벨 */
   const discLabel = (d: string) => (byDept ? d : (SLOT_LABEL[d] ?? d));
+  /** 발주처 보기에서는 발주처(HMMME) 계열만 사용 */
+  const seriesOk = (s: { disc: string }) => (byDept ? s.disc === OWNER_SLOT : true);
 
   // 기본값: 인허가(Permit)와 발주처 업역은 예측 대상에서 제외 (목록·계산 모두)
   const FC_SLOTS: string[] = slots ?? KPI_SLOTS.filter((s) => s !== "Permit");
@@ -141,6 +143,7 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
     // 기록 이력 (선택 공종, 전체는 가중평균)
     const byDate = new Map<string, { p: number; a: number; n: number }>();
     for (const s of series) {
+      if (!seriesOk(s)) continue; // 발주처 보기: 발주처 계열만
       if (!FC_SLOTS.includes(sDisc(s))) continue; // 대상 공종 외 제외
       if (mode === "discipline" && tab !== "ALL" && sDisc(s) !== tab) continue;
       if (mode === "milestone" && milestone !== "ALL" && s.ms !== milestone) continue;
@@ -177,13 +180,14 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
     const groupSlots: string[] | null =
       mode === "discipline" && tab === "ALL" ? [...FC_SLOTS]
       : mode === "milestone" && milestoneDisc === "ALL"
-        ? FC_SLOTS.filter((disc) => series.some((s) => sDisc(s) === disc && (milestone === "ALL" || s.ms === milestone)))
+        ? FC_SLOTS.filter((disc) => series.some((s) => seriesOk(s) && sDisc(s) === disc && (milestone === "ALL" || s.ms === milestone)))
         : null;
     if (groupSlots && !actualDoneDate) {
       const ends: { slot: string; end: string }[] = [];
       for (const slot of groupSlots) {
         const bd = new Map<string, { a: number; n: number }>();
         for (const s of series) {
+          if (!seriesOk(s)) continue;
           if (sDisc(s) !== slot) continue;
           if (mode === "milestone" && milestone !== "ALL" && s.ms !== milestone) continue;
           const cur = bd.get(s.date) ?? { a: 0, n: 0 };
@@ -256,6 +260,7 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
     return summaryDiscs.map((disc) => {
       const byDate = new Map<string, { a: number; n: number }>();
       for (const s of series) {
+        if (!seriesOk(s)) continue;
         if (!FC_SLOTS.includes(sDisc(s))) continue; // 대상 공종 외 제외
         if (disc !== "ALL" && sDisc(s) !== disc) continue;
         if (mode === "milestone" && milestone !== "ALL" && s.ms !== milestone) continue;
