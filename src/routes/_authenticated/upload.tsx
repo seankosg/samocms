@@ -20,7 +20,7 @@ import { importActivities } from "@/lib/activities.functions";
 import { importTcItems } from "@/lib/project.functions";
 import { importNcrItems } from "@/lib/ncr.functions";
 import type { ImportRow } from "@/lib/import-schedule";
-import { dayDiff, fmtDate, SLOTS, SLOT_LABEL } from "@/lib/schedule-model";
+import { dayDiff, fmtDate, isOwnerScopeText, normMS, OWNER_SLOT, SLOTS, SLOT_LABEL } from "@/lib/schedule-model";
 
 export const Route = createFileRoute("/_authenticated/upload")({
   head: () => ({ meta: [
@@ -54,7 +54,14 @@ type Job = {
     | { kind: "ncr"; fileDate: string | null; rows: NcrImportRow[] };
   /** NCR: 단계 순서 위반으로 반려될 행 미리보기 */
   rejected: { docNo: string; reasons: string[] }[];
+  /** 업역이 달라 제외한 행 수 */
+  excludedScope?: number;
+  /** 이미 발주처 업역으로 등록돼 제외한 행 수 */
+  excludedRegistered?: number;
 };
+
+/** 공정표 업로드 가능한 공종 목록 (발주처 업역 포함) */
+const UPLOAD_SLOTS: string[] = [...SLOTS, OWNER_SLOT];
 
 /** Row(화면용)를 파일 행과 비교 가능한 지문으로 변환합니다. */
 const rowFinger = (r: { no: string | null; dept: string; bldgRaw: string | null; bldg: string | null; room: string | null; scope: string | null; ms: string | null; sub: string | null; act: string; unit: string | null; done: number | null; tot: number | null; pc: number | null; s: string | null; e: string | null; pred: string | null; succ: string | null }) =>
