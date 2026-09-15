@@ -134,7 +134,7 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
 
   const groups = isOwner
     ? [...NAV.filter((g) => g.group === "발주처 업역"), ...DATA_NAV]
-    : [...NAV, ...(isAdmin ? CLOSEOUT_NAV : []), ...(isAdmin ? ADMIN_NAV : isSafetyLead ? SAFETY_NAV : []), ...DATA_NAV];
+    : [...NAV, ...CLOSEOUT_NAV, ...(isAdmin ? ADMIN_NAV : isSafetyLead ? SAFETY_NAV : []), ...DATA_NAV];
 
   const userBadge = (expanded: boolean) => (
     <div className="flex items-center gap-2 rounded-md bg-accent/40 px-2 py-1.5">

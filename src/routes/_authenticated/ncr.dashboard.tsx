@@ -3,7 +3,6 @@ import { z } from "zod";
 import { useMemo, useState } from "react";
 import { CheckCircle2, ClipboardList } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
-import { AdminGate } from "@/components/manpower/admin-gate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNcrItems, ncrQuery } from "@/lib/use-ncr";
@@ -156,7 +155,6 @@ function NcrDashboardPage() {
     toList({ slot: slot.toUpperCase(), metric, asOf, ...(metric.startsWith("upcoming") ? { within: String(Math.max(1, within)) } : {}) });
 
   return (
-    <AdminGate title="NCR 대시보드" desc="준공 준비 기능은 현재 관리자(Admin)에게만 제공됩니다.">
       <AppShell
         title="NCR 대시보드"
         desc={`PS1~PS8 단계별 진행 · 지연 · 현재단계 현황 — 카드를 누르면 해당 리스트로 이동합니다`}
@@ -342,6 +340,5 @@ function NcrDashboardPage() {
           <div className="border-t border-border bg-muted/30 px-4 py-2 text-[10px] text-muted-foreground">각 수치 영역을 누르면 해당 Progress Stage의 NCR 리스트로 이동합니다.</div>
         </div>
       </AppShell>
-    </AdminGate>
   );
 }
