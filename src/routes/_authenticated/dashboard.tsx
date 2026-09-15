@@ -180,11 +180,24 @@ function Dashboard() {
       <section className="mt-6">
         <h2 className="mb-2 text-sm font-bold">마일스톤 현황</h2>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {m.byMs.map((x) => (
+          {m.byMs.map((x) => {
+            const overdue = x.dd != null && x.dd < 0;
+            const imminent = x.dd != null && x.dd >= 0 && x.dd <= 14;
+            const done = x.pc != null && x.pc >= 0.995;
+            const badgeCls = done
+              ? "bg-primary/15 text-primary border-primary/30"
+              : overdue
+                ? "bg-destructive/15 text-destructive border-destructive/30"
+                : imminent
+                  ? "bg-chart-3/15 text-chart-3 border-chart-3/30"
+                  : "bg-muted text-foreground border-border";
+            return (
             <div key={x.key} className={`rounded-md border bg-card p-3 shadow-sm ${x.late ? "border-destructive/40" : "border-border"}`}>
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between gap-2">
                 <strong className="text-sm">{x.key}</strong>
-                <span className="text-[11px] text-muted-foreground">{fmtDate(x.due)}</span>
+                <span className={`inline-flex shrink-0 items-center rounded-md border px-2 py-0.5 text-xs font-bold tabular-nums ${badgeCls}`}>
+                  {fmtDate(x.due)}
+                </span>
               </div>
               <p className="mt-0.5 truncate text-[11px] text-muted-foreground" title={x.name}>{x.name}</p>
               <Bar v={x.pc ?? 0} className="mt-2" />
@@ -202,7 +215,8 @@ function Dashboard() {
               </div>
 
             </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
