@@ -74,7 +74,7 @@ function UsersPage() {
           full_name: r.full_name,
           position: r.position,
           team: r.team,
-          role: r.role as "admin" | "user" | "guest",
+          role: r.role as "admin" | "user" | "owner" | "guest",
           scopes: r.scopes as (typeof SCOPES)[number][],
           is_active: r.is_active,
         },
