@@ -318,7 +318,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
         </p>
         {mode !== "tc" && (
           <div className="ml-auto flex flex-wrap gap-1">
-            {(mode === "discipline" ? (["ALL", ...KPI_SLOTS] as string[]) : (["ALL", ...milestones] as string[])).map((d) => {
+            {(mode === "discipline" ? (["ALL", ...FC_SLOTS] as string[]) : (["ALL", ...milestones] as string[])).map((d) => {
               const active = mode === "discipline" ? tab === d : milestone === d;
               return (
                 <button key={d} type="button" data-active={active} className="ui-filter h-7 cursor-pointer rounded-full px-2.5 text-[11px] transition-colors"
