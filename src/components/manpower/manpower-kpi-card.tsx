@@ -29,7 +29,7 @@ export function ManpowerKpiCard() {
     .map(([loc, n]) => ({ loc, n }))
     .sort((a, b) => b.n - a.n);
   const top1 = bldgTop[0];
-  const top4 = bldgTop.slice(0, 4);
+  const rest = bldgTop.slice(1, 5);
 
   const totalCard = (
     <div className="rounded-md border border-border bg-card p-4 shadow-sm transition hover:border-primary/50">
