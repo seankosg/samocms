@@ -77,6 +77,9 @@ function TrendPage() {
     [cards, keyOf, isAll, selected, shiftCode],
   );
 
+  /** 조 필터 없이 그룹 선택만 적용 (월간 조별 차트용) */
+  const groupOnly = useMemo(() => cards.filter((c) => isAll || selected.includes(keyOf(c))), [cards, keyOf, isAll, selected]);
+
   const days = useMemo(() => dateRange(from, to), [from, to]);
   const byDate = (src: "SUB" | "HDEC") => {
     const m = new Map<string, number>();
@@ -181,7 +184,7 @@ function TrendPage() {
         </div>
       </section>
 
-      <MonthlyShiftChart cards={filtered} />
+      <MonthlyShiftChart cards={groupOnly} />
 
       <h2 className="mb-2 text-sm font-bold">{DIM_LABEL[dim]} 연인원</h2>
       <section className="overflow-x-auto rounded-md border border-border">
