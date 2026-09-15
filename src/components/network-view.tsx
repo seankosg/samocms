@@ -284,11 +284,16 @@ export function NetworkView({ rows, search, onChange, base, forceMode }: { rows:
             const bend = Math.max(30, Math.min(130, Math.abs(bx1 - ax1) / 2));
             const on = vis.has(e.a) && vis.has(e.b);
             const inChain = chain ? chain.has(e.a) && chain.has(e.b) && on : false;
+            const inPush = !!pchain && pchain.has(e.a) && pchain.has(e.b) && on && (M.push.get(e.b)?.cause === e.a);
+            const stroke = inPush ? "#dc2626" : e.cross ? OWNER_COLOR : (STATUS_COLOR[B.st] ?? "#8b98a5");
             return (
               <path key={i} d={`M${ax1},${ay} C${ax1 + bend},${ay} ${bx1 - bend},${by} ${bx1},${by}`}
-                fill="none" stroke={STATUS_COLOR[B.st] ?? "#8b98a5"} strokeWidth={inChain ? 2.4 : 1.5}
+                fill="none" stroke={stroke} strokeWidth={inPush ? 3 : inChain ? 2.4 : e.cross ? 2.4 : 1.5}
                 strokeDasharray={e.ty !== "FS" ? "6 4" : undefined}
-                opacity={!on ? 0.04 : chain ? (inChain ? 0.95 : 0.04) : 0.45} markerEnd={`url(#ar_${B.st})`} />
+                opacity={!on ? 0.04 : inPush ? 1 : chain ? (inChain ? 0.95 : 0.04) : e.cross ? 0.8 : 0.45}
+                markerEnd={`url(#ar_${B.st})`}>
+                {e.via && <title>{`${e.via} → ${e.b} (건설 뭉치로 연결)`}</title>}
+              </path>
             );
           })}
 
