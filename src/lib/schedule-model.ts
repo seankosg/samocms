@@ -31,11 +31,18 @@ export const STATUS_LABEL: Record<string, string> = { done: "완료", ongoing: "
 
 export const flat = (v: unknown) => String(v ?? "").replace(/\s+/g, " ").trim();
 
-/** 예측 롤업에서 제외할 발주처 담당 업무 */
-export const isClientOwned = (manager: string | null | undefined) => {
-  const value = flat(manager).toLowerCase();
-  return value === "hm" || value === "발주처";
+/** Work Scope 원문이 발주처 업역인지 */
+export const isOwnerScopeText = (scope: string | null | undefined) => {
+  const v = flat(scope).toLowerCase();
+  return v === "발주처" || v === "hmmme" || v === "hm";
 };
+
+/** 발주처 업역 행 판정 — Work Scope 하나로만 판정한다 */
+export const isOwnerRow = (r: { scope: string | null; slot?: string; dept?: string }) =>
+  isOwnerScopeText(r.scope) || r.slot === OWNER_SLOT || r.dept === OWNER_SLOT;
+
+/** 화면·엑셀 표기용 — 파일 원문 발주처/HM 은 HMMME 로 표시 (DB 는 원문 유지) */
+export const dispScope = (v: string | null | undefined) => (v == null ? v : isOwnerScopeText(v) ? OWNER_SLOT : v);
 
 const MSRE = /^\s*[Mm]\s*\.?\s*(\d{1,2})\s*$/;
 export function normMS(v: string | null): string | null {
