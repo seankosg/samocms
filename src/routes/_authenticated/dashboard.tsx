@@ -175,7 +175,7 @@ function Dashboard() {
 
       <section className="mt-6">
         <h2 className="mb-2 text-sm font-bold">출면 현황</h2>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><ManpowerKpiCard /></div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"><ManpowerKpiCard /></div>
       </section>
 
       <section className="mt-6">

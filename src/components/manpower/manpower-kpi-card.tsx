@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { UserCheck } from "lucide-react";
+import { Building2, UserCheck } from "lucide-react";
 import { manpowerRangeQuery } from "@/lib/use-manpower";
-import { compliance, fmtDay, riyadhToday, toDaily, type Card, type CompanyMaster } from "@/lib/manpower-model";
+import { compliance, fmtDay, riyadhToday, toDaily, type Card, type CompanyMaster, type LocationMaster } from "@/lib/manpower-model";
 import { MP } from "@/lib/manpower-i18n";
 
 /** 대시보드용 오늘 출면 요약 카드 (제다 현지 기준) */
@@ -12,15 +12,26 @@ export function ManpowerKpiCard() {
 
   const cards = (data?.cards ?? []) as unknown as Card[];
   const companies = (data?.companies ?? []) as unknown as CompanyMaster[];
+  const locations = (data?.locations ?? []) as unknown as LocationMaster[];
   const sub = cards.filter((c) => c.source === "SUB");
   const daily = toDaily(sub);
   const total = daily.reduce((a, d) => a + d.total, 0);
   const shifts = [
-    { label: "주간", value: daily.reduce((a, d) => a + d.day_total, 0) },
-    { label: "연장", value: daily.reduce((a, d) => a + d.ot_total, 0) },
-    { label: "야간", value: daily.reduce((a, d) => a + d.night_total, 0) },
+    { label: MP.day, value: daily.reduce((a, d) => a + d.day_total, 0), cls: "text-ncr-progress-plan" },
+    { label: MP.ot, value: daily.reduce((a, d) => a + d.ot_total, 0), cls: "text-ncr-upcoming" },
+    { label: MP.night, value: daily.reduce((a, d) => a + d.night_total, 0), cls: "text-ncr-progress-actual" },
   ];
   const comp = compliance(cards, companies, day, data?.settings?.["manpower_cutoff_time"] ?? "09:00");
+
+  // 건물별 집계 (건물 코드가 있으면 코드 표기)
+  const codeOf = new Map(locations.map((l) => [l.name, l.bldg_code]));
+  const byBldg = new Map<string, number>();
+  for (const c of sub) byBldg.set(c.location, (byBldg.get(c.location) ?? 0) + c.subtotal);
+  const bldgTop = [...byBldg.entries()]
+    .map(([loc, n]) => ({ loc, code: codeOf.get(loc) ?? null, n }))
+    .sort((a, b) => b.n - a.n);
+  const top1 = bldgTop[0];
+  const top4 = bldgTop.slice(0, 4);
 
   const totalCard = (
     <div className="rounded-md border border-border bg-card p-4 shadow-sm transition hover:border-primary/50">
@@ -45,16 +56,59 @@ export function ManpowerKpiCard() {
       )}
     </div>
   );
-  return <>{totalCard}{shifts.map((item) => <ShiftCard key={item.label} label={item.label} value={item.value} day={day} loading={isLoading} error={isError} />)}</>;
-}
 
-const ShiftCard = ({ label, value, day, loading, error }: { label: string; value: number; day: string; loading: boolean; error: boolean }) => (
-  <Link to="/manpower" search={{ day, src: "SUB" }} className="rounded-md border border-border bg-card p-4 shadow-sm transition hover:border-primary/50">
-    <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">오늘 출면 · {label}</p>
-    <p className="mt-1 text-2xl font-bold">{error ? "—" : loading ? "…" : `${value.toLocaleString()}명`}</p>
-    <p className="mt-2 text-[11px] text-muted-foreground">협력사 보고 · {fmtDay(day)}</p>
-  </Link>
-);
+  const shiftCard = (
+    <Link to="/manpower" search={{ day, src: "SUB" }} className="rounded-md border border-border bg-card p-4 shadow-sm transition hover:border-primary/50">
+      <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">오늘 출면 · 조별</p>
+      <div className="mt-1 grid grid-cols-3 gap-2">
+        {shifts.map((s) => (
+          <div key={s.label} className="text-center">
+            <p className="text-[11px] font-bold text-muted-foreground">{s.label}</p>
+            <p className={`text-2xl font-bold tabular-nums ${s.cls}`}>
+              {isError ? "—" : isLoading ? "…" : s.value.toLocaleString()}
+            </p>
+          </div>
+        ))}
+      </div>
+      <p className="mt-2 text-[11px] text-muted-foreground">협력사 보고 · {fmtDay(day)}</p>
+    </Link>
+  );
+
+  const bldgCard = (
+    <div className="rounded-md border border-border bg-card p-4 shadow-sm transition hover:border-primary/50">
+      <Link to="/manpower" search={{ day, src: "SUB" }} className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground hover:text-primary">
+        <Building2 className="size-3.5" />오늘 최대 출면 건물
+      </Link>
+      {isError ? (
+        <p className="mt-2 text-xs text-muted-foreground">출면 자료를 불러오지 못했습니다.</p>
+      ) : (
+        <div className="mt-1 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-lg font-extrabold leading-tight" title={top1?.loc}>
+              {isLoading ? "…" : top1 ? (top1.code ? `${top1.code} ${top1.loc}` : top1.loc) : "—"}
+            </p>
+            <p className="text-2xl font-bold tabular-nums text-primary">
+              {isLoading ? "…" : top1 ? `${top1.n.toLocaleString()}명` : ""}
+            </p>
+          </div>
+          <div className="shrink-0 space-y-1 text-right text-[11px]">
+            {top4.map((b, i) => (
+              <div key={b.loc} className="flex items-baseline justify-end gap-1.5">
+                <span className="max-w-[110px] truncate font-semibold text-muted-foreground" title={b.loc}>
+                  {i + 1}. {b.code ? `${b.code} ` : ""}{b.loc}
+                </span>
+                <span className="font-bold tabular-nums">{b.n.toLocaleString()}</span>
+              </div>
+            ))}
+            {!isLoading && top4.length === 0 && <p className="text-muted-foreground">자료 없음</p>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  return <>{totalCard}{shiftCard}{bldgCard}</>;
+}
 
 const Cell = ({ label, value, day }: { label: string; value: string; day: string }) => (
   <Link to="/manpower" search={{ day, src: "SUB" }} className="rounded bg-muted/50 px-2 py-1.5 transition hover:bg-muted">
