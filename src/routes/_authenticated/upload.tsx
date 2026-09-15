@@ -345,6 +345,14 @@ function UploadPage() {
                     {isSchedule && <> · 갱신 {j.changed.toLocaleString()}건</>}
                     {" "}· 보관 예정 {j.removed.length}건{j.removed.length ? ` (예: ${j.removed.slice(0, 5).join(", ")})` : ""}
                   </p>
+                  {(!!j.excludedScope || !!j.excludedRegistered) && (
+                    <p className="mt-1.5 text-[11px] font-semibold text-primary">
+                      {j.payload.kind === "schedule" && j.payload.slot === OWNER_SLOT
+                        ? `HDEC 공정 ${(j.excludedScope ?? 0).toLocaleString()}건을 제외하고 발주처 업역 행만 반영합니다.`
+                        : `발주처 업역 ${(j.excludedScope ?? 0).toLocaleString()}건을 제외했습니다.`}
+                      {!!j.excludedRegistered && ` 발주처 업역으로 등록된 항목 ${j.excludedRegistered.toLocaleString()}건도 제외했습니다.`}
+                    </p>
+                  )}
                   {hideWarn && (
                     <p className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-destructive">
                       <EyeOff className="size-3.5" />기존 항목의 30% 이상이 보관 처리됩니다. 파일이 맞는지 다시 확인해 주세요.
