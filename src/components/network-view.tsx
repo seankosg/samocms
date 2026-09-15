@@ -316,8 +316,25 @@ export function NetworkView({ rows, search, onChange, base, forceMode }: { rows:
                 {n.s && n.e && n.s < n.e && (
                   <line x1={Math.max(lay.PADL - 8, lay.X(n.s))} y1={by + BH + 6} x2={lay.X(n.e)} y2={by + BH + 6} stroke={st} strokeWidth={3} strokeLinecap="round" opacity={0.33} />
                 )}
-                <line x1={x} y1={ly + 16} x2={x} y2={by} stroke={col} strokeWidth={1} opacity={0.3} />
-                <rect x={bx} y={by} width={w} height={BH} rx={4} fill={lock === n.id ? "#f4f9ff" : "#fff"} stroke={st} strokeWidth={n.mile ? 2.2 : 1.3} />
+                {!!n._push && gdx !== 0 && (
+                  <g opacity={0.75}>
+                    <rect x={bx + gdx} y={by} width={w} height={BH} rx={4} fill="none" stroke="#94a3b8" strokeWidth={1.2} strokeDasharray="5 4" />
+                    <line x1={bx + gdx + w} y1={by + BH / 2} x2={bx} y2={by + BH / 2} stroke="#dc2626" strokeWidth={1.4} strokeDasharray="4 3" markerEnd={`url(#ar_${n.st})`} />
+                  </g>
+                )}
+                <line x1={x} y1={ly + 16} x2={x} y2={by} stroke={col} strokeWidth={1} opacity={n.owner ? 0.6 : 0.3} strokeWidth={n.owner ? 1.8 : 1} />
+                <rect x={bx} y={by} width={w} height={BH} rx={4} fill={lock === n.id ? "#f4f9ff" : "#fff"}
+                  stroke={n.owner ? OWNER_COLOR : st} strokeWidth={n.owner ? 2.2 : n.mile ? 2.2 : 1.3}
+                  strokeDasharray={n.ctx ? "5 3" : undefined} />
+                {n.owner && <rect x={bx} y={by} width={3} height={BH} fill={OWNER_COLOR} />}
+                {!!n._push && (
+                  <g>
+                    <rect x={bx + w - 34} y={by - 9} width={34} height={13} rx={6.5} fill="#dc2626" />
+                    <text x={bx + w - 17} y={by + 1} fontSize={9} fontWeight={700} textAnchor="middle" fill="#fff">
+                      +{n._push}d
+                    </text>
+                  </g>
+                )}
                 <rect x={bx} y={byy} width={w} height={3.4} fill="#eaeff4" />
                 {plv != null && plv > pcv && <rect x={bx + w * pcv} y={byy} width={w * (plv - pcv)} height={3.4} fill="#c2185b" opacity={0.45} />}
                 {pcv > 0 && <rect x={bx} y={byy} width={w * pcv} height={3.4} fill={st} />}
