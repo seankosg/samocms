@@ -58,7 +58,7 @@ function TrendPage() {
   /** 카드 → 선택 축의 그룹명 */
   const keyOf = useMemo(() => {
     const team = new Map(companies.map((c) => [c.name, c.discipline || "미지정"]));
-    const bldg = new Map(locations.map((l) => [l.name, l.bldg_code || l.name]));
+    const bldg = new Map(locations.map((l) => [l.name, l.name]));
     return (c: MpCard) =>
       dim === "team" ? (team.get(c.company) ?? "미지정")
       : dim === "building" ? (bldg.get(c.location) ?? c.location)

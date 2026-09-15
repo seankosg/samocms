@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Building2, UserCheck } from "lucide-react";
 import { manpowerRangeQuery } from "@/lib/use-manpower";
-import { compliance, fmtDay, riyadhToday, toDaily, type Card, type CompanyMaster, type LocationMaster } from "@/lib/manpower-model";
+import { compliance, fmtDay, riyadhToday, toDaily, type Card, type CompanyMaster } from "@/lib/manpower-model";
 import { MP } from "@/lib/manpower-i18n";
 
 /** 대시보드용 오늘 출면 요약 카드 (제다 현지 기준) */
@@ -12,7 +12,6 @@ export function ManpowerKpiCard() {
 
   const cards = (data?.cards ?? []) as unknown as Card[];
   const companies = (data?.companies ?? []) as unknown as CompanyMaster[];
-  const locations = (data?.locations ?? []) as unknown as LocationMaster[];
   const sub = cards.filter((c) => c.source === "SUB");
   const daily = toDaily(sub);
   const total = daily.reduce((a, d) => a + d.total, 0);
@@ -23,12 +22,11 @@ export function ManpowerKpiCard() {
   ];
   const comp = compliance(cards, companies, day, data?.settings?.["manpower_cutoff_time"] ?? "09:00");
 
-  // 건물별 집계 (건물 코드가 있으면 코드 표기)
-  const codeOf = new Map(locations.map((l) => [l.name, l.bldg_code]));
+  // 건물별 집계 (화면에는 건물명으로 표시)
   const byBldg = new Map<string, number>();
   for (const c of sub) byBldg.set(c.location, (byBldg.get(c.location) ?? 0) + c.subtotal);
   const bldgTop = [...byBldg.entries()]
-    .map(([loc, n]) => ({ loc, code: codeOf.get(loc) ?? null, n }))
+    .map(([loc, n]) => ({ loc, n }))
     .sort((a, b) => b.n - a.n);
   const top1 = bldgTop[0];
   const top4 = bldgTop.slice(0, 4);
@@ -85,7 +83,7 @@ export function ManpowerKpiCard() {
         <div className="mt-1 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="truncate text-lg font-extrabold leading-tight" title={top1?.loc}>
-              {isLoading ? "…" : top1 ? (top1.code ? `${top1.code} ${top1.loc}` : top1.loc) : "—"}
+              {isLoading ? "…" : top1 ? top1.loc : "—"}
             </p>
             <p className="text-2xl font-bold tabular-nums text-primary">
               {isLoading ? "…" : top1 ? `${top1.n.toLocaleString()}명` : ""}
@@ -95,7 +93,7 @@ export function ManpowerKpiCard() {
             {top4.map((b, i) => (
               <div key={b.loc} className="flex items-baseline justify-end gap-1.5">
                 <span className="max-w-[110px] truncate font-semibold text-muted-foreground" title={b.loc}>
-                  {i + 1}. {b.code ? `${b.code} ` : ""}{b.loc}
+                  {i + 1}. {b.loc}
                 </span>
                 <span className="font-bold tabular-nums">{b.n.toLocaleString()}</span>
               </div>
