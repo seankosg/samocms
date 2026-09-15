@@ -77,6 +77,8 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
   const sDisc = (s: { disc: string; dept?: string }) => (byDept ? (s.dept ?? s.disc) : s.disc);
   /** 그룹 표시 라벨 */
   const discLabel = (d: string) => (byDept ? d : (SLOT_LABEL[d] ?? d));
+  /** 발주처 보기에서는 발주처(HMMME) 계열만 사용 */
+  const seriesOk = (s: { disc: string }) => (byDept ? s.disc === OWNER_SLOT : true);
 
   // 기본값: 인허가(Permit)와 발주처 업역은 예측 대상에서 제외 (목록·계산 모두)
   const FC_SLOTS: string[] = slots ?? KPI_SLOTS.filter((s) => s !== "Permit");
