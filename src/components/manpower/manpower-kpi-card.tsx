@@ -23,12 +23,11 @@ export function ManpowerKpiCard() {
   ];
   const comp = compliance(cards, companies, day, data?.settings?.["manpower_cutoff_time"] ?? "09:00");
 
-  // 건물별 집계 (건물 코드가 있으면 코드 표기)
-  const codeOf = new Map(locations.map((l) => [l.name, l.bldg_code]));
+  // 건물별 집계 (화면에는 건물명으로 표시)
   const byBldg = new Map<string, number>();
   for (const c of sub) byBldg.set(c.location, (byBldg.get(c.location) ?? 0) + c.subtotal);
   const bldgTop = [...byBldg.entries()]
-    .map(([loc, n]) => ({ loc, code: codeOf.get(loc) ?? null, n }))
+    .map(([loc, n]) => ({ loc, n }))
     .sort((a, b) => b.n - a.n);
   const top1 = bldgTop[0];
   const top4 = bldgTop.slice(0, 4);
