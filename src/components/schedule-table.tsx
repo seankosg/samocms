@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/use-auth";
 import { numOrNull, useActivityEdit } from "@/lib/use-inline-edit";
-import { dailyActual, dailyPlan, fmtDate, fmtShortDate, isLate, pct1, SLOT_LABEL, statusOfRow, STATUS_LABEL, type Row } from "@/lib/schedule-model";
+import { dailyActual, dailyPlan, dispScope, fmtDate, fmtShortDate, isLate, pct1, SLOT_LABEL, statusOfRow, STATUS_LABEL, type Row } from "@/lib/schedule-model";
 import { useProject, usePrevActuals } from "@/lib/use-project";
 import {
   DateRangeFilter, MultiSelectFilter, TextFilter, EMPTY_TOKEN,
@@ -162,7 +162,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
   const exportRows = useCallback((): ExportRow[] => filtered.map((r) => ({
     group: r.sub ?? "",
     rec: {
-      "No.": r.no, 담당부서: r.dept, 담당자: mgrLabel(r.mgr), Subcon: r.sub, "Bldg.": r.bldg, Room: r.room, "Work Scope": dispScope(r.scope), Milestone: r.ms,
+      "No.": r.no, 담당부서: SLOT_LABEL[r.dept] ?? r.dept, 담당자: mgrLabel(r.mgr), Subcon: r.sub, "Bldg.": r.bldg, Room: r.room, "Work Scope": dispScope(r.scope), Milestone: r.ms,
       Activity: r.act, Unit: r.unit, Done: r.done, Total: r.tot,
       "계획(%)": r.pl == null ? null : r.pl * 100, "실적(%)": r.pc == null ? null : r.pc * 100,
       "당일계획(%)": dailyPlan(r, base) == null ? null : dailyPlan(r, base)! * 100,
