@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/schedule")({
 });
 
 function SchedulePage() {
-  const { rows, base } = useProject();
+  const { hdecRows: rows, base } = useProject();
   const { canEdit } = useAuth();
   const qc = useQueryClient();
   const search = Route.useSearch();

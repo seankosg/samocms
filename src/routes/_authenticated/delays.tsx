@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/delays")({
 });
 
 function DelaysPage() {
-  const { rows, base } = useProject();
+  const { hdecRows: rows, base } = useProject();
   const search = Route.useSearch();
   const late = useMemo(() => rows.filter((r) => {
     if (!isLate(r)) return false;
