@@ -67,7 +67,7 @@ function OwnerListPage() {
         <button
           type="button" data-active={!search.dept}
           className="ui-filter h-7 cursor-pointer rounded-full px-2.5 text-[11px] transition-colors"
-          onClick={() => navigate({ search: (prev) => ({ ...prev, dept: undefined }) })}
+          onClick={() => navigate({ search: (prev) => { const { dept: _drop, ...rest } = prev; return rest; } })}
         >
           전체
         </button>
