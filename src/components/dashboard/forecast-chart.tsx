@@ -68,9 +68,10 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes }: {
   const [tcBldg, setTcBldg] = useState<string>("ALL");
   const [hover, setHover] = useState<number | null>(null);
 
-  // 인허가(Permit)는 예측 대상에서 제외 (목록·계산 모두)
-  const FC_SLOTS = KPI_SLOTS.filter((s) => s !== "Permit");
-  const eligibleRows = useMemo(() => rows.filter((r) => !isOwnerRow(r) && r.slot !== "Permit"), [rows]);
+  // 기본값: 인허가(Permit)와 발주처 업역은 예측 대상에서 제외 (목록·계산 모두)
+  const FC_SLOTS: string[] = slots ?? KPI_SLOTS.filter((s) => s !== "Permit");
+  const inScope = rowScope ?? ((r: Row) => !isOwnerRow(r) && r.slot !== "Permit");
+  const eligibleRows = useMemo(() => rows.filter(inScope), [rows, rowScope]);
   const milestones = useMemo(() => {
     const values = new Set(eligibleRows.map((r) => r.ms ?? "미지정"));
     return [...values].sort((a, b) => {
