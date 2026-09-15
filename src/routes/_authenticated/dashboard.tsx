@@ -200,7 +200,7 @@ function Dashboard() {
                 ? "bg-chart-3 text-white border-chart-3"
                 : "bg-primary/15 text-primary border-primary/30";
             return (
-            <div key={x.key} className={`rounded-md border bg-card p-3 shadow-sm ${x.late ? "border-destructive/40" : "border-border"}`}>
+            <div key={x.key} className={`rounded-md border bg-card p-3 shadow-sm ${x.late ? "border-destructive/40" : "border-border"} ${done ? "opacity-60 saturate-50" : ""}`}>
               <div className="flex items-start justify-between gap-2">
                 <strong className="text-lg font-extrabold tracking-tight">{x.key}</strong>
                 <div className="flex shrink-0 items-center gap-1.5">
