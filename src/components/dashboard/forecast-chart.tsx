@@ -130,7 +130,7 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes }: {
     // 기록 이력 (선택 공종, 전체는 가중평균)
     const byDate = new Map<string, { p: number; a: number; n: number }>();
     for (const s of series) {
-      if (s.disc === "Permit") continue; // 인허가 제외
+      if (!FC_SLOTS.includes(s.disc)) continue; // 대상 공종 외 제외
       if (mode === "discipline" && tab !== "ALL" && s.disc !== tab) continue;
       if (mode === "milestone" && milestone !== "ALL" && s.ms !== milestone) continue;
       if (mode === "milestone" && milestoneDisc !== "ALL" && s.disc !== milestoneDisc) continue;
@@ -245,7 +245,7 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes }: {
     return summaryDiscs.map((disc) => {
       const byDate = new Map<string, { a: number; n: number }>();
       for (const s of series) {
-        if (s.disc === "Permit") continue; // 인허가 제외
+        if (!FC_SLOTS.includes(s.disc)) continue; // 대상 공종 외 제외
         if (disc !== "ALL" && s.disc !== disc) continue;
         if (mode === "milestone" && milestone !== "ALL" && s.ms !== milestone) continue;
         const cur = byDate.get(s.date) ?? { a: 0, n: 0 };
