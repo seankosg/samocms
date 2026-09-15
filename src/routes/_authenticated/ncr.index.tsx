@@ -141,6 +141,7 @@ function NcrListPage() {
             if (!fPlan || fPlan >= cutoff) return false;
           }
         }
+        if (search.metric === "remain" && d[actualField(slot)]) return false;
       }
       if (q && ![r.doc_no, r.description, r.location, r.mic, r.pic, r.subcontractor, r.response_status].some((v) => (v ?? "").toLowerCase().includes(q))) return false;
       return true;
