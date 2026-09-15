@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Navigate, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { ChangePassword } from "@/components/change-password";
 import { useAuth } from "@/lib/use-auth";
@@ -13,8 +13,13 @@ export const Route = createFileRoute("/_authenticated")({
   component: Gate,
 });
 
+/** 발주처 권한 사용자가 열람할 수 있는 경로 */
+const OWNER_PATHS = ["/owner", "/upload"];
+
 function Gate() {
-  const { profile, isLoading } = useAuth();
+  const { profile, isLoading, isOwner } = useAuth();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
 
   if (isLoading) {
     return <div className="grid min-h-screen place-items-center text-sm text-muted-foreground">불러오는 중…</div>;
