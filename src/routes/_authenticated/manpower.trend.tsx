@@ -79,22 +79,19 @@ function TrendPage() {
   const subTotals = useMemo(() => byDate("SUB"), [filtered]);
   const hdecTotals = useMemo(() => byDate("HDEC"), [filtered]);
 
-  let cs = 0, ch = 0;
   const chart = days.map((d) => {
     const rep = subTotals.get(d) ?? 0;
     const ver = hdecTotals.get(d) ?? 0;
-    cs += rep; ch += ver;
-    return { day: d.slice(5), 보고: rep, 재집계: ver, "누계 보고": cs, "누계 재집계": ch };
+    return { day: d.slice(5), 보고: rep, 재집계: ver };
   });
 
   // 차트 크기: X축(일수)·Y축(최대값)에 따라 가변 — 영역 폭은 고정, 내부만 스크롤
   const dailyMax = Math.max(1, ...chart.map((r) => Math.max(r.보고, r.재집계)));
-  const cumMax = Math.max(1, cs, ch);
   const chartWidth = Math.max(640, days.length * (days.length > 45 ? 26 : 44));
   const chartHeight = dailyMax > 800 ? 520 : dailyMax > 400 ? 460 : dailyMax > 150 ? 400 : 340;
 
   const workDays = days.filter(isWorkday);
-  const sum = cs;
+  const sum = days.reduce((s, d) => s + (subTotals.get(d) ?? 0), 0);
   const avg = workDays.length ? sum / workDays.length : 0;
   const peakDay = days.reduce((best, d) => ((subTotals.get(d) ?? 0) > (subTotals.get(best) ?? 0) ? d : best), days[0] ?? from);
 
@@ -109,7 +106,7 @@ function TrendPage() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(chart.map((r, i) => ({
       일자: days[i], 근무일: isWorkday(days[i]!) ? "Y" : "N",
-      보고: r.보고, 재집계: r.재집계, "누계 보고": r["누계 보고"], "누계 재집계": r["누계 재집계"],
+      보고: r.보고, 재집계: r.재집계,
     }))), "출면추이");
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(byGroup.map(([c, v]) => ({ [DIM_LABEL[dim]]: c, 연인원: v }))), DIM_LABEL[dim]);
     XLSX.writeFile(wb, `HMMME_출면추이_${from.replace(/-/g, "")}_${to.replace(/-/g, "")}.xlsx`);
@@ -152,40 +149,17 @@ function TrendPage() {
 
       <section className="mb-6 rounded-md border border-border bg-card p-3">
         <h2 className="mb-2 text-sm font-bold">
-          일자별 출면 인원 <span className="text-xs font-normal text-muted-foreground">막대: 일일기록(좌축) · 선: 누계기록(우축)</span>
+          일자별 출면 인원 <span className="text-xs font-normal text-muted-foreground">선: 일일 출면 인원 (당일 기준)</span>
         </h2>
         <div className="w-full overflow-x-auto">
-          <ComposedChart width={chartWidth} height={chartHeight} data={chart} margin={{ top: 8, right: 12, left: 0, bottom: 0 }} barGap="-100%">
+          <ComposedChart width={chartWidth} height={chartHeight} data={chart} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
             <XAxis dataKey="day" tick={{ fontSize: 11 }} interval={days.length > 60 ? 2 : 0} angle={days.length > 20 ? -45 : 0} textAnchor={days.length > 20 ? "end" : "middle"} height={days.length > 20 ? 52 : 30} />
-            <YAxis yAxisId="daily" tick={{ fontSize: 11 }} domain={[0, Math.ceil((dailyMax * 1.1) / 10) * 10]} allowDecimals={false} />
-            <YAxis yAxisId="cum" orientation="right" tick={{ fontSize: 11 }} domain={[0, Math.ceil((cumMax * 1.05) / 10) * 10]} allowDecimals={false} />
+            <YAxis tick={{ fontSize: 11 }} domain={[0, Math.ceil((dailyMax * 1.1) / 10) * 10]} allowDecimals={false} />
             <Tooltip contentStyle={{ fontSize: 12 }} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar yAxisId="daily" dataKey="재집계" fill="#9ca3af" isAnimationActive={false} shape={(props: { x?: number; y?: number; width?: number; height?: number; payload?: Record<string, unknown> }) => {
-              const { x = 0, y = 0, width = 0, height = 0, payload } = props;
-              const sub = Number(payload?.["보고"] ?? 0); const hdec = Number(payload?.["재집계"] ?? 0);
-              const diffH = hdec > sub && hdec > 0 ? (height * (hdec - sub)) / hdec : 0;
-              return (
-                <g>
-                  <rect x={x} y={y} width={width} height={height} fill="#9ca3af" rx={2} />
-                  {diffH > 0 && <rect x={x} y={y} width={width} height={diffH} fill="#ef4444" rx={2} />}
-                </g>
-              );
-            }} />
-            <Bar yAxisId="daily" dataKey="보고" fill="#2563eb" isAnimationActive={false} shape={(props: { x?: number; y?: number; width?: number; height?: number; payload?: Record<string, unknown> }) => {
-              const { x = 0, y = 0, width = 0, height = 0, payload } = props;
-              const sub = Number(payload?.["보고"] ?? 0); const hdec = Number(payload?.["재집계"] ?? 0);
-              const diffH = sub > hdec && sub > 0 ? (height * (sub - hdec)) / sub : 0;
-              return (
-                <g>
-                  <rect x={x} y={y} width={width} height={height} fill="#2563eb" rx={2} />
-                  {diffH > 0 && <rect x={x} y={y} width={width} height={diffH} fill="#16a34a" rx={2} />}
-                </g>
-              );
-            }} />
-            <Line yAxisId="cum" type="monotone" dataKey="누계 보고" stroke="var(--chart-1)" dot={false} strokeWidth={2} />
-            <Line yAxisId="cum" type="monotone" dataKey="누계 재집계" stroke="var(--chart-4)" dot={false} strokeWidth={2} strokeDasharray="5 4" />
+            <Line type="monotone" dataKey="보고" stroke="var(--chart-1)" dot={{ r: 2 }} strokeWidth={2} isAnimationActive={false} />
+            <Line type="monotone" dataKey="재집계" stroke="var(--chart-4)" dot={{ r: 2 }} strokeWidth={2} strokeDasharray="5 4" isAnimationActive={false} />
           </ComposedChart>
         </div>
       </section>
