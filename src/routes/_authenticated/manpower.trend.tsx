@@ -128,6 +128,7 @@ function TrendPage() {
     };
     return [make("전조"), make("주간", "Day Shift"), make("연장", "Overtime"), make("야간", "Night Shift")];
   }, [selectedSub]);
+  const allShiftSummary = shiftSummary[0] ?? { label: "전조", total: 0, reportDays: 0, avg: 0 };
 
   const exportXlsx = () => {
     const wb = XLSX.utils.book_new();
@@ -162,7 +163,7 @@ function TrendPage() {
     >
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label="연인원" value={sum.toLocaleString()} sub={`${DIM_LABEL[dim]} · ${selLabel}`} breakdown={shiftSummary.slice(1).map((x) => ({ label: x.label, value: x.total.toLocaleString() }))} />
-        <Kpi label="일일투입평균" value={shiftSummary[0].avg.toFixed(1)} sub={`실제 보고일 ${shiftSummary[0].reportDays}일`} breakdown={shiftSummary.slice(1).map((x) => ({ label: x.label, value: x.avg.toFixed(1) }))} />
+        <Kpi label="일일투입평균" value={allShiftSummary.avg.toFixed(1)} sub={`실제 보고일 ${allShiftSummary.reportDays}일`} breakdown={shiftSummary.slice(1).map((x) => ({ label: x.label, value: x.avg.toFixed(1) }))} />
         <Kpi label="최대 투입일" value={String(subTotals.get(peakDay) ?? 0)} sub={peakDay} />
         <Kpi label={DIM_LABEL[dim].replace("별", " 수")} value={String(byGroup.length)} sub={byGroup[0] ? `최다 ${byGroup[0][0]}` : ""} />
       </div>
