@@ -169,7 +169,18 @@ export function NetworkView({ rows, search, onChange, base, forceMode }: { rows:
         <span style={{ color: STATUS_COLOR["delay"] }}>┃ 계획선</span>
         <span>◆ 마일스톤(굵은 테두리)</span>
         <span style={{ color: STATUS_COLOR["delay"] }}>┆ 기준일</span>
+        <span className="inline-flex items-center gap-1"><i className="inline-block size-[11px] rounded-[3px]" style={{ background: OWNER_COLOR }} />발주처 업역</span>
+        <span className="inline-flex items-center gap-1"><i className="inline-block size-[11px] rounded-[3px] border border-dashed border-muted-foreground/70" />밀리기 전 자리</span>
       </div>
+
+      {/* 발주처 영향 요약 */}
+      {showPush && M.impact.hdec > 0 && (
+        <div className="rounded-md border px-3 py-2 text-[12px] font-bold" style={{ borderColor: OWNER_COLOR, color: OWNER_COLOR, background: `${OWNER_COLOR}12` }}>
+          발주처 변경으로 당사 항목 {M.impact.hdec}건
+          {M.impact.ms.length > 0 ? `, 마일스톤 ${M.impact.ms.join("·")}` : ""}이(가) 최대 {M.impact.maxDays}일 영향을 받습니다.
+        </div>
+      )}
+
 
       {/* 통계 */}
       <div className="flex flex-wrap gap-4 rounded-md border border-border bg-card px-3 py-2 text-[12px] text-muted-foreground">
