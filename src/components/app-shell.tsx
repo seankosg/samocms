@@ -6,7 +6,7 @@ import * as XLSX from "xlsx";
 import {
   AlertTriangle, BarChart3, CalendarClock, TrendingUp, CalendarDays, ChevronLeft, Download, FileText, ListChecks,
   LogOut, Menu, MoreVertical, Network, PanelLeft, Settings, Sparkles, Table2, UploadCloud, Users, Wrench, Zap,
-  UserCheck, GitCompare, LineChart, Contact, ShieldAlert, ClipboardCheck, FileWarning,
+  UserCheck, GitCompare, LineChart, Contact, ShieldAlert, ClipboardCheck, FileWarning, Building2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ROLE_LABEL, useAuth } from "@/lib/use-auth";
@@ -47,6 +47,10 @@ const NAV = [
     { to: "/delays", label: "지연 리스트", icon: AlertTriangle },
     { to: "/schedule", label: "공정 리스트", icon: Table2 },
     { to: "/report", label: "Progress Report", icon: FileText },
+  ] },
+  { group: "발주처 업역", items: [
+    { to: "/owner", label: "발주처 공정현황", icon: Building2 },
+    { to: "/owner/list", label: "발주처 공정 리스트", icon: ListChecks },
   ] },
   { group: "시운전 현황", items: [
     { to: "/tc/progress", label: "T&C Progress", icon: TrendingUp },
