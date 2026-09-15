@@ -180,13 +180,14 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
     const groupSlots: string[] | null =
       mode === "discipline" && tab === "ALL" ? [...FC_SLOTS]
       : mode === "milestone" && milestoneDisc === "ALL"
-        ? FC_SLOTS.filter((disc) => series.some((s) => sDisc(s) === disc && (milestone === "ALL" || s.ms === milestone)))
+        ? FC_SLOTS.filter((disc) => series.some((s) => seriesOk(s) && sDisc(s) === disc && (milestone === "ALL" || s.ms === milestone)))
         : null;
     if (groupSlots && !actualDoneDate) {
       const ends: { slot: string; end: string }[] = [];
       for (const slot of groupSlots) {
         const bd = new Map<string, { a: number; n: number }>();
         for (const s of series) {
+          if (!seriesOk(s)) continue;
           if (sDisc(s) !== slot) continue;
           if (mode === "milestone" && milestone !== "ALL" && s.ms !== milestone) continue;
           const cur = bd.get(s.date) ?? { a: 0, n: 0 };
