@@ -79,7 +79,7 @@ const diffKeys = (before: string[], after: string[]) => {
 };
 
 function UploadPage() {
-  const { rows, tcItems, batches, base } = useProject();
+  const { rows, ownerRows, tcItems, batches, base } = useProject();
   const ncrItems = useNcrItems();
   const { canEdit, canWrite, scopes, isAdmin } = useAuth();
   const qc = useQueryClient();
@@ -88,6 +88,19 @@ function UploadPage() {
   const [drag, setDrag] = useState(false);
   const [pending, setPending] = useState<Job[] | null>(null);
   const [skip, setSkip] = useState<Record<string, boolean>>({});
+  /** 파일명으로 공종을 판별하지 못했을 때 사용자에게 묻는 창 */
+  const [askSlot, setAskSlot] = useState<string | null>(null);
+  const askResolve = useRef<((slot: string | null) => void) | null>(null);
+  const pickSlot = (fileName: string) =>
+    new Promise<string | null>((resolve) => {
+      askResolve.current = resolve;
+      setAskSlot(fileName);
+    });
+  const answerSlot = (slot: string | null) => {
+    setAskSlot(null);
+    askResolve.current?.(slot);
+    askResolve.current = null;
+  };
 
   /** 파일을 파싱해 기존 DB 행수와 비교한 작업 목록으로 만듭니다. */
   const buildJobs = async (list: File[]) => {
