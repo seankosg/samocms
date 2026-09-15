@@ -136,7 +136,7 @@ function TrendPage() {
       }
     >
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="연인원" value={sum.toLocaleString()} sub={`${DIM_LABEL[dim]} · ${active}`} />
+        <Kpi label="연인원" value={sum.toLocaleString()} sub={`${DIM_LABEL[dim]} · ${selLabel}`} />
         <Kpi label="근무일 평균" value={avg.toFixed(1)} sub={`${workDays.length}일 기준`} />
         <Kpi label="최대 투입일" value={String(subTotals.get(peakDay) ?? 0)} sub={peakDay} />
         <Kpi label={DIM_LABEL[dim].replace("별", " 수")} value={String(byGroup.length)} sub={byGroup[0] ? `최다 ${byGroup[0][0]}` : ""} />
@@ -144,8 +144,8 @@ function TrendPage() {
 
       <div className="mb-3 flex flex-wrap gap-1.5">
         {["전체", ...groups].map((c) => (
-          <button key={c} type="button" data-active={active === c} className="ui-filter h-7 cursor-pointer rounded-md px-2.5 text-xs transition-colors"
-            onClick={() => navigate({ search: (p) => ({ ...p, mpVal: c }), replace: true })}>{c}</button>
+          <button key={c} type="button" data-active={isAll ? c === "전체" : selected.includes(c)} className="ui-filter h-7 cursor-pointer rounded-md px-2.5 text-xs transition-colors"
+            onClick={() => { if (c === "전체") { setSelected([]); return; } setSelected(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]); }}>{c}</button>
         ))}
       </div>
 
@@ -180,8 +180,8 @@ function TrendPage() {
           </thead>
           <tbody>
             {byGroup.map(([c, v]) => (
-              <tr key={c} className={`cursor-pointer [&>td]:border-b [&>td]:border-border/60 [&>td]:px-2 [&>td]:py-1.5 ${active === c ? "bg-primary/10" : "hover:bg-muted/40"}`}
-                onClick={() => navigate({ search: (p) => ({ ...p, mpVal: active === c ? "전체" : c }), replace: true })}>
+              <tr key={c} className={`cursor-pointer [&>td]:border-b [&>td]:border-border/60 [&>td]:px-2 [&>td]:py-1.5 ${isAll || selected.includes(c) ? "bg-primary/10" : "hover:bg-muted/40"}`}
+                onClick={() => setSelected(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c])}>
                 <td className="font-medium">{c}</td>
                 <td className="text-right font-bold">{v.toLocaleString()}</td>
                 <td className="text-right text-muted-foreground">{groupSum ? `${((v / groupSum) * 100).toFixed(1)}%` : "—"}</td>
