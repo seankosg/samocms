@@ -18,32 +18,41 @@ export async function assertCanWrite(context: Ctx) {
   if (data) throw new Error("게스트는 자료를 수정할 수 없습니다.");
 }
 
+/** PostgREST 기본 1,000행 제한을 넘기기 위한 페이지 분할 조회 */
+async function fetchAll<T>(
+  build: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+  page = 1000,
+): Promise<T[]> {
+  const out: T[] = [];
+  for (let from = 0; ; from += page) {
+    const { data, error } = await build(from, from + page - 1);
+    if (error) throw new Error(error.message);
+    const rows = data ?? [];
+    out.push(...rows);
+    if (rows.length < page) return out;
+  }
+}
+
 /** 대시보드·리스트·T&C 화면이 함께 쓰는 전체 데이터 */
 export const getProjectData = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
   const c = context.supabase;
-  const [acts, tc, manual, batches, settings] = await Promise.all([
-    c.from("activities").select("*").is("hidden_at", null).order("id"),
-    c.from("tc_items").select("*").order("id"),
-    c.from("tc_manual").select("*"),
-    c.from("import_batches").select("*").order("created_at", { ascending: false }),
-    c.from("app_settings").select("*"),
+  const [activities, tcItems, tcManual, batches, settings] = await Promise.all([
+    fetchAll((f, t) => c.from("activities").select("*").is("hidden_at", null).order("id").range(f, t)),
+    fetchAll((f, t) => c.from("tc_items").select("*").order("id").range(f, t)),
+    fetchAll((f, t) => c.from("tc_manual").select("*").order("id").range(f, t)),
+    fetchAll((f, t) => c.from("import_batches").select("*").order("created_at", { ascending: false }).range(f, t)),
+    fetchAll((f, t) => c.from("app_settings").select("*").order("key").range(f, t)),
   ]);
-  const err = acts.error ?? tc.error ?? manual.error ?? batches.error ?? settings.error;
-  if (err) throw new Error(err.message);
+
   const settingMap: Record<string, string> = {};
-  (settings.data ?? []).forEach((s) => {
+  settings.forEach((s) => {
     if (s.value) settingMap[s.key] = s.value;
   });
-  return {
-    activities: acts.data ?? [],
-    tcItems: tc.data ?? [],
-    tcManual: manual.data ?? [],
-    batches: batches.data ?? [],
-    settings: settingMap,
-  };
+  return { activities, tcItems, tcManual, batches, settings: settingMap };
 });
+
 
 /** 숨김(보관) 처리된 공정 항목 — 공정리스트 「숨김 항목 보기」 전용 */
 export const getHiddenActivities = createServerFn({ method: "GET" })
