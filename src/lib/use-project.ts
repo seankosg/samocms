@@ -1,7 +1,7 @@
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { getHiddenActivities, getPrevActuals, getProgressForecast, getProgressHistory, getProjectData } from "./project.functions";
-import { applyBaseline, toRow } from "./schedule-model";
+import { applyBaseline, isOwnerRow, toRow } from "./schedule-model";
 
 
 export const projectQuery = queryOptions({
@@ -58,7 +58,11 @@ export function useProject() {
   const raw = useMemo(() => data.activities.map(toRow), [data.activities]);
   const base = data.settings["baseline_date"] ?? autoBaseline(data.batches) ?? "2026-09-05";
   const rows = useMemo(() => applyBaseline(raw, base), [raw, base]);
-  return { ...data, rows, base };
+  /** 발주처 업역을 제외한 HDEC 공정 행 — 대시보드·리포트·지연·공정 리스트용 */
+  const hdecRows = useMemo(() => rows.filter((r) => !isOwnerRow(r)), [rows]);
+  /** 발주처 업역 행 */
+  const ownerRows = useMemo(() => rows.filter((r) => isOwnerRow(r)), [rows]);
+  return { ...data, rows, hdecRows, ownerRows, base };
 }
 
 /** 업로드된 공종별 최신 파일 기준일 중 가장 빠른 날짜 */
