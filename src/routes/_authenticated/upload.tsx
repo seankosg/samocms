@@ -81,7 +81,7 @@ const diffKeys = (before: string[], after: string[]) => {
 function UploadPage() {
   const { rows, ownerRows, tcItems, batches, base } = useProject();
   const ncrItems = useNcrItems();
-  const { canEdit, canWrite, scopes, isAdmin } = useAuth();
+  const { canEdit, canWrite, scopes, isAdmin, isOwner } = useAuth();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -265,11 +265,11 @@ function UploadPage() {
   const latestOf = (kind: string, slot: string) => batches.find((b) => b.kind === kind && b.slot === slot) ?? null;
 
   const cards = [
-    ...UPLOAD_SLOTS.map((s) => ({ key: `s-${s}`, label: SLOT_LABEL[s] ?? s, sub: s, count: rows.filter((r) => r.slot === s).length, batch: latestOf("schedule", s) })),
-    ...(["Mech", "Elec"] as const).map((s) => ({
+    ...UPLOAD_SLOTS.filter((s) => !isOwner || s === OWNER_SLOT).map((s) => ({ key: `s-${s}`, label: SLOT_LABEL[s] ?? s, sub: s, count: rows.filter((r) => r.slot === s).length, batch: latestOf("schedule", s) })),
+    ...(isOwner ? [] : (["Mech", "Elec"] as const).map((s) => ({
       key: `t-${s}`, label: `${s.toUpperCase()} T&C`, sub: "T&C",
       count: tcItems.filter((i) => i.discipline === s).length, batch: latestOf("tc", s),
-    })),
+    }))),
     ...(isAdmin ? [{ key: "ncr", label: "NCR·OR·SOR", sub: "준공 준비", count: ncrItems.length, batch: latestOf("ncr", "-") ?? batches.find((b) => b.kind === "ncr") ?? null }] : []),
   ];
 
@@ -286,7 +286,13 @@ function UploadPage() {
         {busy ? <Loader2 className="mb-2 size-8 animate-spin text-primary" /> : <UploadCloud className="mb-2 size-8 text-muted-foreground" />}
         <p className="text-sm font-semibold">엑셀 파일을 여기로 끌어다 놓으세요</p>
         <p className="mt-1 text-xs font-semibold text-primary">
-          {isAdmin ? "관리자: 모든 공종 업로드 가능" : canWrite ? `담당 공종: ${scopes.map((x) => SCOPE_LABEL[x]).join(" · ") || "없음"}` : "조회 전용 계정입니다"}
+          {isAdmin
+            ? "관리자: 모든 공종 업로드 가능"
+            : isOwner
+              ? "발주처 권한: 발주처(HMMME) 자료만 업로드 가능"
+              : canWrite
+                ? `담당 공종: ${scopes.map((x) => SCOPE_LABEL[x]).join(" · ") || "없음"}`
+                : "조회 전용 계정입니다"}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">공정표(Arch · Elec · Mech · Int · Permit)와 시운전(MECH T&C · ELEC T&C) 워크북을 자동으로 구분합니다.</p>
         <Button className="mt-4" disabled={busy || !canWrite} onClick={() => fileRef.current?.click()}>
