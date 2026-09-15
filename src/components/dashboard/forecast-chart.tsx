@@ -49,7 +49,15 @@ function planCurveOf(rows: Row[], dates: string[]): Map<string, number> {
 
 type Mode = "discipline" | "milestone" | "tc";
 
-export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: TcItem[]; base: string }) {
+export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes }: {
+  rows: Row[]; tcItems: TcItem[]; base: string;
+  /** 예측 대상 공종 목록 (기본: 인허가 제외한 KPI 공종) */
+  slots?: string[];
+  /** 예측 대상 행 필터 (기본: 발주처·인허가 제외) */
+  rowScope?: (r: Row) => boolean;
+  /** 표시할 보기 모드 (기본: 공종별·마일스톤별·T&C) */
+  modes?: Mode[];
+}) {
   const { data, isLoading } = useProgressForecast();
   const [mode, setMode] = useState<Mode>("discipline");
   const [tab, setTab] = useState<string>("ALL");
@@ -60,9 +68,10 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
   const [tcBldg, setTcBldg] = useState<string>("ALL");
   const [hover, setHover] = useState<number | null>(null);
 
-  // 인허가(Permit)는 예측 대상에서 제외 (목록·계산 모두)
-  const FC_SLOTS = KPI_SLOTS.filter((s) => s !== "Permit");
-  const eligibleRows = useMemo(() => rows.filter((r) => !isOwnerRow(r) && r.slot !== "Permit"), [rows]);
+  // 기본값: 인허가(Permit)와 발주처 업역은 예측 대상에서 제외 (목록·계산 모두)
+  const FC_SLOTS: string[] = slots ?? KPI_SLOTS.filter((s) => s !== "Permit");
+  const inScope = rowScope ?? ((r: Row) => !isOwnerRow(r) && r.slot !== "Permit");
+  const eligibleRows = useMemo(() => rows.filter(inScope), [rows, rowScope]);
   const milestones = useMemo(() => {
     const values = new Set(eligibleRows.map((r) => r.ms ?? "미지정"));
     return [...values].sort((a, b) => {
@@ -75,7 +84,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
   }, [eligibleRows]);
   const milestoneDiscs = useMemo(() => {
     const scoped = milestone === "ALL" ? eligibleRows : eligibleRows.filter((r) => (r.ms ?? "미지정") === milestone);
-    return KPI_SLOTS.filter((disc) => scoped.some((r) => r.slot === disc));
+    return FC_SLOTS.filter((disc) => scoped.some((r) => r.slot === disc));
   }, [eligibleRows, milestone]);
 
   // T&C 예측: 팀 선택에 따라 건물 목록 갱신
@@ -121,7 +130,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
     // 기록 이력 (선택 공종, 전체는 가중평균)
     const byDate = new Map<string, { p: number; a: number; n: number }>();
     for (const s of series) {
-      if (s.disc === "Permit") continue; // 인허가 제외
+      if (!FC_SLOTS.includes(s.disc)) continue; // 대상 공종 외 제외
       if (mode === "discipline" && tab !== "ALL" && s.disc !== tab) continue;
       if (mode === "milestone" && milestone !== "ALL" && s.ms !== milestone) continue;
       if (mode === "milestone" && milestoneDisc !== "ALL" && s.disc !== milestoneDisc) continue;
@@ -236,7 +245,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
     return summaryDiscs.map((disc) => {
       const byDate = new Map<string, { a: number; n: number }>();
       for (const s of series) {
-        if (s.disc === "Permit") continue; // 인허가 제외
+        if (!FC_SLOTS.includes(s.disc)) continue; // 대상 공종 외 제외
         if (disc !== "ALL" && s.disc !== disc) continue;
         if (mode === "milestone" && milestone !== "ALL" && s.ms !== milestone) continue;
         const cur = byDate.get(s.date) ?? { a: 0, n: 0 };
@@ -305,9 +314,11 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
       <div className="mb-3">
         <Tabs value={mode} onValueChange={(value) => { setMode(value as Mode); setHover(null); }}>
           <TabsList className="h-9">
-            <TabsTrigger value="discipline" className="px-4 text-xs">공종별 예측</TabsTrigger>
-            <TabsTrigger value="milestone" className="px-4 text-xs">마일스톤별 예측</TabsTrigger>
-            <TabsTrigger value="tc" className="px-4 text-xs">T&C 예측</TabsTrigger>
+            {(modes ?? (["discipline", "milestone", "tc"] as Mode[])).map((mo) => (
+              <TabsTrigger key={mo} value={mo} className="px-4 text-xs">
+                {mo === "discipline" ? "공종별 예측" : mo === "milestone" ? "마일스톤별 예측" : "T&C 예측"}
+              </TabsTrigger>
+            ))}
           </TabsList>
         </Tabs>
       </div>

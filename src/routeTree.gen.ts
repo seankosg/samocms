@@ -30,6 +30,8 @@ import { Route as AuthenticatedManpowerCompareRouteImport } from './routes/_auth
 import { Route as AuthenticatedManpowerTrendRouteImport } from './routes/_authenticated/manpower.trend'
 import { Route as AuthenticatedNcrIndexRouteImport } from './routes/_authenticated/ncr.index'
 import { Route as AuthenticatedNcrDashboardRouteImport } from './routes/_authenticated/ncr.dashboard'
+import { Route as AuthenticatedOwnerIndexRouteImport } from './routes/_authenticated/owner.index'
+import { Route as AuthenticatedOwnerListRouteImport } from './routes/_authenticated/owner.list'
 import { Route as AuthenticatedTcElecRouteImport } from './routes/_authenticated/tc.elec'
 import { Route as AuthenticatedTcListRouteImport } from './routes/_authenticated/tc.list'
 import { Route as AuthenticatedTcMechRouteImport } from './routes/_authenticated/tc.mech'
@@ -152,6 +154,16 @@ const AuthenticatedNcrDashboardRoute =
     path: '/ncr/dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedOwnerIndexRoute = AuthenticatedOwnerIndexRouteImport.update({
+  id: '/owner/',
+  path: '/owner/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOwnerListRoute = AuthenticatedOwnerListRouteImport.update({
+  id: '/owner/list',
+  path: '/owner/list',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedTcElecRoute = AuthenticatedTcElecRouteImport.update({
   id: '/tc/elec',
   path: '/tc/elec',
@@ -217,6 +229,7 @@ export interface FileRoutesByFullPath {
   '/manpower/compare': typeof AuthenticatedManpowerCompareRoute
   '/manpower/trend': typeof AuthenticatedManpowerTrendRoute
   '/ncr/dashboard': typeof AuthenticatedNcrDashboardRoute
+  '/owner/list': typeof AuthenticatedOwnerListRoute
   '/tc/elec': typeof AuthenticatedTcElecRoute
   '/tc/list': typeof AuthenticatedTcListRoute
   '/tc/mech': typeof AuthenticatedTcMechRoute
@@ -228,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/api/public/version': typeof ApiPublicVersionRoute
   '/manpower/': typeof AuthenticatedManpowerIndexRoute
   '/ncr/': typeof AuthenticatedNcrIndexRoute
+  '/owner/': typeof AuthenticatedOwnerIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -248,6 +262,7 @@ export interface FileRoutesByTo {
   '/manpower/compare': typeof AuthenticatedManpowerCompareRoute
   '/manpower/trend': typeof AuthenticatedManpowerTrendRoute
   '/ncr/dashboard': typeof AuthenticatedNcrDashboardRoute
+  '/owner/list': typeof AuthenticatedOwnerListRoute
   '/tc/elec': typeof AuthenticatedTcElecRoute
   '/tc/list': typeof AuthenticatedTcListRoute
   '/tc/mech': typeof AuthenticatedTcMechRoute
@@ -259,6 +274,7 @@ export interface FileRoutesByTo {
   '/api/public/version': typeof ApiPublicVersionRoute
   '/manpower': typeof AuthenticatedManpowerIndexRoute
   '/ncr': typeof AuthenticatedNcrIndexRoute
+  '/owner': typeof AuthenticatedOwnerIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -281,6 +297,7 @@ export interface FileRoutesById {
   '/_authenticated/manpower/compare': typeof AuthenticatedManpowerCompareRoute
   '/_authenticated/manpower/trend': typeof AuthenticatedManpowerTrendRoute
   '/_authenticated/ncr/dashboard': typeof AuthenticatedNcrDashboardRoute
+  '/_authenticated/owner/list': typeof AuthenticatedOwnerListRoute
   '/_authenticated/tc/elec': typeof AuthenticatedTcElecRoute
   '/_authenticated/tc/list': typeof AuthenticatedTcListRoute
   '/_authenticated/tc/mech': typeof AuthenticatedTcMechRoute
@@ -292,6 +309,7 @@ export interface FileRoutesById {
   '/api/public/version': typeof ApiPublicVersionRoute
   '/_authenticated/manpower/': typeof AuthenticatedManpowerIndexRoute
   '/_authenticated/ncr/': typeof AuthenticatedNcrIndexRoute
+  '/_authenticated/owner/': typeof AuthenticatedOwnerIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -314,6 +332,7 @@ export interface FileRouteTypes {
     | '/manpower/compare'
     | '/manpower/trend'
     | '/ncr/dashboard'
+    | '/owner/list'
     | '/tc/elec'
     | '/tc/list'
     | '/tc/mech'
@@ -325,6 +344,7 @@ export interface FileRouteTypes {
     | '/api/public/version'
     | '/manpower/'
     | '/ncr/'
+    | '/owner/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -345,6 +365,7 @@ export interface FileRouteTypes {
     | '/manpower/compare'
     | '/manpower/trend'
     | '/ncr/dashboard'
+    | '/owner/list'
     | '/tc/elec'
     | '/tc/list'
     | '/tc/mech'
@@ -356,6 +377,7 @@ export interface FileRouteTypes {
     | '/api/public/version'
     | '/manpower'
     | '/ncr'
+    | '/owner'
   id:
     | '__root__'
     | '/'
@@ -377,6 +399,7 @@ export interface FileRouteTypes {
     | '/_authenticated/manpower/compare'
     | '/_authenticated/manpower/trend'
     | '/_authenticated/ncr/dashboard'
+    | '/_authenticated/owner/list'
     | '/_authenticated/tc/elec'
     | '/_authenticated/tc/list'
     | '/_authenticated/tc/mech'
@@ -388,6 +411,7 @@ export interface FileRouteTypes {
     | '/api/public/version'
     | '/_authenticated/manpower/'
     | '/_authenticated/ncr/'
+    | '/_authenticated/owner/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -550,6 +574,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNcrDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/owner/': {
+      id: '/_authenticated/owner/'
+      path: '/owner'
+      fullPath: '/owner/'
+      preLoaderRoute: typeof AuthenticatedOwnerIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner/list': {
+      id: '/_authenticated/owner/list'
+      path: '/owner/list'
+      fullPath: '/owner/list'
+      preLoaderRoute: typeof AuthenticatedOwnerListRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/tc/elec': {
       id: '/_authenticated/tc/elec'
       path: '/tc/elec'
@@ -633,12 +671,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedManpowerCompareRoute: typeof AuthenticatedManpowerCompareRoute
   AuthenticatedManpowerTrendRoute: typeof AuthenticatedManpowerTrendRoute
   AuthenticatedNcrDashboardRoute: typeof AuthenticatedNcrDashboardRoute
+  AuthenticatedOwnerListRoute: typeof AuthenticatedOwnerListRoute
   AuthenticatedTcElecRoute: typeof AuthenticatedTcElecRoute
   AuthenticatedTcListRoute: typeof AuthenticatedTcListRoute
   AuthenticatedTcMechRoute: typeof AuthenticatedTcMechRoute
   AuthenticatedTcProgressRoute: typeof AuthenticatedTcProgressRoute
   AuthenticatedManpowerIndexRoute: typeof AuthenticatedManpowerIndexRoute
   AuthenticatedNcrIndexRoute: typeof AuthenticatedNcrIndexRoute
+  AuthenticatedOwnerIndexRoute: typeof AuthenticatedOwnerIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -658,12 +698,14 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedManpowerCompareRoute: AuthenticatedManpowerCompareRoute,
   AuthenticatedManpowerTrendRoute: AuthenticatedManpowerTrendRoute,
   AuthenticatedNcrDashboardRoute: AuthenticatedNcrDashboardRoute,
+  AuthenticatedOwnerListRoute: AuthenticatedOwnerListRoute,
   AuthenticatedTcElecRoute: AuthenticatedTcElecRoute,
   AuthenticatedTcListRoute: AuthenticatedTcListRoute,
   AuthenticatedTcMechRoute: AuthenticatedTcMechRoute,
   AuthenticatedTcProgressRoute: AuthenticatedTcProgressRoute,
   AuthenticatedManpowerIndexRoute: AuthenticatedManpowerIndexRoute,
   AuthenticatedNcrIndexRoute: AuthenticatedNcrIndexRoute,
+  AuthenticatedOwnerIndexRoute: AuthenticatedOwnerIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

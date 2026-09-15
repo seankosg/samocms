@@ -20,7 +20,7 @@ import { importActivities } from "@/lib/activities.functions";
 import { importTcItems } from "@/lib/project.functions";
 import { importNcrItems } from "@/lib/ncr.functions";
 import type { ImportRow } from "@/lib/import-schedule";
-import { dayDiff, fmtDate, SLOTS, SLOT_LABEL } from "@/lib/schedule-model";
+import { dayDiff, fmtDate, isOwnerScopeText, normMS, OWNER_SLOT, SLOTS, SLOT_LABEL } from "@/lib/schedule-model";
 
 export const Route = createFileRoute("/_authenticated/upload")({
   head: () => ({ meta: [
@@ -54,7 +54,14 @@ type Job = {
     | { kind: "ncr"; fileDate: string | null; rows: NcrImportRow[] };
   /** NCR: 단계 순서 위반으로 반려될 행 미리보기 */
   rejected: { docNo: string; reasons: string[] }[];
+  /** 업역이 달라 제외한 행 수 */
+  excludedScope?: number;
+  /** 이미 발주처 업역으로 등록돼 제외한 행 수 */
+  excludedRegistered?: number;
 };
+
+/** 공정표 업로드 가능한 공종 목록 (발주처 업역 포함) */
+const UPLOAD_SLOTS: string[] = [...SLOTS, OWNER_SLOT];
 
 /** Row(화면용)를 파일 행과 비교 가능한 지문으로 변환합니다. */
 const rowFinger = (r: { no: string | null; dept: string; bldgRaw: string | null; bldg: string | null; room: string | null; scope: string | null; ms: string | null; sub: string | null; act: string; unit: string | null; done: number | null; tot: number | null; pc: number | null; s: string | null; e: string | null; pred: string | null; succ: string | null }) =>
@@ -72,7 +79,7 @@ const diffKeys = (before: string[], after: string[]) => {
 };
 
 function UploadPage() {
-  const { rows, tcItems, batches, base } = useProject();
+  const { rows, ownerRows, tcItems, batches, base } = useProject();
   const ncrItems = useNcrItems();
   const { canEdit, canWrite, scopes, isAdmin } = useAuth();
   const qc = useQueryClient();
@@ -81,6 +88,19 @@ function UploadPage() {
   const [drag, setDrag] = useState(false);
   const [pending, setPending] = useState<Job[] | null>(null);
   const [skip, setSkip] = useState<Record<string, boolean>>({});
+  /** 파일명으로 공종을 판별하지 못했을 때 사용자에게 묻는 창 */
+  const [askSlot, setAskSlot] = useState<string | null>(null);
+  const askResolve = useRef<((slot: string | null) => void) | null>(null);
+  const pickSlot = (fileName: string) =>
+    new Promise<string | null>((resolve) => {
+      askResolve.current = resolve;
+      setAskSlot(fileName);
+    });
+  const answerSlot = (slot: string | null) => {
+    setAskSlot(null);
+    askResolve.current?.(slot);
+    askResolve.current = null;
+  };
 
   /** 파일을 파싱해 기존 DB 행수와 비교한 작업 목록으로 만듭니다. */
   const buildJobs = async (list: File[]) => {
@@ -117,26 +137,47 @@ function UploadPage() {
           payload: { kind: "tc", disc, fileDate: meta.date, rows: parsed },
         });
       } else {
-        const slot = sourceKeyFromFileName(file.name);
+        const slot = sourceKeyFromFileName(file.name) ?? (await pickSlot(file.name));
+        if (!slot) continue;
         if (!canEdit(slot)) throw new Error(`${SLOT_LABEL[slot] ?? slot} 자료를 업로드할 권한이 없습니다.`);
         const parsed = parseScheduleFile(buf, file.name);
+
+        // 업역 분리 — 발주처 파일은 발주처 행만, 공종 파일은 발주처 행을 건너뜁니다.
+        let fileRows = parsed.rows;
+        let excludedScope = 0;
+        let excludedRegistered = 0;
+        if (slot === OWNER_SLOT) {
+          const kept = fileRows.filter((r) => isOwnerScopeText(r.work_scope));
+          excludedScope = fileRows.length - kept.length;
+          fileRows = kept.map((r) => ({ ...r, owner_dept: r.discipline, discipline: OWNER_SLOT }));
+        } else {
+          const notOwner = fileRows.filter((r) => !isOwnerScopeText(r.work_scope));
+          excludedScope = fileRows.length - notOwner.length;
+          const ownerNos = new Set(ownerRows.map((r) => r.no).filter((v): v is string => !!v));
+          const kept = notOwner.filter((r) => !ownerNos.has(normMS(r.activity_no) ?? ""));
+          excludedRegistered = notOwner.length - kept.length;
+          fileRows = kept;
+        }
+        if (!fileRows.length) throw new Error(`"${file.name}"에서 ${SLOT_LABEL[slot] ?? slot}에 반영할 행이 없습니다.`);
+
         const existingRows = rows.filter((r) => r.slot === slot);
         const existingNos = existingRows.map((r) => r.no).filter((v): v is string => !!v);
         const byNo = new Map(existingRows.map((r) => [r.no, r]));
         const fileDate = parsed.fileDate ?? meta.date;
         const prevFileDate = batches.find((b) => b.kind === "schedule" && b.slot === slot)?.file_date ?? null;
         let changed = 0;
-        for (const r of parsed.rows) {
+        for (const r of fileRows) {
           const cur = r.activity_no ? byNo.get(r.activity_no) : undefined;
           if (cur && rowFinger(cur) !== importFinger(r)) changed += 1;
         }
-        const conflicts = findNoConflicts(parsed.rows);
+        const conflicts = findNoConflicts(fileRows);
         jobs.push({
           id: `s-${slot}-${file.name}`, label: SLOT_LABEL[slot] ?? slot, fileName: file.name,
-          existing: existingNos.length, incoming: parsed.rows.length,
-          ...diffKeys(existingNos, parsed.rows.map((r) => r.activity_no).filter((v): v is string => !!v)),
+          existing: existingNos.length, incoming: fileRows.length,
+          ...diffKeys(existingNos, fileRows.map((r) => r.activity_no).filter((v): v is string => !!v)),
           changed, conflicts, existingNos, fileDate, prevFileDate, rejected: [],
-          payload: { kind: "schedule", slot, fileDate, rev: meta.rev, rows: parsed.rows.map((r) => ({ ...r, source_file: slot })) },
+          excludedScope, excludedRegistered,
+          payload: { kind: "schedule", slot, fileDate, rev: meta.rev, rows: fileRows.map((r) => ({ ...r, source_file: slot })) },
         });
       }
     }
@@ -224,7 +265,7 @@ function UploadPage() {
   const latestOf = (kind: string, slot: string) => batches.find((b) => b.kind === kind && b.slot === slot) ?? null;
 
   const cards = [
-    ...SLOTS.map((s) => ({ key: `s-${s}`, label: SLOT_LABEL[s]!, sub: s, count: rows.filter((r) => r.slot === s).length, batch: latestOf("schedule", s) })),
+    ...UPLOAD_SLOTS.map((s) => ({ key: `s-${s}`, label: SLOT_LABEL[s] ?? s, sub: s, count: rows.filter((r) => r.slot === s).length, batch: latestOf("schedule", s) })),
     ...(["Mech", "Elec"] as const).map((s) => ({
       key: `t-${s}`, label: `${s.toUpperCase()} T&C`, sub: "T&C",
       count: tcItems.filter((i) => i.discipline === s).length, batch: latestOf("tc", s),
@@ -252,6 +293,27 @@ function UploadPage() {
           {busy ? <Loader2 className="animate-spin" /> : <FileSpreadsheet />}파일 선택
         </Button>
       </div>
+
+      <Dialog open={!!askSlot} onOpenChange={(o) => { if (!o) answerSlot(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>공종을 선택하세요</DialogTitle>
+            <DialogDescription>
+              파일명으로 공종을 판별하지 못했습니다. <b className="text-foreground">{askSlot}</b> 파일을 어느 공종으로 반영할지 선택해 주세요.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-wrap gap-2">
+            {UPLOAD_SLOTS.map((s) => (
+              <Button key={s} size="sm" variant="outline" disabled={!canEdit(s)} onClick={() => answerSlot(s)}>
+                {SLOT_LABEL[s] ?? s}
+              </Button>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => answerSlot(null)}>이 파일 건너뛰기</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!pending} onOpenChange={(o) => { if (!o) setPending(null); }}>
         <DialogContent className="max-w-2xl">
@@ -283,6 +345,14 @@ function UploadPage() {
                     {isSchedule && <> · 갱신 {j.changed.toLocaleString()}건</>}
                     {" "}· 보관 예정 {j.removed.length}건{j.removed.length ? ` (예: ${j.removed.slice(0, 5).join(", ")})` : ""}
                   </p>
+                  {(!!j.excludedScope || !!j.excludedRegistered) && (
+                    <p className="mt-1.5 text-[11px] font-semibold text-primary">
+                      {j.payload.kind === "schedule" && j.payload.slot === OWNER_SLOT
+                        ? `HDEC 공정 ${(j.excludedScope ?? 0).toLocaleString()}건을 제외하고 발주처 업역 행만 반영합니다.`
+                        : `발주처 업역 ${(j.excludedScope ?? 0).toLocaleString()}건을 제외했습니다.`}
+                      {!!j.excludedRegistered && ` 발주처 업역으로 등록된 항목 ${j.excludedRegistered.toLocaleString()}건도 제외했습니다.`}
+                    </p>
+                  )}
                   {hideWarn && (
                     <p className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-destructive">
                       <EyeOff className="size-3.5" />기존 항목의 30% 이상이 보관 처리됩니다. 파일이 맞는지 다시 확인해 주세요.

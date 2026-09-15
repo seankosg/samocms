@@ -32,7 +32,7 @@ const sign = (v: number) => (v > 0 ? "+" : v < 0 ? "−" : "");
 const gapCls = (v: number) => (v < 0 ? "text-destructive" : v > 0 ? "text-primary" : "text-muted-foreground");
 
 function Dashboard() {
-  const { rows, base, tcItems } = useProject();
+  const { hdecRows: rows, base, tcItems } = useProject();
   const { isAdmin } = useAuth();
 
   const m = useMemo(() => {

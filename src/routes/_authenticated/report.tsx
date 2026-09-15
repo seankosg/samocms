@@ -57,7 +57,7 @@ const sign = (v: number) => (v > 0 ? "+" : v < 0 ? "−" : "");
 const gapColor = (v: number) => (v < 0 ? "#b91c1c" : v > 0 ? "#1d4ed8" : "#475569");
 
 function ReportPage() {
-  const { rows, base, tcItems } = useProject();
+  const { hdecRows: rows, base, tcItems } = useProject();
   const { print, summary: withSummary } = Route.useSearch();
   const m = useMemo(() => buildReportMetrics(rows, base), [rows, base]);
   const tc = useMemo(() => buildTcT1T2(tcItems, base, (k) => TC_DISC_LABEL[k] ?? k.toUpperCase()), [tcItems, base]);
