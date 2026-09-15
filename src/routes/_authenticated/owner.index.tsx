@@ -99,19 +99,95 @@ function OwnerDashboard() {
         </div>
       }
     >
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {[
-          { k: "전체", v: rows.length.toLocaleString(), s: "HMMME 업역 활동" },
-          { k: "완료", v: done.length.toLocaleString(), s: `${pct1(rows.length ? done.length / rows.length : 0)}%` },
-          { k: "평균 진도", v: `${pct1(avgOf(withP, "pc"))}%`, s: `계획 ${pct1(avgOf(withP, "pl"))}%` },
-          { k: "지연", v: late.length.toLocaleString(), s: `대상 ${withP.length.toLocaleString()}행` },
-        ].map((c) => (
-          <div key={c.k} className="rounded-md border border-border bg-card p-4 shadow-sm">
-            <p className="text-xs font-bold text-muted-foreground">{c.k}</p>
-            <p className="mt-1 text-3xl font-bold">{c.v}</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">{c.s}</p>
+      <section className="grid gap-3 xl:grid-cols-3">
+        <div className="grid gap-4 rounded-md border border-border bg-card p-4 shadow-sm sm:grid-cols-[1.2fr_1fr]">
+          <div>
+            <p className="text-xs font-bold text-muted-foreground">완료현황</p>
+            <p className="mt-1 flex flex-wrap items-baseline gap-1.5">
+              <span className="text-3xl font-bold"><Drill search={{ status: "done" }}>{done.length.toLocaleString()}</Drill></span>
+              <span className="text-lg font-semibold text-muted-foreground">{pct1(rows.length ? done.length / rows.length : 0)}%</span>
+            </p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              전체 <Drill className="font-semibold text-foreground">{rows.length.toLocaleString()}</Drill>행
+            </p>
+            <Bar v={rows.length ? done.length / rows.length : 0} className="mt-3" />
           </div>
-        ))}
+          <div className="border-t border-border pt-2 text-[11px] sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
+            <div className="grid grid-cols-4 gap-1 pb-1 text-right text-muted-foreground">
+              <span />{["계획", "실적", "차이"].map((h) => <span key={h}>{h}</span>)}
+            </div>
+            {kpiDept.map((s) => (
+              <div key={s.dept} className="grid grid-cols-4 gap-1 border-t border-border/60 py-1 text-right">
+                <span className="text-left font-semibold"><Drill search={{ dept: s.dept }}>{s.dept}</Drill></span>
+                <span><Drill search={{ dept: s.dept, duebyBase: true }}>{s.plan}</Drill></span>
+                <span className="font-bold"><Drill search={{ dept: s.dept, status: "done" }}>{s.act}</Drill></span>
+                <span className={`font-semibold ${gapCls(s.gap)}`}><Drill search={{ dept: s.dept, duebyBase: true }}>{sign(s.gap)}{Math.abs(s.gap)}</Drill></span>
+              </div>
+            ))}
+            <p className="mt-1 text-right text-[9px] text-muted-foreground">계획 = 기준일 내 완료 예정 · 실적 = 완료</p>
+          </div>
+        </div>
+
+        <div className="grid gap-4 rounded-md border border-primary/30 bg-primary/5 p-4 shadow-sm sm:grid-cols-[1.2fr_1fr]">
+          <div>
+            <p className="text-xs font-bold text-muted-foreground">계획 대비 실적</p>
+            <p className="mt-1 flex flex-wrap items-baseline gap-1.5">
+              <span className="text-3xl font-bold"><Drill>{pct1(avgOf(withP, "pc"))}%</Drill></span>
+              <span className="text-sm text-muted-foreground">/ <Drill>{pct1(avgOf(withP, "pl"))}%</Drill></span>
+              <span className={`text-xs font-bold ${gapCls(avgOf(withP, "pc") - avgOf(withP, "pl"))}`}>
+                {sign(avgOf(withP, "pc") - avgOf(withP, "pl"))}{pct1(Math.abs(avgOf(withP, "pc") - avgOf(withP, "pl")))}p
+              </span>
+            </p>
+            <p className="mt-1 text-[11px] text-muted-foreground">평균 진도 · 대상 <span className="font-semibold text-foreground">{withP.length.toLocaleString()}</span>행</p>
+            <Bar v={avgOf(withP, "pc")} marker={avgOf(withP, "pl")} className="mt-3" />
+          </div>
+          <div className="border-t border-border pt-2 text-[11px] sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
+            <div className="grid grid-cols-4 gap-1 pb-1 text-right text-muted-foreground">
+              <span />{["계획", "실적", "차이"].map((h) => <span key={h}>{h}</span>)}
+            </div>
+            {kpiDept.map((s) => (
+              <div key={s.dept} className="grid grid-cols-4 gap-1 border-t border-border/60 py-1 text-right">
+                <span className="text-left font-semibold"><Drill search={{ dept: s.dept }}>{s.dept}</Drill></span>
+                {s.n === 0 ? <><span className="text-muted-foreground">—</span><span className="text-muted-foreground">—</span><span className="text-muted-foreground">—</span></> : (
+                  <>
+                    <span>{pct1(s.pl)}</span>
+                    <span className="font-bold">{pct1(s.pc)}</span>
+                    <span className={`font-semibold ${gapCls(s.pc - s.pl)}`}>{sign(s.pc - s.pl)}{pct1(Math.abs(s.pc - s.pl))}</span>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-4 rounded-md border border-destructive/30 bg-destructive/5 p-4 shadow-sm sm:grid-cols-[1.2fr_1fr]">
+          <div>
+            <p className="text-xs font-bold text-muted-foreground">지연</p>
+            <p className="mt-1 text-3xl font-bold text-destructive">
+              <Drill search={{ status: "delay" }}>{late.length.toLocaleString()}</Drill>
+              <span className="ml-1 text-sm font-semibold text-muted-foreground">건</span>
+            </p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              대상 <span className="font-semibold text-foreground">{withP.length.toLocaleString()}</span>행 중 ·{" "}
+              <b className="text-foreground"><Drill search={{ status: "delay" }}>{pct1(withP.length ? late.length / withP.length : 0)}%</Drill></b>
+            </p>
+            <Bar v={withP.length ? late.length / withP.length : 0} tone="bad" className="mt-3" />
+          </div>
+          <div className="border-t border-border pt-2 text-[11px] sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
+            <div className="grid grid-cols-[1fr_auto_60px] gap-2 pb-1 text-right text-muted-foreground"><span /><span>지연</span><span>비교</span></div>
+            {kpiDept.map((s) => (
+              <div key={s.dept} className="grid grid-cols-[1fr_auto_60px] items-center gap-2 border-t border-border/60 py-1">
+                <span className="font-semibold"><Drill search={{ dept: s.dept, status: "delay" }}>{s.dept}</Drill></span>
+                <span className={`text-right font-bold ${s.late ? "text-destructive" : "text-muted-foreground"}`}>
+                  <Drill search={{ dept: s.dept, status: "delay" }}>{s.late}</Drill>
+                </span>
+                <span className="h-1.5 overflow-hidden rounded bg-muted">
+                  <span className="block h-full bg-destructive" style={{ width: `${(s.late / maxLate) * 100}%` }} />
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       <section className="mt-4 grid gap-3 lg:grid-cols-2">
