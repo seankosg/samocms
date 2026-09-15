@@ -199,8 +199,6 @@ function ComparePage() {
                <th scope="col"><span className="flex items-center justify-end gap-1">HDEC Exe Count <MultiSelectFilter options={facet("exe_verified")} selected={columnFilters.exe_verified ?? []} onChange={(v) => setColumnFilter("exe_verified", v)} /></span></th>
                <th scope="col"><span className="flex items-center justify-end gap-1">Diff (HSE) <MultiSelectFilter options={facet("hse_diff")} selected={columnFilters.hse_diff ?? []} onChange={(v) => setColumnFilter("hse_diff", v)} /></span></th>
                <th scope="col"><span className="flex items-center justify-end gap-1">Diff (EXE) <MultiSelectFilter options={facet("exe_diff")} selected={columnFilters.exe_diff ?? []} onChange={(v) => setColumnFilter("exe_diff", v)} /></span></th>
-               <th scope="col"><span className="flex items-center gap-1">Result (HSE) <MultiSelectFilter options={facet("hse_result")} selected={columnFilters.hse_result ?? []} onChange={(v) => setColumnFilter("hse_result", v)} /></span></th>
-               <th scope="col"><span className="flex items-center gap-1">Result (EXE) <MultiSelectFilter options={facet("exe_result")} selected={columnFilters.exe_result ?? []} onChange={(v) => setColumnFilter("exe_result", v)} /></span></th>
                <th scope="col"><span className="flex items-center gap-1">Reporter <MultiSelectFilter options={facet("sub_reporter")} selected={columnFilters.sub_reporter ?? []} onChange={(v) => setColumnFilter("sub_reporter", v)} /></span></th>
                <th scope="col"><span className="flex items-center gap-1">HSE Counter <MultiSelectFilter options={facet("hse_counter")} selected={columnFilters.hse_counter ?? []} onChange={(v) => setColumnFilter("hse_counter", v)} /></span></th>
                <th scope="col"><span className="flex items-center gap-1">EXE Counter <MultiSelectFilter options={facet("exe_counter")} selected={columnFilters.exe_counter ?? []} onChange={(v) => setColumnFilter("exe_counter", v)} /></span></th>
@@ -215,7 +213,7 @@ function ComparePage() {
                 <td className="text-right">{totals.exe.toLocaleString()}</td>
                 <td className={`text-right ${diffTone(totals.hseDiff)}`}>{fmtDiff(totals.hseDiff)}</td>
                 <td className={`text-right ${diffTone(totals.exeDiff)}`}>{fmtDiff(totals.exeDiff)}</td>
-                <td /><td /><td /><td /><td />
+                <td /><td /><td />
               </tr>
             )}
             {shown.map((r, i) => (
@@ -226,8 +224,6 @@ function ComparePage() {
                 <td className="text-right">{r.exe_verified ?? "—"}</td>
                 <td className={`text-right font-bold ${diffTone(r.hse_diff)}`}>{fmtDiff(r.hse_diff)}</td>
                 <td className={`text-right font-bold ${diffTone(r.exe_diff)}`}>{fmtDiff(r.exe_diff)}</td>
-                <td>{resultBadge(r.hse_result)}</td>
-                <td>{resultBadge(r.exe_result)}</td>
                 <td className="text-muted-foreground"><ReporterCell source="SUB" row={r} memberMap={memberMap} /></td>
                 <td className="text-muted-foreground"><ReporterCell source="HDEC" group="HSE" row={r} memberMap={memberMap} /></td>
                 <td className="text-muted-foreground"><ReporterCell source="HDEC" group="EXE" row={r} memberMap={memberMap} /></td>
