@@ -1,12 +1,18 @@
 import { useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
 import {
-  AXH, BH, buildModel, chainOf, dayList, layout, nodeVisible,
-  type NetFilter, type NetNode,
+  AXH, BH, buildModel, chainOf, dayList, layout, linkedToOwner, nodeVisible,
+  type NetFilter, type NetMode, type NetNode, type NetScope,
 } from "@/lib/network-model";
+import { applyPush, computePush, ownerImpactSummary, pushChain } from "@/lib/network-impact";
 import { BANDS, fmtDate, MSDEF, pct1, SLOT_LABEL, STATUS_COLOR, STATUS_LABEL, type Row } from "@/lib/schedule-model";
 
-export type NetSearch = { view: "net" | "bldg"; zoom: number; bands: number[]; dept: string; ms: string; bldg: string; late: boolean };
+export type NetSearch = {
+  view: "net" | "bldg"; zoom: number; bands: number[]; dept: string; ms: string; bldg: string; late: boolean;
+  scope?: NetScope; push?: boolean;
+};
+
+const OWNER_COLOR = "#6d28d9";
 
 const ZMIN = 0.6, ZMAX = 4, ZSTEP = 0.25;
 const WD = ["일", "월", "화", "수", "목", "금", "토"];
