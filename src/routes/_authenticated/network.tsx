@@ -20,7 +20,11 @@ export const Route = createFileRoute("/_authenticated/network")({
     return {
       view: s["view"] === "bldg" ? "bldg" : "net",
       zoom: Math.min(4, Math.max(0.6, toNum(s["zoom"], 1))),
-      bands: typeof bands === "string" && bands.length ? bands.split(",").map(Number).filter((n) => n >= 0 && n <= 2) : [0, 1, 2],
+      bands: Array.isArray(bands)
+        ? bands.map(Number).filter((n) => n >= 0 && n <= 2)
+        : typeof bands === "string" && bands.length
+          ? bands.split(",").map(Number).filter((n) => n >= 0 && n <= 2)
+          : [0, 1, 2],
       dept: str("dept"),
       ms: str("ms"),
       bldg: str("bldg"),
@@ -39,10 +43,7 @@ function NetworkPage() {
   const onChange = (p: Partial<NetSearch>) =>
     navigate({
       to: ".",
-      search: (prev) => {
-        const next = { ...prev, ...p };
-        return { ...next, bands: next.bands.join(",") as unknown as number[] };
-      },
+      search: (prev) => ({ ...prev, ...p }),
     });
 
   return (
