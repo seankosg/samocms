@@ -1,4 +1,4 @@
-import { bandOf, flat, isDone, isLate, refList, stOf, type Row } from "./schedule-model";
+import { bandOf, flat, isDone, isLate, isOwnerRow, refList, SLOT_LABEL, stOf, type Row } from "./schedule-model";
 
 export type NetNode = {
   id: string;
@@ -31,16 +31,31 @@ export type NetNode = {
   gb?: string;
   grm?: string;
   rowIds: number[];
+  /** 발주처(HMMME) 업역 노드 */
+  owner?: boolean;
+  /** 롤업 노드에 포함된 개별 Activity No — 끊긴 선후행 참조를 뭉치로 잇는 데 사용 */
+  memberIds?: string[];
+  /** 롤업으로 흡수된 참조 원본 번호 (엣지 라벨용) */
+  ctx?: boolean;
   /* layout */
   _w?: number;
   _t?: number;
   _x?: number;
   _y?: number;
   _bx?: number;
+  /** 선행 영향으로 밀린 일수 */
+  _push?: number;
+  /** 밀리기 전 원래 종료일 */
+  _origE?: string | null;
+  /** 밀림을 유발한 선행 노드 id */
+  _cause?: string | null;
+  _gx?: number;
+  _gbx?: number;
 };
-export type NetEdge = { a: string; b: string; ty: string };
-export type NetMode = "net" | "group";
-export type NetFilter = { band: string; dept: string; bldg: string; ms: string; late: boolean };
+export type NetEdge = { a: string; b: string; ty: string; via?: string; cross?: boolean };
+export type NetMode = "net" | "group" | "owner";
+export type NetScope = "all" | "owner" | "hdec" | "linked";
+export type NetFilter = { band: string; dept: string; bldg: string; ms: string; late: boolean; scope?: NetScope };
 
 const dnum = (d: string) => Date.parse(`${d}T00:00:00Z`);
 const days = (a: string, b: string) => Math.round((dnum(b) - dnum(a)) / 864e5);
@@ -69,21 +84,65 @@ export function netNodes(rows: Row[]): NetNode[] {
       st: stOf(pl, pc, lateN > 0), late: lateN > 0, lateN, cnt: a.length,
       done: a.filter(isDone).length, roll: true, ms: k, pred: [], depts,
       rowIds: a.map((r) => r.id),
+      owner: a.every(isOwnerRow),
+      memberIds: a.map((r) => flat(r.no)).filter(Boolean),
     });
   });
   rows.filter((r) => bandOf(r) > 0).forEach((r) => {
     if (!r.no) return;
-    const late = isLate(r);
-    N.push({
-      id: flat(r.no), band: bandOf(r), nm: flat(r.act), sub: flat(r.no), s: r.s, e: r.e,
-      pl: r.pl, pc: r.pc, st: stOf(r.pl, r.pc, late), late, lateN: late ? 1 : 0,
-      cnt: 1, done: isDone(r) ? 1 : 0, ms: r.ms, dept: r.dept, depts: r.dept,
-      bldg: r.bldg, room: r.room, subc: r.sub, scope: r.scope,
-      predRaw: r.pred, succRaw: r.succ, pred: refList(r.pred),
-      mile: /^M\d+$/.test(String(r.no)), rowIds: [r.id],
-    });
+    N.push(activityNode(r, bandOf(r)));
   });
-  return N;
+  const uniq = new Map<string, NetNode>();
+  N.forEach((n) => { if (!uniq.has(n.id)) uniq.set(n.id, n); });
+  return [...uniq.values()];
+}
+
+/** 개별 활동 노드 하나 */
+function activityNode(r: Row, band: number): NetNode {
+  const late = isLate(r);
+  return {
+    id: flat(r.no), band, nm: flat(r.act), sub: flat(r.no), s: r.s, e: r.e,
+    pl: r.pl, pc: r.pc, st: stOf(r.pl, r.pc, late), late, lateN: late ? 1 : 0,
+    cnt: 1, done: isDone(r) ? 1 : 0, ms: r.ms, dept: r.dept, depts: r.dept,
+    bldg: r.bldg, room: r.room, subc: r.sub, scope: r.scope,
+    predRaw: r.pred, succRaw: r.succ, pred: refList(r.pred),
+    mile: /^M\d+$/.test(String(r.no)), rowIds: [r.id], owner: isOwnerRow(r),
+  };
+}
+
+/** 발주처 중심 보기 — 발주처 내부 부서를 레인으로, 물린 당사 항목은 참고 레인에 */
+export function ownerNodes(rows: Row[]) {
+  const owner = rows.filter(isOwnerRow).filter((r) => r.no);
+  const ownerNos = new Set(owner.map((r) => flat(r.no)));
+  const linkedNos = new Set<string>();
+  owner.forEach((r) => {
+    refList(r.pred).forEach((p) => linkedNos.add(p.id));
+    refList(r.succ).forEach((p) => linkedNos.add(p.id));
+  });
+  rows.forEach((r) => {
+    if (isOwnerRow(r) || !r.no) return;
+    const me = flat(r.no);
+    const touches = [...refList(r.pred), ...refList(r.succ)].some((p) => ownerNos.has(p.id));
+    if (touches) linkedNos.add(me);
+  });
+  const ctx = rows.filter((r) => !isOwnerRow(r) && r.no && linkedNos.has(flat(r.no)));
+
+  const depts = [...new Set(owner.map((r) => r.ownerDept ?? r.dept ?? "기타"))]
+    .sort((a, b) =>
+      owner.filter((r) => (r.ownerDept ?? r.dept) === b).length - owner.filter((r) => (r.ownerDept ?? r.dept) === a).length
+      || a.localeCompare(b, "ko"));
+  const laneIx = new Map(depts.map((d, i) => [d, i]));
+  const uniq = new Map<string, NetNode>();
+  [
+    ...owner.map((r) => activityNode(r, laneIx.get(r.ownerDept ?? r.dept ?? "기타") ?? 0)),
+    ...ctx.map((r) => ({ ...activityNode(r, depts.length), ctx: true })),
+  ].forEach((n) => { if (!uniq.has(n.id)) uniq.set(n.id, n); });
+  const N = [...uniq.values()];
+  const lanes = [
+    ...depts.map((d) => ({ label: `발주처 · ${SLOT_LABEL[d] ?? d}`, color: "#6d28d9" })),
+    { label: "당사(HDEC) 연관 작업", color: "#64748b" },
+  ];
+  return { N, lanes };
 }
 
 /** 건물 · 룸 보기 — 건물이 레인, Room이 노드 */
@@ -130,31 +189,68 @@ export function buildModel(rows: Row[], mode: NetMode, bandDefs: { label: string
     const g = groupNodes(rows);
     N = g.N;
     lanes = g.lanes.map((b) => ({ label: b, color: "#1f4e79" }));
+  } else if (mode === "owner") {
+    const g = ownerNodes(rows);
+    N = g.N;
+    lanes = g.lanes;
   } else {
     N = netNodes(rows);
     lanes = bandDefs;
   }
   const byId = new Map<string, NetNode>();
   N.forEach((n) => byId.set(n.id, n));
+  /** 롤업(건설 뭉치)에 흡수된 개별 번호 → 뭉치 노드 id */
+  const inRoll = new Map<string, string>();
+  N.forEach((n) => n.memberIds?.forEach((m) => { if (!byId.has(m)) inRoll.set(m, n.id); }));
+
   const edges: NetEdge[] = [];
   const miss: string[] = [];
+  const softMiss: string[] = [];
+  const seen = new Set<string>();
   N.forEach((n) =>
     n.pred.forEach((p) => {
-      if (byId.has(p.id)) edges.push({ a: p.id, b: n.id, ty: p.ty });
-      else if (!/[가-힣]/.test(p.id)) miss.push(`${n.id} ← ${p.id}`);
+      const direct = byId.has(p.id);
+      const viaRoll = !direct ? inRoll.get(p.id) : undefined;
+      const a = direct ? p.id : viaRoll;
+      if (a) {
+        if (a === n.id) return;
+        const key = `${a}>${n.id}>${p.ty}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        const A = byId.get(a)!;
+        edges.push({
+          a, b: n.id, ty: p.ty,
+          ...(viaRoll ? { via: p.id } : {}),
+          ...(!!A.owner !== !!n.owner ? { cross: true } : {}),
+        });
+      } else if (/[가-힣]/.test(p.id)) softMiss.push(`${n.id} ← ${p.id}`);
+      else miss.push(`${n.id} ← ${p.id}`);
     }),
   );
-  return { N, lanes, edges, byId, miss: [...new Set(miss)] };
+  return { N, lanes, edges, byId, miss: [...new Set(miss)], softMiss: [...new Set(softMiss)] };
 }
 
 export function nodeVisible(n: NetNode, f: NetFilter, mode: NetMode) {
   if (mode === "net" && f.band !== "" && n.band !== Number(f.band)) return false;
   if (f.late && !n.late) return false;
+  if (f.scope === "owner" && !n.owner) return false;
+  if (f.scope === "hdec" && n.owner) return false;
   if (mode === "group") return !f.bldg || n.gb === f.bldg;
   if (f.dept && !(n.roll ? String(n.depts).includes(f.dept) : n.dept !== f.dept ? false : true)) return false;
   if (f.bldg && !n.roll && String(n.bldg) !== f.bldg) return false;
   if (f.ms && String(n.ms) !== f.ms) return false;
   return true;
+}
+
+/** 발주처 노드와 직접 연결된 노드 집합 (발주처 연관만 보기) */
+export function linkedToOwner(N: NetNode[], edges: NetEdge[]) {
+  const own = new Set(N.filter((n) => n.owner).map((n) => n.id));
+  const set = new Set(own);
+  edges.forEach((e) => {
+    if (own.has(e.a)) set.add(e.b);
+    if (own.has(e.b)) set.add(e.a);
+  });
+  return set;
 }
 
 export function chainOf(edges: NetEdge[], id: string) {

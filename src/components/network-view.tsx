@@ -1,25 +1,33 @@
 import { useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
 import {
-  AXH, BH, buildModel, chainOf, dayList, layout, nodeVisible,
-  type NetFilter, type NetNode,
+  AXH, BH, buildModel, chainOf, dayList, layout, linkedToOwner, nodeVisible,
+  type NetFilter, type NetMode, type NetNode, type NetScope,
 } from "@/lib/network-model";
+import { applyPush, computePush, ownerImpactSummary, pushChain } from "@/lib/network-impact";
 import { BANDS, fmtDate, MSDEF, pct1, SLOT_LABEL, STATUS_COLOR, STATUS_LABEL, type Row } from "@/lib/schedule-model";
 
-export type NetSearch = { view: "net" | "bldg"; zoom: number; bands: number[]; dept: string; ms: string; bldg: string; late: boolean };
+export type NetSearch = {
+  view: "net" | "bldg"; zoom: number; bands: number[]; dept: string; ms: string; bldg: string; late: boolean;
+  scope?: NetScope; push?: boolean;
+};
+
+const OWNER_COLOR = "#6d28d9";
 
 const ZMIN = 0.6, ZMAX = 4, ZSTEP = 0.25;
 const WD = ["일", "월", "화", "수", "목", "금", "토"];
 const dnum = (d: string) => Date.parse(`${d}T00:00:00Z`);
 const dayDur = (a: string, b: string) => Math.round((dnum(b) - dnum(a)) / 864e5);
 
-export function NetworkView({ rows, search, onChange, base }: { rows: Row[]; search: NetSearch; onChange: (p: Partial<NetSearch>) => void; base: string }) {
-  const mode = search.view === "bldg" ? "group" : "net";
+export function NetworkView({ rows, search, onChange, base, forceMode }: { rows: Row[]; search: NetSearch; onChange: (p: Partial<NetSearch>) => void; base: string; forceMode?: NetMode }) {
+  const mode: NetMode = forceMode ?? (search.view === "bldg" ? "group" : "net");
   const [lock, setLock] = useState<string | null>(null);
   const [hover, setHover] = useState<{ n: NetNode; x: number; y: number } | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const scope: NetScope = search.scope ?? "all";
+  const showPush = search.push ?? true;
 
-  const f: NetFilter = { band: search.bands.length === 1 ? String(search.bands[0]) : "", dept: search.dept, bldg: search.bldg, ms: search.ms, late: search.late };
+  const f: NetFilter = { band: search.bands.length === 1 ? String(search.bands[0]) : "", dept: search.dept, bldg: search.bldg, ms: search.ms, late: search.late, scope };
 
   const opts = useMemo(() => ({
     dept: [...new Set(rows.map((r) => r.dept).filter(Boolean))].sort(),
@@ -27,12 +35,20 @@ export function NetworkView({ rows, search, onChange, base }: { rows: Row[]; sea
     bldg: [...new Set(rows.map((r) => (mode === "group" ? r.bldg ?? "(미지정)" : r.bldg)).filter(Boolean))].sort((x, y) => String(x).localeCompare(String(y), "ko")) as string[],
   }), [rows, mode]);
 
-  const M = useMemo(() => buildModel(rows, mode, BANDS), [rows, mode]);
+  const M = useMemo(() => {
+    const m = buildModel(rows, mode, BANDS);
+    const push = computePush(m.N, m.edges);
+    const N = showPush ? applyPush(m.N, push) : m.N;
+    return { ...m, N, byId: new Map(N.map((n) => [n.id, n])), push, impact: ownerImpactSummary(N, push) };
+  }, [rows, mode, showPush]);
   const lay = useMemo(() => layout(M.N, M.lanes.length, search.zoom, fmtDate), [M, search.zoom]);
-  const vis = useMemo(() => new Set(lay.nodes.filter((n) => nodeVisible(n, f, mode)).map((n) => n.id)),
-    [lay, f.band, f.dept, f.bldg, f.ms, f.late, mode]);
+  const ownerLinked = useMemo(() => linkedToOwner(M.N, M.edges), [M]);
+  const vis = useMemo(() => new Set(lay.nodes.filter((n) =>
+    nodeVisible(n, f, mode) && (scope !== "linked" || ownerLinked.has(n.id))).map((n) => n.id)),
+    [lay, f.band, f.dept, f.bldg, f.ms, f.late, scope, ownerLinked, mode]);
   const active = hover && !lock ? hover.n.id : lock;
   const chain = useMemo(() => (active ? chainOf(M.edges, active) : null), [active, M.edges]);
+  const pchain = useMemo(() => (active ? pushChain(M.push, active) : null), [active, M.push]);
 
   const days = useMemo(() => dayList(lay.A0, lay.A1), [lay.A0, lay.A1]);
   const axMode = lay.PPD >= 15 ? "dw" : lay.PPD >= 9 ? "d" : lay.PPD >= 4 ? "s" : "w";
@@ -128,6 +144,14 @@ export function NetworkView({ rows, search, onChange, base }: { rows: Row[]; sea
         <label className="flex cursor-pointer items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
           <input type="checkbox" checked={search.late} onChange={(e) => { setLock(null); onChange({ late: e.target.checked }); }} />지연만
         </label>
+        <span className="mx-1 inline-block h-[18px] w-px bg-border" />
+        {([["all", "전체"], ["owner", "발주처만"], ["hdec", "당사만"], ["linked", "발주처 연관만"]] as [NetScope, string][]) .map(([v, l]) => (
+          <button key={v} type="button" onClick={() => { setLock(null); onChange({ scope: v }); }}
+            className={`rounded border px-2 py-1 text-[11.5px] font-bold ${scope === v ? "border-transparent bg-[#6d28d9] text-white" : "border-input bg-background"}`}>{l}</button>
+        ))}
+        <label className="flex cursor-pointer items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
+          <input type="checkbox" checked={showPush} onChange={(e) => { setLock(null); onChange({ push: e.target.checked }); }} />선행 영향 반영
+        </label>
         <button type="button" onClick={resetFilter} className="rounded border border-input bg-background px-2 py-1 text-[11.5px] font-bold">필터 해제</button>
         <span className="ml-auto text-[11.5px] font-bold text-primary">
           {lock ? `선택 ${lock}${chain ? ` · 체인 ${chain.size}개` : ""} — 빈 곳 클릭 시 해제` : ""}
@@ -145,7 +169,18 @@ export function NetworkView({ rows, search, onChange, base }: { rows: Row[]; sea
         <span style={{ color: STATUS_COLOR["delay"] }}>┃ 계획선</span>
         <span>◆ 마일스톤(굵은 테두리)</span>
         <span style={{ color: STATUS_COLOR["delay"] }}>┆ 기준일</span>
+        <span className="inline-flex items-center gap-1"><i className="inline-block size-[11px] rounded-[3px]" style={{ background: OWNER_COLOR }} />발주처 업역</span>
+        <span className="inline-flex items-center gap-1"><i className="inline-block size-[11px] rounded-[3px] border border-dashed border-muted-foreground/70" />밀리기 전 자리</span>
       </div>
+
+      {/* 발주처 영향 요약 */}
+      {showPush && M.impact.hdec > 0 && (
+        <div className="rounded-md border px-3 py-2 text-[12px] font-bold" style={{ borderColor: OWNER_COLOR, color: OWNER_COLOR, background: `${OWNER_COLOR}12` }}>
+          발주처 변경으로 당사 항목 {M.impact.hdec}건
+          {M.impact.ms.length > 0 ? `, 마일스톤 ${M.impact.ms.join("·")}` : ""}이(가) 최대 {M.impact.maxDays}일 영향을 받습니다.
+        </div>
+      )}
+
 
       {/* 통계 */}
       <div className="flex flex-wrap gap-4 rounded-md border border-border bg-card px-3 py-2 text-[12px] text-muted-foreground">
@@ -249,11 +284,16 @@ export function NetworkView({ rows, search, onChange, base }: { rows: Row[]; sea
             const bend = Math.max(30, Math.min(130, Math.abs(bx1 - ax1) / 2));
             const on = vis.has(e.a) && vis.has(e.b);
             const inChain = chain ? chain.has(e.a) && chain.has(e.b) && on : false;
+            const inPush = !!pchain && pchain.has(e.a) && pchain.has(e.b) && on && (M.push.get(e.b)?.cause === e.a);
+            const stroke = inPush ? "#dc2626" : e.cross ? OWNER_COLOR : (STATUS_COLOR[B.st] ?? "#8b98a5");
             return (
               <path key={i} d={`M${ax1},${ay} C${ax1 + bend},${ay} ${bx1 - bend},${by} ${bx1},${by}`}
-                fill="none" stroke={STATUS_COLOR[B.st] ?? "#8b98a5"} strokeWidth={inChain ? 2.4 : 1.5}
+                fill="none" stroke={stroke} strokeWidth={inPush ? 3 : inChain ? 2.4 : e.cross ? 2.4 : 1.5}
                 strokeDasharray={e.ty !== "FS" ? "6 4" : undefined}
-                opacity={!on ? 0.04 : chain ? (inChain ? 0.95 : 0.04) : 0.45} markerEnd={`url(#ar_${B.st})`} />
+                opacity={!on ? 0.04 : inPush ? 1 : chain ? (inChain ? 0.95 : 0.04) : e.cross ? 0.8 : 0.45}
+                markerEnd={`url(#ar_${B.st})`}>
+                {e.via && <title>{`${e.via} → ${e.b} (건설 뭉치로 연결)`}</title>}
+              </path>
             );
           })}
 
@@ -261,7 +301,8 @@ export function NetworkView({ rows, search, onChange, base }: { rows: Row[]; sea
           {lay.rows.map((list, i) => list.map((n) => {
             if (!vis.has(n.id)) return null;
             const st = STATUS_COLOR[n.st] ?? "#8b98a5";
-            const col = M.lanes[i]?.color ?? "#1f4e79";
+            const col = n.owner ? OWNER_COLOR : (M.lanes[i]?.color ?? "#1f4e79");
+            const gdx = n._push && n._origE ? lay.X(n._origE) - lay.X(n.e!) : 0;
             const ly = lay.laneY[i]!, by = n._y!, bx = n._bx!, w = n._w!, x = n._x!;
             const pcv = Math.max(0, Math.min(1, n.pc ?? 0));
             const plv = n.pl == null ? null : Math.max(0, Math.min(1, n.pl));
@@ -275,8 +316,25 @@ export function NetworkView({ rows, search, onChange, base }: { rows: Row[]; sea
                 {n.s && n.e && n.s < n.e && (
                   <line x1={Math.max(lay.PADL - 8, lay.X(n.s))} y1={by + BH + 6} x2={lay.X(n.e)} y2={by + BH + 6} stroke={st} strokeWidth={3} strokeLinecap="round" opacity={0.33} />
                 )}
-                <line x1={x} y1={ly + 16} x2={x} y2={by} stroke={col} strokeWidth={1} opacity={0.3} />
-                <rect x={bx} y={by} width={w} height={BH} rx={4} fill={lock === n.id ? "#f4f9ff" : "#fff"} stroke={st} strokeWidth={n.mile ? 2.2 : 1.3} />
+                {!!n._push && gdx !== 0 && (
+                  <g opacity={0.75}>
+                    <rect x={bx + gdx} y={by} width={w} height={BH} rx={4} fill="none" stroke="#94a3b8" strokeWidth={1.2} strokeDasharray="5 4" />
+                    <line x1={bx + gdx + w} y1={by + BH / 2} x2={bx} y2={by + BH / 2} stroke="#dc2626" strokeWidth={1.4} strokeDasharray="4 3" markerEnd={`url(#ar_${n.st})`} />
+                  </g>
+                )}
+                <line x1={x} y1={ly + 16} x2={x} y2={by} stroke={col} opacity={n.owner ? 0.6 : 0.3} strokeWidth={n.owner ? 1.8 : 1} />
+                <rect x={bx} y={by} width={w} height={BH} rx={4} fill={lock === n.id ? "#f4f9ff" : "#fff"}
+                  stroke={n.owner ? OWNER_COLOR : st} strokeWidth={n.owner ? 2.2 : n.mile ? 2.2 : 1.3}
+                  strokeDasharray={n.ctx ? "5 3" : undefined} />
+                {n.owner && <rect x={bx} y={by} width={3} height={BH} fill={OWNER_COLOR} />}
+                {!!n._push && (
+                  <g>
+                    <rect x={bx + w - 34} y={by - 9} width={34} height={13} rx={6.5} fill="#dc2626" />
+                    <text x={bx + w - 17} y={by + 1} fontSize={9} fontWeight={700} textAnchor="middle" fill="#fff">
+                      +{n._push}d
+                    </text>
+                  </g>
+                )}
                 <rect x={bx} y={byy} width={w} height={3.4} fill="#eaeff4" />
                 {plv != null && plv > pcv && <rect x={bx + w * pcv} y={byy} width={w * (plv - pcv)} height={3.4} fill="#c2185b" opacity={0.45} />}
                 {pcv > 0 && <rect x={bx} y={byy} width={w * pcv} height={3.4} fill={st} />}
@@ -295,6 +353,11 @@ export function NetworkView({ rows, search, onChange, base }: { rows: Row[]; sea
       {M.miss.length > 0 && (
         <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-[11.5px] text-destructive">
           대상 없는 선행 참조 {M.miss.length}건 — {M.miss.slice(0, 10).join(" , ")}
+        </div>
+      )}
+      {M.softMiss.length > 0 && (
+        <div className="rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-[11.5px] text-amber-700 dark:text-amber-400">
+          말로 쓴 선행 {M.softMiss.length}건 — 번호가 아니라 설명으로 적혀 있어 연결선을 그릴 수 없습니다. {M.softMiss.slice(0, 8).join(" , ")}
         </div>
       )}
 
