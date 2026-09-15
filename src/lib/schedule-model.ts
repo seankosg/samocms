@@ -145,6 +145,7 @@ export function toRow(a: ActivityRow): Row {
     scope: a.work_scope,
     ms: normMS(a.milestone),
     sub: a.subcontractor,
+    ownerDept: (a as { owner_dept?: string | null }).owner_dept ?? null,
     mgr: (a as { manager?: string | null }).manager ?? null,
     act: flat(a.activity),
     unit: a.unit,
