@@ -48,6 +48,8 @@ const date = (v: unknown): string | null => {
 };
 
 const KNOWN = ["Arch", "Elec", "Int", "Mech", "Permit"];
+/** 발주처 취합본 파일명 토큰 */
+const OWNER_TOKENS = ["발주처", "HMMME"];
 
 /** 공정표 담당자 이름 → CMS 사용자 이름 교정표 (불일치 발견 시 여기에 추가) */
 export const MANAGER_ALIAS: Record<string, string> = {
@@ -62,11 +64,14 @@ export function normalizeManager(v: string | null): string | null {
   return MANAGER_ALIAS[s] ?? s;
 }
 
-/** 파일명에서 공종 키(Arch/Elec/Int/Mech/Permit)를 추출합니다. */
-export function sourceKeyFromFileName(fileName: string): string {
+/**
+ * 파일명에서 공종 키(Arch/Elec/Int/Mech/Permit/HMMME)를 추출합니다.
+ * 판별할 수 없으면 null — 업로드 확인창에서 사용자가 공종을 고릅니다.
+ */
+export function sourceKeyFromFileName(fileName: string): string | null {
   const base = fileName.replace(/\.[^.]+$/, "");
-  const hit = KNOWN.find((k) => new RegExp(`(^|[_\\-\\s])${k}($|[_\\-\\s])`, "i").test(base));
-  return hit ?? base.slice(0, 64);
+  if (OWNER_TOKENS.some((t) => base.toUpperCase().includes(t.toUpperCase()))) return "HMMME";
+  return KNOWN.find((k) => new RegExp(`(^|[_\\-\\s])${k}($|[_\\-\\s])`, "i").test(base)) ?? null;
 }
 
 /** 파일명의 YYYYMMDD → ISO 날짜 */
