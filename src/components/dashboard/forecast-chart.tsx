@@ -84,7 +84,7 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes }: {
   }, [eligibleRows]);
   const milestoneDiscs = useMemo(() => {
     const scoped = milestone === "ALL" ? eligibleRows : eligibleRows.filter((r) => (r.ms ?? "미지정") === milestone);
-    return KPI_SLOTS.filter((disc) => scoped.some((r) => r.slot === disc));
+    return FC_SLOTS.filter((disc) => scoped.some((r) => r.slot === disc));
   }, [eligibleRows, milestone]);
 
   // T&C 예측: 팀 선택에 따라 건물 목록 갱신
@@ -314,9 +314,11 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes }: {
       <div className="mb-3">
         <Tabs value={mode} onValueChange={(value) => { setMode(value as Mode); setHover(null); }}>
           <TabsList className="h-9">
-            <TabsTrigger value="discipline" className="px-4 text-xs">공종별 예측</TabsTrigger>
-            <TabsTrigger value="milestone" className="px-4 text-xs">마일스톤별 예측</TabsTrigger>
-            <TabsTrigger value="tc" className="px-4 text-xs">T&C 예측</TabsTrigger>
+            {(modes ?? (["discipline", "milestone", "tc"] as Mode[])).map((mo) => (
+              <TabsTrigger key={mo} value={mo} className="px-4 text-xs">
+                {mo === "discipline" ? "공종별 예측" : mo === "milestone" ? "마일스톤별 예측" : "T&C 예측"}
+              </TabsTrigger>
+            ))}
           </TabsList>
         </Tabs>
       </div>
