@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { Download, Search } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
-import { AdminGate } from "@/components/manpower/admin-gate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NcrRawTable, cellValue } from "@/components/ncr/ncr-raw-table";
@@ -187,7 +186,6 @@ function NcrListPage() {
   );
 
   return (
-    <AdminGate title="NCR 리스트" desc="준공 준비 기능은 현재 관리자(Admin)에게만 제공됩니다.">
       <AppShell
         title="NCR 리스트"
         desc={`NCR · OR · SOR ${filtered.length.toLocaleString()}건 (전체 ${items.length.toLocaleString()}건) · 행을 펼치면 PS1~PS8 단계별 계획/실적을 수정할 수 있습니다`}
@@ -246,6 +244,5 @@ function NcrListPage() {
           onSave={(id, patch) => save.mutate({ id, patch })}
         />
       </AppShell>
-    </AdminGate>
   );
 }
