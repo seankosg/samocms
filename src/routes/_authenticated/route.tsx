@@ -33,5 +33,9 @@ function Gate() {
     );
   }
 
+  if (isOwner && !OWNER_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    return <Navigate to="/owner" replace />;
+  }
+
   return <Outlet />;
 }
