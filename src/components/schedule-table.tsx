@@ -259,7 +259,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
                   <td className="px-3 py-2">{cell(r.sub, "subcontractor", "text")}</td>
                   <td className="px-3 py-2">{cell(r.bldg, "building", "text")}</td>
                   <td className="px-3 py-2">{cell(r.room, "room", "text")}</td>
-                  <td className="max-w-[200px] truncate px-3 py-2">{cell(dispScope(r.scope), "work_scope", "text")}</td>
+                  <td className="max-w-[200px] truncate px-3 py-2">{cell(dispScope(r.scope) ?? null, "work_scope", "text")}</td>
                   <td className="px-3 py-2">{cell(r.ms, "milestone", "text")}</td>
                   <td className="max-w-[340px] px-3 py-2 font-medium">
                     <EditableCell value={r.act} editable={on} onSave={(x) => x && save({ activity: x })} />
