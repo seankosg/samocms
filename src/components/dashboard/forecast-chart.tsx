@@ -95,7 +95,7 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
   }, [eligibleRows]);
   const milestoneDiscs = useMemo(() => {
     const scoped = milestone === "ALL" ? eligibleRows : eligibleRows.filter((r) => (r.ms ?? "미지정") === milestone);
-    return FC_SLOTS.filter((disc) => scoped.some((r) => r.slot === disc));
+    return FC_SLOTS.filter((disc) => scoped.some((r) => rowDisc(r) === disc));
   }, [eligibleRows, milestone]);
 
   // T&C 예측: 팀 선택에 따라 건물 목록 갱신
@@ -135,16 +135,16 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
     if (series.length === 0) return null;
     const baseRows = eligibleRows; // 발주처(현대자동차) 담당 항목 제외
     const sel = mode === "discipline"
-      ? (tab === "ALL" ? baseRows : baseRows.filter((r) => r.slot === tab))
-      : baseRows.filter((r) => (milestone === "ALL" || (r.ms ?? "미지정") === milestone) && (milestoneDisc === "ALL" || r.slot === milestoneDisc));
+      ? (tab === "ALL" ? baseRows : baseRows.filter((r) => rowDisc(r) === tab))
+      : baseRows.filter((r) => (milestone === "ALL" || (r.ms ?? "미지정") === milestone) && (milestoneDisc === "ALL" || rowDisc(r) === milestoneDisc));
 
     // 기록 이력 (선택 공종, 전체는 가중평균)
     const byDate = new Map<string, { p: number; a: number; n: number }>();
     for (const s of series) {
-      if (!FC_SLOTS.includes(s.disc)) continue; // 대상 공종 외 제외
-      if (mode === "discipline" && tab !== "ALL" && s.disc !== tab) continue;
+      if (!FC_SLOTS.includes(sDisc(s))) continue; // 대상 공종 외 제외
+      if (mode === "discipline" && tab !== "ALL" && sDisc(s) !== tab) continue;
       if (mode === "milestone" && milestone !== "ALL" && s.ms !== milestone) continue;
-      if (mode === "milestone" && milestoneDisc !== "ALL" && s.disc !== milestoneDisc) continue;
+      if (mode === "milestone" && milestoneDisc !== "ALL" && sDisc(s) !== milestoneDisc) continue;
       const cur = byDate.get(s.date) ?? { p: 0, a: 0, n: 0 };
       cur.p += s.planned * s.count; cur.a += s.actual * s.count; cur.n += s.count;
       byDate.set(s.date, cur);
@@ -177,14 +177,14 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
     const groupSlots: string[] | null =
       mode === "discipline" && tab === "ALL" ? [...FC_SLOTS]
       : mode === "milestone" && milestoneDisc === "ALL"
-        ? FC_SLOTS.filter((disc) => series.some((s) => s.disc === disc && (milestone === "ALL" || s.ms === milestone)))
+        ? FC_SLOTS.filter((disc) => series.some((s) => sDisc(s) === disc && (milestone === "ALL" || s.ms === milestone)))
         : null;
     if (groupSlots && !actualDoneDate) {
       const ends: { slot: string; end: string }[] = [];
       for (const slot of groupSlots) {
         const bd = new Map<string, { a: number; n: number }>();
         for (const s of series) {
-          if (s.disc !== slot) continue;
+          if (sDisc(s) !== slot) continue;
           if (mode === "milestone" && milestone !== "ALL" && s.ms !== milestone) continue;
           const cur = bd.get(s.date) ?? { a: 0, n: 0 };
           cur.a += s.actual * s.count; cur.n += s.count;
@@ -256,8 +256,8 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
     return summaryDiscs.map((disc) => {
       const byDate = new Map<string, { a: number; n: number }>();
       for (const s of series) {
-        if (!FC_SLOTS.includes(s.disc)) continue; // 대상 공종 외 제외
-        if (disc !== "ALL" && s.disc !== disc) continue;
+        if (!FC_SLOTS.includes(sDisc(s))) continue; // 대상 공종 외 제외
+        if (disc !== "ALL" && sDisc(s) !== disc) continue;
         if (mode === "milestone" && milestone !== "ALL" && s.ms !== milestone) continue;
         const cur = byDate.get(s.date) ?? { a: 0, n: 0 };
         cur.a += s.actual * s.count; cur.n += s.count;
@@ -268,7 +268,7 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
       const scopedRows = mode === "milestone"
         ? eligibleRows.filter((r) => milestone === "ALL" || (r.ms ?? "미지정") === milestone)
         : eligibleRows;
-      const sel = disc === "ALL" ? scopedRows : scopedRows.filter((r) => r.slot === disc);
+      const sel = disc === "ALL" ? scopedRows : scopedRows.filter((r) => rowDisc(r) === disc);
       if (hist.length === 0 || sel.length === 0) return { disc, slope: null, forecastEnd: null, actualDone: null, diffDays: null, planDone: null as string | null, actual: null as number | null };
       const last = hist[hist.length - 1]!;
       const slope = slopeOf(hist);
@@ -345,7 +345,7 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
               return (
                 <button key={d} type="button" data-active={active} className="ui-filter h-7 cursor-pointer rounded-full px-2.5 text-[11px] transition-colors"
                   onClick={() => { if (mode === "discipline") setTab(d); else { setMilestone(d); setMilestoneDisc("ALL"); } setHover(null); }}>
-                  {d === "ALL" ? "전체" : (mode === "discipline" ? (SLOT_LABEL[d] ?? d) : d)}
+                  {d === "ALL" ? "전체" : (mode === "discipline" ? discLabel(d) : d)}
                 </button>
               );
             })}
@@ -359,7 +359,7 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
           {(["ALL", ...milestoneDiscs] as string[]).map((disc) => (
             <button key={disc} type="button" data-active={milestoneDisc === disc} className="ui-filter h-7 cursor-pointer rounded-full px-2.5 text-[11px] transition-colors"
               onClick={() => { setMilestoneDisc(disc); setHover(null); }}>
-              {disc === "ALL" ? "전체 공종" : (SLOT_LABEL[disc] ?? disc)}
+              {disc === "ALL" ? "전체 공종" : discLabel(disc)}
             </button>
           ))}
         </div>
@@ -471,7 +471,7 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
                       </p>
                       {model.forecastEndBy && (
                         <p className="mt-0.5 text-[10px] text-muted-foreground">
-                          {mode === "tc" ? "팀·건물별 최종 완료일 기준" : "공종별 최종 완료일 기준"} · {SLOT_LABEL[model.forecastEndBy] ?? model.forecastEndBy}
+                          {mode === "tc" ? "팀·건물별 최종 완료일 기준" : "공종별 최종 완료일 기준"} · {discLabel(model.forecastEndBy)}
                         </p>
                       )}
                     </>
@@ -650,7 +650,7 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
                 const isActive = mode === "discipline" ? s.disc === tab : mode === "milestone" ? s.disc === milestoneDisc : s.disc === tcBldg || (tcTeam === "ALL" && s.disc === tcTeam);
                 const label = mode === "tc"
                   ? (s.disc === "ALL" || s.disc === "Mech" || s.disc === "Elec" ? (s.disc === "Mech" ? "MECH" : s.disc === "Elec" ? "ELEC" : "전체") : s.disc)
-                  : (s.disc === "ALL" ? (mode === "milestone" ? "전체 공종" : "전체") : (SLOT_LABEL[s.disc] ?? s.disc));
+                  : (s.disc === "ALL" ? (mode === "milestone" ? "전체 공종" : "전체") : discLabel(s.disc));
                 const tcSearch = mode === "tc" ? ({
                   ...(tcStage !== "ALL" ? { stage: tcStage } : {}),
                   ...(s.disc === "Mech" || s.disc === "Elec"
