@@ -60,7 +60,9 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
   const [tcBldg, setTcBldg] = useState<string>("ALL");
   const [hover, setHover] = useState<number | null>(null);
 
-  const eligibleRows = useMemo(() => rows.filter((r) => !isClientOwned(r.mgr)), [rows]);
+  // 인허가(Permit)는 예측 대상에서 제외 (목록·계산 모두)
+  const FC_SLOTS = KPI_SLOTS.filter((s) => s !== "Permit");
+  const eligibleRows = useMemo(() => rows.filter((r) => !isClientOwned(r.mgr) && r.slot !== "Permit"), [rows]);
   const milestones = useMemo(() => {
     const values = new Set(eligibleRows.map((r) => r.ms ?? "미지정"));
     return [...values].sort((a, b) => {
@@ -119,6 +121,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
     // 기록 이력 (선택 공종, 전체는 가중평균)
     const byDate = new Map<string, { p: number; a: number; n: number }>();
     for (const s of series) {
+      if (s.disc === "Permit") continue; // 인허가 제외
       if (mode === "discipline" && tab !== "ALL" && s.disc !== tab) continue;
       if (mode === "milestone" && milestone !== "ALL" && s.ms !== milestone) continue;
       if (mode === "milestone" && milestoneDisc !== "ALL" && s.disc !== milestoneDisc) continue;
@@ -152,9 +155,9 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
     // 전체 보기: 완료 전망은 하위 공종별 예측 완료일 중 가장 늦은 날 (평균 속도가 느린 공종을 과소평가하는 것 방지)
     let forecastEndBy: string | null = null;
     const groupSlots: string[] | null =
-      mode === "discipline" && tab === "ALL" ? [...KPI_SLOTS]
+      mode === "discipline" && tab === "ALL" ? [...FC_SLOTS]
       : mode === "milestone" && milestoneDisc === "ALL"
-        ? KPI_SLOTS.filter((disc) => series.some((s) => s.disc === disc && (milestone === "ALL" || s.ms === milestone)))
+        ? FC_SLOTS.filter((disc) => series.some((s) => s.disc === disc && (milestone === "ALL" || s.ms === milestone)))
         : null;
     if (groupSlots && !actualDoneDate) {
       const ends: { slot: string; end: string }[] = [];
@@ -229,10 +232,11 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
       }));
     }
     const series = data?.series ?? [];
-    const summaryDiscs = mode === "milestone" ? (["ALL", ...milestoneDiscs] as string[]) : (["ALL", ...KPI_SLOTS] as string[]);
+    const summaryDiscs = mode === "milestone" ? (["ALL", ...milestoneDiscs] as string[]) : (["ALL", ...FC_SLOTS] as string[]);
     return summaryDiscs.map((disc) => {
       const byDate = new Map<string, { a: number; n: number }>();
       for (const s of series) {
+        if (s.disc === "Permit") continue; // 인허가 제외
         if (disc !== "ALL" && s.disc !== disc) continue;
         if (mode === "milestone" && milestone !== "ALL" && s.ms !== milestone) continue;
         const cur = byDate.get(s.date) ?? { a: 0, n: 0 };
@@ -314,7 +318,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
         </p>
         {mode !== "tc" && (
           <div className="ml-auto flex flex-wrap gap-1">
-            {(mode === "discipline" ? (["ALL", ...KPI_SLOTS] as string[]) : (["ALL", ...milestones] as string[])).map((d) => {
+            {(mode === "discipline" ? (["ALL", ...FC_SLOTS] as string[]) : (["ALL", ...milestones] as string[])).map((d) => {
               const active = mode === "discipline" ? tab === d : milestone === d;
               return (
                 <button key={d} type="button" data-active={active} className="ui-filter h-7 cursor-pointer rounded-full px-2.5 text-[11px] transition-colors"
