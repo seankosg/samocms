@@ -18,7 +18,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 
 import { autoBaseline, useProject } from "@/lib/use-project";
 import { setBaselineDate } from "@/lib/project.functions";
-import { SLOT_LABEL } from "@/lib/schedule-model";
+import { dispScope, SLOT_LABEL } from "@/lib/schedule-model";
 import { currentBuildId, forceFreshAppLoad } from "@/hooks/use-version-check";
 import { UpdateAvailableBanner } from "@/components/update-available-banner";
 import hyundaiLogo from "@/assets/hyundai-logo.png";
@@ -120,7 +120,7 @@ export function AppShell({ title, desc, actions, children }: { title: string; de
     XLSX.utils.book_append_sheet(
       wb,
       XLSX.utils.json_to_sheet(rows.map((r) => ({
-        "No.": r.no, 담당부서: r.dept, "Bldg.": r.bldg, Room: r.room, "Work Scope": r.scope,
+        "No.": r.no, 담당부서: SLOT_LABEL[r.dept] ?? r.dept, "Bldg.": r.bldg, Room: r.room, "Work Scope": dispScope(r.scope),
         Milestone: r.ms, Subcon: r.sub, Activity: r.act, Unit: r.unit, Done: r.done, Total: r.tot,
         "계획(%)": r.pl == null ? null : r.pl * 100, "실적(%)": r.pc == null ? null : r.pc * 100,
         Predecessor: r.pred, Successor: r.succ, Start: r.s, Finish: r.e, Source: r.slot,
