@@ -60,7 +60,9 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
   const [tcBldg, setTcBldg] = useState<string>("ALL");
   const [hover, setHover] = useState<number | null>(null);
 
-  const eligibleRows = useMemo(() => rows.filter((r) => !isClientOwned(r.mgr)), [rows]);
+  // 인허가(Permit)는 예측 대상에서 제외 (목록·계산 모두)
+  const FC_SLOTS = KPI_SLOTS.filter((s) => s !== "Permit");
+  const eligibleRows = useMemo(() => rows.filter((r) => !isClientOwned(r.mgr) && r.slot !== "Permit"), [rows]);
   const milestones = useMemo(() => {
     const values = new Set(eligibleRows.map((r) => r.ms ?? "미지정"));
     return [...values].sort((a, b) => {
@@ -119,6 +121,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
     // 기록 이력 (선택 공종, 전체는 가중평균)
     const byDate = new Map<string, { p: number; a: number; n: number }>();
     for (const s of series) {
+      if (s.disc === "Permit") continue; // 인허가 제외
       if (mode === "discipline" && tab !== "ALL" && s.disc !== tab) continue;
       if (mode === "milestone" && milestone !== "ALL" && s.ms !== milestone) continue;
       if (mode === "milestone" && milestoneDisc !== "ALL" && s.disc !== milestoneDisc) continue;
