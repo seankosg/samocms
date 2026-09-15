@@ -213,7 +213,7 @@ function ComparePage() {
                 <td className="text-right">{totals.exe.toLocaleString()}</td>
                 <td className={`text-right ${diffTone(totals.hseDiff)}`}>{fmtDiff(totals.hseDiff)}</td>
                 <td className={`text-right ${diffTone(totals.exeDiff)}`}>{fmtDiff(totals.exeDiff)}</td>
-                <td /><td /><td /><td /><td />
+                <td /><td /><td />
               </tr>
             )}
             {shown.map((r, i) => (
