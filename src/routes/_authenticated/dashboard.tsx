@@ -220,7 +220,7 @@ function Dashboard() {
                 <span>총 <Drill to="/schedule" search={{ ms: x.key }}>{x.total}</Drill>건</span>
                 <span>평균 {x.pc == null ? "—" : <Drill to="/schedule" search={{ ms: x.key, hasProgress: true }}>{pct1(x.pc)}%</Drill>}</span>
                 <span className={x.late ? "font-bold text-destructive" : ""}>지연 <Drill to="/delays" search={{ ms: x.key }}>{x.late}</Drill></span>
-                {x.over > 0 && x.due && <span className="font-bold text-destructive">초과 <Drill to="/schedule" search={{ ms: x.key, efrom: nextDay(x.due) }}>{x.over}</Drill></span>}
+                {x.over > 0 && x.due && <span className="font-bold text-primary">초과 <Drill to="/schedule" search={{ ms: x.key, efrom: nextDay(x.due) }}>{x.over}</Drill></span>}
               </div>
               <div className="mt-2 border-t border-border pt-1.5 text-[11px]">
                 <MsRow label="계획" n={x.plan} p={x.total ? x.plan / x.total : 0} search={{ ms: x.key, duebyBase: true }} />
