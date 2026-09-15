@@ -28,6 +28,31 @@ export const Route = createFileRoute("/_authenticated/owner/")({
 });
 
 const sign = (v: number) => (v > 0 ? "+" : v < 0 ? "−" : "");
+const gapCls = (v: number) => (v < 0 ? "text-destructive" : v > 0 ? "text-primary" : "text-muted-foreground");
+
+type OwnerDrillSearch = { dept?: string; status?: string; duebyBase?: boolean };
+
+/** 발주처 KPI 수치 → 발주처 공정 리스트 드릴다운 */
+function Drill({ search, className = "", children }: { search?: OwnerDrillSearch; className?: string; children: React.ReactNode }) {
+  return (
+    <Link
+      to="/owner/list"
+      search={(search ?? {}) as never}
+      className={`cursor-pointer rounded underline-offset-2 transition-colors hover:text-primary hover:underline focus-visible:underline ${className}`}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function Bar({ v, marker, tone = "ok", className = "" }: { v: number; marker?: number | undefined; tone?: "ok" | "bad"; className?: string }) {
+  return (
+    <div className={`relative h-1.5 overflow-hidden rounded bg-muted ${className}`}>
+      <div className={`h-full ${tone === "bad" ? "bg-destructive" : "bg-primary"}`} style={{ width: `${Math.min(100, Math.max(0, v * 100))}%` }} />
+      {marker != null && <span className="absolute top-0 h-full w-px bg-foreground/60" style={{ left: `${Math.min(100, marker * 100)}%` }} />}
+    </div>
+  );
+}
 
 function group(rows: Row[], key: (r: Row) => string) {
   const m = new Map<string, Row[]>();
