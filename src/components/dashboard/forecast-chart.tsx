@@ -49,7 +49,15 @@ function planCurveOf(rows: Row[], dates: string[]): Map<string, number> {
 
 type Mode = "discipline" | "milestone" | "tc";
 
-export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: TcItem[]; base: string }) {
+export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes }: {
+  rows: Row[]; tcItems: TcItem[]; base: string;
+  /** 예측 대상 공종 목록 (기본: 인허가 제외한 KPI 공종) */
+  slots?: string[];
+  /** 예측 대상 행 필터 (기본: 발주처·인허가 제외) */
+  rowScope?: (r: Row) => boolean;
+  /** 표시할 보기 모드 (기본: 공종별·마일스톤별·T&C) */
+  modes?: Mode[];
+}) {
   const { data, isLoading } = useProgressForecast();
   const [mode, setMode] = useState<Mode>("discipline");
   const [tab, setTab] = useState<string>("ALL");
