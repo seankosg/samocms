@@ -29,7 +29,7 @@ export function ManpowerKpiCard() {
     .map(([loc, n]) => ({ loc, n }))
     .sort((a, b) => b.n - a.n);
   const top1 = bldgTop[0];
-  const top4 = bldgTop.slice(0, 4);
+  const rest = bldgTop.slice(1, 5);
 
   const totalCard = (
     <div className="rounded-md border border-border bg-card p-4 shadow-sm transition hover:border-primary/50">
@@ -90,15 +90,15 @@ export function ManpowerKpiCard() {
             </p>
           </div>
           <div className="shrink-0 space-y-1 text-right text-[11px]">
-            {top4.map((b, i) => (
+            {rest.map((b, i) => (
               <div key={b.loc} className="flex items-baseline justify-end gap-1.5">
                 <span className="max-w-[110px] truncate font-semibold text-muted-foreground" title={b.loc}>
-                  {i + 1}. {b.loc}
+                  {i + 2}. {b.loc}
                 </span>
                 <span className="font-bold tabular-nums">{b.n.toLocaleString()}</span>
               </div>
             ))}
-            {!isLoading && top4.length === 0 && <p className="text-muted-foreground">자료 없음</p>}
+            {!isLoading && rest.length === 0 && <p className="text-muted-foreground">자료 없음</p>}
           </div>
         </div>
       )}
