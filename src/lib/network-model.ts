@@ -92,7 +92,9 @@ export function netNodes(rows: Row[]): NetNode[] {
     if (!r.no) return;
     N.push(activityNode(r, bandOf(r)));
   });
-  return N;
+  const uniq = new Map<string, NetNode>();
+  N.forEach((n) => { if (!uniq.has(n.id)) uniq.set(n.id, n); });
+  return [...uniq.values()];
 }
 
 /** 개별 활동 노드 하나 */
