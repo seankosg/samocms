@@ -143,6 +143,7 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
     // 기록 이력 (선택 공종, 전체는 가중평균)
     const byDate = new Map<string, { p: number; a: number; n: number }>();
     for (const s of series) {
+      if (!seriesOk(s)) continue; // 발주처 보기: 발주처 계열만
       if (!FC_SLOTS.includes(sDisc(s))) continue; // 대상 공종 외 제외
       if (mode === "discipline" && tab !== "ALL" && sDisc(s) !== tab) continue;
       if (mode === "milestone" && milestone !== "ALL" && s.ms !== milestone) continue;
