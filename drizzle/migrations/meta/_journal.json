@@ -218,6 +218,13 @@
       "when": 1789461976700,
       "tag": "0030_add_owner_dept_and_hmmme_scope",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1789469600226,
+      "tag": "0031_normalize_progress_over_one",
+      "breakpoints": true
     }
   ]
 }
