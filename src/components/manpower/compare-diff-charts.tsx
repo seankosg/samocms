@@ -1,10 +1,11 @@
 // 검증 대조 차이 시각화 — 일별 차이/누적 차이, 협력사별 누적 차이
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Bar, CartesianGrid, Cell, ComposedChart, Line, ReferenceLine,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import type { CompareRow } from "@/lib/manpower-model";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const POS = "hsl(160,60%,42%)"; // 보고 > 검증 이 아니라, diff = 검증 - 보고 (+ = 보고 누락 반대)
 const NEG = "hsl(0,72%,51%)";
@@ -12,9 +13,11 @@ const NEG = "hsl(0,72%,51%)";
 const barColor = (v: number) => (v < 0 ? NEG : v > 0 ? POS : "hsl(215,16%,65%)");
 
 export function CompareDiffCharts({ rows, day }: { rows: CompareRow[]; day: string }) {
+  const [shift, setShift] = useState("ALL");
+  const filtered = useMemo(() => rows.filter((r) => shift === "ALL" || r.shift === shift), [rows, shift]);
   const daily = useMemo(() => {
     const m = new Map<string, { diff: number; abs: number }>();
-    for (const r of rows) {
+    for (const r of filtered) {
       const d = r.report_date;
       const cur = m.get(d) ?? { diff: 0, abs: 0 };
       cur.diff += r.diff ?? 0;
@@ -28,11 +31,11 @@ export function CompareDiffCharts({ rows, day }: { rows: CompareRow[]; day: stri
         cum += v.diff;
         return { date, label: date.slice(5), diff: v.diff, abs: v.abs, cum };
       });
-  }, [rows]);
+  }, [filtered]);
 
   const byCompany = useMemo(() => {
     const m = new Map<string, { diff: number; abs: number; cards: number }>();
-    for (const r of rows) {
+    for (const r of filtered) {
       const cur = m.get(r.company) ?? { diff: 0, abs: 0, cards: 0 };
       cur.diff += r.diff ?? 0;
       cur.abs += Math.abs(r.diff ?? 0);
@@ -44,13 +47,19 @@ export function CompareDiffCharts({ rows, day }: { rows: CompareRow[]; day: stri
       .filter((r) => r.abs > 0)
       .sort((a, b) => b.abs - a.abs)
       .slice(0, 12);
-  }, [rows]);
+  }, [filtered]);
 
   const totalDiff = daily.reduce((s, d) => s + d.diff, 0);
   const totalAbs = daily.reduce((s, d) => s + d.abs, 0);
 
   return (
-    <section className="mb-4 grid gap-3 lg:grid-cols-2">
+    <section className="mb-4">
+      <Tabs value={shift} onValueChange={setShift} className="mb-2">
+        <TabsList className="h-8">
+          {[["ALL", "전조"], ["Day Shift", "주간"], ["Overtime", "연장"], ["Night Shift", "야간"]].map(([value, label]) => <TabsTrigger key={value} value={value} className="h-6 px-3 text-xs">{label}</TabsTrigger>)}
+        </TabsList>
+      </Tabs>
+      <div className="grid gap-3 lg:grid-cols-2">
       <div className="rounded-md border border-border p-3">
         <header className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-sm font-bold">일별 차이 · 누적 차이</h2>
@@ -110,6 +119,7 @@ export function CompareDiffCharts({ rows, day }: { rows: CompareRow[]; day: stri
             </ResponsiveContainer>
           ) : <Empty />}
         </div>
+      </div>
       </div>
     </section>
   );

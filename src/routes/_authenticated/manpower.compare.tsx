@@ -66,6 +66,9 @@ function ComparePage() {
 
   const rows = useMemo(() => compare.filter((r) => r.report_date === day), [compare, day]);
   const stats = useMemo(() => verificationStats(rows), [rows]);
+  const shiftStats = useMemo(() => ([
+    ["주간", "Day Shift"], ["연장", "Overtime"], ["야간", "Night Shift"],
+  ] as const).map(([label, shift]) => ({ label, stats: verificationStats(rows.filter((r) => r.shift === shift)) })), [rows]);
   const searchedRows = useMemo(
     () => rows.filter((r) => (filter === "ALL" || r.result === filter) && (!q || `${r.company} ${r.location}`.toLowerCase().includes(q.toLowerCase()))),
     [rows, filter, q],
@@ -142,10 +145,10 @@ function ComparePage() {
       }
     >
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label={MP.coverage} value={`${Math.round(stats.coverage * 100)}%`} sub={`${stats.coveredCards} / ${stats.subCards} 카드 검증`} />
-        <Kpi label="일치율" value={`${Math.round(stats.matchRate * 100)}%`} />
-        <Kpi label="평균 절대차" value={stats.avgAbsDiff.toFixed(1)} sub="차이가 난 카드 기준" />
-        <Kpi label={MP.hdecOnly} value={String(stats.hdecOnly)} sub="보고 없이 현장에서 확인" tone={stats.hdecOnly ? "warn" : "ok"} />
+        <Kpi label={MP.coverage} value={`${Math.round(stats.coverage * 100)}%`} sub={`${stats.coveredCards} / ${stats.subCards} 카드 검증`} breakdown={shiftStats.map((x) => ({ label: x.label, value: `${Math.round(x.stats.coverage * 100)}%` }))} />
+        <Kpi label="일치율" value={`${Math.round(stats.matchRate * 100)}%`} breakdown={shiftStats.map((x) => ({ label: x.label, value: `${Math.round(x.stats.matchRate * 100)}%` }))} />
+        <Kpi label="평균 절대차" value={stats.avgAbsDiff.toFixed(1)} sub="차이가 난 카드 기준" breakdown={shiftStats.map((x) => ({ label: x.label, value: x.stats.avgAbsDiff.toFixed(1) }))} />
+        <Kpi label={MP.hdecOnly} value={String(stats.hdecOnly)} sub="보고 없이 현장에서 확인" tone={stats.hdecOnly ? "warn" : "ok"} breakdown={shiftStats.map((x) => ({ label: x.label, value: String(x.stats.hdecOnly) }))} />
       </div>
 
       <CompareDiffCharts rows={compare} day={day} />
