@@ -402,8 +402,10 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
 
       {mode !== "tc" && isLoading ? (
         <p className="text-xs text-muted-foreground">불러오는 중…</p>
-      ) : !model || model.hist.length < 2 ? (
-        <p className="text-xs text-muted-foreground">예측에 필요한 기록이 부족합니다. {mode === "tc" ? "선택한 단계·팀·건물의 계획/실적일 데이터가 부족합니다." : "스냅샷이 2일 이상 쌓이면 표시됩니다."}</p>
+      ) : (
+        <>
+      {!model || model.hist.length < 2 ? (
+        <p className="mb-2 text-xs text-muted-foreground">예측 곡선에 필요한 기록이 부족합니다. {mode === "tc" ? "선택한 단계·팀·건물의 계획/실적일 데이터가 부족합니다." : "스냅샷이 2일 이상 쌓이면 그래프가 표시됩니다."}</p>
       ) : (
         <>
           {/* 요약 지표 카드 */}
@@ -621,8 +623,10 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
               )}
             </svg>
           </div>
+        </>
+      )}
 
-          {/* 선택 범위의 요약 표 */}
+          {/* 선택 범위의 요약 표 — 기록 부족 시에도 부서/공종 목록은 항상 표시 */}
           <table className="mt-3 w-full text-left text-xs">
             <thead className="border-b text-muted-foreground">
               <tr>
