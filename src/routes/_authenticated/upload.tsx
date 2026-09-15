@@ -124,26 +124,47 @@ function UploadPage() {
           payload: { kind: "tc", disc, fileDate: meta.date, rows: parsed },
         });
       } else {
-        const slot = sourceKeyFromFileName(file.name);
+        const slot = sourceKeyFromFileName(file.name) ?? (await pickSlot(file.name));
+        if (!slot) continue;
         if (!canEdit(slot)) throw new Error(`${SLOT_LABEL[slot] ?? slot} 자료를 업로드할 권한이 없습니다.`);
         const parsed = parseScheduleFile(buf, file.name);
+
+        // 업역 분리 — 발주처 파일은 발주처 행만, 공종 파일은 발주처 행을 건너뜁니다.
+        let fileRows = parsed.rows;
+        let excludedScope = 0;
+        let excludedRegistered = 0;
+        if (slot === OWNER_SLOT) {
+          const kept = fileRows.filter((r) => isOwnerScopeText(r.work_scope));
+          excludedScope = fileRows.length - kept.length;
+          fileRows = kept.map((r) => ({ ...r, owner_dept: r.discipline, discipline: OWNER_SLOT }));
+        } else {
+          const notOwner = fileRows.filter((r) => !isOwnerScopeText(r.work_scope));
+          excludedScope = fileRows.length - notOwner.length;
+          const ownerNos = new Set(ownerRows.map((r) => r.no).filter((v): v is string => !!v));
+          const kept = notOwner.filter((r) => !ownerNos.has(normMS(r.activity_no) ?? ""));
+          excludedRegistered = notOwner.length - kept.length;
+          fileRows = kept;
+        }
+        if (!fileRows.length) throw new Error(`"${file.name}"에서 ${SLOT_LABEL[slot] ?? slot}에 반영할 행이 없습니다.`);
+
         const existingRows = rows.filter((r) => r.slot === slot);
         const existingNos = existingRows.map((r) => r.no).filter((v): v is string => !!v);
         const byNo = new Map(existingRows.map((r) => [r.no, r]));
         const fileDate = parsed.fileDate ?? meta.date;
         const prevFileDate = batches.find((b) => b.kind === "schedule" && b.slot === slot)?.file_date ?? null;
         let changed = 0;
-        for (const r of parsed.rows) {
+        for (const r of fileRows) {
           const cur = r.activity_no ? byNo.get(r.activity_no) : undefined;
           if (cur && rowFinger(cur) !== importFinger(r)) changed += 1;
         }
-        const conflicts = findNoConflicts(parsed.rows);
+        const conflicts = findNoConflicts(fileRows);
         jobs.push({
           id: `s-${slot}-${file.name}`, label: SLOT_LABEL[slot] ?? slot, fileName: file.name,
-          existing: existingNos.length, incoming: parsed.rows.length,
-          ...diffKeys(existingNos, parsed.rows.map((r) => r.activity_no).filter((v): v is string => !!v)),
+          existing: existingNos.length, incoming: fileRows.length,
+          ...diffKeys(existingNos, fileRows.map((r) => r.activity_no).filter((v): v is string => !!v)),
           changed, conflicts, existingNos, fileDate, prevFileDate, rejected: [],
-          payload: { kind: "schedule", slot, fileDate, rev: meta.rev, rows: parsed.rows.map((r) => ({ ...r, source_file: slot })) },
+          excludedScope, excludedRegistered,
+          payload: { kind: "schedule", slot, fileDate, rev: meta.rev, rows: fileRows.map((r) => ({ ...r, source_file: slot })) },
         });
       }
     }
