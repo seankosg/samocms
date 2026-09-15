@@ -211,6 +211,13 @@
       "when": 1789400592515,
       "tag": "0029_manpower_hdec_hse_exe_groups",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1789461976700,
+      "tag": "0030_add_owner_dept_and_hmmme_scope",
+      "breakpoints": true
     }
   ]
 }

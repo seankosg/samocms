@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { useProgressForecast } from "@/lib/use-project";
-import { isClientOwned, KPI_SLOTS, planAt, pct1, SLOT_LABEL, type Row } from "@/lib/schedule-model";
+import { isOwnerRow, KPI_SLOTS, planAt, pct1, SLOT_LABEL, type Row } from "@/lib/schedule-model";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { TcItem } from "@/lib/tc-model";
@@ -62,7 +62,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
 
   // 인허가(Permit)는 예측 대상에서 제외 (목록·계산 모두)
   const FC_SLOTS = KPI_SLOTS.filter((s) => s !== "Permit");
-  const eligibleRows = useMemo(() => rows.filter((r) => !isClientOwned(r.mgr) && r.slot !== "Permit"), [rows]);
+  const eligibleRows = useMemo(() => rows.filter((r) => !isOwnerRow(r) && r.slot !== "Permit"), [rows]);
   const milestones = useMemo(() => {
     const values = new Set(eligibleRows.map((r) => r.ms ?? "미지정"));
     return [...values].sort((a, b) => {
@@ -199,7 +199,7 @@ export function ForecastChart({ rows, tcItems, base }: { rows: Row[]; tcItems: T
     const planDoneDate = planEnd;
 
     // 발주처(HM) 항목의 계획 완료일 — 집계에서는 제외하되 참조용 세로선으로 표시
-    const hmRows = rows.filter((r) => isClientOwned(r.mgr) && r.s && r.e);
+    const hmRows = rows.filter((r) => isOwnerRow(r) && r.s && r.e);
     const hmPlanEnd = hmRows.reduce<string | null>((acc, r) => (r.e && (!acc || r.e > acc) ? r.e : acc), null);
     const hmPlanDoneDate = hmPlanEnd ? (days.find((d) => (planCurveOf(hmRows, days).get(d) ?? 0) >= 0.999) ?? hmPlanEnd) : null;
 

@@ -1,4 +1,4 @@
-import { avgOf, dayDiff, isClientOwned, isDone, isLate, KPI_SLOTS, milestoneDates, MSDEF, planAt, SLOT_LABEL, type Row } from "./schedule-model";
+import { avgOf, dayDiff, isOwnerRow, isDone, isLate, KPI_SLOTS, milestoneDates, MSDEF, planAt, SLOT_LABEL, type Row } from "./schedule-model";
 import { stageDone, type TcItem } from "./tc-model";
 import { buildTcForecast, buildTcForecastSummary } from "./tc-forecast";
 
@@ -189,7 +189,7 @@ export function buildForecastFacts(
   tcItems: TcItem[],
   base: string,
 ): string {
-  const eligible = rows.filter((r) => !isClientOwned(r.mgr)); // 발주처 담당 항목 제외
+  const eligible = rows.filter((r) => !isOwnerRow(r)); // 발주처 담당 항목 제외
   const l: string[] = [];
 
   const all = calcForecast(series, eligible);

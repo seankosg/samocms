@@ -4,7 +4,9 @@ export type ActivityRow = Tables<"activities">;
 
 export const SLOTS = ["Arch", "Elec", "Mech", "Int", "Permit"] as const;
 export type Slot = (typeof SLOTS)[number];
-export const SLOT_LABEL: Record<string, string> = { Arch: "건축", Elec: "전기", Mech: "기계", Int: "내장", Permit: "인허가", MS: "인허가", Gas: "가스" };
+/** 발주처 업역 전용 공종 */
+export const OWNER_SLOT = "HMMME";
+export const SLOT_LABEL: Record<string, string> = { Arch: "건축", Elec: "전기", Mech: "기계", Int: "내장", Permit: "인허가", MS: "인허가", Gas: "가스", HMMME: "HMMME", HM: "HMMME" };
 export const KPI_SLOTS: Slot[] = ["Arch", "Int", "Elec", "Mech", "Permit"];
 
 export const MSDEF: Record<string, string> = {
@@ -21,7 +23,7 @@ export const MSDEF: Record<string, string> = {
 export const BANDS = [
   { label: "건설", color: "#1f4e79" },
   { label: "인허가", color: "#b45309" },
-  { label: "생산설비 (발주처)", color: "#6d28d9" },
+  { label: "생산설비 (HMMME)", color: "#6d28d9" },
 ];
 
 export const STATUS_COLOR: Record<string, string> = { done: "#0d7a4f", ongoing: "#1565c0", plan: "#8b98a5", delay: "#c2185b" };
@@ -29,11 +31,18 @@ export const STATUS_LABEL: Record<string, string> = { done: "완료", ongoing: "
 
 export const flat = (v: unknown) => String(v ?? "").replace(/\s+/g, " ").trim();
 
-/** 예측 롤업에서 제외할 발주처 담당 업무 */
-export const isClientOwned = (manager: string | null | undefined) => {
-  const value = flat(manager).toLowerCase();
-  return value === "hm" || value === "발주처";
+/** Work Scope 원문이 발주처 업역인지 */
+export const isOwnerScopeText = (scope: string | null | undefined) => {
+  const v = flat(scope).toLowerCase();
+  return v === "발주처" || v === "hmmme" || v === "hm";
 };
+
+/** 발주처 업역 행 판정 — Work Scope 하나로만 판정한다 */
+export const isOwnerRow = (r: { scope: string | null; slot?: string; dept?: string }) =>
+  isOwnerScopeText(r.scope) || r.slot === OWNER_SLOT || r.dept === OWNER_SLOT;
+
+/** 화면·엑셀 표기용 — 파일 원문 발주처/HM 은 HMMME 로 표시 (DB 는 원문 유지) */
+export const dispScope = (v: string | null | undefined) => (v == null ? v : isOwnerScopeText(v) ? OWNER_SLOT : v);
 
 const MSRE = /^\s*[Mm]\s*\.?\s*(\d{1,2})\s*$/;
 export function normMS(v: string | null): string | null {
@@ -64,7 +73,7 @@ const BLDG_STD: [string, string[]][] = [
   ["Plastic Shop", ["plasticshop", "plastic"]],
   ["C.C", ["cc", "consolidationcenter"]],
   ["C.C.C", ["ccc"]],
-  ["Main Office", ["mainoffice"]],
+  ["Main Office", ["mainoffice", "mainoffiice"]],
   ["WWTP", ["wwtp"]],
   ["VPC", ["vpc"]],
   ["Main Gate", ["maingate"]],
@@ -103,6 +112,8 @@ export type Row = {
   scope: string | null;
   ms: string | null;
   sub: string | null;
+  /** 발주처 내부 부서 (발주처 업역 행만) */
+  ownerDept: string | null;
   /** 담당자 (엑셀 「담당」 컬럼) */
   mgr: string | null;
   act: string;
@@ -134,6 +145,7 @@ export function toRow(a: ActivityRow): Row {
     scope: a.work_scope,
     ms: normMS(a.milestone),
     sub: a.subcontractor,
+    ownerDept: (a as { owner_dept?: string | null }).owner_dept ?? null,
     mgr: (a as { manager?: string | null }).manager ?? null,
     act: flat(a.activity),
     unit: a.unit,
@@ -207,8 +219,8 @@ export function stOf(pl: number | null, pc: number | null, late: boolean) {
 }
 
 export function bandOf(r: Row) {
+  if (isOwnerRow(r) || /생산설비/.test(String(r.bldg ?? ""))) return 2;
   if (["Arch", "Elec", "Mech", "Int"].includes(r.dept)) return 0;
-  if (r.scope === "HMMME" || r.scope === "발주처" || /생산설비/.test(String(r.bldg ?? ""))) return 2;
   return 1;
 }
 

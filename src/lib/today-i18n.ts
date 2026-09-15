@@ -11,6 +11,8 @@ export const SLOT_LABEL_EN: Record<string, string> = {
   Permit: "Permit & Approval",
   MS: "Permit & Approval",
   Gas: "Gas",
+  HMMME: "HMMME",
+  HM: "HMMME",
 };
 
 export const TC_STAGE_SUB_EN: Record<TcStage, string> = {
