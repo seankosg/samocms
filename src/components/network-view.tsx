@@ -35,12 +35,20 @@ export function NetworkView({ rows, search, onChange, base, forceMode }: { rows:
     bldg: [...new Set(rows.map((r) => (mode === "group" ? r.bldg ?? "(미지정)" : r.bldg)).filter(Boolean))].sort((x, y) => String(x).localeCompare(String(y), "ko")) as string[],
   }), [rows, mode]);
 
-  const M = useMemo(() => buildModel(rows, mode, BANDS), [rows, mode]);
+  const M = useMemo(() => {
+    const m = buildModel(rows, mode, BANDS);
+    const push = computePush(m.N, m.edges);
+    const N = showPush ? applyPush(m.N, push) : m.N;
+    return { ...m, N, byId: new Map(N.map((n) => [n.id, n])), push, impact: ownerImpactSummary(N, push) };
+  }, [rows, mode, showPush]);
   const lay = useMemo(() => layout(M.N, M.lanes.length, search.zoom, fmtDate), [M, search.zoom]);
-  const vis = useMemo(() => new Set(lay.nodes.filter((n) => nodeVisible(n, f, mode)).map((n) => n.id)),
-    [lay, f.band, f.dept, f.bldg, f.ms, f.late, mode]);
+  const ownerLinked = useMemo(() => linkedToOwner(M.N, M.edges), [M]);
+  const vis = useMemo(() => new Set(lay.nodes.filter((n) =>
+    nodeVisible(n, f, mode) && (scope !== "linked" || ownerLinked.has(n.id))).map((n) => n.id)),
+    [lay, f.band, f.dept, f.bldg, f.ms, f.late, scope, ownerLinked, mode]);
   const active = hover && !lock ? hover.n.id : lock;
   const chain = useMemo(() => (active ? chainOf(M.edges, active) : null), [active, M.edges]);
+  const pchain = useMemo(() => (active ? pushChain(M.push, active) : null), [active, M.push]);
 
   const days = useMemo(() => dayList(lay.A0, lay.A1), [lay.A0, lay.A1]);
   const axMode = lay.PPD >= 15 ? "dw" : lay.PPD >= 9 ? "d" : lay.PPD >= 4 ? "s" : "w";
