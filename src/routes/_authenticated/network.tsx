@@ -8,9 +8,9 @@ const toNum = (v: unknown, d: number) => (Number.isFinite(Number(v)) && v !== ""
 
 export const Route = createFileRoute("/_authenticated/network")({
   head: () => ({ meta: [
-    { title: "네트워크 | HMMME PROJECT CMS" },
+    { title: "네트워크 공정표 | HMMME PROJECT CMS" },
     { name: "description", content: "선후행 관계를 시간축 네트워크로 보고 마일스톤·건물·지연 기준으로 공정 흐름을 추적합니다." },
-    { property: "og:title", content: "HMMME 공정 네트워크" },
+    { property: "og:title", content: "HMMME 네트워크 공정표" },
     { property: "og:description", content: "선후행 체인과 지연 흐름을 시각적으로 확인하세요." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
   ] }),
@@ -49,7 +49,7 @@ function NetworkPage() {
     });
 
   return (
-    <AppShell title="네트워크" desc={`기준일 ${fmtDate(base)} · 선후행 흐름과 체인 추적`}>
+    <AppShell title="네트워크 공정표" desc={`기준일 ${fmtDate(base)} · 선후행 흐름과 체인 추적`}>
       <NetworkView rows={rows} search={search} onChange={onChange} base={base} />
     </AppShell>
   );
