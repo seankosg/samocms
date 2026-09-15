@@ -355,6 +355,11 @@ export function NetworkView({ rows, search, onChange, base, forceMode }: { rows:
           대상 없는 선행 참조 {M.miss.length}건 — {M.miss.slice(0, 10).join(" , ")}
         </div>
       )}
+      {M.softMiss.length > 0 && (
+        <div className="rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-[11.5px] text-amber-700 dark:text-amber-400">
+          말로 쓴 선행 {M.softMiss.length}건 — 번호가 아니라 설명으로 적혀 있어 연결선을 그릴 수 없습니다. {M.softMiss.slice(0, 8).join(" , ")}
+        </div>
+      )}
 
       {hover && <Tip n={hover.n} x={hover.x} y={hover.y} edges={M.edges} />}
       {selNode && <Detail node={selNode} rows={rows} base={base} edges={M.edges} onClose={() => setLock(null)} />}
