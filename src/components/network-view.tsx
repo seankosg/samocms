@@ -301,7 +301,8 @@ export function NetworkView({ rows, search, onChange, base, forceMode }: { rows:
           {lay.rows.map((list, i) => list.map((n) => {
             if (!vis.has(n.id)) return null;
             const st = STATUS_COLOR[n.st] ?? "#8b98a5";
-            const col = M.lanes[i]?.color ?? "#1f4e79";
+            const col = n.owner ? OWNER_COLOR : (M.lanes[i]?.color ?? "#1f4e79");
+            const gdx = n._push && n._origE ? lay.X(n._origE) - lay.X(n.e!) : 0;
             const ly = lay.laneY[i]!, by = n._y!, bx = n._bx!, w = n._w!, x = n._x!;
             const pcv = Math.max(0, Math.min(1, n.pc ?? 0));
             const plv = n.pl == null ? null : Math.max(0, Math.min(1, n.pl));
