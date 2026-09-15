@@ -23,7 +23,7 @@ export const MSDEF: Record<string, string> = {
 export const BANDS = [
   { label: "건설", color: "#1f4e79" },
   { label: "인허가", color: "#b45309" },
-  { label: "생산설비 (발주처)", color: "#6d28d9" },
+  { label: "생산설비 (HMMME)", color: "#6d28d9" },
 ];
 
 export const STATUS_COLOR: Record<string, string> = { done: "#0d7a4f", ongoing: "#1565c0", plan: "#8b98a5", delay: "#c2185b" };
@@ -219,8 +219,8 @@ export function stOf(pl: number | null, pc: number | null, late: boolean) {
 }
 
 export function bandOf(r: Row) {
+  if (isOwnerRow(r) || /생산설비/.test(String(r.bldg ?? ""))) return 2;
   if (["Arch", "Elec", "Mech", "Int"].includes(r.dept)) return 0;
-  if (r.scope === "HMMME" || r.scope === "발주처" || /생산설비/.test(String(r.bldg ?? ""))) return 2;
   return 1;
 }
 
