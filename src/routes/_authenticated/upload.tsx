@@ -265,7 +265,7 @@ function UploadPage() {
   const latestOf = (kind: string, slot: string) => batches.find((b) => b.kind === kind && b.slot === slot) ?? null;
 
   const cards = [
-    ...SLOTS.map((s) => ({ key: `s-${s}`, label: SLOT_LABEL[s]!, sub: s, count: rows.filter((r) => r.slot === s).length, batch: latestOf("schedule", s) })),
+    ...UPLOAD_SLOTS.map((s) => ({ key: `s-${s}`, label: SLOT_LABEL[s] ?? s, sub: s, count: rows.filter((r) => r.slot === s).length, batch: latestOf("schedule", s) })),
     ...(["Mech", "Elec"] as const).map((s) => ({
       key: `t-${s}`, label: `${s.toUpperCase()} T&C`, sub: "T&C",
       count: tcItems.filter((i) => i.discipline === s).length, batch: latestOf("tc", s),
@@ -293,6 +293,27 @@ function UploadPage() {
           {busy ? <Loader2 className="animate-spin" /> : <FileSpreadsheet />}파일 선택
         </Button>
       </div>
+
+      <Dialog open={!!askSlot} onOpenChange={(o) => { if (!o) answerSlot(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>공종을 선택하세요</DialogTitle>
+            <DialogDescription>
+              파일명으로 공종을 판별하지 못했습니다. <b className="text-foreground">{askSlot}</b> 파일을 어느 공종으로 반영할지 선택해 주세요.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-wrap gap-2">
+            {UPLOAD_SLOTS.map((s) => (
+              <Button key={s} size="sm" variant="outline" disabled={!canEdit(s)} onClick={() => answerSlot(s)}>
+                {SLOT_LABEL[s] ?? s}
+              </Button>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => answerSlot(null)}>이 파일 건너뛰기</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!pending} onOpenChange={(o) => { if (!o) setPending(null); }}>
         <DialogContent className="max-w-2xl">
