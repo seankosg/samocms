@@ -30,6 +30,7 @@ export type Database = {
           id: number
           manager: string | null
           milestone: string | null
+          owner_dept: string | null
           planned_progress: number | null
           predecessor: string | null
           room: string | null
@@ -56,6 +57,7 @@ export type Database = {
           id?: number
           manager?: string | null
           milestone?: string | null
+          owner_dept?: string | null
           planned_progress?: number | null
           predecessor?: string | null
           room?: string | null
@@ -82,6 +84,7 @@ export type Database = {
           id?: number
           manager?: string | null
           milestone?: string | null
+          owner_dept?: string | null
           planned_progress?: number | null
           predecessor?: string | null
           room?: string | null
@@ -162,6 +165,7 @@ export type Database = {
           item_key: string
           manager: string | null
           milestone: string | null
+          owner_dept: string | null
           planned_progress: number | null
           room: string | null
           snapshot_date: string
@@ -187,6 +191,7 @@ export type Database = {
           item_key: string
           manager?: string | null
           milestone?: string | null
+          owner_dept?: string | null
           planned_progress?: number | null
           room?: string | null
           snapshot_date?: string
@@ -212,6 +217,7 @@ export type Database = {
           item_key?: string
           manager?: string | null
           milestone?: string | null
+          owner_dept?: string | null
           planned_progress?: number | null
           room?: string | null
           snapshot_date?: string
