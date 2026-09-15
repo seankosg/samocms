@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import * as XLSX from "xlsx";
@@ -52,8 +52,7 @@ function TrendPage() {
   const def = defaultRange();
   const from = s.mpFrom ?? TREND_DEFAULT_FROM;
   const to = s.mpTo ?? def.to;
-  const dim: Dim = s.mpDim ?? "team";
-  const value = s.mpVal ?? "전체";
+  const dim: Dim = s.mpDim ?? "company";
   const { cards, companies, locations, isWorkday } = useManpower(from, to);
 
   /** 카드 → 선택 축의 그룹명 */
@@ -67,8 +66,11 @@ function TrendPage() {
   }, [dim, companies, locations]);
 
   const groups = useMemo(() => [...new Set(cards.map(keyOf))].sort(), [cards, keyOf]);
-  const active = groups.includes(value) ? value : "전체";
-  const filtered = useMemo(() => cards.filter((c) => active === "전체" || keyOf(c) === active), [cards, keyOf, active]);
+  const [selected, setSelected] = useState<string[]>([]);
+  useEffect(() => { setSelected([]); }, [dim]);
+  const isAll = selected.length === 0;
+  const selLabel = isAll ? "전체" : selected.join(", ");
+  const filtered = useMemo(() => cards.filter((c) => isAll || selected.includes(keyOf(c))), [cards, keyOf, isAll, selected]);
 
   const days = useMemo(() => dateRange(from, to), [from, to]);
   const byDate = (src: "SUB" | "HDEC") => {
