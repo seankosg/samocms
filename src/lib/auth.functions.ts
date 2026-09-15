@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { emailFor, INITIAL_PASSWORD, ROSTER, SCOPES } from "./roster";
 
-const ROLES = ["admin", "user", "guest"] as const;
+const ROLES = ["admin", "user", "owner", "guest"] as const;
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -28,9 +28,16 @@ export const getMe = createServerFn({ method: "GET" })
     const err = p.error ?? r.error ?? s.error;
     if (err) throw new Error(err.message);
     const roles = (r.data ?? []).map((x: { role: string }) => x.role);
+    const role: "admin" | "user" | "owner" | "guest" = roles.includes("admin")
+      ? "admin"
+      : roles.includes("owner")
+        ? "owner"
+        : roles.includes("user")
+          ? "user"
+          : "guest";
     return {
       profile: p.data,
-      role: roles.includes("admin") ? "admin" : roles.includes("user") ? "user" : "guest",
+      role,
       scopes: (s.data ?? []).map((x: { scope: string }) => x.scope),
     };
   });
@@ -52,7 +59,13 @@ export const listUsers = createServerFn({ method: "GET" })
       const roles = (r.data ?? []).filter((x: { user_id: string }) => x.user_id === id).map((x: { role: string }) => x.role);
       return {
         ...row,
-        role: roles.includes("admin") ? "admin" : roles.includes("user") ? "user" : "guest",
+        role: roles.includes("admin")
+          ? "admin"
+          : roles.includes("owner")
+            ? "owner"
+            : roles.includes("user")
+              ? "user"
+              : "guest",
         scopes: (s.data ?? []).filter((x: { user_id: string }) => x.user_id === id).map((x: { scope: string }) => x.scope),
       };
     });

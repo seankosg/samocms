@@ -225,6 +225,20 @@
       "when": 1789469600226,
       "tag": "0031_normalize_progress_over_one",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1789470272546,
+      "tag": "0032_add_owner_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1789470286391,
+      "tag": "0033_owner_role_can_edit_slot",
+      "breakpoints": true
     }
   ]
 }

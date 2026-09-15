@@ -1400,7 +1400,7 @@ export type Database = {
       slot_scope: { Args: { _slot: string }; Returns: string }
     }
     Enums: {
-      app_role: "admin" | "user" | "guest"
+      app_role: "admin" | "user" | "guest" | "owner"
       manpower_source: "SUB" | "HDEC"
     }
     CompositeTypes: {
@@ -1529,7 +1529,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user", "guest"],
+      app_role: ["admin", "user", "guest", "owner"],
       manpower_source: ["SUB", "HDEC"],
     },
   },
