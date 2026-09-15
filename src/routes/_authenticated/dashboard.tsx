@@ -83,7 +83,7 @@ function Dashboard() {
       <section className="grid gap-3 xl:grid-cols-3">
         <div className="grid gap-4 rounded-md border border-border bg-card p-4 shadow-sm sm:grid-cols-[1.2fr_1fr]">
           <div>
-            <p className="text-xs font-bold text-muted-foreground">진도율</p>
+            <p className="text-xs font-bold text-muted-foreground">완료현황</p>
             <p className="mt-1 flex flex-wrap items-baseline gap-1.5">
               <span className="text-3xl font-bold"><Drill to="/schedule" search={{ status: "done" }}>{m.done.toLocaleString()}</Drill></span>
               <span className="text-lg font-semibold text-muted-foreground">{pct1(m.donePct)}%</span>
