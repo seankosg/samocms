@@ -85,7 +85,7 @@ export function ManpowerKpiCard() {
         <div className="mt-1 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="truncate text-lg font-extrabold leading-tight" title={top1?.loc}>
-              {isLoading ? "…" : top1 ? (top1.code ? `${top1.code} ${top1.loc}` : top1.loc) : "—"}
+              {isLoading ? "…" : top1 ? top1.loc : "—"}
             </p>
             <p className="text-2xl font-bold tabular-nums text-primary">
               {isLoading ? "…" : top1 ? `${top1.n.toLocaleString()}명` : ""}
