@@ -65,8 +65,8 @@ const groupValue = (row: Row, dimension: RowDimension, ownerMode = false) => {
   return value || "미지정";
 };
 
-const displayLabel = (value: string, dimension: RowDimension) => {
-  if (dimension === "dept") return SLOT_LABEL[value] ?? value;
+const displayLabel = (value: string, dimension: RowDimension, ownerMode = false) => {
+  if (dimension === "dept") return ownerMode ? value : (SLOT_LABEL[value] ?? value);
   if (dimension === "ms") return value === "미지정" ? value : `${value} ${MSDEF[value] ?? ""}`.trim();
   return value;
 };
@@ -112,8 +112,8 @@ function aggregate(rows: Row[], dimension: RowDimension, ownerMode = false): Gro
     const maxDelayDays = delayDays.length ? Math.max(...delayDays) : 0;
     return {
       key,
-      label: displayLabel(key, dimension),
-      total: measured.length,
+      label: displayLabel(key, dimension, ownerMode),
+      total: ownerMode ? list.length : measured.length,
       planned,
       actual,
       gap: actual - planned,
