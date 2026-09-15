@@ -49,7 +49,7 @@ function planCurveOf(rows: Row[], dates: string[]): Map<string, number> {
 
 type Mode = "discipline" | "milestone" | "tc";
 
-export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes }: {
+export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, groupBy }: {
   rows: Row[]; tcItems: TcItem[]; base: string;
   /** 예측 대상 공종 목록 (기본: 인허가 제외한 KPI 공종) */
   slots?: string[];
@@ -57,6 +57,8 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes }: {
   rowScope?: (r: Row) => boolean;
   /** 표시할 보기 모드 (기본: 공종별·마일스톤별·T&C) */
   modes?: Mode[];
+  /** 그룹 기준 — "slot"(공종, 기본) 또는 "dept"(발주처 담당부서) */
+  groupBy?: "slot" | "dept";
 }) {
   const { data, isLoading } = useProgressForecast();
   const [mode, setMode] = useState<Mode>("discipline");
@@ -68,10 +70,19 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes }: {
   const [tcBldg, setTcBldg] = useState<string>("ALL");
   const [hover, setHover] = useState<number | null>(null);
 
+  const byDept = groupBy === "dept";
+  /** 행의 그룹 키 */
+  const rowDisc = (r: Row) => (byDept ? (r.ownerDept ?? r.dept) : r.slot);
+  /** 스냅샷 계열의 그룹 키 */
+  const sDisc = (s: { disc: string; dept?: string }) => (byDept ? (s.dept ?? s.disc) : s.disc);
+  /** 그룹 표시 라벨 */
+  const discLabel = (d: string) => (byDept ? d : (SLOT_LABEL[d] ?? d));
+
   // 기본값: 인허가(Permit)와 발주처 업역은 예측 대상에서 제외 (목록·계산 모두)
   const FC_SLOTS: string[] = slots ?? KPI_SLOTS.filter((s) => s !== "Permit");
   const inScope = rowScope ?? ((r: Row) => !isOwnerRow(r) && r.slot !== "Permit");
   const eligibleRows = useMemo(() => rows.filter(inScope), [rows, rowScope]);
+
   const milestones = useMemo(() => {
     const values = new Set(eligibleRows.map((r) => r.ms ?? "미지정"));
     return [...values].sort((a, b) => {
