@@ -191,13 +191,28 @@ function Dashboard() {
                 : imminent
                   ? "bg-chart-3/15 text-chart-3 border-chart-3/30"
                   : "bg-muted text-foreground border-border";
+            const showDd = x.dd != null && x.pc != null && x.pc < 0.995;
+            const ddOverdue = x.dd != null && x.dd < 0;
+            const ddImminent = x.dd != null && x.dd >= 0 && x.dd <= 14;
+            const ddCls = ddOverdue
+              ? "bg-destructive text-white border-destructive"
+              : ddImminent
+                ? "bg-chart-3 text-white border-chart-3"
+                : "bg-primary/15 text-primary border-primary/30";
             return (
             <div key={x.key} className={`rounded-md border bg-card p-3 shadow-sm ${x.late ? "border-destructive/40" : "border-border"}`}>
               <div className="flex items-start justify-between gap-2">
                 <strong className="text-sm">{x.key}</strong>
-                <span className={`inline-flex shrink-0 items-center rounded-md border px-2 py-0.5 text-xs font-bold tabular-nums ${badgeCls}`}>
-                  {fmtDate(x.due)}
-                </span>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {showDd && (
+                    <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-sm font-extrabold tabular-nums ${ddCls}`}>
+                      D{x.dd! >= 0 ? "-" : "+"}{Math.abs(x.dd!)}
+                    </span>
+                  )}
+                  <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-bold tabular-nums ${badgeCls}`}>
+                    {fmtDate(x.due)}
+                  </span>
+                </div>
               </div>
               <p className="mt-0.5 truncate text-[11px] text-muted-foreground" title={x.name}>{x.name}</p>
               <Bar v={x.pc ?? 0} className="mt-2" />
@@ -206,7 +221,6 @@ function Dashboard() {
                 <span>평균 {x.pc == null ? "—" : <Drill to="/schedule" search={{ ms: x.key, hasProgress: true }}>{pct1(x.pc)}%</Drill>}</span>
                 <span className={x.late ? "font-bold text-destructive" : ""}>지연 <Drill to="/delays" search={{ ms: x.key }}>{x.late}</Drill></span>
                 {x.over > 0 && x.due && <span className="font-bold text-destructive">초과 <Drill to="/schedule" search={{ ms: x.key, efrom: nextDay(x.due) }}>{x.over}</Drill></span>}
-                {x.dd != null && x.pc != null && x.pc < 0.995 && <span className={x.dd < 0 ? "font-bold text-destructive" : x.dd <= 14 ? "font-bold text-chart-3" : ""}>D{x.dd >= 0 ? "-" : "+"}{Math.abs(x.dd)}</span>}
               </div>
               <div className="mt-2 border-t border-border pt-1.5 text-[11px]">
                 <MsRow label="계획" n={x.plan} p={x.total ? x.plan / x.total : 0} search={{ ms: x.key, duebyBase: true }} />
