@@ -167,7 +167,12 @@ function OwnerDashboard() {
       </div>
 
       <div className="mt-4">
-        <ForecastChart rows={rows} tcItems={[]} base={base} slots={[OWNER_SLOT]} rowScope={() => true} modes={["discipline", "milestone"]} />
+        <ForecastChart
+          rows={rows} tcItems={[]} base={base}
+          slots={byDept.map((d) => d.label)}
+          rowScope={() => true} modes={["discipline", "milestone"]} groupBy="dept"
+        />
+
       </div>
 
       <section className="mt-4">
