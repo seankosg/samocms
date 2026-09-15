@@ -14,6 +14,8 @@ export function useAuth() {
     profile?.team === "안전관리팀" && String(profile?.position ?? "").includes("팀장");
   /** 사업지원2팀 — 준공준비(NCR) 항목을 MIC와 동일하게 수정 가능 */
   const isSupport2 = profile?.team === "사업지원2팀";
+  /** 발주처 권한 — 발주처(HMMME) 자료만 접근·수정·업로드 가능 */
+  const isOwner = role === "owner";
   return {
     isSupport2,
     ...q,
@@ -22,14 +24,18 @@ export function useAuth() {
     role,
     scopes,
     isAdmin: role === "admin",
+    isOwner,
     isSafetyLead,
     /** 안전리포트 설정 접근 권한 (관리자 또는 안전관리팀 팀장) */
     canSafetySettings: role === "admin" || isSafetyLead,
     /** 해당 공종(파일 종류)의 업로드·수정·삭제 권한 */
-    canEdit: (slot: string) => role === "admin" || (role === "user" && scopes.includes(slotScope(slot))),
+    canEdit: (slot: string) =>
+      role === "admin" ||
+      (isOwner && (slot ?? "").toLowerCase() === "hmmme") ||
+      (role === "user" && scopes.includes(slotScope(slot))),
     /** 기준일·메모 등 공통 편집 권한 */
-    canWrite: role === "admin" || role === "user",
+    canWrite: role === "admin" || role === "user" || isOwner,
   };
 }
 
-export const ROLE_LABEL: Record<string, string> = { admin: "관리자", user: "사용자", guest: "게스트" };
+export const ROLE_LABEL: Record<string, string> = { admin: "관리자", user: "사용자", owner: "발주처", guest: "게스트" };
