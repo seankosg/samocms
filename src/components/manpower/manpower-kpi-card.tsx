@@ -55,20 +55,41 @@ export function ManpowerKpiCard() {
     </div>
   );
 
+  // 조별 협력사(SUB) · 당사(HDEC) · 차이
+  const hdec = cards.filter((c) => c.source === "HDEC");
+  const shiftDiff = (shift: string) => {
+    const subSum = sub.filter((c) => c.shift === shift).reduce((a, c) => a + c.subtotal, 0);
+    const hdecSum = hdec.filter((c) => c.shift === shift).reduce((a, c) => a + c.subtotal, 0);
+    return { subSum, hdecSum, diff: hdecSum - subSum };
+  };
+  const shiftRows = shifts.map((s) => {
+    const sd = s.label === MP.day ? shiftDiff("Day Shift") : s.label === MP.ot ? shiftDiff("Overtime") : shiftDiff("Night Shift");
+    return { ...s, ...sd };
+  });
+
   const shiftCard = (
-    <Link to="/manpower" search={{ day, src: "SUB" }} className="rounded-md border border-border bg-card p-4 shadow-sm transition hover:border-primary/50">
-      <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">오늘 출면 · 조별</p>
-      <div className="mt-1 grid grid-cols-3 gap-2">
-        {shifts.map((s) => (
+    <Link to="/manpower/compare" search={{ day }} className="rounded-md border border-border bg-card p-4 shadow-sm transition hover:border-primary/50">
+      <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">오늘 출면 · 조별 + 차이</p>
+      <div className="mt-2 grid grid-cols-3 gap-2">
+        {shiftRows.map((s) => (
           <div key={s.label} className="text-center">
-            <p className="text-[11px] font-bold text-muted-foreground">{s.label}</p>
-            <p className={`text-2xl font-bold tabular-nums ${s.cls}`}>
-              {isError ? "—" : isLoading ? "…" : s.value.toLocaleString()}
+            <p className={`text-sm font-bold ${s.cls}`}>{s.label}</p>
+            <p className="mt-1 text-[10px] text-muted-foreground">협력사</p>
+            <p className="text-xl font-bold tabular-nums text-foreground">
+              {isError ? "—" : isLoading ? "…" : s.subSum.toLocaleString()}
+            </p>
+            <p className="mt-0.5 text-[10px] text-muted-foreground">당사</p>
+            <p className="text-xl font-bold tabular-nums text-foreground">
+              {isError ? "—" : isLoading ? "…" : s.hdecSum.toLocaleString()}
+            </p>
+            <p className="mt-0.5 text-[10px] text-muted-foreground">차이</p>
+            <p className={`text-xl font-bold tabular-nums ${s.diff === 0 ? "text-muted-foreground" : s.diff > 0 ? "text-primary" : "text-destructive"}`}>
+              {isError ? "—" : isLoading ? "…" : (s.diff > 0 ? "+" : "") + s.diff.toLocaleString()}
             </p>
           </div>
         ))}
       </div>
-      <p className="mt-2 text-[11px] text-muted-foreground">협력사 보고 · {fmtDay(day)}</p>
+      <p className="mt-2 text-[11px] text-muted-foreground">협력사 보고 vs 당사 재집계 · {fmtDay(day)}</p>
     </Link>
   );
 
