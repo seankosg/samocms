@@ -193,7 +193,7 @@ function Dashboard() {
                   : "bg-muted text-foreground border-border";
             const showDd = x.dd != null && x.pc != null && x.pc < 0.995;
             const ddOverdue = x.dd != null && x.dd < 0;
-            const ddImminent = x.dd != null && x.dd >= 0 && x.dd <= 14;
+            const ddImminent = x.dd != null && x.dd >= 0 && x.dd <= 7;
             const ddCls = ddOverdue
               ? "bg-destructive text-white border-destructive"
               : ddImminent
