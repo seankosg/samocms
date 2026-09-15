@@ -67,10 +67,15 @@ function TrendPage() {
 
   const groups = useMemo(() => [...new Set(cards.map(keyOf))].sort(), [cards, keyOf]);
   const [selected, setSelected] = useState<string[]>([]);
+  const [shift, setShift] = useState<"전체" | "주간" | "연장" | "야간">("전체");
   useEffect(() => { setSelected([]); }, [dim]);
   const isAll = selected.length === 0;
-  const selLabel = isAll ? "전체" : selected.join(", ");
-  const filtered = useMemo(() => cards.filter((c) => isAll || selected.includes(keyOf(c))), [cards, keyOf, isAll, selected]);
+  const shiftCode = shift === "주간" ? "Day Shift" : shift === "연장" ? "Overtime" : shift === "야간" ? "Night Shift" : null;
+  const selLabel = `${isAll ? "전체" : selected.join(", ")}${shiftCode ? ` · ${shift}` : ""}`;
+  const filtered = useMemo(
+    () => cards.filter((c) => (isAll || selected.includes(keyOf(c))) && (!shiftCode || c.shift === shiftCode)),
+    [cards, keyOf, isAll, selected, shiftCode],
+  );
 
   const days = useMemo(() => dateRange(from, to), [from, to]);
   const byDate = (src: "SUB" | "HDEC") => {
@@ -142,11 +147,21 @@ function TrendPage() {
         <Kpi label={DIM_LABEL[dim].replace("별", " 수")} value={String(byGroup.length)} sub={byGroup[0] ? `최다 ${byGroup[0][0]}` : ""} />
       </div>
 
-      <div className="mb-3 flex flex-wrap gap-1.5">
+      <div className="mb-3 flex flex-wrap items-center gap-1.5">
         {["전체", ...groups].map((c) => (
           <button key={c} type="button" data-active={isAll ? c === "전체" : selected.includes(c)} className="ui-filter h-7 cursor-pointer rounded-md px-2.5 text-xs transition-colors"
             onClick={() => { if (c === "전체") { setSelected([]); return; } setSelected(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]); }}>{c}</button>
         ))}
+        {dim === "company" && (
+          <>
+            <span className="mx-1.5 h-4 w-px bg-border" aria-hidden />
+            <span className="text-xs font-semibold text-muted-foreground">조별</span>
+            {(["전체", "주간", "연장", "야간"] as const).map((sh) => (
+              <button key={sh} type="button" data-active={shift === sh} className="ui-filter h-7 cursor-pointer rounded-md px-2.5 text-xs transition-colors"
+                onClick={() => setShift(sh)}>{sh}</button>
+            ))}
+          </>
+        )}
       </div>
 
       <section className="mb-6 rounded-md border border-border bg-card p-3">
