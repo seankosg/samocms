@@ -269,7 +269,9 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
         ? eligibleRows.filter((r) => milestone === "ALL" || (r.ms ?? "미지정") === milestone)
         : eligibleRows;
       const sel = disc === "ALL" ? scopedRows : scopedRows.filter((r) => rowDisc(r) === disc);
-      if (hist.length === 0 || sel.length === 0) return { disc, slope: null, forecastEnd: null, actualDone: null, diffDays: null, planDone: null as string | null, actual: null as number | null };
+      // 기록이 없어도 행이 있으면 계획 완료일은 표시 (부서/공종 목록 유지용)
+      const planEndOfSel = sel.reduce<string | null>((acc, r) => (r.e && (!acc || r.e > acc) ? r.e : acc), null);
+      if (hist.length === 0 || sel.length === 0) return { disc, slope: null, forecastEnd: null, actualDone: null, diffDays: null, planDone: planEndOfSel, actual: null as number | null };
       const last = hist[hist.length - 1]!;
       const slope = slopeOf(hist);
       // 실적 최초 100% 도달일 — 도달 시 예측 완료일을 실제 완료일로 고정
@@ -630,7 +632,7 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
           <table className="mt-3 w-full text-left text-xs">
             <thead className="border-b text-muted-foreground">
               <tr>
-                <th className="py-1.5">{mode === "tc" ? (tcTeam === "ALL" ? "팀" : "건물") : "공종"}</th>
+                <th className="py-1.5">{mode === "tc" ? (tcTeam === "ALL" ? "팀" : "건물") : byDept ? "담당부서" : "공종"}</th>
                 <th className="text-right">현재 실적</th>
                 <th className="text-right">최근 속도</th>
                 <th className="text-right">계획 완료</th>
