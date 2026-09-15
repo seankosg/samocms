@@ -24,7 +24,10 @@ export function NetworkView({ rows, search, onChange, base, forceMode }: { rows:
   const [lock, setLock] = useState<string | null>(null);
   const [hover, setHover] = useState<{ n: NetNode; x: number; y: number } | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const scope: NetScope = search.scope ?? "all";
+  const requestedScope: NetScope = search.scope ?? "all";
+  const scope: NetScope = forceMode === "owner"
+    ? (requestedScope === "linked" ? "all" : requestedScope)
+    : (requestedScope === "owner" ? "all" : requestedScope);
   const showPush = search.push ?? true;
 
   const f: NetFilter = { band: search.bands.length === 1 ? String(search.bands[0]) : "", dept: search.dept, bldg: search.bldg, ms: search.ms, late: search.late, scope };
@@ -69,7 +72,7 @@ export function NetworkView({ rows, search, onChange, base, forceMode }: { rows:
   }, [lay.nodes, vis]);
 
   const setZoom = (z: number) => onChange({ zoom: Math.min(ZMAX, Math.max(ZMIN, Math.round(z * 100) / 100)) });
-  const resetFilter = () => { setLock(null); onChange({ bands: [0, 1, 2], dept: "", ms: "", bldg: "", late: false }); };
+  const resetFilter = () => { setLock(null); onChange({ bands: [0, 1, 2], dept: "", ms: "", bldg: "", late: false, scope: "all" }); };
 
   const chip = (v: string, label: string) => (
     <button key={label} type="button"
@@ -108,6 +111,9 @@ export function NetworkView({ rows, search, onChange, base, forceMode }: { rows:
   };
 
   const selNode = lock ? M.byId.get(lock) ?? null : null;
+  const scopeOptions: [NetScope, string][] = forceMode === "owner"
+    ? [["all", "전체 업역"], ["owner", "발주처만"], ["hdec", "당사만"]]
+    : [["all", "전체 업역"], ["hdec", "당사만"], ["linked", "발주처 연관만"]];
 
   return (
     <div className="space-y-2">
@@ -122,11 +128,13 @@ export function NetworkView({ rows, search, onChange, base, forceMode }: { rows:
         <button type="button" onClick={() => setZoom(1)} className="rounded border border-input bg-background px-2 py-1 text-[11.5px] font-bold">100%</button>
         <button type="button" onClick={() => setZoom(((wrapRef.current?.clientWidth ?? 1200) - 24) / 1560)}
           className="rounded border border-input bg-background px-2 py-1 text-[11.5px] font-bold">화면맞춤</button>
-        <span className="mx-1 inline-block h-[18px] w-px bg-border" />
-        <button type="button" onClick={() => { setLock(null); resetFilter(); onChange({ view: mode === "group" ? "net" : "bldg", bands: [0, 1, 2], dept: "", ms: "", bldg: "", late: false }); }}
-          className={`rounded border px-2 py-1 text-[11.5px] font-bold ${mode === "group" ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background"}`}>
-          {mode === "group" ? "🔗 네트워크 보기" : "🏢 건물·룸 보기"}
-        </button>
+        {forceMode !== "owner" && <span className="mx-1 inline-block h-[18px] w-px bg-border" />}
+        {forceMode !== "owner" && (
+          <button type="button" onClick={() => { setLock(null); resetFilter(); onChange({ view: mode === "group" ? "net" : "bldg", bands: [0, 1, 2], dept: "", ms: "", bldg: "", late: false, scope: "all" }); }}
+            className={`rounded border px-2 py-1 text-[11.5px] font-bold ${mode === "group" ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background"}`}>
+            {mode === "group" ? "🔗 네트워크 보기" : "🏢 건물·룸 보기"}
+          </button>
+        )}
         <span className="ml-auto text-[11px] text-muted-foreground">
           {mode === "group" ? "건물(레인) × Room(노드) 집계 — 노드 클릭 시 세부작업 표시" : "노드에 올리면 상세, 클릭하면 선후행 체인 + 세부작업"}
         </span>
@@ -134,10 +142,8 @@ export function NetworkView({ rows, search, onChange, base, forceMode }: { rows:
 
       {/* 필터 칩 */}
       <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2">
-        {mode === "net"
-          ? [chip("", "전체"), chip("0", "건설"), chip("1", "인허가"), chip("2", "생산설비(발주처)")]
-          : chip("", "전체")}
-        <span className="mx-1 inline-block h-[18px] w-px bg-border" />
+        {mode === "net" && [chip("", "전체 공정"), chip("0", "건설"), chip("1", "인허가"), chip("2", "생산설비(발주처)")]}
+        {mode === "net" && <span className="mx-1 inline-block h-[18px] w-px bg-border" />}
         {mode === "net" && sel("부서", search.dept, (v) => onChange({ dept: v }), opts.dept)}
         {mode === "net" && sel("마일스톤", search.ms, (v) => onChange({ ms: v }), opts.ms)}
         {sel("건물", search.bldg, (v) => onChange({ bldg: v }), opts.bldg)}
@@ -145,7 +151,7 @@ export function NetworkView({ rows, search, onChange, base, forceMode }: { rows:
           <input type="checkbox" checked={search.late} onChange={(e) => { setLock(null); onChange({ late: e.target.checked }); }} />지연만
         </label>
         <span className="mx-1 inline-block h-[18px] w-px bg-border" />
-        {([["all", "전체"], ["owner", "발주처만"], ["hdec", "당사만"], ["linked", "발주처 연관만"]] as [NetScope, string][]) .map(([v, l]) => (
+        {scopeOptions.map(([v, l]) => (
           <button key={v} type="button" onClick={() => { setLock(null); onChange({ scope: v }); }}
             className={`rounded border px-2 py-1 text-[11.5px] font-bold ${scope === v ? "border-transparent bg-[#6d28d9] text-white" : "border-input bg-background"}`}>{l}</button>
         ))}
