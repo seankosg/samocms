@@ -144,6 +144,14 @@ export function NetworkView({ rows, search, onChange, base, forceMode }: { rows:
         <label className="flex cursor-pointer items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
           <input type="checkbox" checked={search.late} onChange={(e) => { setLock(null); onChange({ late: e.target.checked }); }} />지연만
         </label>
+        <span className="mx-1 inline-block h-[18px] w-px bg-border" />
+        {([["all", "전체"], ["owner", "발주처만"], ["hdec", "당사만"], ["linked", "발주처 연관만"]] as [NetScope, string][]) .map(([v, l]) => (
+          <button key={v} type="button" onClick={() => { setLock(null); onChange({ scope: v }); }}
+            className={`rounded border px-2 py-1 text-[11.5px] font-bold ${scope === v ? "border-transparent bg-[#6d28d9] text-white" : "border-input bg-background"}`}>{l}</button>
+        ))}
+        <label className="flex cursor-pointer items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
+          <input type="checkbox" checked={showPush} onChange={(e) => { setLock(null); onChange({ push: e.target.checked }); }} />선행 영향 반영
+        </label>
         <button type="button" onClick={resetFilter} className="rounded border border-input bg-background px-2 py-1 text-[11.5px] font-bold">필터 해제</button>
         <span className="ml-auto text-[11.5px] font-bold text-primary">
           {lock ? `선택 ${lock}${chain ? ` · 체인 ${chain.size}개` : ""} — 빈 곳 클릭 시 해제` : ""}
