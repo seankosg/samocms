@@ -20,7 +20,7 @@ export function slotScope(slot: string): string {
   if (s === "int") return "interior";
   if (s === "elec") return "elec";
   if (s === "mech") return "mech";
-  if (s === "permit" || s === "ms") return "permit";
+  if (s === "permit" || s === "ms" || s === "hmmme") return "permit";
   return s;
 }
 
