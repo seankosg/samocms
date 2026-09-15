@@ -1,4 +1,4 @@
-import { bandOf, flat, isDone, isLate, refList, stOf, type Row } from "./schedule-model";
+import { bandOf, flat, isDone, isLate, isOwnerRow, refList, SLOT_LABEL, stOf, type Row } from "./schedule-model";
 
 export type NetNode = {
   id: string;
@@ -31,16 +31,31 @@ export type NetNode = {
   gb?: string;
   grm?: string;
   rowIds: number[];
+  /** 발주처(HMMME) 업역 노드 */
+  owner?: boolean;
+  /** 롤업 노드에 포함된 개별 Activity No — 끊긴 선후행 참조를 뭉치로 잇는 데 사용 */
+  memberIds?: string[];
+  /** 롤업으로 흡수된 참조 원본 번호 (엣지 라벨용) */
+  ctx?: boolean;
   /* layout */
   _w?: number;
   _t?: number;
   _x?: number;
   _y?: number;
   _bx?: number;
+  /** 선행 영향으로 밀린 일수 */
+  _push?: number;
+  /** 밀리기 전 원래 종료일 */
+  _origE?: string | null;
+  /** 밀림을 유발한 선행 노드 id */
+  _cause?: string | null;
+  _gx?: number;
+  _gbx?: number;
 };
-export type NetEdge = { a: string; b: string; ty: string };
-export type NetMode = "net" | "group";
-export type NetFilter = { band: string; dept: string; bldg: string; ms: string; late: boolean };
+export type NetEdge = { a: string; b: string; ty: string; via?: string; cross?: boolean };
+export type NetMode = "net" | "group" | "owner";
+export type NetScope = "all" | "owner" | "hdec" | "linked";
+export type NetFilter = { band: string; dept: string; bldg: string; ms: string; late: boolean; scope?: NetScope };
 
 const dnum = (d: string) => Date.parse(`${d}T00:00:00Z`);
 const days = (a: string, b: string) => Math.round((dnum(b) - dnum(a)) / 864e5);
