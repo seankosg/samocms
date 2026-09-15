@@ -9,6 +9,8 @@ export type ImportRow = {
   milestone: string | null;
   subcontractor: string | null;
   manager: string | null;
+  /** 발주처 내부 부서 (발주처 업역 행만) */
+  owner_dept?: string | null;
   activity: string;
   unit: string | null;
   done_quantity: number | null;
