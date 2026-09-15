@@ -668,10 +668,10 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
                     <td className="py-1.5 font-semibold">
                       {mode === "tc" && tcSearch ? (
                         <Link to="/tc/list" search={tcSearch} className="cursor-pointer rounded underline-offset-2 hover:text-primary hover:underline">{label}</Link>
-                      ) : byDept && s.disc !== "ALL" ? (
+                      ) : byDept ? (
                         <Link
                           to="/owner/list"
-                          search={{ dept: s.disc } as never}
+                          search={{ ...(s.disc !== "ALL" ? { dept: s.disc } : {}), ...(mode === "milestone" && milestone !== "ALL" ? { ms: milestone } : {}) } as never}
                           className="cursor-pointer rounded underline-offset-2 hover:text-primary hover:underline"
                         >
                           {label}
