@@ -185,31 +185,68 @@ export function buildModel(rows: Row[], mode: NetMode, bandDefs: { label: string
     const g = groupNodes(rows);
     N = g.N;
     lanes = g.lanes.map((b) => ({ label: b, color: "#1f4e79" }));
+  } else if (mode === "owner") {
+    const g = ownerNodes(rows);
+    N = g.N;
+    lanes = g.lanes;
   } else {
     N = netNodes(rows);
     lanes = bandDefs;
   }
   const byId = new Map<string, NetNode>();
   N.forEach((n) => byId.set(n.id, n));
+  /** 롤업(건설 뭉치)에 흡수된 개별 번호 → 뭉치 노드 id */
+  const inRoll = new Map<string, string>();
+  N.forEach((n) => n.memberIds?.forEach((m) => { if (!byId.has(m)) inRoll.set(m, n.id); }));
+
   const edges: NetEdge[] = [];
   const miss: string[] = [];
+  const softMiss: string[] = [];
+  const seen = new Set<string>();
   N.forEach((n) =>
     n.pred.forEach((p) => {
-      if (byId.has(p.id)) edges.push({ a: p.id, b: n.id, ty: p.ty });
-      else if (!/[가-힣]/.test(p.id)) miss.push(`${n.id} ← ${p.id}`);
+      const direct = byId.has(p.id);
+      const viaRoll = !direct ? inRoll.get(p.id) : undefined;
+      const a = direct ? p.id : viaRoll;
+      if (a) {
+        if (a === n.id) return;
+        const key = `${a}>${n.id}>${p.ty}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        const A = byId.get(a)!;
+        edges.push({
+          a, b: n.id, ty: p.ty,
+          ...(viaRoll ? { via: p.id } : {}),
+          ...(!!A.owner !== !!n.owner ? { cross: true } : {}),
+        });
+      } else if (/[가-힣]/.test(p.id)) softMiss.push(`${n.id} ← ${p.id}`);
+      else miss.push(`${n.id} ← ${p.id}`);
     }),
   );
-  return { N, lanes, edges, byId, miss: [...new Set(miss)] };
+  return { N, lanes, edges, byId, miss: [...new Set(miss)], softMiss: [...new Set(softMiss)] };
 }
 
 export function nodeVisible(n: NetNode, f: NetFilter, mode: NetMode) {
   if (mode === "net" && f.band !== "" && n.band !== Number(f.band)) return false;
   if (f.late && !n.late) return false;
+  if (f.scope === "owner" && !n.owner) return false;
+  if (f.scope === "hdec" && n.owner) return false;
   if (mode === "group") return !f.bldg || n.gb === f.bldg;
   if (f.dept && !(n.roll ? String(n.depts).includes(f.dept) : n.dept !== f.dept ? false : true)) return false;
   if (f.bldg && !n.roll && String(n.bldg) !== f.bldg) return false;
   if (f.ms && String(n.ms) !== f.ms) return false;
   return true;
+}
+
+/** 발주처 노드와 직접 연결된 노드 집합 (발주처 연관만 보기) */
+export function linkedToOwner(N: NetNode[], edges: NetEdge[]) {
+  const own = new Set(N.filter((n) => n.owner).map((n) => n.id));
+  const set = new Set(own);
+  edges.forEach((e) => {
+    if (own.has(e.a)) set.add(e.b);
+    if (own.has(e.b)) set.add(e.a);
+  });
+  return set;
 }
 
 export function chainOf(edges: NetEdge[], id: string) {
