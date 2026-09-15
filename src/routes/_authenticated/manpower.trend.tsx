@@ -39,7 +39,7 @@ export const Route = createFileRoute("/_authenticated/manpower/trend")({
   validateSearch: (s: unknown) => search.parse(s),
   loaderDeps: ({ search: s }) => {
     const d = defaultRange();
-    return { from: s.mpFrom ?? d.from, to: s.mpTo ?? d.to };
+    return { from: s.mpFrom ?? TREND_DEFAULT_FROM, to: s.mpTo ?? d.to };
   },
   loader: ({ context, deps }) => context.queryClient.ensureQueryData(manpowerRangeQuery(deps.from, deps.to)),
   errorComponent: ({ error }) => <div role="alert" className="p-8 text-sm">추이 데이터를 불러오지 못했습니다. {(error as Error).message}</div>,
