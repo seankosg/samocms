@@ -73,7 +73,7 @@ const BLDG_STD: [string, string[]][] = [
   ["Plastic Shop", ["plasticshop", "plastic"]],
   ["C.C", ["cc", "consolidationcenter"]],
   ["C.C.C", ["ccc"]],
-  ["Main Office", ["mainoffice"]],
+  ["Main Office", ["mainoffice", "mainoffiice"]],
   ["WWTP", ["wwtp"]],
   ["VPC", ["vpc"]],
   ["Main Gate", ["maingate"]],
@@ -112,6 +112,8 @@ export type Row = {
   scope: string | null;
   ms: string | null;
   sub: string | null;
+  /** 발주처 내부 부서 (발주처 업역 행만) */
+  ownerDept: string | null;
   /** 담당자 (엑셀 「담당」 컬럼) */
   mgr: string | null;
   act: string;
