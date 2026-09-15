@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { manpowerRangeQuery, useManpower, defaultRange } from "@/lib/use-manpower";
+
+/** 출면 추이 차트 기본 시작일 (고정) */
+const TREND_DEFAULT_FROM = "2026-09-12";
 import { dateRange, riyadhToday, addDays, type Card as MpCard } from "@/lib/manpower-model";
 import { MP } from "@/lib/manpower-i18n";
 
