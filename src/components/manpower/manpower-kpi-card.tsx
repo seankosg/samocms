@@ -95,7 +95,7 @@ export function ManpowerKpiCard() {
             {top4.map((b, i) => (
               <div key={b.loc} className="flex items-baseline justify-end gap-1.5">
                 <span className="max-w-[110px] truncate font-semibold text-muted-foreground" title={b.loc}>
-                  {i + 1}. {b.code ? `${b.code} ` : ""}{b.loc}
+                  {i + 1}. {b.loc}
                 </span>
                 <span className="font-bold tabular-nums">{b.n.toLocaleString()}</span>
               </div>
