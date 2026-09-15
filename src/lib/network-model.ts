@@ -130,10 +130,12 @@ export function ownerNodes(rows: Row[]) {
       owner.filter((r) => (r.ownerDept ?? r.dept) === b).length - owner.filter((r) => (r.ownerDept ?? r.dept) === a).length
       || a.localeCompare(b, "ko"));
   const laneIx = new Map(depts.map((d, i) => [d, i]));
-  const N = [
+  const uniq = new Map<string, NetNode>();
+  [
     ...owner.map((r) => activityNode(r, laneIx.get(r.ownerDept ?? r.dept ?? "기타") ?? 0)),
     ...ctx.map((r) => ({ ...activityNode(r, depts.length), ctx: true })),
-  ];
+  ].forEach((n) => { if (!uniq.has(n.id)) uniq.set(n.id, n); });
+  const N = [...uniq.values()];
   const lanes = [
     ...depts.map((d) => ({ label: `발주처 · ${SLOT_LABEL[d] ?? d}`, color: "#6d28d9" })),
     { label: "당사(HDEC) 연관 작업", color: "#64748b" },
