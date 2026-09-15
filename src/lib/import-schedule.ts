@@ -36,6 +36,14 @@ const num = (v: unknown): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
+/** 진도율: 0~1 비율 저장. 1 초과 값(예: 100)은 퍼센트 입력으로 보고 100으로 나눈 뒤 0~1로 제한 */
+const pctNum = (v: unknown): number | null => {
+  const n = num(v);
+  if (n == null) return null;
+  const r = n > 1 ? n / 100 : n;
+  return Math.min(1, Math.max(0, r));
+};
+
 const date = (v: unknown): string | null => {
   if (v === null || v === undefined || v === "") return null;
   if (typeof v === "number") {
