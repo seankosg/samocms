@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { manpowerRangeQuery, useManpower, defaultRange } from "@/lib/use-manpower";
+
+/** 출면 추이 차트 기본 시작일 (고정) */
+const TREND_DEFAULT_FROM = "2026-09-12";
 import { dateRange, riyadhToday, addDays, type Card as MpCard } from "@/lib/manpower-model";
 import { MP } from "@/lib/manpower-i18n";
 
@@ -36,7 +39,7 @@ export const Route = createFileRoute("/_authenticated/manpower/trend")({
   validateSearch: (s: unknown) => search.parse(s),
   loaderDeps: ({ search: s }) => {
     const d = defaultRange();
-    return { from: s.mpFrom ?? d.from, to: s.mpTo ?? d.to };
+    return { from: s.mpFrom ?? TREND_DEFAULT_FROM, to: s.mpTo ?? d.to };
   },
   loader: ({ context, deps }) => context.queryClient.ensureQueryData(manpowerRangeQuery(deps.from, deps.to)),
   errorComponent: ({ error }) => <div role="alert" className="p-8 text-sm">추이 데이터를 불러오지 못했습니다. {(error as Error).message}</div>,
@@ -47,7 +50,7 @@ function TrendPage() {
   const s = Route.useSearch();
   const navigate = Route.useNavigate();
   const def = defaultRange();
-  const from = s.mpFrom ?? def.from;
+  const from = s.mpFrom ?? TREND_DEFAULT_FROM;
   const to = s.mpTo ?? def.to;
   const dim: Dim = s.mpDim ?? "team";
   const value = s.mpVal ?? "전체";
