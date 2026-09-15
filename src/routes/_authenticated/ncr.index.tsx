@@ -141,6 +141,7 @@ function NcrListPage() {
             if (!fPlan || fPlan >= cutoff) return false;
           }
         }
+        if (search.metric === "remain" && d[actualField(slot)]) return false;
       }
       if (q && ![r.doc_no, r.description, r.location, r.mic, r.pic, r.subcontractor, r.response_status].some((v) => (v ?? "").toLowerCase().includes(q))) return false;
       return true;
@@ -149,7 +150,7 @@ function NcrListPage() {
 
   const drillLabel = useMemo(() => {
     if (!search.slot || !search.metric) return null;
-    const labels: Record<string, string> = { plan: "계획 도래", actual: "실적 입력", short: "계획 미달", over: "계획 초과", delay: "지연", delayBoth: "Start/Finish 지연", ongoing: "진행 중", ongoingDelay: "진행 중(완료계획 경과)", noplan: "계획 미수립", noplanAll: "전 단계 계획 미수립", upcoming: "임박(Upcoming)", upcomingBoth: "임박(Start/Finish)" };
+    const labels: Record<string, string> = { plan: "계획 도래", actual: "실적 입력", short: "계획 미달", over: "계획 초과", delay: "지연", delayBoth: "Start/Finish 지연", ongoing: "진행 중", ongoingDelay: "진행 중(완료계획 경과)", noplan: "계획 미수립", noplanAll: "전 단계 계획 미수립", upcoming: "임박(Upcoming)", upcomingBoth: "임박(Start/Finish)", remain: "잔여(Actual Finish 미달)" };
     const scope = search.metric === "noplanAll" ? "전체" : `PS${psOfSlot(search.slot.toLowerCase() as SlotKey)}`;
     const up = search.metric?.startsWith("upcoming") ? ` · ${Math.max(1, Number(search.within) || 7)}일 이내` : "";
     return `${scope} · ${labels[search.metric] ?? search.metric}${up}${search.asOf && search.metric !== "noplan" && search.metric !== "noplanAll" ? ` · 기준일 ${search.asOf}` : ""}`;

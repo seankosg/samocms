@@ -241,13 +241,13 @@ function NcrDashboardPage() {
                 <Button variant="ghost" onClick={() => toList({ stage: "Closed" })} className="h-auto rounded-none px-2 text-xs font-bold text-ncr-actual">Closed</Button>
               </div>
 
-              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b border-border">
+              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] min-h-[84px] items-center border-b border-border">
                  <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide">Start</strong></span></Button>
                  {stats.map((st) => { const slot = `ps${st.n}s` as SlotKey; return <div key={st.n} className="min-w-0 border-r border-border hover:bg-ncr-plan-soft"><ProgressMetric plan={st.sPlan} actual={st.sAct} total={filtered.length} onDrill={(metric) => drill(slot, metric)} /></div>; })}
                 <div className="bg-muted/20" />
               </div>
 
-              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b border-border">
+              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] min-h-[84px] items-center border-b border-border">
                   <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide">In Progress</strong></span></Button>
                   {stats.map((st) => {
                     const slot = `ps${st.n}s` as SlotKey;
@@ -266,13 +266,40 @@ function NcrDashboardPage() {
                   <div className="bg-muted/20" />
               </div>
 
-              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b-4 border-ncr-matrix/10">
+              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] min-h-[84px] items-center border-b-4 border-ncr-matrix/10">
                   <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide">Finish</strong></span></Button>
                  {stats.map((st) => { const slot = `ps${st.n}f` as SlotKey; return <div key={st.n} className="min-w-0 border-r border-border hover:bg-ncr-actual-soft"><ProgressMetric plan={st.fPlan} actual={st.fAct} total={filtered.length} onDrill={(metric) => drill(slot, metric)} /></div>; })}
                 <div className="bg-muted/20" />
               </div>
 
-              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b-4 border-ncr-matrix/10">
+              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] min-h-[84px] items-center border-b-4 border-ncr-matrix/10 bg-ncr-delay-soft/30">
+                  <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide">Remain</strong><small className="text-[10px] text-muted-foreground">대상 − Actual Finish</small></span></Button>
+                {stats.map((st) => {
+                  const remain = filtered.length - st.fAct;
+                  return <div key={st.n} className="min-w-0 border-r border-border px-2 text-center">
+                    <Button variant="ghost" size="sm" onClick={() => drill(`ps${st.n}f` as SlotKey, "remain")} className={`mx-auto block h-8 px-2 text-2xl font-extrabold tabular-nums ${remain > 0 ? "text-ncr-delay" : "text-foreground/40"}`}>{remain}</Button>
+                    <span className="mt-1 block text-[10px] font-medium text-foreground/50">잔여</span>
+                  </div>;
+                })}
+                <div className="text-center">
+                  <Button variant="ghost" size="sm" onClick={() => toList({})} className="mx-auto block h-8 px-2 text-2xl font-extrabold tabular-nums text-ncr-delay">{filtered.length - closed}</Button>
+                  <span className="mt-1 block text-[10px] font-medium text-foreground/50">미종결</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] min-h-[84px] items-center border-b-4 border-ncr-matrix/10">
+                 <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide">In Delay</strong><small className="text-[9px] text-muted-foreground">{asOf.replace(/-/g, ".")}</small></span></Button>
+                {stats.map((st) => {
+                  const total = st.sDelay + st.fDelay;
+                  return <div key={st.n} className={`min-w-0 border-r border-border px-2 py-2 ${total ? "bg-ncr-delay-soft" : ""}`}>
+                    <Button variant="ghost" size="sm" onClick={() => drill(`ps${st.n}s` as SlotKey, "delayBoth")} className={`mx-auto block h-7 px-2 text-xl font-bold ${total ? "text-ncr-delay" : "text-foreground/40"}`}>{total}</Button>
+                    <span className="mt-1 flex justify-between text-[10px] text-foreground/50"><Button variant="ghost" size="sm" onClick={() => drill(`ps${st.n}s` as SlotKey, "delay")} className="h-5 px-1 text-[10px]">Start <b className={st.sDelay ? "ml-1 text-ncr-delay" : "ml-1"}>{st.sDelay}</b></Button><Button variant="ghost" size="sm" onClick={() => drill(`ps${st.n}f` as SlotKey, "delay")} className="h-5 px-1 text-[10px]">Finish <b className={st.fDelay ? "ml-1 text-ncr-delay" : "ml-1"}>{st.fDelay}</b></Button></span>
+                  </div>;
+                })}
+                <div className="bg-muted/20" />
+              </div>
+
+              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] min-h-[84px] items-center border-b-4 border-ncr-matrix/10">
                  <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide">Upcoming</strong><small className="text-[9px] text-muted-foreground">{within}일 이내 · 미착수</small></span></Button>
                 {stats.map((st) => {
                   const total = st.upS + st.upF;
@@ -287,25 +314,13 @@ function NcrDashboardPage() {
                 <div className="bg-muted/20" />
               </div>
 
-              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b-4 border-ncr-matrix/10">
-                 <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide">In Delay</strong><small className="text-[9px] text-muted-foreground">{asOf.replace(/-/g, ".")}</small></span></Button>
-                {stats.map((st) => {
-                  const total = st.sDelay + st.fDelay;
-                  return <div key={st.n} className={`min-w-0 border-r border-border px-2 py-2 ${total ? "bg-ncr-delay-soft" : ""}`}>
-                    <Button variant="ghost" size="sm" onClick={() => drill(`ps${st.n}s` as SlotKey, "delayBoth")} className={`mx-auto block h-7 px-2 text-xl font-bold ${total ? "text-ncr-delay" : "text-foreground/40"}`}>{total}</Button>
-                    <span className="mt-1 flex justify-between text-[10px] text-foreground/50"><Button variant="ghost" size="sm" onClick={() => drill(`ps${st.n}s` as SlotKey, "delay")} className="h-5 px-1 text-[10px]">Start <b className={st.sDelay ? "ml-1 text-ncr-delay" : "ml-1"}>{st.sDelay}</b></Button><Button variant="ghost" size="sm" onClick={() => drill(`ps${st.n}f` as SlotKey, "delay")} className="h-5 px-1 text-[10px]">Finish <b className={st.fDelay ? "ml-1 text-ncr-delay" : "ml-1"}>{st.fDelay}</b></Button></span>
-                  </div>;
-                })}
-                <div className="bg-muted/20" />
-              </div>
-
-              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b-4 border-ncr-matrix/10">
+              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] min-h-[84px] items-center border-b-4 border-ncr-matrix/10">
                  <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><ClipboardList className="size-4 text-ncr-plan" /><span className="text-left"><strong className="block text-xs uppercase text-foreground">Current Stage</strong><small className="text-[10px] text-foreground/50">자동 산출</small><span className="mt-1.5 flex items-center gap-1 text-[8px] font-medium text-foreground/50"><span>적음</span><i className="size-2 bg-ncr-stage-low" /><i className="size-2 bg-ncr-stage-mid" /><i className="size-2 bg-ncr-stage-high" /><i className="size-2 bg-ncr-stage-max" /><span>많음</span></span></span></Button>
                 {stats.map((st) => <Button key={st.n} variant="ghost" onClick={() => toList({ stage: st.stage })} aria-label={`${st.stage} Current Stage ${st.cur}건`} className={`h-auto min-w-0 rounded-none border-r border-border px-2 py-3 transition-colors ${currentStageTone(st.cur, maxCurrent)}`}><span><strong className="block text-xl">{st.cur}</strong><small className="text-[10px] font-semibold opacity-90">건</small></span></Button>)}
                 <Button variant="ghost" onClick={() => toList({ stage: "Closed" })} className="h-auto rounded-none bg-ncr-actual-soft px-2 py-3 hover:bg-ncr-actual-soft"><span><strong className="block text-xl text-ncr-actual">{closed}</strong><small className="text-[9px] font-medium text-ncr-actual">완료</small></span></Button>
               </div>
 
-              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px]">
+              <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] min-h-[84px] items-center">
                  <Button variant="ghost" onClick={() => drill("ps1s", "noplanAll")} className="sticky left-0 z-10 h-auto items-center gap-2 rounded-none border-r border-border bg-muted px-3 py-2.5 hover:bg-muted"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide text-foreground">No Plan</strong><small className="text-[10px] text-foreground/50">계획일 없음</small></span></Button>
                 {stats.map((st) => (
                   <div key={st.n} className={`min-w-0 border-r border-border text-center ${st.noPlan ? "bg-muted/60" : ""}`}>
