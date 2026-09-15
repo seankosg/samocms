@@ -19,13 +19,15 @@ const WD = ["일", "월", "화", "수", "목", "금", "토"];
 const dnum = (d: string) => Date.parse(`${d}T00:00:00Z`);
 const dayDur = (a: string, b: string) => Math.round((dnum(b) - dnum(a)) / 864e5);
 
-export function NetworkView({ rows, search, onChange, base }: { rows: Row[]; search: NetSearch; onChange: (p: Partial<NetSearch>) => void; base: string }) {
-  const mode = search.view === "bldg" ? "group" : "net";
+export function NetworkView({ rows, search, onChange, base, forceMode }: { rows: Row[]; search: NetSearch; onChange: (p: Partial<NetSearch>) => void; base: string; forceMode?: NetMode }) {
+  const mode: NetMode = forceMode ?? (search.view === "bldg" ? "group" : "net");
   const [lock, setLock] = useState<string | null>(null);
   const [hover, setHover] = useState<{ n: NetNode; x: number; y: number } | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const scope: NetScope = search.scope ?? "all";
+  const showPush = search.push ?? true;
 
-  const f: NetFilter = { band: search.bands.length === 1 ? String(search.bands[0]) : "", dept: search.dept, bldg: search.bldg, ms: search.ms, late: search.late };
+  const f: NetFilter = { band: search.bands.length === 1 ? String(search.bands[0]) : "", dept: search.dept, bldg: search.bldg, ms: search.ms, late: search.late, scope };
 
   const opts = useMemo(() => ({
     dept: [...new Set(rows.map((r) => r.dept).filter(Boolean))].sort(),
