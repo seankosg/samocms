@@ -105,6 +105,21 @@ function OwnerDashboard() {
     });
   }, [rows, msDates]);
 
+  /** 부서별 KPI(당사 대시보드의 공종별 분해와 동일 구성) */
+  const kpiDept = useMemo(() => {
+    const keys = [...new Set(rows.map((r) => (r.ownerDept ?? r.dept) || "미지정"))];
+    return keys.map((dept) => {
+      const list = rows.filter((r) => ((r.ownerDept ?? r.dept) || "미지정") === dept);
+      const w = list.filter((r) => r.pl != null || r.pc != null);
+      const plan = list.filter((r) => r.e && r.e <= base).length;
+      const act = list.filter(isDone).length;
+      return { dept, n: w.length, pl: avgOf(w, "pl"), pc: avgOf(w, "pc"), late: w.filter(isLate).length, total: list.length, plan, act, gap: act - plan };
+    }).sort((a, b) => b.total - a.total);
+  }, [rows, base]);
+
+  const maxLate = Math.max(1, ...kpiDept.map((s) => s.late));
+
+
   return (
     <AppShell
       title="발주처 공정현황"
