@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Building2, UserCheck } from "lucide-react";
 import { manpowerRangeQuery } from "@/lib/use-manpower";
-import { compliance, fmtDay, riyadhToday, toDaily, type Card, type CompanyMaster, type LocationMaster } from "@/lib/manpower-model";
+import { compliance, fmtDay, riyadhToday, toDaily, type Card, type CompanyMaster } from "@/lib/manpower-model";
 import { MP } from "@/lib/manpower-i18n";
 
 /** 대시보드용 오늘 출면 요약 카드 (제다 현지 기준) */
@@ -12,7 +12,6 @@ export function ManpowerKpiCard() {
 
   const cards = (data?.cards ?? []) as unknown as Card[];
   const companies = (data?.companies ?? []) as unknown as CompanyMaster[];
-  const locations = (data?.locations ?? []) as unknown as LocationMaster[];
   const sub = cards.filter((c) => c.source === "SUB");
   const daily = toDaily(sub);
   const total = daily.reduce((a, d) => a + d.total, 0);
