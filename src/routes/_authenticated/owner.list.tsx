@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { ScheduleTable } from "@/components/schedule-table";
 import { projectQuery, useProject } from "@/lib/use-project";
 import { applyBaseline, fmtDate, hasProgress, OWNER_SLOT } from "@/lib/schedule-model";
+import type { TableInitial } from "@/components/schedule-table";
 
-type OwnerListSearch = { base?: string; dept?: string; q?: string };
+type OwnerListSearch = TableInitial & { base?: string; duebyBase?: boolean };
 
 export const Route = createFileRoute("/_authenticated/owner/list")({
   head: () => ({ meta: [
@@ -20,7 +21,10 @@ export const Route = createFileRoute("/_authenticated/owner/list")({
     const out: OwnerListSearch = {};
     const b = raw["base"]; if (typeof b === "string" && /^\d{4}-\d{2}-\d{2}$/.test(b)) out.base = b;
     const d = raw["dept"]; if (typeof d === "string" && d.trim()) out.dept = d;
-    const q = raw["q"]; if (typeof q === "string" && q.trim()) out.q = q;
+    for (const key of ["q", "bldg", "ms", "sub", "mgr", "status", "efrom", "eto"] as const) {
+      const value = raw[key]; if (typeof value === "string" && value.trim()) out[key] = value;
+    }
+    if (raw["duebyBase"] === true || raw["duebyBase"] === "true") out.duebyBase = true;
     return out;
   },
   loader: ({ context }) => context.queryClient.ensureQueryData(projectQuery),
@@ -83,10 +87,11 @@ function OwnerListPage() {
       </div>
 
       <ScheduleTable
-        key={`${base}|${search.dept ?? ""}`}
+        key={`${base}|${JSON.stringify(search)}`}
         rows={rows}
         fileName="HMMME_발주처_공정리스트.xlsx"
-        {...(search.q ? { initial: { q: search.q } } : {})}
+        initial={search}
+        dueBy={search.duebyBase ? base : null}
       />
     </AppShell>
   );

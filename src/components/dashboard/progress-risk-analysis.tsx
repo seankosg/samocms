@@ -59,8 +59,8 @@ type GroupMetric = {
   severity: "critical" | "warning" | "watch";
 };
 
-const groupValue = (row: Row, dimension: RowDimension) => {
-  const raw = row[dimension];
+const groupValue = (row: Row, dimension: RowDimension, ownerMode = false) => {
+  const raw = ownerMode && dimension === "dept" ? (row.ownerDept ?? row.dept) : row[dimension];
   const value = String(raw ?? "").trim();
   return value || "미지정";
 };
@@ -92,10 +92,10 @@ const delayBuckets = (delayDays: number[]) => ({
   short: delayDays.filter((days) => days > 0 && days < 7).length,
 });
 
-function aggregate(rows: Row[], dimension: RowDimension): GroupMetric[] {
+function aggregate(rows: Row[], dimension: RowDimension, ownerMode = false): GroupMetric[] {
   const groups = new Map<string, Row[]>();
   rows.forEach((row) => {
-    const key = groupValue(row, dimension);
+    const key = groupValue(row, dimension, ownerMode);
     groups.set(key, [...(groups.get(key) ?? []), row]);
   });
 
@@ -197,7 +197,7 @@ const tcSearchFor = (groupBy: TcGroupBy, key: string, stage: TcStage, late: bool
   return { ...base, supplier: key };
 };
 
-export function ProgressRiskAnalysis({ rows, tcItems = [], base = null }: { rows: Row[]; tcItems?: TcItem[]; base?: string | null }) {
+export function ProgressRiskAnalysis({ rows, tcItems = [], base = null, ownerMode = false }: { rows: Row[]; tcItems?: TcItem[]; base?: string | null; ownerMode?: boolean }) {
   const [progressDimension, setProgressDimension] = useState<Dimension>("dept");
   const [riskDimension, setRiskDimension] = useState<Dimension>("dept");
   const [pTcStage, setPTcStage] = useState<TcStage>("T1");
@@ -207,12 +207,12 @@ export function ProgressRiskAnalysis({ rows, tcItems = [], base = null }: { rows
   const navigate = useNavigate();
 
   const all = useMemo((): Record<RowDimension, GroupMetric[]> => ({
-    dept: aggregate(rows, "dept"),
-    bldg: aggregate(rows, "bldg"),
-    mgr: aggregate(rows.filter((r) => r.mgr !== "이승한"), "mgr"),
-    sub: aggregate(rows, "sub"),
-    ms: aggregate(rows, "ms"),
-  }), [rows]);
+    dept: aggregate(rows, "dept", ownerMode),
+    bldg: aggregate(rows, "bldg", ownerMode),
+    mgr: aggregate(rows.filter((r) => r.mgr !== "이승한"), "mgr", ownerMode),
+    sub: aggregate(rows, "sub", ownerMode),
+    ms: aggregate(rows, "ms", ownerMode),
+  }), [rows, ownerMode]);
 
   const pTc = useMemo(
     () => aggregateTcStage(tcItems, base, pTcStage, pTcGroup),
@@ -239,6 +239,13 @@ export function ProgressRiskAnalysis({ rows, tcItems = [], base = null }: { rows
       return;
     }
     const baseSearch = searchFor(dimension, key);
+    if (ownerMode) {
+      void navigate({
+        to: "/owner/list",
+        search: mode === "planned" ? { ...baseSearch, duebyBase: true } : mode === "actual" ? { ...baseSearch, status: "done" } : late ? { ...baseSearch, status: "delay" } : baseSearch,
+      });
+      return;
+    }
     void navigate({
       to: late ? "/delays" : "/schedule",
       search: mode === "planned" ? { ...baseSearch, duebyBase: true } : mode === "actual" ? { ...baseSearch, status: "done" } : baseSearch,
@@ -308,7 +315,7 @@ export function ProgressRiskAnalysis({ rows, tcItems = [], base = null }: { rows
             <h2 className="flex items-center gap-1.5 text-sm font-bold"><AlertTriangle className="size-4 text-destructive" />지연 리스크 통합 분석</h2>
             <p className="mt-0.5 text-[11px] text-muted-foreground">평균 진도 격차와 환산 지연일 기준 우선순위</p>
           </div>
-          <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px]" onClick={() => void navigate({ to: "/delays" })}>
+          <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px]" onClick={() => void navigate({ to: ownerMode ? "/owner/list" : "/delays", search: ownerMode ? { status: "delay" } : {} })}>
             전체 보기 <ArrowRight className="size-3" />
           </Button>
         </header>
