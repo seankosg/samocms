@@ -260,6 +260,7 @@ export function ForecastChart({ rows, tcItems, base, slots, rowScope, modes, gro
     return summaryDiscs.map((disc) => {
       const byDate = new Map<string, { a: number; n: number }>();
       for (const s of series) {
+        if (!seriesOk(s)) continue;
         if (!FC_SLOTS.includes(sDisc(s))) continue; // 대상 공종 외 제외
         if (disc !== "ALL" && sDisc(s) !== disc) continue;
         if (mode === "milestone" && milestone !== "ALL" && s.ms !== milestone) continue;
