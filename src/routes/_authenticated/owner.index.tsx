@@ -163,7 +163,7 @@ function OwnerDashboard() {
       </section>
 
       <div className="mt-4">
-        <ProgressRiskAnalysis rows={rows} base={base} />
+        <ProgressRiskAnalysis rows={rows} base={base} ownerMode />
       </div>
 
       <div className="mt-4">
