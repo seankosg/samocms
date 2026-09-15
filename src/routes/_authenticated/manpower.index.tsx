@@ -375,13 +375,19 @@ function ManpowerPage() {
   );
 }
 
+const SHIFT_COLOR: Record<string, string> = {
+  주간: "text-sky-700 dark:text-sky-300",
+  연장: "text-amber-700 dark:text-amber-300",
+  야간: "text-indigo-700 dark:text-indigo-300",
+};
+
 export function Kpi({ label, value, sub, tone, breakdown }: { label: string; value: string; sub?: string; tone?: "ok" | "warn"; breakdown?: { label: string; value: string }[] }) {
   return (
     <div className="rounded-md border border-border bg-card p-3">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
       <div className="mt-1 flex items-start justify-between gap-3">
         <p className={`text-2xl font-bold ${tone === "warn" ? "text-amber-600 dark:text-amber-400" : ""}`}>{value}</p>
-        {breakdown && <div className="min-w-[112px] border-l border-border pl-2 text-[10px] tabular-nums">{breakdown.map((item) => <div key={item.label} className="flex justify-between gap-3"><span className="text-muted-foreground">{item.label}</span><strong>{item.value}</strong></div>)}</div>}
+        {breakdown && <div className="min-w-[120px] border-l border-border pl-3 text-sm tabular-nums">{breakdown.map((item) => <div key={item.label} className="flex justify-between gap-3"><span className={`font-bold ${SHIFT_COLOR[item.label] ?? "text-muted-foreground"}`}>{item.label}</span><strong className={SHIFT_COLOR[item.label] ?? ""}>{item.value}</strong></div>)}</div>}
       </div>
       {sub && <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{sub}</p>}
     </div>
