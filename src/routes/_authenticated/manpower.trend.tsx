@@ -50,7 +50,7 @@ function TrendPage() {
   const s = Route.useSearch();
   const navigate = Route.useNavigate();
   const def = defaultRange();
-  const from = s.mpFrom ?? def.from;
+  const from = s.mpFrom ?? TREND_DEFAULT_FROM;
   const to = s.mpTo ?? def.to;
   const dim: Dim = s.mpDim ?? "team";
   const value = s.mpVal ?? "전체";
