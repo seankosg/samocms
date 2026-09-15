@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { useProgressForecast } from "@/lib/use-project";
-import { isOwnerRow, KPI_SLOTS, planAt, pct1, SLOT_LABEL, type Row } from "@/lib/schedule-model";
+import { isOwnerRow, KPI_SLOTS, OWNER_SLOT, planAt, pct1, SLOT_LABEL, type Row } from "@/lib/schedule-model";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { TcItem } from "@/lib/tc-model";
