@@ -91,13 +91,22 @@ function RawDataPage() {
     (data.members as { telegram_id: string; name: string }[]).forEach((x) => m.set(x.telegram_id, x.name));
     return m;
   }, [data.members]);
+  const deptByTg = useMemo(() => {
+    const m = new Map<string, string | null>();
+    (data.members as { telegram_id: string; dept?: string | null }[]).forEach((x) => m.set(x.telegram_id, x.dept ?? null));
+    return m;
+  }, [data.members]);
 
   const [q, setQ] = useState("");
   const [filters, setFilters] = useState<Partial<Record<Key, string[]>>>({});
 
-  const value = useCallback((r: Entry, key: Key): unknown =>
-    key === "reporter" ? (r.reporter_name || (r.reporter_tg_id ? memberName.get(r.reporter_tg_id) : "") || "") : r[key],
-  [memberName]);
+  const grp = useCallback((r: Entry) => grpOf(r.source, r.reporter_tg_id, deptByTg), [deptByTg]);
+
+  const value = useCallback((r: Entry, key: Key): unknown => {
+    if (key === "reporter") return r.reporter_name || (r.reporter_tg_id ? memberName.get(r.reporter_tg_id) : "") || "";
+    if (key === "source") return grp(r);
+    return r[key];
+  }, [memberName, grp]);
 
   const searched = useMemo(() => {
     const needle = q.trim().toLowerCase();
