@@ -98,9 +98,11 @@ function ComparePage() {
     const reported = sum((r) => r.reported);
     const hse = sum((r) => r.hse_verified);
     const exe = sum((r) => r.exe_verified);
-    // 차이는 재집계가 실제로 있는 칸끼리만 비교 (미확인 칸을 차이로 부풀리지 않음)
-    const hseDiff = shown.reduce((a, r) => (r.hse_verified != null ? a + (r.hse_diff ?? 0) : a), 0);
-    const exeDiff = shown.reduce((a, r) => (r.exe_verified != null ? a + (r.exe_diff ?? 0) : a), 0);
+    // 차이는 협력사 보고와 재집계가 모두 있는 칸끼리만 비교 (HDEC 단독·미확인 칸 제외 — 대시보드와 동일 기준)
+    const bothDiff = (pickV: (r: CompareRow) => number | null | undefined, pickD: (r: CompareRow) => number | null | undefined) =>
+      shown.reduce((a, r) => (r.reported != null && pickV(r) != null ? a + (pickD(r) ?? 0) : a), 0);
+    const hseDiff = bothDiff((r) => r.hse_verified, (r) => r.hse_diff);
+    const exeDiff = bothDiff((r) => r.exe_verified, (r) => r.exe_diff);
     return { reported, hse, exe, hseDiff, exeDiff };
   }, [shown]);
 
