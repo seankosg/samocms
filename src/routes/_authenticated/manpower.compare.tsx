@@ -9,7 +9,7 @@ import { Kpi } from "@/routes/_authenticated/manpower.index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { manpowerRangeQuery, useManpower } from "@/lib/use-manpower";
-import { RESULT_ORDER, addDays, deptDot, fmtDay, reporterLabel, riyadhToday, toExeBasis, verificationStats, type CompareRow } from "@/lib/manpower-model";
+import { RESULT_ORDER, addDays, deptDot, displayDiff, fmtDay, reporterLabel, riyadhToday, toExeBasis, verificationStats, type CompareRow } from "@/lib/manpower-model";
 import { CardHistoryButton } from "@/components/manpower/card-history";
 import { MP, RESULT_LABEL } from "@/lib/manpower-i18n";
 import { CompareDiffCharts } from "@/components/manpower/compare-diff-charts";
@@ -51,7 +51,10 @@ const TONE: Record<CompareRow["result"], string> = {
 
 type ColumnFilterKey = "company" | "location" | "shift" | "reported" | "hse_verified" | "exe_verified" | "hse_diff" | "exe_diff" | "hse_result" | "exe_result" | "sub_reporter" | "hse_counter" | "exe_counter";
 
-const columnValue = (row: CompareRow, key: ColumnFilterKey): unknown => row[key];
+const columnValue = (row: CompareRow, key: ColumnFilterKey): unknown =>
+  key === "hse_diff" ? displayDiff(row.hse_verified, row.reported)
+    : key === "exe_diff" ? displayDiff(row.exe_verified, row.reported)
+      : row[key];
 
 function ComparePage() {
   const s = Route.useSearch();
@@ -100,16 +103,10 @@ function ComparePage() {
     const reported = sum((r) => r.reported);
     const hse = sum((r) => r.hse_verified);
     const exe = sum((r) => r.exe_verified);
-    // 차이는 협력사 보고와 재집계가 모두 있는 칸끼리만 비교 (HDEC 단독·미확인 칸 제외 — 대시보드와 동일 기준)
-    const bothDiff = (pickV: (r: CompareRow) => number | null | undefined, pickD: (r: CompareRow) => number | null | undefined) =>
-      shown.reduce((a, r) => (r.reported != null && pickV(r) != null ? a + (pickD(r) ?? 0) : a), 0);
-    const hseDiff = bothDiff((r) => r.hse_verified, (r) => r.hse_diff);
-    const exeDiff = bothDiff((r) => r.exe_verified, (r) => r.exe_diff);
-    const pairCount = (pickV: (r: CompareRow) => number | null | undefined) =>
-      shown.filter((r) => r.reported != null && pickV(r) != null).length;
-    const hsePairs = pairCount((r) => r.hse_verified);
-    const exePairs = pairCount((r) => r.exe_verified);
-    return { reported, hse, exe, hseDiff, exeDiff, hsePairs, exePairs };
+    // 차이는 화면의 모든 칸을 대상으로 계산 — 한쪽만 있는 칸도 없는 쪽을 0으로 간주해 포함
+    const hseDiff = hse - reported;
+    const exeDiff = exe - reported;
+    return { reported, hse, exe, hseDiff, exeDiff };
   }, [shown]);
 
   const exportRows = useCallback((): ExportRow[] => shown.map((r) => ({
@@ -122,8 +119,8 @@ function ComparePage() {
       "Subcon Report": r.reported,
       "HDEC HSE Count": r.hse_verified,
       "HDEC Exe Count": r.exe_verified,
-      "Diff (HSE)": r.hse_diff,
-      "Diff (EXE)": r.exe_diff,
+      "Diff (HSE)": displayDiff(r.hse_verified, r.reported),
+      "Diff (EXE)": displayDiff(r.exe_verified, r.reported),
       "Result (HSE)": r.hse_result,
       "Result (EXE)": r.exe_result,
       Reporter: reporterLabel(memberMap, r.sub_reporter_tg_id, r.sub_reporter).text,
@@ -156,7 +153,7 @@ function ComparePage() {
       }
     >
       <p className="mb-2 rounded-md border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300">
-        기준: 협력사 보고 vs 수행팀(EXE) 재집계 · 판정(일치·차이·미확인·HDEC 단독)은 EXE 기준 · 기준일 {fmtDay(day)} 하루치 · 안전팀(HSE) 열은 참고용
+        기준: 협력사 보고 vs 수행팀(EXE) 재집계 · 판정(일치·차이·미확인·HDEC 단독)은 EXE 기준 · 기준일 {fmtDay(day)} 하루치 · 안전팀(HSE) 열은 참고용 · 차이는 모든 칸에 표시(한쪽만 있으면 없는 쪽을 0으로 계산)
       </p>
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label={MP.coverage} value={`${Math.round(stats.coverage * 100)}%`} sub={`${stats.coveredCards} / ${stats.subCards} 카드 검증 · 미확인 ${stats.pendingCards}칸 ${stats.pendingHeadcount.toLocaleString()}명`} breakdown={shiftStats.map((x) => ({ label: x.label, value: `${Math.round(x.stats.coverage * 100)}%` }))} />
@@ -230,11 +227,11 @@ function ComparePage() {
                 <td className="text-right">{totals.exe.toLocaleString()}</td>
                 <td className={`text-right ${diffTone(totals.hseDiff)}`}>
                   {fmtDiff(totals.hseDiff)}
-                  <span className="block text-[10px] font-normal text-muted-foreground">양쪽 있는 {totals.hsePairs}칸</span>
+                  <span className="block text-[10px] font-normal text-muted-foreground">전체 칸 · 없는 쪽 0</span>
                 </td>
                 <td className={`text-right ${diffTone(totals.exeDiff)}`}>
                   {fmtDiff(totals.exeDiff)}
-                  <span className="block text-[10px] font-normal text-muted-foreground">양쪽 있는 {totals.exePairs}칸</span>
+                  <span className="block text-[10px] font-normal text-muted-foreground">전체 칸 · 없는 쪽 0</span>
                 </td>
                 <td /><td /><td />
               </tr>
@@ -245,8 +242,8 @@ function ComparePage() {
                 <td className="text-right">{r.reported ?? "—"}</td>
                 <td className="text-right">{r.hse_verified ?? "—"}</td>
                 <td className="text-right">{r.exe_verified ?? "—"}</td>
-                <td className={`text-right font-bold ${diffTone(r.hse_diff)}`}>{fmtDiff(r.hse_diff)}</td>
-                <td className={`text-right font-bold ${diffTone(r.exe_diff)}`}>{fmtDiff(r.exe_diff)}</td>
+                <td className={`text-right font-bold ${diffTone(displayDiff(r.hse_verified, r.reported))}`}>{fmtDiff(displayDiff(r.hse_verified, r.reported))}</td>
+                <td className={`text-right font-bold ${diffTone(displayDiff(r.exe_verified, r.reported))}`}>{fmtDiff(displayDiff(r.exe_verified, r.reported))}</td>
                 <td className="text-muted-foreground"><ReporterCell source="SUB" row={r} memberMap={memberMap} /></td>
                 <td className="text-muted-foreground"><ReporterCell source="HDEC" group="HSE" row={r} memberMap={memberMap} /></td>
                 <td className="text-muted-foreground"><ReporterCell source="HDEC" group="EXE" row={r} memberMap={memberMap} /></td>
