@@ -4,7 +4,7 @@ import {
   Bar, CartesianGrid, Cell, ComposedChart, Line, ReferenceLine,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
-import type { CompareRow } from "@/lib/manpower-model";
+import { displayDiff, type CompareRow } from "@/lib/manpower-model";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const POS = "hsl(160,60%,42%)"; // 보고 > 검증 이 아니라, diff = 검증 - 보고 (+ = 보고 누락 반대)
@@ -14,18 +14,19 @@ const barColor = (v: number) => (v < 0 ? NEG : v > 0 ? POS : "hsl(215,16%,65%)")
 
 export function CompareDiffCharts({ rows, day }: { rows: CompareRow[]; day: string }) {
   const [shift, setShift] = useState("ALL");
-  // 기준 통일: 협력사 보고와 수행팀(EXE) 재집계가 모두 있는 칸만 차이로 계산 (표·대시보드와 동일)
+  // 차이는 모든 칸을 대상으로 계산 — 한쪽만 있는 칸도 없는 쪽을 0으로 간주 (대조 표와 동일 기준)
   const filtered = useMemo(
-    () => rows.filter((r) => (shift === "ALL" || r.shift === shift) && r.reported != null && r.verified != null),
+    () => rows.filter((r) => (shift === "ALL" || r.shift === shift) && (r.reported != null || r.verified != null)),
     [rows, shift],
   );
   const daily = useMemo(() => {
     const m = new Map<string, { diff: number; abs: number }>();
     for (const r of filtered) {
       const d = r.report_date;
+      const diff = displayDiff(r.verified, r.reported) ?? 0;
       const cur = m.get(d) ?? { diff: 0, abs: 0 };
-      cur.diff += r.diff ?? 0;
-      cur.abs += Math.abs(r.diff ?? 0);
+      cur.diff += diff;
+      cur.abs += Math.abs(diff);
       m.set(d, cur);
     }
     let cum = 0;
@@ -40,9 +41,10 @@ export function CompareDiffCharts({ rows, day }: { rows: CompareRow[]; day: stri
   const byCompany = useMemo(() => {
     const m = new Map<string, { diff: number; abs: number; cards: number }>();
     for (const r of filtered) {
+      const diff = displayDiff(r.verified, r.reported) ?? 0;
       const cur = m.get(r.company) ?? { diff: 0, abs: 0, cards: 0 };
-      cur.diff += r.diff ?? 0;
-      cur.abs += Math.abs(r.diff ?? 0);
+      cur.diff += diff;
+      cur.abs += Math.abs(diff);
       cur.cards += r.result === "MATCH" ? 0 : 1;
       m.set(r.company, cur);
     }
@@ -97,7 +99,7 @@ export function CompareDiffCharts({ rows, day }: { rows: CompareRow[]; day: stri
           ) : <Empty />}
         </div>
         <p className="mt-1 text-[11px] text-muted-foreground">
-          기준: 차이 = 수행팀(EXE) 재집계 − 협력사 보고 · 양쪽 모두 있는 칸만 · 기간 {daily[0]?.date ?? "—"} ~ {day}.
+          기준: 차이 = 수행팀(EXE) 재집계 − 협력사 보고 · 한쪽만 있는 칸도 없는 쪽을 0으로 포함 · 기간 {daily[0]?.date ?? "—"} ~ {day}.
           음수(빨강)는 보고가 더 많고, 양수(초록)는 재집계가 더 많습니다.
         </p>
       </div>
