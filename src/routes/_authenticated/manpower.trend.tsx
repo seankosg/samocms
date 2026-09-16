@@ -82,6 +82,7 @@ function TrendPage() {
 
   const days = useMemo(() => dateRange(from, to), [from, to]);
   const byDate = (src: "SUB" | "HDEC") => {
+    // 재집계(점선)는 수행팀(EXE) 기준
     const m = new Map<string, number>();
     filtered.filter((c) => c.source === src).forEach((c) => m.set(c.report_date, (m.get(c.report_date) ?? 0) + c.subtotal));
     return m;

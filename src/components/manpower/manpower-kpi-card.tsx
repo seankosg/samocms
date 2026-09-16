@@ -59,7 +59,8 @@ export function ManpowerKpiCard() {
   );
 
   // 조별 협력사(SUB) · 당사(HDEC) · 차이 — 차이는 재집계가 있는 칸끼리만 비교하고, 미집계 칸은 「미확인」으로 분리
-  const hdec = cards.filter((c) => c.source === "HDEC");
+  // 재집계 숫자는 수행팀(EXE) 기준
+  const hdec = cards.filter((c) => c.source === "HDEC" && c.grp === "EXE");
   const hdecByKey = new Map(hdec.map((c) => [`${c.shift}|${c.company}|${c.location}`, c.subtotal]));
   const shiftDiff = (shift: string) => {
     const subCells = sub.filter((c) => c.shift === shift);

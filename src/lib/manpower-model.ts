@@ -35,7 +35,12 @@ export type Card = {
   n_rows: number;
   reporter_tg_id?: string | null;
   superseded_count?: number;
+  /** 재집계(HDEC) 카드의 작성 주체 — 안전팀(HSE) 또는 수행팀(EXE). 협력사 보고(SUB)는 null */
+  grp?: "HSE" | "EXE" | null;
 };
+
+/** 화면에 보여주는 재집계 숫자는 수행팀(EXE) 기준 — SUB 카드는 항상 통과 */
+export const isExeRecheck = (c: Pick<Card, "source" | "grp">) => c.source !== "HDEC" || c.grp === "EXE";
 
 export type MemberInfo = { telegram_id: string; name: string; dept: string | null; position: string | null };
 export type MemberMap = Map<string, MemberInfo>;
