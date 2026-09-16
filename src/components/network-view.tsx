@@ -6,7 +6,7 @@ import {
   type NetFilter, type NetMode, type NetNode, type NetScope,
 } from "@/lib/network-model";
 import { applyPush, computePush, ownerImpactSummary, pushChain } from "@/lib/network-impact";
-import { BANDS, fmtDate, MSDEF, pct1, SLOT_LABEL, STATUS_COLOR, STATUS_LABEL, type Row } from "@/lib/schedule-model";
+import { BANDS, fmtDate, isOwnerRow, MSDEF, pct1, SLOT_LABEL, STATUS_COLOR, STATUS_LABEL, type Row } from "@/lib/schedule-model";
 
 export type NetSearch = {
   view: "net" | "bldg"; zoom: number; bands: number[]; dept: string; ms: string; bldg: string; late: boolean;
