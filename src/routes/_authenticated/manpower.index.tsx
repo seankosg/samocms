@@ -217,6 +217,13 @@ function ManpowerPage() {
         <TabsList><TabsTrigger value="SUB">{MP.sub}</TabsTrigger><TabsTrigger value="HDEC">{MP.hdec}</TabsTrigger></TabsList>
       </Tabs>
 
+      {source === "HDEC" && (
+        <p className="mb-4 rounded-md border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300">
+          수행팀(EXE) 재집계 기준 · 안전팀(HSE) 재집계는 검증 대조 화면에서 확인할 수 있습니다.
+        </p>
+      )}
+
+
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label={MP.headcount} value={totals.total.toLocaleString()} sub={`${MP.day} ${daily.reduce((a, d) => a + d.day_total, 0)} · ${MP.ot} ${daily.reduce((a, d) => a + d.ot_total, 0)} · ${MP.night} ${daily.reduce((a, d) => a + d.night_total, 0)}`} />
         <Kpi label="보고 협력사" value={`${new Set(shown.filter((c) => isActiveName.has(c.company)).map((c) => c.company)).size} / ${comp.total}`}
