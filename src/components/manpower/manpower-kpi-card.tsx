@@ -53,6 +53,7 @@ export function ManpowerKpiCard() {
             <Cell label={MP.compliance} value={`${Math.round(comp.rate * 100)}%`} day={day} />
             <Cell label={MP.notReported} value={String(comp.missing.length)} day={day} />
           </div>
+          <p className="mt-2 text-[10px] text-muted-foreground">기준: 협력사 보고 · 전 조(주간·연장·야간) 합계</p>
         </>
       )}
     </div>
@@ -103,7 +104,7 @@ export function ManpowerKpiCard() {
           </div>
         ))}
       </div>
-      <p className="mt-2 text-[11px] text-muted-foreground">협력사 보고 vs 당사 재집계 · {fmtDay(day)} · 차이는 재집계 완료 칸 기준</p>
+      <p className="mt-2 text-[11px] text-muted-foreground">기준: 협력사 보고 vs 수행팀(EXE) 재집계 · {fmtDay(day)} · 차이·미확인은 협력사 보고가 있는 칸 기준</p>
     </Link>
   );
 
