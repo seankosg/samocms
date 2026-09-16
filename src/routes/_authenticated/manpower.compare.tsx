@@ -228,8 +228,14 @@ function ComparePage() {
                 <td className="text-right">{totals.reported.toLocaleString()}</td>
                 <td className="text-right">{totals.hse.toLocaleString()}</td>
                 <td className="text-right">{totals.exe.toLocaleString()}</td>
-                <td className={`text-right ${diffTone(totals.hseDiff)}`}>{fmtDiff(totals.hseDiff)}</td>
-                <td className={`text-right ${diffTone(totals.exeDiff)}`}>{fmtDiff(totals.exeDiff)}</td>
+                <td className={`text-right ${diffTone(totals.hseDiff)}`}>
+                  {fmtDiff(totals.hseDiff)}
+                  <span className="block text-[10px] font-normal text-muted-foreground">양쪽 있는 {totals.hsePairs}칸</span>
+                </td>
+                <td className={`text-right ${diffTone(totals.exeDiff)}`}>
+                  {fmtDiff(totals.exeDiff)}
+                  <span className="block text-[10px] font-normal text-muted-foreground">양쪽 있는 {totals.exePairs}칸</span>
+                </td>
                 <td /><td /><td />
               </tr>
             )}
