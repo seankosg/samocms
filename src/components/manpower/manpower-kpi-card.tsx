@@ -99,7 +99,7 @@ export function ManpowerKpiCard() {
           </div>
         ))}
       </div>
-      <p className="mt-2 text-[11px] text-muted-foreground">기준: 협력사 보고 vs 수행팀(EXE) 재집계 · {fmtDay(day)} · 차이·미확인은 협력사 보고가 있는 칸 기준</p>
+      <p className="mt-2 text-[11px] text-muted-foreground">기준: 협력사 보고 vs 수행팀(EXE) 재집계 · {fmtDay(day)} · 차이 = 당사 − 협력사(모든 칸, 없는 쪽 0) · 미확인은 재집계가 없는 칸 수</p>
     </Link>
   );
 
