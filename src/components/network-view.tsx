@@ -148,7 +148,7 @@ export function NetworkView({ rows, search, onChange, base, forceMode }: { rows:
         {mode !== "group" && (["", "POP", "FOP", "TOC"] as const).map((p) => (
           <button key={p || "all"} type="button"
             onClick={() => { setLock(null); onChange({ phase: p }); }}
-            title={p ? `${p} 단계 (${PHASE_MS[p].join("·")})` : "전체 단계"}
+            title={p ? `${p} 단계 (${(PHASE_MS[p] ?? []).join("·")})` : "전체 단계"}
             className={`rounded-full border px-3 py-1 text-[11.5px] font-bold ${f.phase === p ? "border-transparent bg-emerald-600 text-white" : "border-input bg-background text-muted-foreground hover:bg-accent"}`}>
             {p || "전체 단계"}
           </button>
