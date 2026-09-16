@@ -1,11 +1,12 @@
 import { useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import {
   AXH, BH, buildModel, chainOf, dayList, layout, linkedToOwner, nodeVisible,
   type NetFilter, type NetMode, type NetNode, type NetScope,
 } from "@/lib/network-model";
 import { applyPush, computePush, ownerImpactSummary, pushChain } from "@/lib/network-impact";
-import { BANDS, fmtDate, MSDEF, pct1, SLOT_LABEL, STATUS_COLOR, STATUS_LABEL, type Row } from "@/lib/schedule-model";
+import { BANDS, fmtDate, isOwnerRow, MSDEF, pct1, SLOT_LABEL, STATUS_COLOR, STATUS_LABEL, type Row } from "@/lib/schedule-model";
 
 export type NetSearch = {
   view: "net" | "bldg"; zoom: number; bands: number[]; dept: string; ms: string; bldg: string; late: boolean;
@@ -568,7 +569,17 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
                 <li key={r.id} className="rounded-md border p-2.5 text-xs"
                   style={late ? { borderColor: `${STATUS_COLOR["delay"]}66`, background: `${STATUS_COLOR["delay"]}0a` } : ahead ? { borderColor: `${STATUS_COLOR["done"]}66`, background: `${STATUS_COLOR["done"]}0a` } : undefined}>
                   <div className="flex items-start justify-between gap-2">
-                    <p className="font-semibold leading-snug">{r.no ? `${r.no} · ` : ""}{r.act}</p>
+                    {isOwnerRow(r) ? (
+                      <Link to="/owner/list" search={{ q: r.no || r.act, ...(r.ownerDept ? { dept: r.ownerDept } : {}) } as never}
+                        className="font-semibold leading-snug underline-offset-2 hover:text-primary hover:underline">
+                        {r.no ? `${r.no} · ` : ""}{r.act}
+                      </Link>
+                    ) : (
+                      <Link to="/schedule" search={{ q: r.no || r.act, ...(r.slot ? { slot: r.slot } : {}) } as never}
+                        className="font-semibold leading-snug underline-offset-2 hover:text-primary hover:underline">
+                        {r.no ? `${r.no} · ` : ""}{r.act}
+                      </Link>
+                    )}
                     {late && <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: STATUS_COLOR["delay"] }}>-{pct1(g)}%p</span>}
                     {ahead && <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: STATUS_COLOR["done"] }}>+{pct1(Math.abs(g))}%p</span>}
                   </div>
