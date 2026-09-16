@@ -93,7 +93,10 @@ function ManpowerPage() {
   const s = Route.useSearch();
   const navigate = Route.useNavigate();
   const day = s.day ?? riyadhToday();
-  const source: Source = s.src ?? "SUB";
+  // 이전 링크 호환: src=HDEC 는 수행팀(EXE) 탭으로 취급
+  const view: View = s.src === "HDEC" ? "EXE" : (s.src ?? "SUB");
+  const viewLabel = VIEW_LABEL[view];
+  const source: Source = view === "SUB" ? "SUB" : "HDEC";
   const { cards, companies, locations, settings, cutoff, lastReceivedAt, reminderLog, memberMap } = useManpower(day, day);
   /** 오늘 미보고 알림이 발송된 횟수 (협력사별) */
   const reminderCount = useMemo(() => {
@@ -106,7 +109,11 @@ function ManpowerPage() {
   const [exportOpen, setExportOpen] = useState(false);
 
   const dayCards = useMemo(() => cards.filter((c) => c.report_date === day), [cards, day]);
-  const shown = useMemo(() => dayCards.filter((c) => c.source === source && isExeRecheck(c)), [dayCards, source]);
+  // 재집계는 확인자 부서(HSE/EXE) 기준으로 분리 집계
+  const shown = useMemo(
+    () => dayCards.filter((c) => c.source === source && (view === "SUB" || c.grp === view)),
+    [dayCards, source, view],
+  );
   const daily = useMemo(() => toDaily(shown), [shown]);
   const totals = useMemo(() => tradeTotals(shown, source), [shown, source]);
   const comp = useMemo(() => compliance(dayCards, companies, day, cutoff), [dayCards, companies, day, cutoff]);
