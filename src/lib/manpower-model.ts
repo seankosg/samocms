@@ -107,7 +107,8 @@ export function toExeBasis(rows: CompareRow[]): CompareRow[] {
     const verified = r.exe_verified ?? null;
     const diff = groupDiff(verified, r.reported);
     const result: CompareRow["result"] =
-      r.reported == null ? (verified == null ? "NOT COUNTED" : "HDEC ONLY")
+      // 협력사 보고가 없으면 현장에서만 확인된 칸(HDEC 단독), 보고가 있는데 EXE 재집계가 없으면 미확인
+      r.reported == null ? "HDEC ONLY"
         : verified == null ? "NOT COUNTED"
           : diff === 0 ? "MATCH" : "DIFF";
     return { ...r, verified, diff, result, hdec_counter: r.exe_counter ?? null, hdec_counter_tg_id: r.exe_counter_tg_id ?? null };
