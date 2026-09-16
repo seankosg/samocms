@@ -73,6 +73,23 @@ export const getManpower = createServerFn({ method: "GET" })
     };
   });
 
+/** Raw Data — 봇으로 입력된 출면 기록 원본 전체 (재제출 포함) */
+export const getManpowerEntries = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ from: dateStr, to: dateStr }).parse(d))
+  .handler(async ({ data, context }) => {
+    const c = context.supabase;
+    const [entries, members] = await Promise.all([
+      selectAll(() => c.from("manpower_entries").select("*")
+        .gte("report_date", data.from).lte("report_date", data.to)
+        .order("report_date", { ascending: false }).order("company").order("location").order("shift").order("id")),
+      c.from("manpower_members").select("telegram_id, name, dept, position"),
+    ]);
+    const err = entries.error ?? members.error;
+    if (err) throw new Error(err.message);
+    return { entries: entries.data ?? [], members: members.data ?? [] };
+  });
+
 
 /** 봇 사용자(회원) 목록 — 관리자 화면용 */
 export const getManpowerMembers = createServerFn({ method: "GET" })
