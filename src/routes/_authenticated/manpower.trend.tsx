@@ -143,7 +143,7 @@ function TrendPage() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(chart.map((r, i) => ({
       일자: days[i], 근무일: isWorkday(days[i]!) ? "Y" : "N",
-      보고: r.보고, 재집계: r.재집계,
+      보고: r.보고, "재집계(EXE)": r["재집계(EXE)"], "재집계(HSE)": r["재집계(HSE)"],
     }))), "출면추이");
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(byGroup.map(([c, v]) => ({ [DIM_LABEL[dim]]: c, 연인원: v.total, 주간: v.day, 연장: v.ot, 야간: v.night }))), DIM_LABEL[dim]);
     XLSX.writeFile(wb, `HMMME_출면추이_${from.replace(/-/g, "")}_${to.replace(/-/g, "")}.xlsx`);
@@ -171,7 +171,7 @@ function TrendPage() {
       }
     >
       <p className="mb-2 rounded-md border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300">
-        기준: 협력사 보고(실선) · 수행팀(EXE) 재집계(점선) · 조 필터 「{shift}」이(가) 아래 카드·차트·표에 모두 적용됩니다.
+        기준: 협력사 보고(실선) · 당사 재집계는 수행팀(EXE)·안전팀(HSE)을 분리한 점선 2개 · 조 필터 「{shift}」이(가) 아래 카드·차트·표에 모두 적용됩니다.
       </p>
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label="연인원" value={sum.toLocaleString()} sub={`${DIM_LABEL[dim]} · ${selLabel}`} breakdown={shiftSummary.slice(1).map((x) => ({ label: x.label, value: x.total.toLocaleString() }))} />
@@ -205,7 +205,8 @@ function TrendPage() {
             <Tooltip contentStyle={{ fontSize: 12 }} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
             <Line type="monotone" dataKey="보고" stroke="var(--chart-1)" dot={{ r: 2 }} strokeWidth={2} isAnimationActive={false} />
-            <Line type="monotone" dataKey="재집계" stroke="var(--chart-4)" dot={{ r: 2 }} strokeWidth={2} strokeDasharray="5 4" isAnimationActive={false} />
+            <Line type="monotone" dataKey="재집계(EXE)" stroke="var(--chart-4)" dot={{ r: 2 }} strokeWidth={2} strokeDasharray="5 4" isAnimationActive={false} />
+            <Line type="monotone" dataKey="재집계(HSE)" stroke="var(--chart-2)" dot={{ r: 2 }} strokeWidth={2} strokeDasharray="2 3" isAnimationActive={false} />
           </ComposedChart>
         </div>
       </section>
