@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/use-auth";
 import { manpowerRangeQuery, useManpower } from "@/lib/use-manpower";
 import {
-  TRADES, cardMismatch, compliance, fmtDay, isActiveOn, riyadhToday, riyadhTime,
+  TRADES, cardMismatch, compliance, fmtDay, isActiveOn, isExeRecheck, riyadhToday, riyadhTime,
   toDaily, tradeTotals, reporterLabel, type Card as MpCard, type Source,
 } from "@/lib/manpower-model";
 
@@ -37,7 +37,7 @@ function buildMatrix(
 ) {
   const rows = new Map<string, Map<string, MatrixCell>>();
   const colSet = new Set<string>();
-  cards.filter((c) => c.source === source).forEach((c) => {
+  cards.filter((c) => c.source === source && isExeRecheck(c)).forEach((c) => {
     const n = matrixCount(c);
     if (!n) return;
     const [rk, ck] = mode === "company" ? [c.company, c.location] : [c.location, c.company];
@@ -100,7 +100,7 @@ function ManpowerPage() {
   const [exportOpen, setExportOpen] = useState(false);
 
   const dayCards = useMemo(() => cards.filter((c) => c.report_date === day), [cards, day]);
-  const shown = useMemo(() => dayCards.filter((c) => c.source === source), [dayCards, source]);
+  const shown = useMemo(() => dayCards.filter((c) => c.source === source && isExeRecheck(c)), [dayCards, source]);
   const daily = useMemo(() => toDaily(shown), [shown]);
   const totals = useMemo(() => tradeTotals(shown, source), [shown, source]);
   const comp = useMemo(() => compliance(dayCards, companies, day, cutoff), [dayCards, companies, day, cutoff]);

@@ -14,7 +14,7 @@ import { manpowerRangeQuery, useManpower, defaultRange } from "@/lib/use-manpowe
 
 /** 출면 추이 차트 기본 시작일 (고정) */
 const TREND_DEFAULT_FROM = "2026-09-12";
-import { dateRange, riyadhToday, addDays, type Card as MpCard } from "@/lib/manpower-model";
+import { dateRange, isExeRecheck, riyadhToday, addDays, type Card as MpCard } from "@/lib/manpower-model";
 import { MP } from "@/lib/manpower-i18n";
 
 const DIMS = ["company", "building", "team"] as const;
@@ -82,8 +82,9 @@ function TrendPage() {
 
   const days = useMemo(() => dateRange(from, to), [from, to]);
   const byDate = (src: "SUB" | "HDEC") => {
+    // 재집계(점선)는 수행팀(EXE) 기준
     const m = new Map<string, number>();
-    filtered.filter((c) => c.source === src).forEach((c) => m.set(c.report_date, (m.get(c.report_date) ?? 0) + c.subtotal));
+    filtered.filter((c) => c.source === src && isExeRecheck(c)).forEach((c) => m.set(c.report_date, (m.get(c.report_date) ?? 0) + c.subtotal));
     return m;
   };
   const subTotals = useMemo(() => byDate("SUB"), [filtered]);
