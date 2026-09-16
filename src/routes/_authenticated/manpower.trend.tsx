@@ -81,23 +81,27 @@ function TrendPage() {
   const groupOnly = useMemo(() => cards.filter((c) => isAll || selected.includes(keyOf(c))), [cards, keyOf, isAll, selected]);
 
   const days = useMemo(() => dateRange(from, to), [from, to]);
-  const byDate = (src: "SUB" | "HDEC") => {
-    // 재집계(점선)는 수행팀(EXE) 기준
+  /** 재집계는 확인자 부서(HSE·EXE)별로 분리 집계 — 합산하지 않는다 */
+  const byDate = (src: "SUB" | "HDEC", grp?: "HSE" | "EXE") => {
     const m = new Map<string, number>();
-    filtered.filter((c) => c.source === src && isExeRecheck(c)).forEach((c) => m.set(c.report_date, (m.get(c.report_date) ?? 0) + c.subtotal));
+    filtered
+      .filter((c) => c.source === src && (!grp || c.grp === grp))
+      .forEach((c) => m.set(c.report_date, (m.get(c.report_date) ?? 0) + c.subtotal));
     return m;
   };
   const subTotals = useMemo(() => byDate("SUB"), [filtered]);
-  const hdecTotals = useMemo(() => byDate("HDEC"), [filtered]);
+  const exeTotals = useMemo(() => byDate("HDEC", "EXE"), [filtered]);
+  const hseTotals = useMemo(() => byDate("HDEC", "HSE"), [filtered]);
 
-  const chart = days.map((d) => {
-    const rep = subTotals.get(d) ?? 0;
-    const ver = hdecTotals.get(d) ?? 0;
-    return { day: d.slice(5), 보고: rep, 재집계: ver };
-  });
+  const chart = days.map((d) => ({
+    day: d.slice(5),
+    보고: subTotals.get(d) ?? 0,
+    "재집계(EXE)": exeTotals.get(d) ?? 0,
+    "재집계(HSE)": hseTotals.get(d) ?? 0,
+  }));
 
   // 차트 크기: X축(일수)·Y축(최대값)에 따라 가변 — 영역 폭은 고정, 내부만 스크롤
-  const dailyMax = Math.max(1, ...chart.map((r) => Math.max(r.보고, r.재집계)));
+  const dailyMax = Math.max(1, ...chart.map((r) => Math.max(r.보고, r["재집계(EXE)"], r["재집계(HSE)"])));
   const chartWidth = Math.max(640, days.length * (days.length > 45 ? 26 : 44));
   const chartHeight = dailyMax > 800 ? 520 : dailyMax > 400 ? 460 : dailyMax > 150 ? 400 : 340;
 
