@@ -9,7 +9,7 @@ import { Kpi } from "@/routes/_authenticated/manpower.index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { manpowerRangeQuery, useManpower } from "@/lib/use-manpower";
-import { RESULT_ORDER, addDays, deptDot, fmtDay, reporterLabel, riyadhToday, toExeBasis, verificationStats, type CompareRow } from "@/lib/manpower-model";
+import { RESULT_ORDER, addDays, deptDot, displayDiff, fmtDay, reporterLabel, riyadhToday, toExeBasis, verificationStats, type CompareRow } from "@/lib/manpower-model";
 import { CardHistoryButton } from "@/components/manpower/card-history";
 import { MP, RESULT_LABEL } from "@/lib/manpower-i18n";
 import { CompareDiffCharts } from "@/components/manpower/compare-diff-charts";
@@ -51,7 +51,10 @@ const TONE: Record<CompareRow["result"], string> = {
 
 type ColumnFilterKey = "company" | "location" | "shift" | "reported" | "hse_verified" | "exe_verified" | "hse_diff" | "exe_diff" | "hse_result" | "exe_result" | "sub_reporter" | "hse_counter" | "exe_counter";
 
-const columnValue = (row: CompareRow, key: ColumnFilterKey): unknown => row[key];
+const columnValue = (row: CompareRow, key: ColumnFilterKey): unknown =>
+  key === "hse_diff" ? displayDiff(row.hse_verified, row.reported)
+    : key === "exe_diff" ? displayDiff(row.exe_verified, row.reported)
+      : row[key];
 
 function ComparePage() {
   const s = Route.useSearch();
@@ -100,16 +103,10 @@ function ComparePage() {
     const reported = sum((r) => r.reported);
     const hse = sum((r) => r.hse_verified);
     const exe = sum((r) => r.exe_verified);
-    // 차이는 협력사 보고와 재집계가 모두 있는 칸끼리만 비교 (HDEC 단독·미확인 칸 제외 — 대시보드와 동일 기준)
-    const bothDiff = (pickV: (r: CompareRow) => number | null | undefined, pickD: (r: CompareRow) => number | null | undefined) =>
-      shown.reduce((a, r) => (r.reported != null && pickV(r) != null ? a + (pickD(r) ?? 0) : a), 0);
-    const hseDiff = bothDiff((r) => r.hse_verified, (r) => r.hse_diff);
-    const exeDiff = bothDiff((r) => r.exe_verified, (r) => r.exe_diff);
-    const pairCount = (pickV: (r: CompareRow) => number | null | undefined) =>
-      shown.filter((r) => r.reported != null && pickV(r) != null).length;
-    const hsePairs = pairCount((r) => r.hse_verified);
-    const exePairs = pairCount((r) => r.exe_verified);
-    return { reported, hse, exe, hseDiff, exeDiff, hsePairs, exePairs };
+    // 차이는 화면의 모든 칸을 대상으로 계산 — 한쪽만 있는 칸도 없는 쪽을 0으로 간주해 포함
+    const hseDiff = hse - reported;
+    const exeDiff = exe - reported;
+    return { reported, hse, exe, hseDiff, exeDiff };
   }, [shown]);
 
   const exportRows = useCallback((): ExportRow[] => shown.map((r) => ({
@@ -122,8 +119,8 @@ function ComparePage() {
       "Subcon Report": r.reported,
       "HDEC HSE Count": r.hse_verified,
       "HDEC Exe Count": r.exe_verified,
-      "Diff (HSE)": r.hse_diff,
-      "Diff (EXE)": r.exe_diff,
+      "Diff (HSE)": displayDiff(r.hse_verified, r.reported),
+      "Diff (EXE)": displayDiff(r.exe_verified, r.reported),
       "Result (HSE)": r.hse_result,
       "Result (EXE)": r.exe_result,
       Reporter: reporterLabel(memberMap, r.sub_reporter_tg_id, r.sub_reporter).text,
