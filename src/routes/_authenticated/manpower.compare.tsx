@@ -9,7 +9,7 @@ import { Kpi } from "@/routes/_authenticated/manpower.index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { manpowerRangeQuery, useManpower } from "@/lib/use-manpower";
-import { RESULT_ORDER, addDays, deptDot, fmtDay, reporterLabel, riyadhToday, verificationStats, type CompareRow } from "@/lib/manpower-model";
+import { RESULT_ORDER, addDays, deptDot, fmtDay, reporterLabel, riyadhToday, toExeBasis, verificationStats, type CompareRow } from "@/lib/manpower-model";
 import { CardHistoryButton } from "@/components/manpower/card-history";
 import { MP, RESULT_LABEL } from "@/lib/manpower-i18n";
 import { CompareDiffCharts } from "@/components/manpower/compare-diff-charts";
