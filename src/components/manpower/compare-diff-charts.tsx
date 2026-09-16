@@ -14,7 +14,11 @@ const barColor = (v: number) => (v < 0 ? NEG : v > 0 ? POS : "hsl(215,16%,65%)")
 
 export function CompareDiffCharts({ rows, day }: { rows: CompareRow[]; day: string }) {
   const [shift, setShift] = useState("ALL");
-  const filtered = useMemo(() => rows.filter((r) => shift === "ALL" || r.shift === shift), [rows, shift]);
+  // 기준 통일: 협력사 보고와 수행팀(EXE) 재집계가 모두 있는 칸만 차이로 계산 (표·대시보드와 동일)
+  const filtered = useMemo(
+    () => rows.filter((r) => (shift === "ALL" || r.shift === shift) && r.reported != null && r.verified != null),
+    [rows, shift],
+  );
   const daily = useMemo(() => {
     const m = new Map<string, { diff: number; abs: number }>();
     for (const r of filtered) {
@@ -93,7 +97,8 @@ export function CompareDiffCharts({ rows, day }: { rows: CompareRow[]; day: stri
           ) : <Empty />}
         </div>
         <p className="mt-1 text-[11px] text-muted-foreground">
-          차이 = HDEC 재집계 − 협력사 보고. 음수(빨강)는 보고가 더 많고, 양수(초록)는 재집계가 더 많습니다.
+          기준: 차이 = 수행팀(EXE) 재집계 − 협력사 보고 · 양쪽 모두 있는 칸만 · 기간 {daily[0]?.date ?? "—"} ~ {day}.
+          음수(빨강)는 보고가 더 많고, 양수(초록)는 재집계가 더 많습니다.
         </p>
       </div>
 

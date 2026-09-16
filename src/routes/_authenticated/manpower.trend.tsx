@@ -166,6 +166,9 @@ function TrendPage() {
         </>
       }
     >
+      <p className="mb-2 rounded-md border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300">
+        기준: 협력사 보고(실선) · 수행팀(EXE) 재집계(점선) · 조 필터 「{shift}」이(가) 아래 카드·차트·표에 모두 적용됩니다.
+      </p>
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label="연인원" value={sum.toLocaleString()} sub={`${DIM_LABEL[dim]} · ${selLabel}`} breakdown={shiftSummary.slice(1).map((x) => ({ label: x.label, value: x.total.toLocaleString() }))} />
         <Kpi label="일일투입평균" value={curShiftSummary.avg.toFixed(1)} sub={`${selLabel} · 실제 보고일 ${curShiftSummary.reportDays}일`} breakdown={shiftSummary.slice(1).map((x) => ({ label: x.label, value: x.avg.toFixed(1) }))} />

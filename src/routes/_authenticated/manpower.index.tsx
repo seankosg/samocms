@@ -225,17 +225,28 @@ function ManpowerPage() {
 
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label={MP.headcount} value={totals.total.toLocaleString()} sub={`${MP.day} ${daily.reduce((a, d) => a + d.day_total, 0)} · ${MP.ot} ${daily.reduce((a, d) => a + d.ot_total, 0)} · ${MP.night} ${daily.reduce((a, d) => a + d.night_total, 0)}`} />
-        <Kpi label="보고 협력사" value={`${new Set(shown.filter((c) => isActiveName.has(c.company)).map((c) => c.company)).size} / ${comp.total}`}
-          sub={`장소 ${locs.length}곳${comp.outOfScope.length ? ` · 대상 외 ${comp.outOfScope.join(", ")}` : ""}`} />
-        <Kpi label={MP.compliance} value={`${Math.round(comp.rate * 100)}%`} sub={`마감 ${cutoff} 이전 ${comp.n}/${comp.total}개사`} />
-        <Kpi label={MP.notReported} value={String(comp.missing.length)} tone={comp.missing.length ? "warn" : "ok"}
-          sub={comp.missing.length
-            ? comp.missing.slice(0, 3).map((co) => {
-                const n = reminderCount.get(co) ?? 0;
-                return n > 0 ? `${co} (${MP.reminderSent} ${n}회)` : co;
-              }).join(", ")
-            : "없음"} />
+        <Kpi label={MP.headcount} value={totals.total.toLocaleString()} sub={`${MP.day} ${daily.reduce((a, d) => a + d.day_total, 0)} · ${MP.ot} ${daily.reduce((a, d) => a + d.ot_total, 0)} · ${MP.night} ${daily.reduce((a, d) => a + d.night_total, 0)} · ${source === "SUB" ? "협력사 보고" : "수행팀(EXE) 재집계"} 기준`} />
+        {/* 준수율·미보고는 협력사 보고 전용 지표 — 재집계 탭에서는 재집계 기준 지표만 표시(기준 혼재 방지) */}
+        {source === "SUB" ? (
+          <>
+            <Kpi label="보고 협력사" value={`${new Set(shown.filter((c) => isActiveName.has(c.company)).map((c) => c.company)).size} / ${comp.total}`}
+              sub={`협력사 보고 기준 · 장소 ${locs.length}곳${comp.outOfScope.length ? ` · 대상 외 ${comp.outOfScope.join(", ")}` : ""}`} />
+            <Kpi label={MP.compliance} value={`${Math.round(comp.rate * 100)}%`} sub={`협력사 보고 기준 · 마감 ${cutoff} 이전 ${comp.n}/${comp.total}개사`} />
+            <Kpi label={MP.notReported} value={String(comp.missing.length)} tone={comp.missing.length ? "warn" : "ok"}
+              sub={comp.missing.length
+                ? comp.missing.slice(0, 3).map((co) => {
+                    const n = reminderCount.get(co) ?? 0;
+                    return n > 0 ? `${co} (${MP.reminderSent} ${n}회)` : co;
+                  }).join(", ")
+                : "없음"} />
+          </>
+        ) : (
+          <>
+            <Kpi label="재집계 협력사" value={String(new Set(shown.map((c) => c.company)).size)} sub="수행팀(EXE) 재집계 기준" />
+            <Kpi label="재집계 장소" value={`${locs.length}곳`} sub="수행팀(EXE) 재집계 기준" />
+            <Kpi label="재집계 입력자" value={String(new Set(shown.map((c) => c.reporter_name).filter(Boolean)).size)} sub={`카드 ${shown.length}건 · 수행팀(EXE) 기준`} />
+          </>
+        )}
       </div>
 
       {mismatches.length > 0 && (
@@ -246,7 +257,10 @@ function ManpowerPage() {
 
       <section className="mb-6 overflow-x-auto rounded-lg border border-border shadow-sm">
         <table className="w-full min-w-[900px] border-collapse text-xs tabular-nums">
-          <caption className="sr-only">협력사별 출면 집계</caption>
+          <caption className="px-3 py-2 text-left text-[11px] text-muted-foreground">
+            기준: {source === "SUB" ? "협력사 보고" : "수행팀(EXE) 재집계"} · {fmtDay(day)} · 전 조(주간·연장·야간) 합계 ·
+            Staff·Safety·Operator 등 직종 인원은 이 표에서만 집계합니다.
+          </caption>
           <thead>
             <tr className="bg-primary/10 [&>th]:border-b-2 [&>th]:border-primary/30 [&>th]:px-3 [&>th]:py-2.5 [&>th]:text-right [&>th]:text-[11px] [&>th]:font-bold [&>th]:uppercase [&>th]:tracking-wide [&>th]:text-primary [&>th:first-child]:text-left">
               <th scope="col" className="w-[90px] min-w-[90px]">{MP.company}</th>
@@ -287,7 +301,7 @@ function ManpowerPage() {
       </section>
 
       <div className="mb-2 flex flex-wrap items-center gap-2">
-        <h2 className="text-sm font-bold">협력사 × 장소 <span className="font-normal text-muted-foreground">(Worker·Elec·Plumb·Scaf 합계)</span></h2>
+        <h2 className="text-sm font-bold">협력사 × 장소 <span className="font-normal text-muted-foreground">(기준: 기능직 Worker·Elec·Plumb·Scaf만 합산 — Staff·Safety·Operator 제외)</span></h2>
         <Tabs value={matrixMode} onValueChange={(v) => setMatrixMode(v as "company" | "location")}>
           <TabsList className="h-8"><TabsTrigger value="company" className="text-xs">협력사별</TabsTrigger><TabsTrigger value="location" className="text-xs">장소별</TabsTrigger></TabsList>
         </Tabs>

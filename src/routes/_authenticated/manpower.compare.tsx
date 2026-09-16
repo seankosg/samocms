@@ -9,7 +9,7 @@ import { Kpi } from "@/routes/_authenticated/manpower.index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { manpowerRangeQuery, useManpower } from "@/lib/use-manpower";
-import { RESULT_ORDER, addDays, deptDot, fmtDay, reporterLabel, riyadhToday, verificationStats, type CompareRow } from "@/lib/manpower-model";
+import { RESULT_ORDER, addDays, deptDot, fmtDay, reporterLabel, riyadhToday, toExeBasis, verificationStats, type CompareRow } from "@/lib/manpower-model";
 import { CardHistoryButton } from "@/components/manpower/card-history";
 import { MP, RESULT_LABEL } from "@/lib/manpower-i18n";
 import { CompareDiffCharts } from "@/components/manpower/compare-diff-charts";
@@ -64,7 +64,9 @@ function ComparePage() {
   const [exportOpen, setExportOpen] = useState(false);
   const [columnFilters, setColumnFilters] = useState<Partial<Record<ColumnFilterKey, string[]>>>({});
 
-  const rows = useMemo(() => compare.filter((r) => r.report_date === day), [compare, day]);
+  // 기준 통일: 판정(일치/차이/미확인/HDEC 단독)은 수행팀(EXE) 재집계 기준 — 대시보드와 같은 기준
+  const exeCompare = useMemo(() => toExeBasis(compare), [compare]);
+  const rows = useMemo(() => exeCompare.filter((r) => r.report_date === day), [exeCompare, day]);
   const stats = useMemo(() => verificationStats(rows), [rows]);
   const shiftStats = useMemo(() => ([
     ["주간", "Day Shift"], ["연장", "Overtime"], ["야간", "Night Shift"],
@@ -149,6 +151,9 @@ function ComparePage() {
         </>
       }
     >
+      <p className="mb-2 rounded-md border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300">
+        기준: 협력사 보고 vs 수행팀(EXE) 재집계 · 판정(일치·차이·미확인·HDEC 단독)은 EXE 기준 · 기준일 {fmtDay(day)} 하루치 · 안전팀(HSE) 열은 참고용
+      </p>
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label={MP.coverage} value={`${Math.round(stats.coverage * 100)}%`} sub={`${stats.coveredCards} / ${stats.subCards} 카드 검증 · 미확인 ${stats.pendingCards}칸 ${stats.pendingHeadcount.toLocaleString()}명`} breakdown={shiftStats.map((x) => ({ label: x.label, value: `${Math.round(x.stats.coverage * 100)}%` }))} />
         <Kpi label="일치율" value={`${Math.round(stats.matchRate * 100)}%`} breakdown={shiftStats.map((x) => ({ label: x.label, value: `${Math.round(x.stats.matchRate * 100)}%` }))} />
@@ -156,7 +161,7 @@ function ComparePage() {
         <Kpi label={MP.hdecOnly} value={String(stats.hdecOnly)} sub="보고 없이 현장에서 확인" tone={stats.hdecOnly ? "warn" : "ok"} breakdown={shiftStats.map((x) => ({ label: x.label, value: String(x.stats.hdecOnly) }))} />
       </div>
 
-      <CompareDiffCharts rows={compare} day={day} />
+      <CompareDiffCharts rows={exeCompare} day={day} />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         {(["ALL", "DIFF", "HDEC ONLY", "NOT COUNTED", "MATCH"] as const).map((v) => (
