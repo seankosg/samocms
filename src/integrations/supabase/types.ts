@@ -1260,6 +1260,7 @@ export type Database = {
         Row: {
           company: string | null
           electrician: number | null
+          grp: string | null
           location: string | null
           n_rows: number | null
           operator: number | null

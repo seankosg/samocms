@@ -246,6 +246,13 @@
       "when": 1789576148964,
       "tag": "0034_fix_manpower_compare_active_only",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1789576721827,
+      "tag": "0035_add_grp_to_manpower_cards",
+      "breakpoints": true
     }
   ]
 }
