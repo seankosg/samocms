@@ -53,9 +53,12 @@ const MULTI_LABEL: Record<MultiKey, string> = { dept: "담당부서", bldg: "Bld
 const MGR_NONE = "미지정";
 const mgrLabel = (v: string | null) => (v && v.trim() ? v.trim() : MGR_NONE);
 
+/** 담당부서 표시값: 발주처 행은 실제 부서(ownerDept), 당사 행은 공종 라벨 */
+const deptLabel = (r: Row): string => r.ownerDept?.trim() || SLOT_LABEL[r.dept] || r.dept || "";
+
 /** 컬럼 필터 비교값 = 화면 표시값 */
 function multiValue(r: Row, k: MultiKey): string {
-  if (k === "dept") return SLOT_LABEL[r.dept] ?? r.dept ?? "";
+  if (k === "dept") return deptLabel(r);
   if (k === "status") return STATUS_LABEL[statusOfRow(r)] ?? statusOfRow(r);
   if (k === "mgr") return mgrLabel(r.mgr);
   return String(r[k] ?? "");
@@ -103,7 +106,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
     if (lockLate && !isLate(r)) return false;
     if (due && !(r.e && r.e <= due)) return false;
     if (q) {
-      const hay = [r.no, r.dept, r.bldg, r.room, r.scope, r.ms, r.sub, r.mgr, r.act].join(" ").toLowerCase();
+      const hay = [r.no, deptLabel(r), r.bldg, r.room, r.scope, r.ms, r.sub, r.mgr, r.act].join(" ").toLowerCase();
       if (!hay.includes(q.toLowerCase())) return false;
     }
     for (const [k, v] of Object.entries(multi)) {
@@ -124,8 +127,8 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
   const filtered = useMemo(() => {
     const out = rows.filter((r) => passes(r));
     return out.sort((a, b) => {
-      const av = a[sort] ?? "";
-      const bv = b[sort] ?? "";
+      const av = sort === "dept" ? deptLabel(a) : a[sort] ?? "";
+      const bv = sort === "dept" ? deptLabel(b) : b[sort] ?? "";
       const c = typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv), undefined, { numeric: true });
       return c * (asc ? 1 : -1);
     });
@@ -162,7 +165,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
   const exportRows = useCallback((): ExportRow[] => filtered.map((r) => ({
     group: r.sub ?? "",
     rec: {
-      "No.": r.no, 담당부서: SLOT_LABEL[r.dept] ?? r.dept, 담당자: mgrLabel(r.mgr), Subcon: r.sub, "Bldg.": r.bldg, Room: r.room, "Work Scope": dispScope(r.scope), Milestone: r.ms,
+      "No.": r.no, 담당부서: deptLabel(r), 담당자: mgrLabel(r.mgr), Subcon: r.sub, "Bldg.": r.bldg, Room: r.room, "Work Scope": dispScope(r.scope), Milestone: r.ms,
       Activity: r.act, Unit: r.unit, Done: r.done, Total: r.tot,
       "계획(%)": r.pl == null ? null : r.pl * 100, "실적(%)": r.pc == null ? null : r.pc * 100,
       "당일계획(%)": dailyPlan(r, base) == null ? null : dailyPlan(r, base)! * 100,
@@ -254,7 +257,7 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
                 <tr key={r.id} className={`border-b border-border ${st === "delay" ? "bg-destructive/5" : "bg-card"}`}>
                   <td className="sticky left-0 z-10 whitespace-nowrap border-r border-border bg-inherit px-3 py-2 font-medium">{r.no ?? "-"}</td>
 
-                  <td className="px-3 py-2">{SLOT_LABEL[r.dept] ?? r.dept}</td>
+                  <td className="px-3 py-2">{deptLabel(r)}</td>
                   <td className={`whitespace-nowrap px-3 py-2 ${r.mgr ? "" : "text-muted-foreground"}`}>{mgrLabel(r.mgr)}</td>
                   <td className="px-3 py-2">{cell(r.sub, "subcontractor", "text")}</td>
                   <td className="px-3 py-2">{cell(r.bldg, "building", "text")}</td>
