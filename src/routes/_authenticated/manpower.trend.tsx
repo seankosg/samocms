@@ -155,7 +155,7 @@ function TrendPage() {
   return (
     <AppShell
       title={MP.trend}
-      desc={`${from} ~ ${to} · 근무일 ${workDays.length}일 · 연인원 ${sum.toLocaleString()}명`}
+      desc={`${from} ~ ${to} · 근무일 ${workDays.length}일 · 연인원 ${allShiftSummary.total.toLocaleString()}명`}
       actions={
         <>
           <Tabs value={dim} onValueChange={(v) => navigate({ search: (p) => ({ ...p, mpDim: v as Dim, mpVal: "전체" }), replace: true })}>
