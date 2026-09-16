@@ -104,6 +104,7 @@ function ManpowerPage() {
   const daily = useMemo(() => toDaily(shown), [shown]);
   const totals = useMemo(() => tradeTotals(shown, source), [shown, source]);
   const comp = useMemo(() => compliance(dayCards, companies, day, cutoff), [dayCards, companies, day, cutoff]);
+  const isActiveName = useMemo(() => new Set(companies.filter((c) => isActiveOn(c, day)).map((c) => c.name)), [companies, day]);
   const allLocNames = useMemo(
     () => locations.filter((l) => l.is_active).map((l) => l.name).sort((a, b) => a.localeCompare(b)),
     [locations],
