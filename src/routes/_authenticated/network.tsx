@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/network")({
     const str = (k: string) => (typeof s[k] === "string" ? (s[k] as string) : "");
     return {
       view: s["view"] === "bldg" ? "bldg" : "net",
-      zoom: Math.min(4, Math.max(0.6, toNum(s["zoom"], 1))),
+      zoom: Math.min(4, Math.max(0.6, toNum(s["zoom"], 1.75))),
       bands: Array.isArray(bands)
         ? bands.map(Number).filter((n) => n >= 0 && n <= 2)
         : typeof bands === "string" && bands.length
