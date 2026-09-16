@@ -218,7 +218,7 @@ function RawDataPage() {
             {shown.map((r) => (
               <tr key={r.id} className={`[&>td]:border-b [&>td]:border-border/60 [&>td]:px-2 [&>td]:py-1.5 ${r.status !== "ACTIVE" ? "text-muted-foreground/70 line-through decoration-muted-foreground/40" : ""}`}>
                 <td className="tabular-nums">{r.report_date}</td>
-                <td>{r.source}</td>
+                <td>{grp(r)}</td>
                 <td>
                   <span className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${r.status === "ACTIVE" ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-muted text-muted-foreground"}`}>{r.status}</span>
                 </td>
