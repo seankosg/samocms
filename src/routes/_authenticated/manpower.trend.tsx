@@ -204,9 +204,9 @@ function TrendPage() {
             <YAxis tick={{ fontSize: 11 }} domain={[0, Math.ceil((dailyMax * 1.1) / 10) * 10]} allowDecimals={false} />
             <Tooltip contentStyle={{ fontSize: 12 }} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Line type="monotone" dataKey="보고" stroke="var(--chart-1)" dot={{ r: 2 }} strokeWidth={2} isAnimationActive={false} />
-            <Line type="monotone" dataKey="재집계(EXE)" stroke="var(--chart-4)" dot={{ r: 2 }} strokeWidth={2} strokeDasharray="5 4" isAnimationActive={false} />
-            <Line type="monotone" dataKey="재집계(HSE)" stroke="var(--chart-2)" dot={{ r: 2 }} strokeWidth={2} strokeDasharray="2 3" isAnimationActive={false} />
+            <Line type="monotone" dataKey="보고" stroke="#dc2626" dot={{ r: 2 }} strokeWidth={2} isAnimationActive={false} />
+            <Line type="monotone" dataKey="재집계(EXE)" stroke="#2563eb" dot={{ r: 2 }} strokeWidth={2} strokeDasharray="5 4" isAnimationActive={false} />
+            <Line type="monotone" dataKey="재집계(HSE)" stroke="#16a34a" dot={{ r: 2 }} strokeWidth={2} strokeDasharray="2 3" isAnimationActive={false} />
           </ComposedChart>
         </div>
       </section>
