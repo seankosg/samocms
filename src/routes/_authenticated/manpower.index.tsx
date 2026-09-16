@@ -225,17 +225,28 @@ function ManpowerPage() {
 
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label={MP.headcount} value={totals.total.toLocaleString()} sub={`${MP.day} ${daily.reduce((a, d) => a + d.day_total, 0)} · ${MP.ot} ${daily.reduce((a, d) => a + d.ot_total, 0)} · ${MP.night} ${daily.reduce((a, d) => a + d.night_total, 0)}`} />
-        <Kpi label="보고 협력사" value={`${new Set(shown.filter((c) => isActiveName.has(c.company)).map((c) => c.company)).size} / ${comp.total}`}
-          sub={`장소 ${locs.length}곳${comp.outOfScope.length ? ` · 대상 외 ${comp.outOfScope.join(", ")}` : ""}`} />
-        <Kpi label={MP.compliance} value={`${Math.round(comp.rate * 100)}%`} sub={`마감 ${cutoff} 이전 ${comp.n}/${comp.total}개사`} />
-        <Kpi label={MP.notReported} value={String(comp.missing.length)} tone={comp.missing.length ? "warn" : "ok"}
-          sub={comp.missing.length
-            ? comp.missing.slice(0, 3).map((co) => {
-                const n = reminderCount.get(co) ?? 0;
-                return n > 0 ? `${co} (${MP.reminderSent} ${n}회)` : co;
-              }).join(", ")
-            : "없음"} />
+        <Kpi label={MP.headcount} value={totals.total.toLocaleString()} sub={`${MP.day} ${daily.reduce((a, d) => a + d.day_total, 0)} · ${MP.ot} ${daily.reduce((a, d) => a + d.ot_total, 0)} · ${MP.night} ${daily.reduce((a, d) => a + d.night_total, 0)} · ${source === "SUB" ? "협력사 보고" : "수행팀(EXE) 재집계"} 기준`} />
+        {/* 준수율·미보고는 협력사 보고 전용 지표 — 재집계 탭에서는 재집계 기준 지표만 표시(기준 혼재 방지) */}
+        {source === "SUB" ? (
+          <>
+            <Kpi label="보고 협력사" value={`${new Set(shown.filter((c) => isActiveName.has(c.company)).map((c) => c.company)).size} / ${comp.total}`}
+              sub={`협력사 보고 기준 · 장소 ${locs.length}곳${comp.outOfScope.length ? ` · 대상 외 ${comp.outOfScope.join(", ")}` : ""}`} />
+            <Kpi label={MP.compliance} value={`${Math.round(comp.rate * 100)}%`} sub={`협력사 보고 기준 · 마감 ${cutoff} 이전 ${comp.n}/${comp.total}개사`} />
+            <Kpi label={MP.notReported} value={String(comp.missing.length)} tone={comp.missing.length ? "warn" : "ok"}
+              sub={comp.missing.length
+                ? comp.missing.slice(0, 3).map((co) => {
+                    const n = reminderCount.get(co) ?? 0;
+                    return n > 0 ? `${co} (${MP.reminderSent} ${n}회)` : co;
+                  }).join(", ")
+                : "없음"} />
+          </>
+        ) : (
+          <>
+            <Kpi label="재집계 협력사" value={String(new Set(shown.map((c) => c.company)).size)} sub="수행팀(EXE) 재집계 기준" />
+            <Kpi label="재집계 장소" value={`${locs.length}곳`} sub="수행팀(EXE) 재집계 기준" />
+            <Kpi label="재집계 입력자" value={String(new Set(shown.map((c) => c.reporter_name).filter(Boolean)).size)} sub={`카드 ${shown.length}건 · 수행팀(EXE) 기준`} />
+          </>
+        )}
       </div>
 
       {mismatches.length > 0 && (
