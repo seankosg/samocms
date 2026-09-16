@@ -98,10 +98,11 @@ export function ManpowerKpiCard() {
             <p className={`text-xl font-bold tabular-nums ${s.diff === 0 ? "text-muted-foreground" : s.diff > 0 ? "text-primary" : "text-destructive"}`}>
               {isError ? "—" : isLoading ? "…" : (s.diff > 0 ? "+" : "") + s.diff.toLocaleString()}
             </p>
+            {(s.pending ?? 0) > 0 && <p className="mt-0.5 text-[10px] text-muted-foreground">미확인 {s.pending}칸</p>}
           </div>
         ))}
       </div>
-      <p className="mt-2 text-[11px] text-muted-foreground">협력사 보고 vs 당사 재집계 · {fmtDay(day)}</p>
+      <p className="mt-2 text-[11px] text-muted-foreground">협력사 보고 vs 당사 재집계 · {fmtDay(day)} · 차이는 재집계 완료 칸 기준</p>
     </Link>
   );
 
