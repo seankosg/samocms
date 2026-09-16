@@ -26,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/owner/network")({
       late: s["late"] === true || s["late"] === "true",
       scope: s["scope"] === "owner" || s["scope"] === "hdec" || s["scope"] === "linked" ? s["scope"] : "all",
       push: s["push"] === false || s["push"] === "false" ? false : true,
+      phase: s["phase"] === "POP" || s["phase"] === "FOP" || s["phase"] === "TOC" ? s["phase"] : "",
     };
   },
   loader: ({ context }) => context.queryClient.ensureQueryData(projectQuery),

@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import {
-  AXH, BH, buildModel, chainOf, dayList, layout, linkedToOwner, nodeVisible,
+  AXH, BH, buildModel, chainOf, dayList, layout, linkedToOwner, nodeVisible, PHASE_MS,
   type NetFilter, type NetMode, type NetNode, type NetScope,
 } from "@/lib/network-model";
 import { applyPush, computePush, ownerImpactSummary, pushChain } from "@/lib/network-impact";
@@ -10,7 +10,7 @@ import { BANDS, fmtDate, isOwnerRow, MSDEF, pct1, SLOT_LABEL, STATUS_COLOR, STAT
 
 export type NetSearch = {
   view: "net" | "bldg"; zoom: number; bands: number[]; dept: string; ms: string; bldg: string; late: boolean;
-  scope?: NetScope; push?: boolean;
+  scope?: NetScope; push?: boolean; phase?: string;
 };
 
 const OWNER_COLOR = "#6d28d9";
@@ -31,7 +31,7 @@ export function NetworkView({ rows, search, onChange, base, forceMode }: { rows:
     : (requestedScope === "owner" ? "all" : requestedScope);
   const showPush = search.push ?? true;
 
-  const f: NetFilter = { band: search.bands.length === 1 ? String(search.bands[0]) : "", dept: search.dept, bldg: search.bldg, ms: search.ms, late: search.late, scope };
+  const f: NetFilter = { band: search.bands.length === 1 ? String(search.bands[0]) : "", dept: search.dept, bldg: search.bldg, ms: search.ms, late: search.late, scope, phase: search.phase ?? "" };
 
   const opts = useMemo(() => ({
     dept: [...new Set(rows.map((r) => r.dept).filter(Boolean))].sort(),
@@ -49,7 +49,7 @@ export function NetworkView({ rows, search, onChange, base, forceMode }: { rows:
   const ownerLinked = useMemo(() => linkedToOwner(M.N, M.edges), [M]);
   const vis = useMemo(() => new Set(lay.nodes.filter((n) =>
     nodeVisible(n, f, mode) && (scope !== "linked" || ownerLinked.has(n.id))).map((n) => n.id)),
-    [lay, f.band, f.dept, f.bldg, f.ms, f.late, scope, ownerLinked, mode]);
+    [lay, f.band, f.dept, f.bldg, f.ms, f.late, f.phase, scope, ownerLinked, mode]);
   const active = hover && !lock ? hover.n.id : lock;
   const chain = useMemo(() => (active ? chainOf(M.edges, active) : null), [active, M.edges]);
   const pchain = useMemo(() => (active ? pushChain(M.push, active) : null), [active, M.push]);
@@ -73,7 +73,7 @@ export function NetworkView({ rows, search, onChange, base, forceMode }: { rows:
   }, [lay.nodes, vis]);
 
   const setZoom = (z: number) => onChange({ zoom: Math.min(ZMAX, Math.max(ZMIN, Math.round(z * 100) / 100)) });
-  const resetFilter = () => { setLock(null); onChange({ bands: [0, 1, 2], dept: "", ms: "", bldg: "", late: false, scope: "all" }); };
+  const resetFilter = () => { setLock(null); onChange({ bands: [0, 1, 2], dept: "", ms: "", bldg: "", late: false, scope: "all", phase: "" }); };
 
   const chip = (v: string, label: string) => (
     <button key={label} type="button"
@@ -145,6 +145,15 @@ export function NetworkView({ rows, search, onChange, base, forceMode }: { rows:
       <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2">
         {mode === "net" && [chip("", "전체 공정"), chip("0", "건설"), chip("1", "인허가"), chip("2", "생산설비(발주처)")]}
         {mode === "net" && <span className="mx-1 inline-block h-[18px] w-px bg-border" />}
+        {mode !== "group" && (["", "POP", "FOP", "TOC"] as const).map((p) => (
+          <button key={p || "all"} type="button"
+            onClick={() => { setLock(null); onChange({ phase: p }); }}
+            title={p ? `${p} 단계 (${(PHASE_MS[p] ?? []).join("·")})` : "전체 단계"}
+            className={`rounded-full border px-3 py-1 text-[11.5px] font-bold ${f.phase === p ? "border-transparent bg-emerald-600 text-white" : "border-input bg-background text-muted-foreground hover:bg-accent"}`}>
+            {p || "전체 단계"}
+          </button>
+        ))}
+        {mode !== "group" && <span className="mx-1 inline-block h-[18px] w-px bg-border" />}
         {mode === "net" && sel("부서", search.dept, (v) => onChange({ dept: v }), opts.dept)}
         {mode === "net" && sel("마일스톤", search.ms, (v) => onChange({ ms: v }), opts.ms)}
         {sel("건물", search.bldg, (v) => onChange({ bldg: v }), opts.bldg)}
