@@ -59,23 +59,18 @@ export function ManpowerKpiCard() {
     </div>
   );
 
-  // 조별 협력사(SUB) · 당사(HDEC) · 차이 — 차이는 재집계가 있는 칸끼리만 비교하고, 미집계 칸은 「미확인」으로 분리
-  // 재집계 숫자는 수행팀(EXE) 기준
+  // 조별 협력사(SUB) · 당사(HDEC) · 차이 — 차이는 모든 칸 기준(한쪽만 있으면 없는 쪽을 0으로 계산),
+  // 재집계가 아직 없는 칸 수는 「미확인」으로 별도 표기. 재집계 숫자는 수행팀(EXE) 기준
   const hdec = cards.filter((c) => c.source === "HDEC" && c.grp === "EXE");
   const hdecByKey = new Map(hdec.map((c) => [`${c.shift}|${c.company}|${c.location}`, c.subtotal]));
   const shiftDiff = (shift: string) => {
     const subCells = sub.filter((c) => c.shift === shift);
     const subSum = subCells.reduce((a, c) => a + c.subtotal, 0);
     const hdecSum = hdec.filter((c) => c.shift === shift).reduce((a, c) => a + c.subtotal, 0);
-    let diff = 0;
-    let pending = 0;
-    for (const c of subCells) {
-      const v = hdecByKey.get(`${c.shift}|${c.company}|${c.location}`);
-      if (v == null) pending += 1;
-      else diff += v - c.subtotal;
-    }
-    return { subSum, hdecSum, diff, pending };
+    const pending = subCells.filter((c) => hdecByKey.get(`${c.shift}|${c.company}|${c.location}`) == null).length;
+    return { subSum, hdecSum, diff: hdecSum - subSum, pending };
   };
+
   const shiftRows = shifts.map((s) => {
     const sd = s.label === MP.day ? shiftDiff("Day Shift") : s.label === MP.ot ? shiftDiff("Overtime") : shiftDiff("Night Shift");
     return { ...s, ...sd };
@@ -104,7 +99,7 @@ export function ManpowerKpiCard() {
           </div>
         ))}
       </div>
-      <p className="mt-2 text-[11px] text-muted-foreground">기준: 협력사 보고 vs 수행팀(EXE) 재집계 · {fmtDay(day)} · 차이·미확인은 협력사 보고가 있는 칸 기준</p>
+      <p className="mt-2 text-[11px] text-muted-foreground">기준: 협력사 보고 vs 수행팀(EXE) 재집계 · {fmtDay(day)} · 차이 = 당사 − 협력사(모든 칸, 없는 쪽 0) · 미확인은 재집계가 없는 칸 수</p>
     </Link>
   );
 
