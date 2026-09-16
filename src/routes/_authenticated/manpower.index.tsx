@@ -178,9 +178,9 @@ function ManpowerPage() {
       name: matrixMode === "company" ? "협력사×장소" : "장소×협력사",
       aoa: [head1, head2, ...body, totalLine], headerRows: 2, merges, freezeCols: 5, minColWidth: 9,
       title: `출면 현황 - ${matrixMode === "company" ? "협력사 × 장소" : "장소 × 협력사"} (Worker·Elec·Plumb·Scaf)`,
-      subtitle: `기준일 ${fmtDay(day)} · ${source === "SUB" ? MP.sub : MP.hdec}`,
+      subtitle: `기준일 ${fmtDay(day)} · ${viewLabel}`,
     };
-  }, [matrix, matrixMode, day, source]);
+  }, [matrix, matrixMode, day, viewLabel]);
 
   /** 매트릭스만 단일 파일로 내려받기 */
   const exportMatrix = useCallback(async () => {
@@ -190,8 +190,8 @@ function ManpowerPage() {
     XLSXS.utils.book_append_sheet(wb, styledAoaSheet(ex.aoa, 2, {
       title: ex.title, subtitle: ex.subtitle, merges: ex.merges, freezeCols: ex.freezeCols, minColWidth: ex.minColWidth,
     }), ex.name);
-    XLSXS.writeFile(wb, `출면매트릭스_${day.replace(/-/g, "")}_${source}.xlsx`);
-  }, [matrixSheet, day, source]);
+    XLSXS.writeFile(wb, `출면매트릭스_${day.replace(/-/g, "")}_${view}.xlsx`);
+  }, [matrixSheet, day, view]);
 
   /** 단일 파일 모드에 함께 담는 추가 시트: 협력사 집계 + 매트릭스 */
   const getExtraSheets = useCallback((): ExtraSheet[] => {
@@ -206,15 +206,15 @@ function ManpowerPage() {
         ...TRADES.map((t) => totals[t]), totals.total, ""],
     ];
     return [
-      { name: "협력사집계", aoa: summary, headerRows: 1, title: `출면 현황 - 협력사 집계 (${source === "SUB" ? MP.sub : MP.hdec})`, subtitle: `기준일 ${fmtDay(day)}` },
+      { name: "협력사집계", aoa: summary, headerRows: 1, title: `출면 현황 - 협력사 집계 (${viewLabel})`, subtitle: `기준일 ${fmtDay(day)}` },
       matrixSheet(),
     ];
-  }, [daily, totals, matrixSheet, day, source]);
+  }, [daily, totals, matrixSheet, day, viewLabel]);
 
   return (
     <AppShell
       title={MP.daily}
-      desc={`${fmtDay(day)} · ${source === "SUB" ? MP.sub : MP.hdec} · 총 ${totals.total.toLocaleString()}명 · 주간 ${daily.reduce((a, d) => a + d.day_total, 0).toLocaleString()}명 · 연장 ${daily.reduce((a, d) => a + d.ot_total, 0).toLocaleString()}명 · 야간 ${daily.reduce((a, d) => a + d.night_total, 0).toLocaleString()}명 · 카드 ${shown.length}건${
+      desc={`${fmtDay(day)} · ${viewLabel} · 총 ${totals.total.toLocaleString()}명 · 주간 ${daily.reduce((a, d) => a + d.day_total, 0).toLocaleString()}명 · 연장 ${daily.reduce((a, d) => a + d.ot_total, 0).toLocaleString()}명 · 야간 ${daily.reduce((a, d) => a + d.night_total, 0).toLocaleString()}명 · 카드 ${shown.length}건${
         lastReceivedAt ? ` · 마지막 수신 ${new Date(lastReceivedAt).toLocaleString("ko-KR", { timeZone: "Asia/Riyadh", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}` : ""
       }`}
 
@@ -226,19 +226,23 @@ function ManpowerPage() {
         </>
       }
     >
-      <Tabs value={source} onValueChange={(v) => navigate({ search: (p) => ({ ...p, src: v as Source }), replace: true })} className="mb-4">
-        <TabsList><TabsTrigger value="SUB">{MP.sub}</TabsTrigger><TabsTrigger value="HDEC">{MP.hdec}</TabsTrigger></TabsList>
+      <Tabs value={view} onValueChange={(v) => navigate({ search: (p) => ({ ...p, src: v as View }), replace: true })} className="mb-4">
+        <TabsList>
+          <TabsTrigger value="SUB">{MP.sub}</TabsTrigger>
+          <TabsTrigger value="HSE">안전팀(HSE) 재집계</TabsTrigger>
+          <TabsTrigger value="EXE">수행팀(EXE) 재집계</TabsTrigger>
+        </TabsList>
       </Tabs>
 
-      {source === "HDEC" && (
+      {view !== "SUB" && (
         <p className="mb-4 rounded-md border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300">
-          수행팀(EXE) 재집계 기준 · 안전팀(HSE) 재집계는 검증 대조 화면에서 확인할 수 있습니다.
+          {viewLabel} 기준 · 당사 재집계는 확인자 부서(HSE·EXE)별로 분리 집계하며 합산하지 않습니다.
         </p>
       )}
 
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label={MP.headcount} value={totals.total.toLocaleString()} sub={`${MP.day} ${daily.reduce((a, d) => a + d.day_total, 0)} · ${MP.ot} ${daily.reduce((a, d) => a + d.ot_total, 0)} · ${MP.night} ${daily.reduce((a, d) => a + d.night_total, 0)} · ${source === "SUB" ? "협력사 보고" : "수행팀(EXE) 재집계"} 기준`} />
+        <Kpi label={MP.headcount} value={totals.total.toLocaleString()} sub={`${MP.day} ${daily.reduce((a, d) => a + d.day_total, 0)} · ${MP.ot} ${daily.reduce((a, d) => a + d.ot_total, 0)} · ${MP.night} ${daily.reduce((a, d) => a + d.night_total, 0)} · ${viewLabel} 기준`} />
         {/* 준수율·미보고는 협력사 보고 전용 지표 — 재집계 탭에서는 재집계 기준 지표만 표시(기준 혼재 방지) */}
         {source === "SUB" ? (
           <>
