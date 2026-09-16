@@ -97,6 +97,23 @@ export type CompareRow = {
 export const groupDiff = (verified: number | null | undefined, reported: number | null) =>
   verified == null || reported == null ? null : verified - reported;
 
+/**
+ * 모든 화면의 재집계 기준을 「수행팀(EXE)」 하나로 통일.
+ * verified/diff/result를 EXE 값으로 다시 계산해 대시보드·검증 대조·차트가 같은 숫자를 씁니다.
+ * (안전팀(HSE) 값은 열로만 남겨 참고용으로 표시)
+ */
+export function toExeBasis(rows: CompareRow[]): CompareRow[] {
+  return rows.map((r) => {
+    const verified = r.exe_verified ?? null;
+    const diff = groupDiff(verified, r.reported);
+    const result: CompareRow["result"] =
+      r.reported == null ? (verified == null ? "NOT COUNTED" : "HDEC ONLY")
+        : verified == null ? "NOT COUNTED"
+          : diff === 0 ? "MATCH" : "DIFF";
+    return { ...r, verified, diff, result, hdec_counter: r.exe_counter ?? null, hdec_counter_tg_id: r.exe_counter_tg_id ?? null };
+  });
+}
+
 export type CompanyMaster = {
   name: string;
   short_name: string | null;

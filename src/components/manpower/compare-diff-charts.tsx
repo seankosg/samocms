@@ -14,7 +14,11 @@ const barColor = (v: number) => (v < 0 ? NEG : v > 0 ? POS : "hsl(215,16%,65%)")
 
 export function CompareDiffCharts({ rows, day }: { rows: CompareRow[]; day: string }) {
   const [shift, setShift] = useState("ALL");
-  const filtered = useMemo(() => rows.filter((r) => shift === "ALL" || r.shift === shift), [rows, shift]);
+  // 기준 통일: 협력사 보고와 수행팀(EXE) 재집계가 모두 있는 칸만 차이로 계산 (표·대시보드와 동일)
+  const filtered = useMemo(
+    () => rows.filter((r) => (shift === "ALL" || r.shift === shift) && r.reported != null && r.verified != null),
+    [rows, shift],
+  );
   const daily = useMemo(() => {
     const m = new Map<string, { diff: number; abs: number }>();
     for (const r of filtered) {
