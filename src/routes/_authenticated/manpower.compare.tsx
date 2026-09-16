@@ -98,7 +98,10 @@ function ComparePage() {
     const reported = sum((r) => r.reported);
     const hse = sum((r) => r.hse_verified);
     const exe = sum((r) => r.exe_verified);
-    return { reported, hse, exe, hseDiff: hse - reported, exeDiff: exe - reported };
+    // 차이는 재집계가 실제로 있는 칸끼리만 비교 (미확인 칸을 차이로 부풀리지 않음)
+    const hseDiff = shown.reduce((a, r) => (r.hse_verified != null ? a + (r.hse_diff ?? 0) : a), 0);
+    const exeDiff = shown.reduce((a, r) => (r.exe_verified != null ? a + (r.exe_diff ?? 0) : a), 0);
+    return { reported, hse, exe, hseDiff, exeDiff };
   }, [shown]);
 
   const exportRows = useCallback((): ExportRow[] => shown.map((r) => ({
@@ -145,7 +148,7 @@ function ComparePage() {
       }
     >
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label={MP.coverage} value={`${Math.round(stats.coverage * 100)}%`} sub={`${stats.coveredCards} / ${stats.subCards} 카드 검증`} breakdown={shiftStats.map((x) => ({ label: x.label, value: `${Math.round(x.stats.coverage * 100)}%` }))} />
+        <Kpi label={MP.coverage} value={`${Math.round(stats.coverage * 100)}%`} sub={`${stats.coveredCards} / ${stats.subCards} 카드 검증 · 미확인 ${stats.pendingCards}칸 ${stats.pendingHeadcount.toLocaleString()}명`} breakdown={shiftStats.map((x) => ({ label: x.label, value: `${Math.round(x.stats.coverage * 100)}%` }))} />
         <Kpi label="일치율" value={`${Math.round(stats.matchRate * 100)}%`} breakdown={shiftStats.map((x) => ({ label: x.label, value: `${Math.round(x.stats.matchRate * 100)}%` }))} />
         <Kpi label="평균 절대차" value={stats.avgAbsDiff.toFixed(1)} sub="차이가 난 카드 기준" breakdown={shiftStats.map((x) => ({ label: x.label, value: x.stats.avgAbsDiff.toFixed(1) }))} />
         <Kpi label={MP.hdecOnly} value={String(stats.hdecOnly)} sub="보고 없이 현장에서 확인" tone={stats.hdecOnly ? "warn" : "ok"} breakdown={shiftStats.map((x) => ({ label: x.label, value: String(x.stats.hdecOnly) }))} />
