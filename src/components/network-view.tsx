@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import {
   AXH, BH, buildModel, chainOf, dayList, layout, linkedToOwner, nodeVisible,
   type NetFilter, type NetMode, type NetNode, type NetScope,
