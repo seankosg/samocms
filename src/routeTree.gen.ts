@@ -27,6 +27,7 @@ import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedManpowerIndexRouteImport } from './routes/_authenticated/manpower.index'
 import { Route as AuthenticatedManpowerAdminRouteImport } from './routes/_authenticated/manpower.admin'
 import { Route as AuthenticatedManpowerCompareRouteImport } from './routes/_authenticated/manpower.compare'
+import { Route as AuthenticatedManpowerRawRouteImport } from './routes/_authenticated/manpower.raw'
 import { Route as AuthenticatedManpowerTrendRouteImport } from './routes/_authenticated/manpower.trend'
 import { Route as AuthenticatedNcrIndexRouteImport } from './routes/_authenticated/ncr.index'
 import { Route as AuthenticatedNcrDashboardRouteImport } from './routes/_authenticated/ncr.dashboard'
@@ -138,6 +139,12 @@ const AuthenticatedManpowerCompareRoute =
     path: '/manpower/compare',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedManpowerRawRoute =
+  AuthenticatedManpowerRawRouteImport.update({
+    id: '/manpower/raw',
+    path: '/manpower/raw',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedManpowerTrendRoute =
   AuthenticatedManpowerTrendRouteImport.update({
     id: '/manpower/trend',
@@ -234,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/users': typeof AuthenticatedUsersRoute
   '/manpower/admin': typeof AuthenticatedManpowerAdminRoute
   '/manpower/compare': typeof AuthenticatedManpowerCompareRoute
+  '/manpower/raw': typeof AuthenticatedManpowerRawRoute
   '/manpower/trend': typeof AuthenticatedManpowerTrendRoute
   '/ncr/dashboard': typeof AuthenticatedNcrDashboardRoute
   '/owner/list': typeof AuthenticatedOwnerListRoute
@@ -268,6 +276,7 @@ export interface FileRoutesByTo {
   '/users': typeof AuthenticatedUsersRoute
   '/manpower/admin': typeof AuthenticatedManpowerAdminRoute
   '/manpower/compare': typeof AuthenticatedManpowerCompareRoute
+  '/manpower/raw': typeof AuthenticatedManpowerRawRoute
   '/manpower/trend': typeof AuthenticatedManpowerTrendRoute
   '/ncr/dashboard': typeof AuthenticatedNcrDashboardRoute
   '/owner/list': typeof AuthenticatedOwnerListRoute
@@ -304,6 +313,7 @@ export interface FileRoutesById {
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/manpower/admin': typeof AuthenticatedManpowerAdminRoute
   '/_authenticated/manpower/compare': typeof AuthenticatedManpowerCompareRoute
+  '/_authenticated/manpower/raw': typeof AuthenticatedManpowerRawRoute
   '/_authenticated/manpower/trend': typeof AuthenticatedManpowerTrendRoute
   '/_authenticated/ncr/dashboard': typeof AuthenticatedNcrDashboardRoute
   '/_authenticated/owner/list': typeof AuthenticatedOwnerListRoute
@@ -340,6 +350,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/manpower/admin'
     | '/manpower/compare'
+    | '/manpower/raw'
     | '/manpower/trend'
     | '/ncr/dashboard'
     | '/owner/list'
@@ -374,6 +385,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/manpower/admin'
     | '/manpower/compare'
+    | '/manpower/raw'
     | '/manpower/trend'
     | '/ncr/dashboard'
     | '/owner/list'
@@ -409,6 +421,7 @@ export interface FileRouteTypes {
     | '/_authenticated/users'
     | '/_authenticated/manpower/admin'
     | '/_authenticated/manpower/compare'
+    | '/_authenticated/manpower/raw'
     | '/_authenticated/manpower/trend'
     | '/_authenticated/ncr/dashboard'
     | '/_authenticated/owner/list'
@@ -566,6 +579,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedManpowerCompareRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/manpower/raw': {
+      id: '/_authenticated/manpower/raw'
+      path: '/manpower/raw'
+      fullPath: '/manpower/raw'
+      preLoaderRoute: typeof AuthenticatedManpowerRawRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/manpower/trend': {
       id: '/_authenticated/manpower/trend'
       path: '/manpower/trend'
@@ -689,6 +709,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedManpowerAdminRoute: typeof AuthenticatedManpowerAdminRoute
   AuthenticatedManpowerCompareRoute: typeof AuthenticatedManpowerCompareRoute
+  AuthenticatedManpowerRawRoute: typeof AuthenticatedManpowerRawRoute
   AuthenticatedManpowerTrendRoute: typeof AuthenticatedManpowerTrendRoute
   AuthenticatedNcrDashboardRoute: typeof AuthenticatedNcrDashboardRoute
   AuthenticatedOwnerListRoute: typeof AuthenticatedOwnerListRoute
@@ -717,6 +738,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedManpowerAdminRoute: AuthenticatedManpowerAdminRoute,
   AuthenticatedManpowerCompareRoute: AuthenticatedManpowerCompareRoute,
+  AuthenticatedManpowerRawRoute: AuthenticatedManpowerRawRoute,
   AuthenticatedManpowerTrendRoute: AuthenticatedManpowerTrendRoute,
   AuthenticatedNcrDashboardRoute: AuthenticatedNcrDashboardRoute,
   AuthenticatedOwnerListRoute: AuthenticatedOwnerListRoute,
