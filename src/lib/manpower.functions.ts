@@ -13,6 +13,18 @@ async function assertAdmin(context: Ctx) {
 
 const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
+/** PostgREST 1,000행 제한 회피 — 정렬을 고정하고 페이지 단위로 끝까지 가져온다 */
+async function selectAll(build: () => any) {
+  const PAGE = 1000;
+  const out: any[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data: rows, error } = await build().range(from, from + PAGE - 1);
+    if (error) return { data: null as any[] | null, error };
+    out.push(...(rows ?? []));
+    if (!rows || rows.length < PAGE) return { data: out, error: null };
+  }
+}
+
 /** 출면 화면 공통 데이터 — 기간 내 카드/대조/마스터/설정 */
 export const getManpower = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -20,8 +32,8 @@ export const getManpower = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const c = context.supabase;
     const [cards, compare, companies, locations, calendar, plan, settings, log, lastEntry, reminders, members] = await Promise.all([
-      c.from("v_manpower_cards").select("*").gte("report_date", data.from).lte("report_date", data.to),
-      c.from("v_manpower_compare").select("*").gte("report_date", data.from).lte("report_date", data.to),
+      selectAll(() => c.from("v_manpower_cards").select("*").gte("report_date", data.from).lte("report_date", data.to).order("report_date").order("company").order("location").order("shift")),
+      selectAll(() => c.from("v_manpower_compare").select("*").gte("report_date", data.from).lte("report_date", data.to).order("report_date").order("company").order("location").order("shift")),
       c.from("manpower_companies").select("*").order("sort_order"),
       c.from("manpower_locations").select("*").order("sort_order"),
       c.from("manpower_calendar").select("*").gte("day", data.from).lte("day", data.to),
