@@ -137,7 +137,7 @@ function RawDataPage() {
 
   const exportXlsx = () => {
     const rows = shown.map((r) => ({
-      "Report Date": r.report_date, Source: r.source, Status: r.status,
+      "Report Date": r.report_date, Source: grp(r), "Raw Source": r.source, Status: r.status,
       Company: r.company, Location: r.location, Shift: r.shift,
       Staff: r.staff, Safety: r.safety_officer, Operator: r.operator, Worker: r.worker,
       Elec: r.electrician, Scaf: r.scaffolder, Plumb: r.plumber, Subtotal: r.subtotal,
