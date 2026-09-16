@@ -138,6 +138,7 @@ export function ManpowerKpiCard() {
           </div>
         </div>
       )}
+      <p className="mt-2 text-[10px] text-muted-foreground">기준: 협력사 보고 · 전 조 합계</p>
     </div>
   );
 
