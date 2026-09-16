@@ -55,7 +55,13 @@ export type NetNode = {
 export type NetEdge = { a: string; b: string; ty: string; via?: string; cross?: boolean };
 export type NetMode = "net" | "group" | "owner";
 export type NetScope = "all" | "owner" | "hdec" | "linked";
-export type NetFilter = { band: string; dept: string; bldg: string; ms: string; late: boolean; scope?: NetScope };
+export type NetFilter = { band: string; dept: string; bldg: string; ms: string; late: boolean; scope?: NetScope; phase?: string };
+/** 단계(POP/FOP/TOC) → 포함 마일스톤 */
+export const PHASE_MS: Record<string, string[]> = {
+  POP: ["M1", "M2", "M3"],
+  FOP: ["M4", "M5", "M6"],
+  TOC: ["M7", "M8"],
+};
 
 const dnum = (d: string) => Date.parse(`${d}T00:00:00Z`);
 const days = (a: string, b: string) => Math.round((dnum(b) - dnum(a)) / 864e5);
@@ -235,6 +241,7 @@ export function nodeVisible(n: NetNode, f: NetFilter, mode: NetMode) {
   if (f.late && !n.late) return false;
   if (f.scope === "owner" && !n.owner) return false;
   if (f.scope === "hdec" && n.owner) return false;
+  if (f.phase && !(n.ms && (PHASE_MS[f.phase] ?? []).includes(String(n.ms)))) return false;
   if (mode === "group") return !f.bldg || n.gb === f.bldg;
   if (f.dept && !(n.roll ? String(n.depts).includes(f.dept) : n.dept !== f.dept ? false : true)) return false;
   if (f.bldg && !n.roll && String(n.bldg) !== f.bldg) return false;
