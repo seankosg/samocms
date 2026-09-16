@@ -97,6 +97,10 @@ export type CompareRow = {
 export const groupDiff = (verified: number | null | undefined, reported: number | null) =>
   verified == null || reported == null ? null : verified - reported;
 
+/** 화면 표시용 차이 — 한쪽만 있어도 계산(없는 쪽은 0으로 간주), 둘 다 없으면 null */
+export const displayDiff = (verified: number | null | undefined, reported: number | null | undefined) =>
+  verified == null && reported == null ? null : (verified ?? 0) - (reported ?? 0);
+
 /**
  * 모든 화면의 재집계 기준을 「수행팀(EXE)」 하나로 통일.
  * verified/diff/result를 EXE 값으로 다시 계산해 대시보드·검증 대조·차트가 같은 숫자를 씁니다.
