@@ -67,6 +67,7 @@ const NAV = [
     { to: "/manpower", label: "출면 현황", icon: UserCheck },
     { to: "/manpower/trend", label: "출면 추이", icon: LineChart },
     { to: "/manpower/compare", label: "검증 대조", icon: GitCompare },
+    { to: "/manpower/raw", label: "Raw Data", icon: Database },
   ] },
 ] as const;
 
