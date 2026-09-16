@@ -244,7 +244,7 @@ function ManpowerPage() {
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label={MP.headcount} value={totals.total.toLocaleString()} sub={`${MP.day} ${daily.reduce((a, d) => a + d.day_total, 0)} · ${MP.ot} ${daily.reduce((a, d) => a + d.ot_total, 0)} · ${MP.night} ${daily.reduce((a, d) => a + d.night_total, 0)} · ${viewLabel} 기준`} />
         {/* 준수율·미보고는 협력사 보고 전용 지표 — 재집계 탭에서는 재집계 기준 지표만 표시(기준 혼재 방지) */}
-        {source === "SUB" ? (
+        {view === "SUB" ? (
           <>
             <Kpi label="보고 협력사" value={`${new Set(shown.filter((c) => isActiveName.has(c.company)).map((c) => c.company)).size} / ${comp.total}`}
               sub={`협력사 보고 기준 · 장소 ${locs.length}곳${comp.outOfScope.length ? ` · 대상 외 ${comp.outOfScope.join(", ")}` : ""}`} />
@@ -259,9 +259,9 @@ function ManpowerPage() {
           </>
         ) : (
           <>
-            <Kpi label="재집계 협력사" value={String(new Set(shown.map((c) => c.company)).size)} sub="수행팀(EXE) 재집계 기준" />
-            <Kpi label="재집계 장소" value={`${locs.length}곳`} sub="수행팀(EXE) 재집계 기준" />
-            <Kpi label="재집계 입력자" value={String(new Set(shown.map((c) => c.reporter_name).filter(Boolean)).size)} sub={`카드 ${shown.length}건 · 수행팀(EXE) 기준`} />
+            <Kpi label="재집계 협력사" value={String(new Set(shown.map((c) => c.company)).size)} sub={`${viewLabel} 기준`} />
+            <Kpi label="재집계 장소" value={`${locs.length}곳`} sub={`${viewLabel} 기준`} />
+            <Kpi label="재집계 입력자" value={String(new Set(shown.map((c) => c.reporter_name).filter(Boolean)).size)} sub={`카드 ${shown.length}건 · ${viewLabel} 기준`} />
           </>
         )}
       </div>
