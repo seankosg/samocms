@@ -153,7 +153,7 @@ function ComparePage() {
       }
     >
       <p className="mb-2 rounded-md border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300">
-        기준: 협력사 보고 vs 수행팀(EXE) 재집계 · 판정(일치·차이·미확인·HDEC 단독)은 EXE 기준 · 기준일 {fmtDay(day)} 하루치 · 안전팀(HSE) 열은 참고용
+        기준: 협력사 보고 vs 수행팀(EXE) 재집계 · 판정(일치·차이·미확인·HDEC 단독)은 EXE 기준 · 기준일 {fmtDay(day)} 하루치 · 안전팀(HSE) 열은 참고용 · 차이는 모든 칸에 표시(한쪽만 있으면 없는 쪽을 0으로 계산)
       </p>
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label={MP.coverage} value={`${Math.round(stats.coverage * 100)}%`} sub={`${stats.coveredCards} / ${stats.subCards} 카드 검증 · 미확인 ${stats.pendingCards}칸 ${stats.pendingHeadcount.toLocaleString()}명`} breakdown={shiftStats.map((x) => ({ label: x.label, value: `${Math.round(x.stats.coverage * 100)}%` }))} />
@@ -227,11 +227,11 @@ function ComparePage() {
                 <td className="text-right">{totals.exe.toLocaleString()}</td>
                 <td className={`text-right ${diffTone(totals.hseDiff)}`}>
                   {fmtDiff(totals.hseDiff)}
-                  <span className="block text-[10px] font-normal text-muted-foreground">양쪽 있는 {totals.hsePairs}칸</span>
+                  <span className="block text-[10px] font-normal text-muted-foreground">전체 칸 · 없는 쪽 0</span>
                 </td>
                 <td className={`text-right ${diffTone(totals.exeDiff)}`}>
                   {fmtDiff(totals.exeDiff)}
-                  <span className="block text-[10px] font-normal text-muted-foreground">양쪽 있는 {totals.exePairs}칸</span>
+                  <span className="block text-[10px] font-normal text-muted-foreground">전체 칸 · 없는 쪽 0</span>
                 </td>
                 <td /><td /><td />
               </tr>
@@ -242,8 +242,8 @@ function ComparePage() {
                 <td className="text-right">{r.reported ?? "—"}</td>
                 <td className="text-right">{r.hse_verified ?? "—"}</td>
                 <td className="text-right">{r.exe_verified ?? "—"}</td>
-                <td className={`text-right font-bold ${diffTone(r.hse_diff)}`}>{fmtDiff(r.hse_diff)}</td>
-                <td className={`text-right font-bold ${diffTone(r.exe_diff)}`}>{fmtDiff(r.exe_diff)}</td>
+                <td className={`text-right font-bold ${diffTone(displayDiff(r.hse_verified, r.reported))}`}>{fmtDiff(displayDiff(r.hse_verified, r.reported))}</td>
+                <td className={`text-right font-bold ${diffTone(displayDiff(r.exe_verified, r.reported))}`}>{fmtDiff(displayDiff(r.exe_verified, r.reported))}</td>
                 <td className="text-muted-foreground"><ReporterCell source="SUB" row={r} memberMap={memberMap} /></td>
                 <td className="text-muted-foreground"><ReporterCell source="HDEC" group="HSE" row={r} memberMap={memberMap} /></td>
                 <td className="text-muted-foreground"><ReporterCell source="HDEC" group="EXE" row={r} memberMap={memberMap} /></td>
