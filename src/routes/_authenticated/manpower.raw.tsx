@@ -12,9 +12,10 @@ import { defaultRange } from "@/lib/use-manpower";
 import { fmtDay, riyadhToday } from "@/lib/manpower-model";
 import { MultiSelectFilter, matchMulti } from "@/components/column-filter";
 
+type RawSource = "SUB" | "HDEC";
 type Entry = {
   id: number;
-  source: "SUB" | "HDEC";
+  source: RawSource;
   status: string;
   submission_id: string;
   sheet_row: number;
@@ -30,6 +31,13 @@ type Entry = {
   submitted_at: string | null;
   synced_at: string;
 };
+
+/** HDEC 재집계 기록을 확인자 부서 기준으로 HSE/EXE 로 분리 — SUB 은 그대로 */
+function grpOf(source: RawSource, tgId: string | null, deptByTg: Map<string, string | null>): "SUB" | "HSE" | "EXE" {
+  if (source === "SUB") return "SUB";
+  const dept = tgId ? (deptByTg.get(tgId) ?? null) : null;
+  return dept === "안전 (HSE)" || dept === "안전관리팀" ? "HSE" : "EXE";
+}
 
 const search = z.object({
   rawFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
@@ -83,13 +91,22 @@ function RawDataPage() {
     (data.members as { telegram_id: string; name: string }[]).forEach((x) => m.set(x.telegram_id, x.name));
     return m;
   }, [data.members]);
+  const deptByTg = useMemo(() => {
+    const m = new Map<string, string | null>();
+    (data.members as { telegram_id: string; dept?: string | null }[]).forEach((x) => m.set(x.telegram_id, x.dept ?? null));
+    return m;
+  }, [data.members]);
 
   const [q, setQ] = useState("");
   const [filters, setFilters] = useState<Partial<Record<Key, string[]>>>({});
 
-  const value = useCallback((r: Entry, key: Key): unknown =>
-    key === "reporter" ? (r.reporter_name || (r.reporter_tg_id ? memberName.get(r.reporter_tg_id) : "") || "") : r[key],
-  [memberName]);
+  const grp = useCallback((r: Entry) => grpOf(r.source, r.reporter_tg_id, deptByTg), [deptByTg]);
+
+  const value = useCallback((r: Entry, key: Key): unknown => {
+    if (key === "reporter") return r.reporter_name || (r.reporter_tg_id ? memberName.get(r.reporter_tg_id) : "") || "";
+    if (key === "source") return grp(r);
+    return r[key];
+  }, [memberName, grp]);
 
   const searched = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -120,7 +137,7 @@ function RawDataPage() {
 
   const exportXlsx = () => {
     const rows = shown.map((r) => ({
-      "Report Date": r.report_date, Source: r.source, Status: r.status,
+      "Report Date": r.report_date, Source: grp(r), "Raw Source": r.source, Status: r.status,
       Company: r.company, Location: r.location, Shift: r.shift,
       Staff: r.staff, Safety: r.safety_officer, Operator: r.operator, Worker: r.worker,
       Elec: r.electrician, Scaf: r.scaffolder, Plumb: r.plumber, Subtotal: r.subtotal,
@@ -161,7 +178,7 @@ function RawDataPage() {
       }
     >
       <p className="mb-2 rounded-md border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300">
-        기준: 봇으로 입력된 원본 기록 전체 · 재제출로 대체된 기록(SUPERSEDED) 포함 · 집계 화면은 ACTIVE만 사용
+        기준: 봇으로 입력된 원본 기록 전체 · 재제출로 대체된 기록(SUPERSEDED) 포함 · 집계 화면은 ACTIVE만 사용 · Source는 HDEC 재집계를 확인자 부서 기준으로 HSE/EXE 로 구분
       </p>
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -201,7 +218,7 @@ function RawDataPage() {
             {shown.map((r) => (
               <tr key={r.id} className={`[&>td]:border-b [&>td]:border-border/60 [&>td]:px-2 [&>td]:py-1.5 ${r.status !== "ACTIVE" ? "text-muted-foreground/70 line-through decoration-muted-foreground/40" : ""}`}>
                 <td className="tabular-nums">{r.report_date}</td>
-                <td>{r.source}</td>
+                <td>{grp(r)}</td>
                 <td>
                   <span className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${r.status === "ACTIVE" ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-muted text-muted-foreground"}`}>{r.status}</span>
                 </td>
