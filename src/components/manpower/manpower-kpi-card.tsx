@@ -25,9 +25,9 @@ export function ManpowerKpiCard() {
   const activeNames = new Set(companies.filter((c) => isActiveOn(c, day)).map((c) => c.name));
   const reportedActive = new Set(sub.filter((c) => activeNames.has(c.company)).map((c) => c.company)).size;
 
-  // 건물별 집계 (화면에는 건물명으로 표시)
+  // 건물별 집계 — 주간(Day Shift) 기준 (화면에는 건물명으로 표시)
   const byBldg = new Map<string, number>();
-  for (const c of sub) byBldg.set(c.location, (byBldg.get(c.location) ?? 0) + c.subtotal);
+  for (const c of sub) if (c.shift === "Day Shift") byBldg.set(c.location, (byBldg.get(c.location) ?? 0) + c.subtotal);
   const bldgTop = [...byBldg.entries()]
     .map(([loc, n]) => ({ loc, n }))
     .sort((a, b) => b.n - a.n);
@@ -133,7 +133,7 @@ export function ManpowerKpiCard() {
           </div>
         </div>
       )}
-      <p className="mt-2 text-[10px] text-muted-foreground">기준: 협력사 보고 · 전 조 합계</p>
+      <p className="mt-2 text-[10px] text-muted-foreground">기준: 협력사 보고 · 주간(Day Shift)만</p>
     </div>
   );
 
