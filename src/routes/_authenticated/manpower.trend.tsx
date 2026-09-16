@@ -81,23 +81,27 @@ function TrendPage() {
   const groupOnly = useMemo(() => cards.filter((c) => isAll || selected.includes(keyOf(c))), [cards, keyOf, isAll, selected]);
 
   const days = useMemo(() => dateRange(from, to), [from, to]);
-  const byDate = (src: "SUB" | "HDEC") => {
-    // 재집계(점선)는 수행팀(EXE) 기준
+  /** 재집계는 확인자 부서(HSE·EXE)별로 분리 집계 — 합산하지 않는다 */
+  const byDate = (src: "SUB" | "HDEC", grp?: "HSE" | "EXE") => {
     const m = new Map<string, number>();
-    filtered.filter((c) => c.source === src && isExeRecheck(c)).forEach((c) => m.set(c.report_date, (m.get(c.report_date) ?? 0) + c.subtotal));
+    filtered
+      .filter((c) => c.source === src && (!grp || c.grp === grp))
+      .forEach((c) => m.set(c.report_date, (m.get(c.report_date) ?? 0) + c.subtotal));
     return m;
   };
   const subTotals = useMemo(() => byDate("SUB"), [filtered]);
-  const hdecTotals = useMemo(() => byDate("HDEC"), [filtered]);
+  const exeTotals = useMemo(() => byDate("HDEC", "EXE"), [filtered]);
+  const hseTotals = useMemo(() => byDate("HDEC", "HSE"), [filtered]);
 
-  const chart = days.map((d) => {
-    const rep = subTotals.get(d) ?? 0;
-    const ver = hdecTotals.get(d) ?? 0;
-    return { day: d.slice(5), 보고: rep, 재집계: ver };
-  });
+  const chart = days.map((d) => ({
+    day: d.slice(5),
+    보고: subTotals.get(d) ?? 0,
+    "재집계(EXE)": exeTotals.get(d) ?? 0,
+    "재집계(HSE)": hseTotals.get(d) ?? 0,
+  }));
 
   // 차트 크기: X축(일수)·Y축(최대값)에 따라 가변 — 영역 폭은 고정, 내부만 스크롤
-  const dailyMax = Math.max(1, ...chart.map((r) => Math.max(r.보고, r.재집계)));
+  const dailyMax = Math.max(1, ...chart.map((r) => Math.max(r.보고, r["재집계(EXE)"], r["재집계(HSE)"])));
   const chartWidth = Math.max(640, days.length * (days.length > 45 ? 26 : 44));
   const chartHeight = dailyMax > 800 ? 520 : dailyMax > 400 ? 460 : dailyMax > 150 ? 400 : 340;
 
@@ -139,7 +143,7 @@ function TrendPage() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(chart.map((r, i) => ({
       일자: days[i], 근무일: isWorkday(days[i]!) ? "Y" : "N",
-      보고: r.보고, 재집계: r.재집계,
+      보고: r.보고, "재집계(EXE)": r["재집계(EXE)"], "재집계(HSE)": r["재집계(HSE)"],
     }))), "출면추이");
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(byGroup.map(([c, v]) => ({ [DIM_LABEL[dim]]: c, 연인원: v.total, 주간: v.day, 연장: v.ot, 야간: v.night }))), DIM_LABEL[dim]);
     XLSX.writeFile(wb, `HMMME_출면추이_${from.replace(/-/g, "")}_${to.replace(/-/g, "")}.xlsx`);
@@ -167,7 +171,7 @@ function TrendPage() {
       }
     >
       <p className="mb-2 rounded-md border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300">
-        기준: 협력사 보고(실선) · 수행팀(EXE) 재집계(점선) · 조 필터 「{shift}」이(가) 아래 카드·차트·표에 모두 적용됩니다.
+        기준: 협력사 보고(실선) · 당사 재집계는 수행팀(EXE)·안전팀(HSE)을 분리한 점선 2개 · 조 필터 「{shift}」이(가) 아래 카드·차트·표에 모두 적용됩니다.
       </p>
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label="연인원" value={sum.toLocaleString()} sub={`${DIM_LABEL[dim]} · ${selLabel}`} breakdown={shiftSummary.slice(1).map((x) => ({ label: x.label, value: x.total.toLocaleString() }))} />
@@ -201,7 +205,8 @@ function TrendPage() {
             <Tooltip contentStyle={{ fontSize: 12 }} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
             <Line type="monotone" dataKey="보고" stroke="var(--chart-1)" dot={{ r: 2 }} strokeWidth={2} isAnimationActive={false} />
-            <Line type="monotone" dataKey="재집계" stroke="var(--chart-4)" dot={{ r: 2 }} strokeWidth={2} strokeDasharray="5 4" isAnimationActive={false} />
+            <Line type="monotone" dataKey="재집계(EXE)" stroke="var(--chart-4)" dot={{ r: 2 }} strokeWidth={2} strokeDasharray="5 4" isAnimationActive={false} />
+            <Line type="monotone" dataKey="재집계(HSE)" stroke="var(--chart-2)" dot={{ r: 2 }} strokeWidth={2} strokeDasharray="2 3" isAnimationActive={false} />
           </ComposedChart>
         </div>
       </section>

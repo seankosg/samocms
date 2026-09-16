@@ -37,7 +37,7 @@ function buildMatrix(
 ) {
   const rows = new Map<string, Map<string, MatrixCell>>();
   const colSet = new Set<string>();
-  cards.filter((c) => c.source === source && isExeRecheck(c)).forEach((c) => {
+  cards.filter((c) => c.source === source).forEach((c) => {
     const n = matrixCount(c);
     if (!n) return;
     const [rk, ck] = mode === "company" ? [c.company, c.location] : [c.location, c.company];
@@ -66,7 +66,13 @@ function buildMatrix(
 }
 import { MP, TRADE_LABEL } from "@/lib/manpower-i18n";
 
-const search = z.object({ day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), src: z.enum(["SUB", "HDEC"]).optional() });
+/** 화면 탭: 협력사 보고 / 안전팀(HSE) 재집계 / 수행팀(EXE) 재집계 — 재집계는 부서별로 분리 집계 */
+type View = "SUB" | "HSE" | "EXE";
+const VIEW_LABEL: Record<View, string> = { SUB: "협력사 보고", HSE: "안전팀(HSE) 재집계", EXE: "수행팀(EXE) 재집계" };
+const search = z.object({
+  day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  src: z.enum(["SUB", "HSE", "EXE", "HDEC"]).optional(),
+});
 
 export const Route = createFileRoute("/_authenticated/manpower/")({
   head: () => ({ meta: [
@@ -87,7 +93,10 @@ function ManpowerPage() {
   const s = Route.useSearch();
   const navigate = Route.useNavigate();
   const day = s.day ?? riyadhToday();
-  const source: Source = s.src ?? "SUB";
+  // 이전 링크 호환: src=HDEC 는 수행팀(EXE) 탭으로 취급
+  const view: View = s.src === "HDEC" ? "EXE" : (s.src ?? "SUB");
+  const viewLabel = VIEW_LABEL[view];
+  const source: Source = view === "SUB" ? "SUB" : "HDEC";
   const { cards, companies, locations, settings, cutoff, lastReceivedAt, reminderLog, memberMap } = useManpower(day, day);
   /** 오늘 미보고 알림이 발송된 횟수 (협력사별) */
   const reminderCount = useMemo(() => {
@@ -100,7 +109,11 @@ function ManpowerPage() {
   const [exportOpen, setExportOpen] = useState(false);
 
   const dayCards = useMemo(() => cards.filter((c) => c.report_date === day), [cards, day]);
-  const shown = useMemo(() => dayCards.filter((c) => c.source === source && isExeRecheck(c)), [dayCards, source]);
+  // 재집계는 확인자 부서(HSE/EXE) 기준으로 분리 집계
+  const shown = useMemo(
+    () => dayCards.filter((c) => c.source === source && (view === "SUB" || c.grp === view)),
+    [dayCards, source, view],
+  );
   const daily = useMemo(() => toDaily(shown), [shown]);
   const totals = useMemo(() => tradeTotals(shown, source), [shown, source]);
   const comp = useMemo(() => compliance(dayCards, companies, day, cutoff), [dayCards, companies, day, cutoff]);
@@ -165,9 +178,9 @@ function ManpowerPage() {
       name: matrixMode === "company" ? "협력사×장소" : "장소×협력사",
       aoa: [head1, head2, ...body, totalLine], headerRows: 2, merges, freezeCols: 5, minColWidth: 9,
       title: `출면 현황 - ${matrixMode === "company" ? "협력사 × 장소" : "장소 × 협력사"} (Worker·Elec·Plumb·Scaf)`,
-      subtitle: `기준일 ${fmtDay(day)} · ${source === "SUB" ? MP.sub : MP.hdec}`,
+      subtitle: `기준일 ${fmtDay(day)} · ${viewLabel}`,
     };
-  }, [matrix, matrixMode, day, source]);
+  }, [matrix, matrixMode, day, viewLabel]);
 
   /** 매트릭스만 단일 파일로 내려받기 */
   const exportMatrix = useCallback(async () => {
@@ -177,8 +190,8 @@ function ManpowerPage() {
     XLSXS.utils.book_append_sheet(wb, styledAoaSheet(ex.aoa, 2, {
       title: ex.title, subtitle: ex.subtitle, merges: ex.merges, freezeCols: ex.freezeCols, minColWidth: ex.minColWidth,
     }), ex.name);
-    XLSXS.writeFile(wb, `출면매트릭스_${day.replace(/-/g, "")}_${source}.xlsx`);
-  }, [matrixSheet, day, source]);
+    XLSXS.writeFile(wb, `출면매트릭스_${day.replace(/-/g, "")}_${view}.xlsx`);
+  }, [matrixSheet, day, view]);
 
   /** 단일 파일 모드에 함께 담는 추가 시트: 협력사 집계 + 매트릭스 */
   const getExtraSheets = useCallback((): ExtraSheet[] => {
@@ -193,15 +206,15 @@ function ManpowerPage() {
         ...TRADES.map((t) => totals[t]), totals.total, ""],
     ];
     return [
-      { name: "협력사집계", aoa: summary, headerRows: 1, title: `출면 현황 - 협력사 집계 (${source === "SUB" ? MP.sub : MP.hdec})`, subtitle: `기준일 ${fmtDay(day)}` },
+      { name: "협력사집계", aoa: summary, headerRows: 1, title: `출면 현황 - 협력사 집계 (${viewLabel})`, subtitle: `기준일 ${fmtDay(day)}` },
       matrixSheet(),
     ];
-  }, [daily, totals, matrixSheet, day, source]);
+  }, [daily, totals, matrixSheet, day, viewLabel]);
 
   return (
     <AppShell
       title={MP.daily}
-      desc={`${fmtDay(day)} · ${source === "SUB" ? MP.sub : MP.hdec} · 총 ${totals.total.toLocaleString()}명 · 주간 ${daily.reduce((a, d) => a + d.day_total, 0).toLocaleString()}명 · 연장 ${daily.reduce((a, d) => a + d.ot_total, 0).toLocaleString()}명 · 야간 ${daily.reduce((a, d) => a + d.night_total, 0).toLocaleString()}명 · 카드 ${shown.length}건${
+      desc={`${fmtDay(day)} · ${viewLabel} · 총 ${totals.total.toLocaleString()}명 · 주간 ${daily.reduce((a, d) => a + d.day_total, 0).toLocaleString()}명 · 연장 ${daily.reduce((a, d) => a + d.ot_total, 0).toLocaleString()}명 · 야간 ${daily.reduce((a, d) => a + d.night_total, 0).toLocaleString()}명 · 카드 ${shown.length}건${
         lastReceivedAt ? ` · 마지막 수신 ${new Date(lastReceivedAt).toLocaleString("ko-KR", { timeZone: "Asia/Riyadh", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}` : ""
       }`}
 
@@ -213,21 +226,25 @@ function ManpowerPage() {
         </>
       }
     >
-      <Tabs value={source} onValueChange={(v) => navigate({ search: (p) => ({ ...p, src: v as Source }), replace: true })} className="mb-4">
-        <TabsList><TabsTrigger value="SUB">{MP.sub}</TabsTrigger><TabsTrigger value="HDEC">{MP.hdec}</TabsTrigger></TabsList>
+      <Tabs value={view} onValueChange={(v) => navigate({ search: (p) => ({ ...p, src: v as View }), replace: true })} className="mb-4">
+        <TabsList>
+          <TabsTrigger value="SUB">{MP.sub}</TabsTrigger>
+          <TabsTrigger value="HSE">안전팀(HSE) 재집계</TabsTrigger>
+          <TabsTrigger value="EXE">수행팀(EXE) 재집계</TabsTrigger>
+        </TabsList>
       </Tabs>
 
-      {source === "HDEC" && (
+      {view !== "SUB" && (
         <p className="mb-4 rounded-md border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300">
-          수행팀(EXE) 재집계 기준 · 안전팀(HSE) 재집계는 검증 대조 화면에서 확인할 수 있습니다.
+          {viewLabel} 기준 · 당사 재집계는 확인자 부서(HSE·EXE)별로 분리 집계하며 합산하지 않습니다.
         </p>
       )}
 
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label={MP.headcount} value={totals.total.toLocaleString()} sub={`${MP.day} ${daily.reduce((a, d) => a + d.day_total, 0)} · ${MP.ot} ${daily.reduce((a, d) => a + d.ot_total, 0)} · ${MP.night} ${daily.reduce((a, d) => a + d.night_total, 0)} · ${source === "SUB" ? "협력사 보고" : "수행팀(EXE) 재집계"} 기준`} />
+        <Kpi label={MP.headcount} value={totals.total.toLocaleString()} sub={`${MP.day} ${daily.reduce((a, d) => a + d.day_total, 0)} · ${MP.ot} ${daily.reduce((a, d) => a + d.ot_total, 0)} · ${MP.night} ${daily.reduce((a, d) => a + d.night_total, 0)} · ${viewLabel} 기준`} />
         {/* 준수율·미보고는 협력사 보고 전용 지표 — 재집계 탭에서는 재집계 기준 지표만 표시(기준 혼재 방지) */}
-        {source === "SUB" ? (
+        {view === "SUB" ? (
           <>
             <Kpi label="보고 협력사" value={`${new Set(shown.filter((c) => isActiveName.has(c.company)).map((c) => c.company)).size} / ${comp.total}`}
               sub={`협력사 보고 기준 · 장소 ${locs.length}곳${comp.outOfScope.length ? ` · 대상 외 ${comp.outOfScope.join(", ")}` : ""}`} />
@@ -242,9 +259,9 @@ function ManpowerPage() {
           </>
         ) : (
           <>
-            <Kpi label="재집계 협력사" value={String(new Set(shown.map((c) => c.company)).size)} sub="수행팀(EXE) 재집계 기준" />
-            <Kpi label="재집계 장소" value={`${locs.length}곳`} sub="수행팀(EXE) 재집계 기준" />
-            <Kpi label="재집계 입력자" value={String(new Set(shown.map((c) => c.reporter_name).filter(Boolean)).size)} sub={`카드 ${shown.length}건 · 수행팀(EXE) 기준`} />
+            <Kpi label="재집계 협력사" value={String(new Set(shown.map((c) => c.company)).size)} sub={`${viewLabel} 기준`} />
+            <Kpi label="재집계 장소" value={`${locs.length}곳`} sub={`${viewLabel} 기준`} />
+            <Kpi label="재집계 입력자" value={String(new Set(shown.map((c) => c.reporter_name).filter(Boolean)).size)} sub={`카드 ${shown.length}건 · ${viewLabel} 기준`} />
           </>
         )}
       </div>
@@ -258,7 +275,7 @@ function ManpowerPage() {
       <section className="mb-6 overflow-x-auto rounded-lg border border-border shadow-sm">
         <table className="w-full min-w-[900px] border-collapse text-xs tabular-nums">
           <caption className="px-3 py-2 text-left text-[11px] text-muted-foreground">
-            기준: {source === "SUB" ? "협력사 보고" : "수행팀(EXE) 재집계"} · {fmtDay(day)} · 전 조(주간·연장·야간) 합계 ·
+            기준: {viewLabel} · {fmtDay(day)} · 전 조(주간·연장·야간) 합계 ·
             Staff·Safety·Operator 등 직종 인원은 이 표에서만 집계합니다.
           </caption>
           <thead>
@@ -338,7 +355,7 @@ function ManpowerPage() {
                 <tr key={rowKey} className={`transition-colors hover:bg-primary/5 ${ri % 2 ? "bg-muted/20" : ""} [&>td]:border-b [&>td]:border-border/50 [&>td]:px-2 [&>td]:py-1.5 [&>td]:text-right [&>td:first-child]:text-left`}>
                   <td className={`sticky left-0 z-10 w-[150px] min-w-[150px] font-semibold shadow-[2px_0_0_0_hsl(var(--border))] ${ri % 2 ? "bg-muted/40" : "bg-card"}`}>
                     {rowKey}
-                    {matrixMode === "company" && source === "SUB" && comp.missing.includes(rowKey) && (
+                    {matrixMode === "company" && view === "SUB" && comp.missing.includes(rowKey) && (
                       <span className="ml-1.5 inline-block rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
                         {MP.notReported}{(reminderCount.get(rowKey) ?? 0) > 0 ? ` · ${MP.reminderSent} ${reminderCount.get(rowKey)}회` : ""}
                       </span>
@@ -389,9 +406,9 @@ function ManpowerPage() {
         title="출면 현황 내보내기"
         getRows={getRows}
         extraSheets={getExtraSheets}
-        fileBase={`HMMME_출면현황_${source}_${day.replace(/-/g, "")}`}
+        fileBase={`HMMME_출면현황_${view}_${day.replace(/-/g, "")}`}
         sheetName="출면카드"
-        docLabel={`출면 현황 (${source === "SUB" ? MP.sub : MP.hdec})`}
+        docLabel={`출면 현황 (${viewLabel})`}
         subtitle={`기준일 ${fmtDay(day)} · 총 ${totals.total.toLocaleString()}명 · 카드 ${shown.length}건`}
       />
     </AppShell>
