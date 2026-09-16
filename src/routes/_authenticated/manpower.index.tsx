@@ -275,7 +275,7 @@ function ManpowerPage() {
       <section className="mb-6 overflow-x-auto rounded-lg border border-border shadow-sm">
         <table className="w-full min-w-[900px] border-collapse text-xs tabular-nums">
           <caption className="px-3 py-2 text-left text-[11px] text-muted-foreground">
-            기준: {source === "SUB" ? "협력사 보고" : "수행팀(EXE) 재집계"} · {fmtDay(day)} · 전 조(주간·연장·야간) 합계 ·
+            기준: {viewLabel} · {fmtDay(day)} · 전 조(주간·연장·야간) 합계 ·
             Staff·Safety·Operator 등 직종 인원은 이 표에서만 집계합니다.
           </caption>
           <thead>
@@ -355,7 +355,7 @@ function ManpowerPage() {
                 <tr key={rowKey} className={`transition-colors hover:bg-primary/5 ${ri % 2 ? "bg-muted/20" : ""} [&>td]:border-b [&>td]:border-border/50 [&>td]:px-2 [&>td]:py-1.5 [&>td]:text-right [&>td:first-child]:text-left`}>
                   <td className={`sticky left-0 z-10 w-[150px] min-w-[150px] font-semibold shadow-[2px_0_0_0_hsl(var(--border))] ${ri % 2 ? "bg-muted/40" : "bg-card"}`}>
                     {rowKey}
-                    {matrixMode === "company" && source === "SUB" && comp.missing.includes(rowKey) && (
+                    {matrixMode === "company" && view === "SUB" && comp.missing.includes(rowKey) && (
                       <span className="ml-1.5 inline-block rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
                         {MP.notReported}{(reminderCount.get(rowKey) ?? 0) > 0 ? ` · ${MP.reminderSent} ${reminderCount.get(rowKey)}회` : ""}
                       </span>
@@ -406,9 +406,9 @@ function ManpowerPage() {
         title="출면 현황 내보내기"
         getRows={getRows}
         extraSheets={getExtraSheets}
-        fileBase={`HMMME_출면현황_${source}_${day.replace(/-/g, "")}`}
+        fileBase={`HMMME_출면현황_${view}_${day.replace(/-/g, "")}`}
         sheetName="출면카드"
-        docLabel={`출면 현황 (${source === "SUB" ? MP.sub : MP.hdec})`}
+        docLabel={`출면 현황 (${viewLabel})`}
         subtitle={`기준일 ${fmtDay(day)} · 총 ${totals.total.toLocaleString()}명 · 카드 ${shown.length}건`}
       />
     </AppShell>
