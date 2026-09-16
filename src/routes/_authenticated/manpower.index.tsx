@@ -37,7 +37,7 @@ function buildMatrix(
 ) {
   const rows = new Map<string, Map<string, MatrixCell>>();
   const colSet = new Set<string>();
-  cards.filter((c) => c.source === source && isExeRecheck(c)).forEach((c) => {
+  cards.filter((c) => c.source === source).forEach((c) => {
     const n = matrixCount(c);
     if (!n) return;
     const [rk, ck] = mode === "company" ? [c.company, c.location] : [c.location, c.company];
@@ -66,7 +66,13 @@ function buildMatrix(
 }
 import { MP, TRADE_LABEL } from "@/lib/manpower-i18n";
 
-const search = z.object({ day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), src: z.enum(["SUB", "HDEC"]).optional() });
+/** 화면 탭: 협력사 보고 / 안전팀(HSE) 재집계 / 수행팀(EXE) 재집계 — 재집계는 부서별로 분리 집계 */
+type View = "SUB" | "HSE" | "EXE";
+const VIEW_LABEL: Record<View, string> = { SUB: "협력사 보고", HSE: "안전팀(HSE) 재집계", EXE: "수행팀(EXE) 재집계" };
+const search = z.object({
+  day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  src: z.enum(["SUB", "HSE", "EXE", "HDEC"]).optional(),
+});
 
 export const Route = createFileRoute("/_authenticated/manpower/")({
   head: () => ({ meta: [
