@@ -178,7 +178,7 @@ function RawDataPage() {
       }
     >
       <p className="mb-2 rounded-md border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300">
-        기준: 봇으로 입력된 원본 기록 전체 · 재제출로 대체된 기록(SUPERSEDED) 포함 · 집계 화면은 ACTIVE만 사용
+        기준: 봇으로 입력된 원본 기록 전체 · 재제출로 대체된 기록(SUPERSEDED) 포함 · 집계 화면은 ACTIVE만 사용 · Source는 HDEC 재집계를 확인자 부서 기준으로 HSE/EXE 로 구분
       </p>
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
