@@ -51,5 +51,5 @@ export const RESULT_LABEL: Record<string, string> = {
   MATCH: "일치",
   DIFF: "차이",
   "HDEC ONLY": "HDEC 단독",
-  "NOT COUNTED": "미집계",
+  "NOT COUNTED": "미확인",
 };

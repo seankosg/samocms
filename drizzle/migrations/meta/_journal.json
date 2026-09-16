@@ -239,6 +239,13 @@
       "when": 1789470286391,
       "tag": "0033_owner_role_can_edit_slot",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1789576148964,
+      "tag": "0034_fix_manpower_compare_active_only",
+      "breakpoints": true
     }
   ]
 }

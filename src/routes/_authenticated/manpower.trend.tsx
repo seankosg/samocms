@@ -106,7 +106,7 @@ function TrendPage() {
 
   const byGroup = useMemo(() => {
     const m = new Map<string, { total: number; day: number; ot: number; night: number }>();
-    cards.filter((c) => c.source === "SUB").forEach((c) => {
+    filtered.filter((c) => c.source === "SUB").forEach((c) => {
       const key = keyOf(c);
       const row = m.get(key) ?? { total: 0, day: 0, ot: 0, night: 0 };
       row.total += c.subtotal;
@@ -116,7 +116,7 @@ function TrendPage() {
       m.set(key, row);
     });
     return [...m.entries()].sort((a, b) => b[1].total - a[1].total);
-  }, [cards, keyOf]);
+  }, [filtered, keyOf]);
   const groupSums = byGroup.reduce((a, [, x]) => ({ total: a.total + x.total, day: a.day + x.day, ot: a.ot + x.ot, night: a.night + x.night }), { total: 0, day: 0, ot: 0, night: 0 });
   const selectedSub = useMemo(() => groupOnly.filter((c) => c.source === "SUB"), [groupOnly]);
   const shiftSummary = useMemo(() => {
@@ -129,6 +129,10 @@ function TrendPage() {
     return [make("전조"), make("주간", "Day Shift"), make("연장", "Overtime"), make("야간", "Night Shift")];
   }, [selectedSub]);
   const allShiftSummary = shiftSummary[0] ?? { label: "전조", total: 0, reportDays: 0, avg: 0 };
+  /** 현재 선택된 조에 맞는 요약 — 상단 수치와 세부 내역이 같은 범위를 보게 한다 */
+  const curShiftSummary =
+    shift === "전체" ? allShiftSummary
+    : shiftSummary[["전조", "주간", "연장", "야간"].indexOf(shift)] ?? allShiftSummary;
 
   const exportXlsx = () => {
     const wb = XLSX.utils.book_new();
@@ -163,7 +167,7 @@ function TrendPage() {
     >
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label="연인원" value={sum.toLocaleString()} sub={`${DIM_LABEL[dim]} · ${selLabel}`} breakdown={shiftSummary.slice(1).map((x) => ({ label: x.label, value: x.total.toLocaleString() }))} />
-        <Kpi label="일일투입평균" value={allShiftSummary.avg.toFixed(1)} sub={`실제 보고일 ${allShiftSummary.reportDays}일`} breakdown={shiftSummary.slice(1).map((x) => ({ label: x.label, value: x.avg.toFixed(1) }))} />
+        <Kpi label="일일투입평균" value={curShiftSummary.avg.toFixed(1)} sub={`${selLabel} · 실제 보고일 ${curShiftSummary.reportDays}일`} breakdown={shiftSummary.slice(1).map((x) => ({ label: x.label, value: x.avg.toFixed(1) }))} />
         <Kpi label="최대 투입일" value={String(subTotals.get(peakDay) ?? 0)} sub={peakDay} />
         <Kpi label={DIM_LABEL[dim].replace("별", " 수")} value={String(byGroup.length)} sub={byGroup[0] ? `최다 ${byGroup[0][0]}` : ""} />
       </div>
@@ -200,7 +204,9 @@ function TrendPage() {
 
       <MonthlyShiftChart cards={groupOnly} />
 
-      <h2 className="mb-2 text-sm font-bold">{DIM_LABEL[dim]} 연인원</h2>
+      <h2 className="mb-2 text-sm font-bold">
+        {DIM_LABEL[dim]} 연인원 <span className="text-xs font-normal text-muted-foreground">{selLabel}</span>
+      </h2>
       <section className="overflow-x-auto rounded-md border border-border">
         <table className="w-full min-w-[820px] text-xs">
           <caption className="sr-only">{DIM_LABEL[dim]} 기간 연인원</caption>

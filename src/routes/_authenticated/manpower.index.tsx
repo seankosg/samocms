@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/use-auth";
 import { manpowerRangeQuery, useManpower } from "@/lib/use-manpower";
 import {
-  TRADES, cardMismatch, compliance, fmtDay, riyadhToday, riyadhTime,
+  TRADES, cardMismatch, compliance, fmtDay, isActiveOn, riyadhToday, riyadhTime,
   toDaily, tradeTotals, reporterLabel, type Card as MpCard, type Source,
 } from "@/lib/manpower-model";
 
@@ -104,6 +104,7 @@ function ManpowerPage() {
   const daily = useMemo(() => toDaily(shown), [shown]);
   const totals = useMemo(() => tradeTotals(shown, source), [shown, source]);
   const comp = useMemo(() => compliance(dayCards, companies, day, cutoff), [dayCards, companies, day, cutoff]);
+  const isActiveName = useMemo(() => new Set(companies.filter((c) => isActiveOn(c, day)).map((c) => c.name)), [companies, day]);
   const allLocNames = useMemo(
     () => locations.filter((l) => l.is_active).map((l) => l.name).sort((a, b) => a.localeCompare(b)),
     [locations],
@@ -218,7 +219,8 @@ function ManpowerPage() {
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label={MP.headcount} value={totals.total.toLocaleString()} sub={`${MP.day} ${daily.reduce((a, d) => a + d.day_total, 0)} · ${MP.ot} ${daily.reduce((a, d) => a + d.ot_total, 0)} · ${MP.night} ${daily.reduce((a, d) => a + d.night_total, 0)}`} />
-        <Kpi label="보고 협력사" value={`${new Set(shown.map((c) => c.company)).size} / ${companies.filter((c) => c.is_active).length}`} sub={`장소 ${locs.length}곳`} />
+        <Kpi label="보고 협력사" value={`${new Set(shown.filter((c) => isActiveName.has(c.company)).map((c) => c.company)).size} / ${comp.total}`}
+          sub={`장소 ${locs.length}곳${comp.outOfScope.length ? ` · 대상 외 ${comp.outOfScope.join(", ")}` : ""}`} />
         <Kpi label={MP.compliance} value={`${Math.round(comp.rate * 100)}%`} sub={`마감 ${cutoff} 이전 ${comp.n}/${comp.total}개사`} />
         <Kpi label={MP.notReported} value={String(comp.missing.length)} tone={comp.missing.length ? "warn" : "ok"}
           sub={comp.missing.length

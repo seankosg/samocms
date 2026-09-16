@@ -99,7 +99,13 @@ export type CompanyMaster = {
   contract_no: string | null;
   sort_order: number;
   is_active: boolean;
+  active_from?: string | null;
+  active_to?: string | null;
 };
+
+/** 해당 날짜 기준 활성 회사인지 (is_active + 활성 기간) */
+export const isActiveOn = (c: CompanyMaster, day: string) =>
+  c.is_active && (c.active_from == null || c.active_from <= day) && (c.active_to == null || c.active_to >= day);
 export type LocationMaster = {
   name: string;
   bldg_code: string | null;
@@ -205,13 +211,16 @@ export function movingAverage(days: string[], totals: Map<string, number>, isWor
   });
 }
 
-/** 보고 준수율 — 마감 전에 Day Shift 카드가 들어온 활성 회사 ÷ 활성 회사 */
+/** 보고 준수율 — 마감 전에 Day Shift 카드가 들어온 활성 회사 ÷ 활성 회사 (비활성 회사 보고는 대상 외로 분리) */
 export function compliance(cards: Card[], companies: CompanyMaster[], day: string, cutoff: string) {
-  const active = companies.filter((c) => c.is_active);
+  const active = companies.filter((c) => isActiveOn(c, day));
+  const activeNames = new Set(active.map((c) => c.name));
   const onTime = new Set<string>();
   const reported = new Set<string>();
+  const outOfScope = new Set<string>();
   cards.forEach((c) => {
     if (c.source !== "SUB" || c.report_date !== day) return;
+    if (!activeNames.has(c.company)) { outOfScope.add(c.company); return; }
     reported.add(c.company);
     if (c.shift !== "Day Shift") return;
     if (!c.submitted_at) return;
@@ -222,6 +231,8 @@ export function compliance(cards: Card[], companies: CompanyMaster[], day: strin
     total: active.length,
     rate: active.length ? onTime.size / active.length : 0,
     missing: active.filter((c) => !reported.has(c.name)).map((c) => c.name),
+    /** 비활성(대상 외) 회사가 보고한 경우 그 회사명 목록 */
+    outOfScope: [...outOfScope].sort(),
   };
 }
 
@@ -232,10 +243,14 @@ export function verificationStats(rows: CompareRow[]) {
   const match = rows.filter((r) => r.result === "MATCH").length;
   const diff = rows.filter((r) => r.result === "DIFF");
   const hdecOnly = rows.filter((r) => r.result === "HDEC ONLY").length;
+  const pending = rows.filter((r) => r.reported != null && r.verified == null);
   return {
     coverage: subCards ? covered / subCards : 0,
     coveredCards: covered,
     subCards,
+    /** 아직 재집계가 없는 칸 수와 그 인원 합 (차이가 아니라 미확인) */
+    pendingCards: pending.length,
+    pendingHeadcount: pending.reduce((s, r) => s + (r.reported ?? 0), 0),
     matchRate: match + diff.length ? match / (match + diff.length) : 0,
     avgAbsDiff: diff.length ? diff.reduce((s, r) => s + Math.abs(r.diff ?? 0), 0) / diff.length : 0,
     hdecOnly,
