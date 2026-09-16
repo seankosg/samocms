@@ -64,7 +64,9 @@ function ComparePage() {
   const [exportOpen, setExportOpen] = useState(false);
   const [columnFilters, setColumnFilters] = useState<Partial<Record<ColumnFilterKey, string[]>>>({});
 
-  const rows = useMemo(() => compare.filter((r) => r.report_date === day), [compare, day]);
+  // 기준 통일: 판정(일치/차이/미확인/HDEC 단독)은 수행팀(EXE) 재집계 기준 — 대시보드와 같은 기준
+  const exeCompare = useMemo(() => toExeBasis(compare), [compare]);
+  const rows = useMemo(() => exeCompare.filter((r) => r.report_date === day), [exeCompare, day]);
   const stats = useMemo(() => verificationStats(rows), [rows]);
   const shiftStats = useMemo(() => ([
     ["주간", "Day Shift"], ["연장", "Overtime"], ["야간", "Night Shift"],

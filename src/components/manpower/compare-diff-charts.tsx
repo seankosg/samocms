@@ -97,7 +97,8 @@ export function CompareDiffCharts({ rows, day }: { rows: CompareRow[]; day: stri
           ) : <Empty />}
         </div>
         <p className="mt-1 text-[11px] text-muted-foreground">
-          차이 = HDEC 재집계 − 협력사 보고. 음수(빨강)는 보고가 더 많고, 양수(초록)는 재집계가 더 많습니다.
+          기준: 차이 = 수행팀(EXE) 재집계 − 협력사 보고 · 양쪽 모두 있는 칸만 · 기간 {daily[0]?.date ?? "—"} ~ {day}.
+          음수(빨강)는 보고가 더 많고, 양수(초록)는 재집계가 더 많습니다.
         </p>
       </div>
 
