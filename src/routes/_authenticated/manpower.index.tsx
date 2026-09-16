@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/use-auth";
 import { manpowerRangeQuery, useManpower } from "@/lib/use-manpower";
 import {
-  TRADES, cardMismatch, compliance, fmtDay, isActiveOn, riyadhToday, riyadhTime,
+  TRADES, cardMismatch, compliance, fmtDay, isActiveOn, isExeRecheck, riyadhToday, riyadhTime,
   toDaily, tradeTotals, reporterLabel, type Card as MpCard, type Source,
 } from "@/lib/manpower-model";
 
