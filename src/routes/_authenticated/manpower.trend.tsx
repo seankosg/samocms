@@ -155,7 +155,7 @@ function TrendPage() {
   return (
     <AppShell
       title={MP.trend}
-      desc={`${from} ~ ${to} · 근무일 ${workDays.length}일 · 연인원 ${sum.toLocaleString()}명`}
+      desc={`${from} ~ ${to} · 근무일 ${workDays.length}일 · 연인원 ${allShiftSummary.total.toLocaleString()}명`}
       actions={
         <>
           <Tabs value={dim} onValueChange={(v) => navigate({ search: (p) => ({ ...p, mpDim: v as Dim, mpVal: "전체" }), replace: true })}>
@@ -174,7 +174,7 @@ function TrendPage() {
         기준: 협력사 보고(실선) · 당사 재집계는 수행팀(EXE)·안전팀(HSE)을 분리한 점선 2개 · 조 필터 「{shift}」이(가) 아래 카드·차트·표에 모두 적용됩니다.
       </p>
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="연인원" value={sum.toLocaleString()} sub={`${DIM_LABEL[dim]} · ${selLabel}`} breakdown={shiftSummary.slice(1).map((x) => ({ label: x.label, value: x.total.toLocaleString() }))} />
+        <Kpi label="연인원" value={allShiftSummary.total.toLocaleString()} sub={`${DIM_LABEL[dim]} · ${selLabel} (전조 합)`} breakdown={shiftSummary.slice(1).map((x) => ({ label: x.label, value: x.total.toLocaleString() }))} />
         <Kpi label="일일투입평균" value={curShiftSummary.avg.toFixed(1)} sub={`${selLabel} · 실제 보고일 ${curShiftSummary.reportDays}일`} breakdown={shiftSummary.slice(1).map((x) => ({ label: x.label, value: x.avg.toFixed(1) }))} />
         <Kpi label="최대 투입일" value={String(subTotals.get(peakDay) ?? 0)} sub={peakDay} />
         <Kpi label={DIM_LABEL[dim].replace("별", " 수")} value={String(byGroup.length)} sub={byGroup[0] ? `최다 ${byGroup[0][0]}` : ""} />
