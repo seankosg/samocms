@@ -12,9 +12,10 @@ import { defaultRange } from "@/lib/use-manpower";
 import { fmtDay, riyadhToday } from "@/lib/manpower-model";
 import { MultiSelectFilter, matchMulti } from "@/components/column-filter";
 
+type RawSource = "SUB" | "HDEC";
 type Entry = {
   id: number;
-  source: "SUB" | "HDEC";
+  source: RawSource;
   status: string;
   submission_id: string;
   sheet_row: number;
@@ -30,6 +31,13 @@ type Entry = {
   submitted_at: string | null;
   synced_at: string;
 };
+
+/** HDEC 재집계 기록을 확인자 부서 기준으로 HSE/EXE 로 분리 — SUB 은 그대로 */
+function grpOf(source: RawSource, tgId: string | null, deptByTg: Map<string, string | null>): "SUB" | "HSE" | "EXE" {
+  if (source === "SUB") return "SUB";
+  const dept = tgId ? (deptByTg.get(tgId) ?? null) : null;
+  return dept === "안전 (HSE)" || dept === "안전관리팀" ? "HSE" : "EXE";
+}
 
 const search = z.object({
   rawFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
