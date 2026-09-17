@@ -277,9 +277,37 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
           fileBase={fileName.replace(/\.xlsx$/, "")}
           sheetName="Data"
           docLabel={`${fileName.replace(/\.xlsx$/, "").replace(/^HMMME_/, "")} · 기준일 ${fmtDate(base)}`}
-          subtitle={`기준일: ${fmtDate(base)}${asOf ? " (시점 누계)" : ""}`}
+          subtitle={`기준일: ${fmtDate(base)}${asOf ? " (시점 누계)" : ""}${seriesOn && validRange ? ` · 누계 공정율 ${fmtDate(sFrom)} ~ ${fmtDate(sTo)}` : ""}`}
           dateStamp={base.replace(/-/g, "")}
+          optionsSlot={
+            <div className="rounded-md border p-3">
+              <label className="flex cursor-pointer items-start gap-3">
+                <Checkbox checked={seriesOn} onCheckedChange={(c) => setSeriesOn(!!c)} className="mt-0.5" />
+                <div className="flex-1">
+                  <span className="text-sm font-medium">누계 공정율 내려받기</span>
+                  <p className="mt-1 text-xs text-muted-foreground">기간 내 날짜마다 누계 계획(%)·실적(%) 열을 추가합니다.</p>
+                </div>
+              </label>
+              {seriesOn && (
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Input type="date" value={sFrom} onChange={(e) => setSFrom(e.target.value)} className="h-8 text-xs" />
+                    <span className="text-xs text-muted-foreground">~</span>
+                    <Input type="date" value={sTo} onChange={(e) => setSTo(e.target.value)} className="h-8 text-xs" />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    {!validRange
+                      ? "시작일이 종료일보다 늦습니다."
+                      : seriesQ.isLoading
+                        ? "기록을 불러오는 중..."
+                        : `날짜 ${seriesDates.length}일 · 열 ${seriesDates.length * 2}개 추가 · 기록 없는 날은 직전 값 유지`}
+                  </p>
+                </div>
+              )}
+            </div>
+          }
         />
+
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto border-b border-border bg-muted/40 px-3 py-2 text-xs whitespace-nowrap sm:flex-wrap sm:whitespace-normal">
