@@ -431,14 +431,25 @@ export const getActivitiesAsOf = createServerFn({ method: "GET" })
       actual_progress: number | null;
     };
     const map: Record<string, { date: string; done: number | null; tot: number | null; pc: number | null }> = {};
-    ((rows ?? []) as R[]).forEach((r) => {
-      map[r.item_key] = {
-        date: r.snapshot_date,
-        done: r.done_quantity == null ? null : Number(r.done_quantity),
-        tot: r.total_quantity == null ? null : Number(r.total_quantity),
-        pc: r.actual_progress == null ? null : Number(r.actual_progress),
-      };
-    });
+    // PostgREST 기본 행 제한(1,000)을 넘기므로 페이지 단위로 모두 가져온다
+    const PAGE = 1000;
+    for (let from = 0; ; from += PAGE) {
+      const { data: rows, error } = await c
+        .rpc("activities_as_of", { _base: data.base } as never)
+        .select("item_key,snapshot_date,done_quantity,total_quantity,actual_progress")
+        .range(from, from + PAGE - 1);
+      if (error) throw new Error(error.message);
+      const list = (rows ?? []) as unknown as R[];
+      list.forEach((r) => {
+        map[r.item_key] = {
+          date: r.snapshot_date,
+          done: r.done_quantity == null ? null : Number(r.done_quantity),
+          tot: r.total_quantity == null ? null : Number(r.total_quantity),
+          pc: r.actual_progress == null ? null : Number(r.actual_progress),
+        };
+      });
+      if (list.length < PAGE) break;
+    }
     const { data: last } = await c
       .from("activity_snapshots")
       .select("snapshot_date")
