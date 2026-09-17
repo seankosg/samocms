@@ -39,6 +39,15 @@ export type SheetOptions = {
   freezeCols?: number | undefined;
   /** 컬럼 최소 너비 */
   minColWidth?: number | undefined;
+  /** 헤더명 배열 — 이 컬럼 헤더는 주황색 음영으로 강조 */
+  highlightHeaders?: string[] | undefined;
+};
+
+/** 주황색 강조 헤더 서식 */
+const ORANGE = "C2410C";
+const HEADER_HIGHLIGHT_STYLE = {
+  ...HEADER_STYLE,
+  fill: { patternType: "solid", fgColor: { rgb: ORANGE } },
 };
 
 /** 레코드 배열 -> 서식이 적용된 워크시트 */
