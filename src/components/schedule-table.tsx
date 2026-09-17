@@ -277,7 +277,9 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
           <tbody>
             {filtered.map((r) => {
               const st = statusOfRow(r);
-              const on = edit && canEdit(r.slot);
+              /** 기준일 시점 기록이 없는 행 */
+              const noSnap = asOfReady && r.pc == null && r.done == null;
+              const on = !asOf && edit && canEdit(r.slot);
               const save = (patch: Record<string, unknown>) => mut.mutate({ id: r.id, patch });
               const cell = (v: string | number | null, k: string, kind: "text" | "number" | "date", map?: (x: string | null) => unknown) => (
                 <EditableCell
