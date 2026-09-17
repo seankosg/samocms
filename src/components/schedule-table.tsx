@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/use-auth";
 import { numOrNull, useActivityEdit } from "@/lib/use-inline-edit";
-import { dailyActual, dailyPlan, dispScope, fmtDate, fmtShortDate, isLate, pct1, SLOT_LABEL, statusOfRow, STATUS_LABEL, type Row } from "@/lib/schedule-model";
+import { dailyActual, dailyPlan, dispScope, flat, fmtDate, fmtShortDate, isLate, normMS, pct1, SLOT_LABEL, statusOfRow, STATUS_LABEL, type Row } from "@/lib/schedule-model";
 import { useActivitiesAsOf, useProject, usePrevActuals } from "@/lib/use-project";
 import {
   DateRangeFilter, MultiSelectFilter, TextFilter, EMPTY_TOKEN,
