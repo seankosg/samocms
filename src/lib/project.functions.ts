@@ -458,3 +458,30 @@ export const getActivitiesAsOf = createServerFn({ method: "GET" })
       .maybeSingle();
     return { asOf: map, latest: (last?.snapshot_date as string | null) ?? null };
   });
+
+/** 항목별 날짜순 실적 누계 시계열 — 엑셀 「누계 공정율」 열 생성용 */
+export const getSnapshotSeries = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(d))
+  .handler(async ({ data, context }) => {
+    type R = { item_key: string; snapshot_date: string; actual_progress: number | null; captured_at: string };
+    const rows = await fetchAll<R>((from, to) =>
+      context.supabase
+        .from("activity_snapshots")
+        .select("item_key,snapshot_date,actual_progress,captured_at")
+        .lte("snapshot_date", data.to)
+        .order("snapshot_date", { ascending: true })
+        .order("captured_at", { ascending: true })
+        .range(from, to));
+    // item_key → [날짜, 실적] 오름차순 (같은 날 중복은 마지막 기록이 이김)
+    const series: Record<string, [string, number | null][]> = {};
+    for (const r of rows) {
+      const list = (series[r.item_key] ??= []);
+      const v: [string, number | null] = [r.snapshot_date, r.actual_progress == null ? null : Number(r.actual_progress)];
+      if (list.length && list[list.length - 1]![0] === r.snapshot_date) list[list.length - 1] = v;
+      else list.push(v);
+    }
+    return { series };
+  });
+

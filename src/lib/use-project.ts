@@ -1,6 +1,6 @@
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { getActivitiesAsOf, getHiddenActivities, getPrevActuals, getProgressForecast, getProgressHistory, getProjectData } from "./project.functions";
+import { getActivitiesAsOf, getHiddenActivities, getPrevActuals, getProgressForecast, getProgressHistory, getProjectData, getSnapshotSeries } from "./project.functions";
 import { applyBaseline, isOwnerRow, toRow } from "./schedule-model";
 
 
@@ -47,6 +47,16 @@ export function useActivitiesAsOf(base: string, enabled: boolean) {
     queryKey: ["activities-as-of", base],
     queryFn: () => getActivitiesAsOf({ data: { base } }),
     enabled,
+    staleTime: 120_000,
+  });
+}
+
+/** 항목별 실적 시계열 (기간 내 날짜별 누계 실적 열 생성용) */
+export function useSnapshotSeries(to: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["snapshot-series", to],
+    queryFn: () => getSnapshotSeries({ data: { to } }),
+    enabled: enabled && !!to,
     staleTime: 120_000,
   });
 }

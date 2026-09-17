@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/use-auth";
 import { numOrNull, useActivityEdit } from "@/lib/use-inline-edit";
-import { dailyActual, dailyPlan, dispScope, flat, fmtDate, fmtShortDate, isLate, normMS, pct1, SLOT_LABEL, statusOfRow, STATUS_LABEL, type Row } from "@/lib/schedule-model";
-import { useActivitiesAsOf, useProject, usePrevActuals } from "@/lib/use-project";
+import { dailyActual, dailyPlan, dispScope, flat, fmtDate, fmtShortDate, isLate, normMS, pct1, planAt, SLOT_LABEL, statusOfRow, STATUS_LABEL, type Row } from "@/lib/schedule-model";
+import { useActivitiesAsOf, useProject, usePrevActuals, useSnapshotSeries } from "@/lib/use-project";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DateRangeFilter, MultiSelectFilter, TextFilter, EMPTY_TOKEN,
   matchDate, matchMulti, matchText, type DateFilterValue, type TextFilterValue,
@@ -108,6 +109,31 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
   const [q, setQ] = useState(initial?.q ?? "");
 
   const [exportOpen, setExportOpen] = useState(false);
+  /** 엑셀 「누계 공정율」 옵션 — 기간 내 날짜별 계획·실적 누계 열 추가 */
+  const [seriesOn, setSeriesOn] = useState(false);
+  const [sFrom, setSFrom] = useState(base);
+  const [sTo, setSTo] = useState(base);
+  const validRange = !!sFrom && !!sTo && sFrom <= sTo;
+  const seriesQ = useSnapshotSeries(sTo, exportOpen && seriesOn && validRange);
+  const seriesMap = useMemo(() => {
+    const src = seriesQ.data?.series;
+    if (!src) return undefined;
+    const m = new Map<string, [string, number | null][]>();
+    for (const [key, v] of Object.entries(src)) {
+      const i = key.indexOf("|"), j = key.indexOf("|", i + 1);
+      if (i < 0 || j < 0) { m.set(key, v); continue; }
+      m.set(`${key.slice(0, i)}|${normMS(key.slice(i + 1, j)) ?? ""}|${flat(key.slice(j + 1))}`, v);
+    }
+    return m;
+  }, [seriesQ.data]);
+  const seriesDates = useMemo(() => {
+    if (!validRange) return [] as string[];
+    const out: string[] = [];
+    for (let t = Date.parse(sFrom); t <= Date.parse(sTo); t += 864e5) out.push(new Date(t).toISOString().slice(0, 10));
+    return out;
+  }, [sFrom, sTo, validRange]);
+  const seriesReady = seriesOn && validRange && !!seriesMap;
+
   const [due, setDue] = useState<string | null>(dueBy ?? null);
   const [sort, setSort] = useState<SortKey>("e");
   const [asc, setAsc] = useState(true);
@@ -195,17 +221,28 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
 
   const reset = () => { setQ(""); setDue(null); setMulti({}); setTexts({}); setDates({}); };
 
-  const exportRows = useCallback((): ExportRow[] => filtered.map((r) => ({
-    group: r.sub ?? "",
-    rec: {
+  const exportRows = useCallback((): ExportRow[] => filtered.map((r) => {
+    const rec: Record<string, unknown> = {
       "No.": r.no, 담당부서: deptLabel(r), 담당자: mgrLabel(r.mgr), Subcon: r.sub, "Bldg.": r.bldg, Room: r.room, "Work Scope": dispScope(r.scope), Milestone: r.ms,
       Activity: r.act, Unit: r.unit, Done: r.done, Total: r.tot,
       "계획(%)": r.pl == null ? null : r.pl * 100, "실적(%)": r.pc == null ? null : r.pc * 100,
       "당일계획(%)": dailyPlan(r, base) == null ? null : dailyPlan(r, base)! * 100,
       "당일실적(%)": dailyActual(r, prevActuals) == null ? null : dailyActual(r, prevActuals)! * 100,
       상태: STATUS_LABEL[statusOfRow(r)], Predecessor: r.pred, Successor: r.succ, Start: r.s, Finish: r.e,
-    },
-  })), [filtered, base, prevActuals]);
+    };
+    if (seriesReady) {
+      const list = seriesMap!.get(asOfKey(r)) ?? [];
+      let i = 0, last: number | null = null, seen = false;
+      for (const d of seriesDates) {
+        while (i < list.length && list[i]![0] <= d) { last = list[i]![1]; seen = true; i += 1; }
+        const p = planAt(r, d);
+        rec[`${d.slice(5).replace("-", ".")} 계획(%)`] = p == null ? null : p * 100;
+        rec[`${d.slice(5).replace("-", ".")} 실적(%)`] = seen && last != null ? last * 100 : null;
+      }
+    }
+    return { group: r.sub ?? "", rec };
+  }), [filtered, base, prevActuals, seriesReady, seriesMap, seriesDates]);
+
 
   const setSortKey = (k: SortKey | null) => { if (!k) return; if (k === sort) setAsc((v) => !v); else { setSort(k); setAsc(true); } };
 
@@ -240,9 +277,37 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
           fileBase={fileName.replace(/\.xlsx$/, "")}
           sheetName="Data"
           docLabel={`${fileName.replace(/\.xlsx$/, "").replace(/^HMMME_/, "")} · 기준일 ${fmtDate(base)}`}
-          subtitle={`기준일: ${fmtDate(base)}${asOf ? " (시점 누계)" : ""}`}
+          subtitle={`기준일: ${fmtDate(base)}${asOf ? " (시점 누계)" : ""}${seriesOn && validRange ? ` · 누계 공정율 ${fmtDate(sFrom)} ~ ${fmtDate(sTo)}` : ""}`}
           dateStamp={base.replace(/-/g, "")}
+          optionsSlot={
+            <div className="rounded-md border p-3">
+              <label className="flex cursor-pointer items-start gap-3">
+                <Checkbox checked={seriesOn} onCheckedChange={(c) => setSeriesOn(!!c)} className="mt-0.5" />
+                <div className="flex-1">
+                  <span className="text-sm font-medium">누계 공정율 내려받기</span>
+                  <p className="mt-1 text-xs text-muted-foreground">기간 내 날짜마다 누계 계획(%)·실적(%) 열을 추가합니다.</p>
+                </div>
+              </label>
+              {seriesOn && (
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Input type="date" value={sFrom} onChange={(e) => setSFrom(e.target.value)} className="h-8 text-xs" />
+                    <span className="text-xs text-muted-foreground">~</span>
+                    <Input type="date" value={sTo} onChange={(e) => setSTo(e.target.value)} className="h-8 text-xs" />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    {!validRange
+                      ? "시작일이 종료일보다 늦습니다."
+                      : seriesQ.isLoading
+                        ? "기록을 불러오는 중..."
+                        : `날짜 ${seriesDates.length}일 · 열 ${seriesDates.length * 2}개 추가 · 기록 없는 날은 직전 값 유지`}
+                  </p>
+                </div>
+              )}
+            </div>
+          }
         />
+
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto border-b border-border bg-muted/40 px-3 py-2 text-xs whitespace-nowrap sm:flex-wrap sm:whitespace-normal">
