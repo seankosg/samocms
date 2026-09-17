@@ -41,6 +41,16 @@ export function useProgressForecast() {
   });
 }
 
+/** 기준일 시점 누계(Done·Total·실적) 맵 — 공정리스트 「기준일 시점 값」 표시용 */
+export function useActivitiesAsOf(base: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["activities-as-of", base],
+    queryFn: () => getActivitiesAsOf({ data: { base } }),
+    enabled,
+    staleTime: 120_000,
+  });
+}
+
 /** 기준일 직전 스냅샷 실적값 맵 (당일 실적 증분용) */
 export function usePrevActuals(base: string) {
   const q = useQuery({
