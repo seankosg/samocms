@@ -260,6 +260,13 @@
       "when": 1789580846391,
       "tag": "0036_manpower_supersede_per_group",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1789632345586,
+      "tag": "0037_activities_as_of",
+      "breakpoints": true
     }
   ]
 }
