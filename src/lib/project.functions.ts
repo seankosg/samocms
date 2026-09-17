@@ -423,8 +423,6 @@ export const getActivitiesAsOf = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ base: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(d))
   .handler(async ({ data, context }) => {
     const c = context.supabase;
-    const { data: rows, error } = await c.rpc("activities_as_of", { _base: data.base } as never);
-    if (error) throw new Error(error.message);
     type R = {
       item_key: string;
       snapshot_date: string;
