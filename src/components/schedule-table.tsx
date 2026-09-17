@@ -239,6 +239,14 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
         {chips.length > 1 && <button onClick={reset} className="text-[11px] font-semibold text-primary underline">전체 해제</button>}
       </div>
 
+      {asOf && (
+        <p className="border-b border-border bg-primary/5 px-3 py-2 text-[11px] text-muted-foreground">
+          기준: <b className="text-foreground">기준일 {fmtDate(base)} 시점 누계</b> — Done / Total · 실적(%) · 상태는 기준일 이하 마지막 기록값입니다. 수정 잠금.
+          {asOfQ.isLoading && " · 불러오는 중…"}
+          {asOfReady && missingAsOf > 0 && ` · 해당 시점 기록이 없는 ${missingAsOf.toLocaleString()}건은 —로 표시`}
+        </p>
+      )}
+
       <div className="max-h-[calc(100vh-330px)] overflow-auto">
         <table className="raw-table w-full min-w-[2100px] border-collapse text-left text-xs">
           <thead className="sticky top-0 z-10 bg-secondary text-secondary-foreground">
