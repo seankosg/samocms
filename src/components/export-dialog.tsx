@@ -159,7 +159,9 @@ export function ExportDialog({
               </div>
             </RadioGroup>
           </div>
+          {optionsSlot}
         </div>
+
         <DialogFooter>
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={busy}>취소</Button>
           <Button size="sm" onClick={exportNow} disabled={busy}>
