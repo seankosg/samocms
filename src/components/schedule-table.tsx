@@ -328,13 +328,15 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
                         display={`${pct1(r.pc)}%`}
                         onSave={(x) => save({ actual_progress: x == null ? null : (numOrNull(x) ?? 0) / 100 })}
                       />
+                    ) : noSnap ? (
+                      <span className="text-muted-foreground">—</span>
                     ) : (
                       <Bar v={r.pc} />
                     )}
                   </td>
                   <td className="px-3 py-2"><Delta v={dailyPlan(r, base)} /></td>
                   <td className="px-3 py-2"><Delta v={dailyActual(r, prevActuals)} /></td>
-                  <td className="px-3 py-2"><Badge st={st} /></td>
+                  <td className="px-3 py-2">{noSnap ? <span className="text-muted-foreground">—</span> : <Badge st={st} />}</td>
                   <td className="px-3 py-2">{cell(r.pred, "predecessor", "text")}</td>
                   <td className="px-3 py-2">{cell(r.succ, "successor", "text")}</td>
                   <td className="whitespace-nowrap px-3 py-2">{cell(r.s, "start_date", "date")}</td>
