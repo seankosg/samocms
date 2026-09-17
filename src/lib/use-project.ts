@@ -51,6 +51,16 @@ export function useActivitiesAsOf(base: string, enabled: boolean) {
   });
 }
 
+/** 항목별 실적 시계열 (기간 내 날짜별 누계 실적 열 생성용) */
+export function useSnapshotSeries(to: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["snapshot-series", to],
+    queryFn: () => getSnapshotSeries({ data: { to } }),
+    enabled: enabled && !!to,
+    staleTime: 120_000,
+  });
+}
+
 /** 기준일 직전 스냅샷 실적값 맵 (당일 실적 증분용) */
 export function usePrevActuals(base: string) {
   const q = useQuery({
