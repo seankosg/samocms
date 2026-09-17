@@ -312,6 +312,8 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
                         /
                         <EditableCell value={r.tot ?? 0} kind="number" editable onSave={(x) => save({ total_quantity: numOrNull(x) })} />
                       </span>
+                    ) : noSnap ? (
+                      <span className="text-muted-foreground">—</span>
                     ) : (
                       <>{r.done ?? 0} / {r.tot ?? 0}</>
                     )}
