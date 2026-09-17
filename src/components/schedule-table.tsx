@@ -233,13 +233,23 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
     if (seriesReady) {
       const list = seriesMap!.get(asOfKey(r)) ?? [];
       let i = 0, last: number | null = null, seen = false;
-      for (const d of seriesDates) {
+      let firstPlan: number | null = null, lastPlan: number | null = null;
+      let firstAct: number | null = null, lastAct: number | null = null;
+      seriesDates.forEach((d, idx) => {
         while (i < list.length && list[i]![0] <= d) { last = list[i]![1]; seen = true; i += 1; }
         const p = planAt(r, d);
-        rec[`${d.slice(5).replace("-", ".")} 계획(%)`] = p == null ? null : p * 100;
-        rec[`${d.slice(5).replace("-", ".")} 실적(%)`] = seen && last != null ? last * 100 : null;
-      }
+        const pv = p == null ? null : p * 100;
+        const av = seen && last != null ? last * 100 : null;
+        rec[`${d.slice(5).replace("-", ".")} 계획(%)`] = pv;
+        rec[`${d.slice(5).replace("-", ".")} 실적(%)`] = av;
+        if (idx === 0) { firstPlan = pv; firstAct = av; }
+        lastPlan = pv; lastAct = av;
+      });
+      // 기간내 증가분 — 시작 시점 기록이 없으면 0에서 증가한 것으로 계산
+      rec["기간내 계획(%)"] = lastPlan == null ? null : lastPlan - (firstPlan ?? 0);
+      rec["기간내 실적(%)"] = lastAct == null ? null : lastAct - (firstAct ?? 0);
     }
+
     return { group: r.sub ?? "", rec };
   }), [filtered, base, prevActuals, seriesReady, seriesMap, seriesDates]);
 
