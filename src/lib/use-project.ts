@@ -1,6 +1,6 @@
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { getHiddenActivities, getPrevActuals, getProgressForecast, getProgressHistory, getProjectData } from "./project.functions";
+import { getActivitiesAsOf, getHiddenActivities, getPrevActuals, getProgressForecast, getProgressHistory, getProjectData } from "./project.functions";
 import { applyBaseline, isOwnerRow, toRow } from "./schedule-model";
 
 
