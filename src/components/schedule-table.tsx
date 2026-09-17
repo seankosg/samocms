@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/use-auth";
 import { numOrNull, useActivityEdit } from "@/lib/use-inline-edit";
 import { dailyActual, dailyPlan, dispScope, fmtDate, fmtShortDate, isLate, pct1, SLOT_LABEL, statusOfRow, STATUS_LABEL, type Row } from "@/lib/schedule-model";
-import { useProject, usePrevActuals } from "@/lib/use-project";
+import { useActivitiesAsOf, useProject, usePrevActuals } from "@/lib/use-project";
 import {
   DateRangeFilter, MultiSelectFilter, TextFilter, EMPTY_TOKEN,
   matchDate, matchMulti, matchText, type DateFilterValue, type TextFilterValue,
@@ -66,12 +66,32 @@ function multiValue(r: Row, k: MultiKey): string {
 
 export type TableInitial = Partial<{ dept: string; bldg: string; ms: string; sub: string; mgr: string; status: string; efrom: string; eto: string; q: string }>;
 
-export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy }: { rows: Row[]; fileName: string; lockLate?: boolean; initial?: TableInitial; dueBy?: string | null }) {
+export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initial, dueBy }: { rows: Row[]; fileName: string; lockLate?: boolean; initial?: TableInitial; dueBy?: string | null }) {
   const { canEdit, canWrite } = useAuth();
   const { base } = useProject();
   const prevActuals = usePrevActuals(base);
   const mut = useActivityEdit();
   const [edit, setEdit] = useState(false);
+  /** 기준일 시점 누계 표시 모드 */
+  const [asOf, setAsOf] = useState(false);
+  const asOfQ = useActivitiesAsOf(base, asOf);
+  const asOfMap = asOfQ.data?.asOf;
+  const asOfReady = asOf && !!asOfMap;
+
+  const rows = useMemo(() => {
+    if (!asOfReady) return srcRows;
+    return srcRows.map((r) => {
+      const s = asOfMap![`${r.dept}|${r.no ?? ""}|${r.act}`];
+      return s
+        ? { ...r, done: s.done, tot: s.tot ?? r.tot, pc: s.pc }
+        : { ...r, done: null, tot: null, pc: null };
+    });
+  }, [srcRows, asOfReady, asOfMap]);
+
+  const missingAsOf = useMemo(
+    () => (asOfReady ? srcRows.filter((r) => !asOfMap![`${r.dept}|${r.no ?? ""}|${r.act}`]).length : 0),
+    [srcRows, asOfReady, asOfMap],
+  );
   const [q, setQ] = useState(initial?.q ?? "");
 
   const [exportOpen, setExportOpen] = useState(false);
