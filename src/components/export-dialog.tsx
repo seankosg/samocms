@@ -60,7 +60,7 @@ export function ExportDialog({
   /** Output 아래에 표시할 추가 옵션 UI */
   optionsSlot?: React.ReactNode;
   /** 헤더명 배열 — 주황색 음영으로 강조 */
-  highlightHeaders?: string[];
+  highlightHeaders?: string[] | undefined;
 }) {
   const bookOf = (recs: Record<string, unknown>[], group?: string) => {
     const wb = XLSX.utils.book_new();
