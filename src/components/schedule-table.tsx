@@ -195,17 +195,28 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
 
   const reset = () => { setQ(""); setDue(null); setMulti({}); setTexts({}); setDates({}); };
 
-  const exportRows = useCallback((): ExportRow[] => filtered.map((r) => ({
-    group: r.sub ?? "",
-    rec: {
+  const exportRows = useCallback((): ExportRow[] => filtered.map((r) => {
+    const rec: Record<string, unknown> = {
       "No.": r.no, 담당부서: deptLabel(r), 담당자: mgrLabel(r.mgr), Subcon: r.sub, "Bldg.": r.bldg, Room: r.room, "Work Scope": dispScope(r.scope), Milestone: r.ms,
       Activity: r.act, Unit: r.unit, Done: r.done, Total: r.tot,
       "계획(%)": r.pl == null ? null : r.pl * 100, "실적(%)": r.pc == null ? null : r.pc * 100,
       "당일계획(%)": dailyPlan(r, base) == null ? null : dailyPlan(r, base)! * 100,
       "당일실적(%)": dailyActual(r, prevActuals) == null ? null : dailyActual(r, prevActuals)! * 100,
       상태: STATUS_LABEL[statusOfRow(r)], Predecessor: r.pred, Successor: r.succ, Start: r.s, Finish: r.e,
-    },
-  })), [filtered, base, prevActuals]);
+    };
+    if (seriesReady) {
+      const list = seriesMap!.get(asOfKey(r)) ?? [];
+      let i = 0, last: number | null = null, seen = false;
+      for (const d of seriesDates) {
+        while (i < list.length && list[i]![0] <= d) { last = list[i]![1]; seen = true; i += 1; }
+        const p = planAt(r, d);
+        rec[`${fmtShortDate(d)} 계획(%)`] = p == null ? null : p * 100;
+        rec[`${fmtShortDate(d)} 실적(%)`] = seen && last != null ? last * 100 : null;
+      }
+    }
+    return { group: r.sub ?? "", rec };
+  }), [filtered, base, prevActuals, seriesReady, seriesMap, seriesDates]);
+
 
   const setSortKey = (k: SortKey | null) => { if (!k) return; if (k === sort) setAsc((v) => !v); else { setSort(k); setAsc(true); } };
 
