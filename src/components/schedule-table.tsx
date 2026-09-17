@@ -75,13 +75,26 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
   /** 기준일 시점 누계 표시 모드 */
   const [asOf, setAsOf] = useState(false);
   const asOfQ = useActivitiesAsOf(base, asOf);
-  const asOfMap = asOfQ.data?.asOf;
+  /** 스냅샷 키를 화면 정규화 규칙(normMS·공백 정리)으로 맞춘 맵 */
+  const asOfMap = useMemo(() => {
+    const src = asOfQ.data?.asOf;
+    if (!src) return undefined;
+    const m = new Map<string, { date: string; done: number | null; tot: number | null; pc: number | null }>();
+    for (const [key, v] of Object.entries(src)) {
+      const i = key.indexOf("|"), j = key.indexOf("|", i + 1);
+      if (i < 0 || j < 0) { m.set(key, v); continue; }
+      const norm = `${key.slice(0, i)}|${normMS(key.slice(i + 1, j)) ?? ""}|${flat(key.slice(j + 1))}`;
+      m.set(norm, v);
+    }
+    return m;
+  }, [asOfQ.data]);
   const asOfReady = asOf && !!asOfMap;
+  const asOfKey = (r: Row) => `${r.dept}|${r.no ?? ""}|${r.act}`;
 
   const rows = useMemo(() => {
     if (!asOfReady) return srcRows;
     return srcRows.map((r) => {
-      const s = asOfMap![`${r.dept}|${r.no ?? ""}|${r.act}`];
+      const s = asOfMap!.get(asOfKey(r));
       return s
         ? { ...r, done: s.done, tot: s.tot ?? r.tot, pc: s.pc }
         : { ...r, done: null, tot: null, pc: null };
@@ -89,7 +102,7 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
   }, [srcRows, asOfReady, asOfMap]);
 
   const missingAsOf = useMemo(
-    () => (asOfReady ? srcRows.filter((r) => !asOfMap![`${r.dept}|${r.no ?? ""}|${r.act}`]).length : 0),
+    () => (asOfReady ? srcRows.filter((r) => !asOfMap!.has(asOfKey(r))).length : 0),
     [srcRows, asOfReady, asOfMap],
   );
   const [q, setQ] = useState(initial?.q ?? "");
