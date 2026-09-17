@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { ArrowDownAZ, ArrowUpAZ, Download, Pencil, RotateCcw, Search, X } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Download, History as HistoryIcon, Pencil, RotateCcw, Search, X } from "lucide-react";
 import { ExportDialog, type ExportRow } from "@/components/export-dialog";
 import { EditableCell } from "@/components/editable-cell";
 import { Button } from "@/components/ui/button";
