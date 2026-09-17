@@ -109,6 +109,31 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
   const [q, setQ] = useState(initial?.q ?? "");
 
   const [exportOpen, setExportOpen] = useState(false);
+  /** 엑셀 「누계 공정율」 옵션 — 기간 내 날짜별 계획·실적 누계 열 추가 */
+  const [seriesOn, setSeriesOn] = useState(false);
+  const [sFrom, setSFrom] = useState(base);
+  const [sTo, setSTo] = useState(base);
+  const validRange = !!sFrom && !!sTo && sFrom <= sTo;
+  const seriesQ = useSnapshotSeries(sTo, exportOpen && seriesOn && validRange);
+  const seriesMap = useMemo(() => {
+    const src = seriesQ.data?.series;
+    if (!src) return undefined;
+    const m = new Map<string, [string, number | null][]>();
+    for (const [key, v] of Object.entries(src)) {
+      const i = key.indexOf("|"), j = key.indexOf("|", i + 1);
+      if (i < 0 || j < 0) { m.set(key, v); continue; }
+      m.set(`${key.slice(0, i)}|${normMS(key.slice(i + 1, j)) ?? ""}|${flat(key.slice(j + 1))}`, v);
+    }
+    return m;
+  }, [seriesQ.data]);
+  const seriesDates = useMemo(() => {
+    if (!validRange) return [] as string[];
+    const out: string[] = [];
+    for (let t = Date.parse(sFrom); t <= Date.parse(sTo); t += 864e5) out.push(new Date(t).toISOString().slice(0, 10));
+    return out;
+  }, [sFrom, sTo, validRange]);
+  const seriesReady = seriesOn && validRange && !!seriesMap;
+
   const [due, setDue] = useState<string | null>(dueBy ?? null);
   const [sort, setSort] = useState<SortKey>("e");
   const [asc, setAsc] = useState(true);
