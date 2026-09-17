@@ -289,6 +289,7 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
           docLabel={`${fileName.replace(/\.xlsx$/, "").replace(/^HMMME_/, "")} · 기준일 ${fmtDate(base)}`}
           subtitle={`기준일: ${fmtDate(base)}${asOf ? " (시점 누계)" : ""}${seriesOn && validRange ? ` · 누계 공정율 ${fmtDate(sFrom)} ~ ${fmtDate(sTo)}` : ""}`}
           dateStamp={base.replace(/-/g, "")}
+          highlightHeaders={seriesReady ? ["기간내 계획(%)", "기간내 실적(%)"] : undefined}
           optionsSlot={
             <div className="rounded-md border p-3">
               <label className="flex cursor-pointer items-start gap-3">

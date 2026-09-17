@@ -37,7 +37,7 @@ const docTitle = (base: string, docLabel?: string, group?: string) =>
 /** QAIL Snag Raw Data 내보내기의 Output 섹션 UI를 이식한 공통 내보내기 다이얼로그 */
 export function ExportDialog({
   open, onOpenChange, title, getRows, fileBase, sheetName, docLabel, subtitle, extraSheets,
-  dateStamp, singleSuffix, groupAfterStamp = false, optionsSlot,
+  dateStamp, singleSuffix, groupAfterStamp = false, optionsSlot, highlightHeaders,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -59,10 +59,12 @@ export function ExportDialog({
   groupAfterStamp?: boolean;
   /** Output 아래에 표시할 추가 옵션 UI */
   optionsSlot?: React.ReactNode;
+  /** 헤더명 배열 — 주황색 음영으로 강조 */
+  highlightHeaders?: string[] | undefined;
 }) {
   const bookOf = (recs: Record<string, unknown>[], group?: string) => {
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, styledSheet(recs, { title: docTitle(fileBase, docLabel, group), subtitle }), sheetName);
+    XLSX.utils.book_append_sheet(wb, styledSheet(recs, { title: docTitle(fileBase, docLabel, group), subtitle, highlightHeaders }), sheetName);
     return wb;
   };
   const [mode, setMode] = useState<"single" | "per-subcon">("single");

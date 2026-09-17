@@ -39,6 +39,15 @@ export type SheetOptions = {
   freezeCols?: number | undefined;
   /** 컬럼 최소 너비 */
   minColWidth?: number | undefined;
+  /** 헤더명 배열 — 이 컬럼 헤더는 주황색 음영으로 강조 */
+  highlightHeaders?: string[] | undefined;
+};
+
+/** 주황색 강조 헤더 서식 */
+const ORANGE = "C2410C";
+const HEADER_HIGHLIGHT_STYLE = {
+  ...HEADER_STYLE,
+  fill: { patternType: "solid", fgColor: { rgb: ORANGE } },
 };
 
 /** 레코드 배열 -> 서식이 적용된 워크시트 */
@@ -55,6 +64,7 @@ export function styledSheet(recs: Record<string, unknown>[], opts: SheetOptions 
   const ws = XLSXS.utils.aoa_to_sheet(aoa);
   const headerRow = titleRows;
 
+  const hl = new Set(opts.highlightHeaders ?? []);
   // 셀 스타일
   for (let r = headerRow; r < aoa.length; r++) {
     for (let c = 0; c < headers.length; c++) {
@@ -62,7 +72,7 @@ export function styledSheet(recs: Record<string, unknown>[], opts: SheetOptions 
       const cell = (ws as Record<string, any>)[addr] ?? ((ws as Record<string, any>)[addr] = { t: "s", v: "" });
       const numeric = r > headerRow && typeof cell.v === "number";
       cell.s = r === headerRow
-        ? HEADER_STYLE
+        ? hl.has(headers[c]!) ? HEADER_HIGHLIGHT_STYLE : HEADER_STYLE
         : { ...BODY_STYLE, alignment: { ...BODY_STYLE.alignment, horizontal: numeric ? "right" : "left" }, ...(r % 2 === 0 ? { fill: { patternType: "solid", fgColor: { rgb: "F6F8FB" } } } : {}) };
       if (numeric) cell.z = "#,##0";
     }
