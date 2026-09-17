@@ -37,7 +37,7 @@ const docTitle = (base: string, docLabel?: string, group?: string) =>
 /** QAIL Snag Raw Data 내보내기의 Output 섹션 UI를 이식한 공통 내보내기 다이얼로그 */
 export function ExportDialog({
   open, onOpenChange, title, getRows, fileBase, sheetName, docLabel, subtitle, extraSheets,
-  dateStamp, singleSuffix, groupAfterStamp = false,
+  dateStamp, singleSuffix, groupAfterStamp = false, optionsSlot,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -57,6 +57,8 @@ export function ExportDialog({
   singleSuffix?: string;
   /** 협력사별 파일명을 fileBase_date_group 순서로 생성 */
   groupAfterStamp?: boolean;
+  /** Output 아래에 표시할 추가 옵션 UI */
+  optionsSlot?: React.ReactNode;
 }) {
   const bookOf = (recs: Record<string, unknown>[], group?: string) => {
     const wb = XLSX.utils.book_new();
