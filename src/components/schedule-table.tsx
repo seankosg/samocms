@@ -239,6 +239,9 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
           getRows={exportRows}
           fileBase={fileName.replace(/\.xlsx$/, "")}
           sheetName="Data"
+          docLabel={`${fileName.replace(/\.xlsx$/, "").replace(/^HMMME_/, "")} · 기준일 ${fmtDate(base)}`}
+          subtitle={`기준일: ${fmtDate(base)}${asOf ? " (시점 누계)" : ""}`}
+          dateStamp={base.replace(/-/g, "")}
         />
       </div>
 
