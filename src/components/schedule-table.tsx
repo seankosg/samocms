@@ -205,7 +205,14 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
         </div>
 
         <Button variant="outline" size="sm" onClick={reset}><RotateCcw className="size-3.5" />초기화</Button>
-        {canWrite && (
+        <Button
+          variant={asOf ? "default" : "outline"} size="sm"
+          title="Done / Total · 실적(%) · 상태를 기준일 시점 기록으로 표시합니다"
+          onClick={() => { setAsOf((v) => !v); setEdit(false); }}
+        >
+          <History className="size-3.5" />{asOf ? "최신 값 보기" : "기준일 시점 값"}
+        </Button>
+        {canWrite && !asOf && (
           <Button variant={edit ? "default" : "outline"} size="sm" onClick={() => setEdit((v) => !v)}>
             <Pencil className="size-3.5" />{edit ? "수정 종료" : "인라인 수정"}
           </Button>
