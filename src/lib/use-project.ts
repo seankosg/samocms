@@ -1,6 +1,6 @@
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { getHiddenActivities, getPrevActuals, getProgressForecast, getProgressHistory, getProjectData } from "./project.functions";
+import { getActivitiesAsOf, getHiddenActivities, getPrevActuals, getProgressForecast, getProgressHistory, getProjectData } from "./project.functions";
 import { applyBaseline, isOwnerRow, toRow } from "./schedule-model";
 
 
@@ -38,6 +38,16 @@ export function useProgressForecast() {
     queryFn: () => getProgressForecast(),
     staleTime: 120_000,
     refetchInterval: 5 * 60_000,
+  });
+}
+
+/** 기준일 시점 누계(Done·Total·실적) 맵 — 공정리스트 「기준일 시점 값」 표시용 */
+export function useActivitiesAsOf(base: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["activities-as-of", base],
+    queryFn: () => getActivitiesAsOf({ data: { base } }),
+    enabled,
+    staleTime: 120_000,
   });
 }
 

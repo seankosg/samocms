@@ -1365,6 +1365,16 @@ export type Database = {
       }
     }
     Functions: {
+      activities_as_of: {
+        Args: { _base: string }
+        Returns: {
+          actual_progress: number
+          done_quantity: number
+          item_key: string
+          snapshot_date: string
+          total_quantity: number
+        }[]
+      }
       activity_daily_trend: {
         Args: { _discipline?: string }
         Returns: {

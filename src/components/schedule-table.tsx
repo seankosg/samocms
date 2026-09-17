@@ -1,13 +1,13 @@
 import { useCallback, useMemo, useState } from "react";
-import { ArrowDownAZ, ArrowUpAZ, Download, Pencil, RotateCcw, Search, X } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Download, History as HistoryIcon, Pencil, RotateCcw, Search, X } from "lucide-react";
 import { ExportDialog, type ExportRow } from "@/components/export-dialog";
 import { EditableCell } from "@/components/editable-cell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/use-auth";
 import { numOrNull, useActivityEdit } from "@/lib/use-inline-edit";
-import { dailyActual, dailyPlan, dispScope, fmtDate, fmtShortDate, isLate, pct1, SLOT_LABEL, statusOfRow, STATUS_LABEL, type Row } from "@/lib/schedule-model";
-import { useProject, usePrevActuals } from "@/lib/use-project";
+import { dailyActual, dailyPlan, dispScope, flat, fmtDate, fmtShortDate, isLate, normMS, pct1, SLOT_LABEL, statusOfRow, STATUS_LABEL, type Row } from "@/lib/schedule-model";
+import { useActivitiesAsOf, useProject, usePrevActuals } from "@/lib/use-project";
 import {
   DateRangeFilter, MultiSelectFilter, TextFilter, EMPTY_TOKEN,
   matchDate, matchMulti, matchText, type DateFilterValue, type TextFilterValue,
@@ -66,12 +66,45 @@ function multiValue(r: Row, k: MultiKey): string {
 
 export type TableInitial = Partial<{ dept: string; bldg: string; ms: string; sub: string; mgr: string; status: string; efrom: string; eto: string; q: string }>;
 
-export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy }: { rows: Row[]; fileName: string; lockLate?: boolean; initial?: TableInitial; dueBy?: string | null }) {
+export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initial, dueBy }: { rows: Row[]; fileName: string; lockLate?: boolean; initial?: TableInitial; dueBy?: string | null }) {
   const { canEdit, canWrite } = useAuth();
   const { base } = useProject();
   const prevActuals = usePrevActuals(base);
   const mut = useActivityEdit();
   const [edit, setEdit] = useState(false);
+  /** 기준일 시점 누계 표시 모드 */
+  const [asOf, setAsOf] = useState(false);
+  const asOfQ = useActivitiesAsOf(base, asOf);
+  /** 스냅샷 키를 화면 정규화 규칙(normMS·공백 정리)으로 맞춘 맵 */
+  const asOfMap = useMemo(() => {
+    const src = asOfQ.data?.asOf;
+    if (!src) return undefined;
+    const m = new Map<string, { date: string; done: number | null; tot: number | null; pc: number | null }>();
+    for (const [key, v] of Object.entries(src)) {
+      const i = key.indexOf("|"), j = key.indexOf("|", i + 1);
+      if (i < 0 || j < 0) { m.set(key, v); continue; }
+      const norm = `${key.slice(0, i)}|${normMS(key.slice(i + 1, j)) ?? ""}|${flat(key.slice(j + 1))}`;
+      m.set(norm, v);
+    }
+    return m;
+  }, [asOfQ.data]);
+  const asOfReady = asOf && !!asOfMap;
+  const asOfKey = (r: Row) => `${r.dept}|${r.no ?? ""}|${r.act}`;
+
+  const rows = useMemo(() => {
+    if (!asOfReady) return srcRows;
+    return srcRows.map((r) => {
+      const s = asOfMap!.get(asOfKey(r));
+      return s
+        ? { ...r, done: s.done, tot: s.tot ?? r.tot, pc: s.pc }
+        : { ...r, done: null, tot: null, pc: null };
+    });
+  }, [srcRows, asOfReady, asOfMap]);
+
+  const missingAsOf = useMemo(
+    () => (asOfReady ? srcRows.filter((r) => !asOfMap!.has(asOfKey(r))).length : 0),
+    [srcRows, asOfReady, asOfMap],
+  );
   const [q, setQ] = useState(initial?.q ?? "");
 
   const [exportOpen, setExportOpen] = useState(false);
@@ -185,7 +218,14 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
         </div>
 
         <Button variant="outline" size="sm" onClick={reset}><RotateCcw className="size-3.5" />초기화</Button>
-        {canWrite && (
+        <Button
+          variant={asOf ? "default" : "outline"} size="sm"
+          title="Done / Total · 실적(%) · 상태를 기준일 시점 기록으로 표시합니다"
+          onClick={() => { setAsOf((v) => !v); setEdit(false); }}
+        >
+          <HistoryIcon className="size-3.5" />{asOf ? "최신 값 보기" : "기준일 시점 값"}
+        </Button>
+        {canWrite && !asOf && (
           <Button variant={edit ? "default" : "outline"} size="sm" onClick={() => setEdit((v) => !v)}>
             <Pencil className="size-3.5" />{edit ? "수정 종료" : "인라인 수정"}
           </Button>
@@ -211,6 +251,14 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
         ))}
         {chips.length > 1 && <button onClick={reset} className="text-[11px] font-semibold text-primary underline">전체 해제</button>}
       </div>
+
+      {asOf && (
+        <p className="border-b border-border bg-primary/5 px-3 py-2 text-[11px] text-muted-foreground">
+          기준: <b className="text-foreground">기준일 {fmtDate(base)} 시점 누계</b> — Done / Total · 실적(%) · 상태는 기준일 이하 마지막 기록값입니다. 수정 잠금.
+          {asOfQ.isLoading && " · 불러오는 중…"}
+          {asOfReady && missingAsOf > 0 && ` · 해당 시점 기록이 없는 ${missingAsOf.toLocaleString()}건은 —로 표시`}
+        </p>
+      )}
 
       <div className="max-h-[calc(100vh-330px)] overflow-auto">
         <table className="raw-table w-full min-w-[2100px] border-collapse text-left text-xs">
@@ -242,7 +290,9 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
           <tbody>
             {filtered.map((r) => {
               const st = statusOfRow(r);
-              const on = edit && canEdit(r.slot);
+              /** 기준일 시점 기록이 없는 행 */
+              const noSnap = asOfReady && r.pc == null && r.done == null;
+              const on = !asOf && edit && canEdit(r.slot);
               const save = (patch: Record<string, unknown>) => mut.mutate({ id: r.id, patch });
               const cell = (v: string | number | null, k: string, kind: "text" | "number" | "date", map?: (x: string | null) => unknown) => (
                 <EditableCell
@@ -275,6 +325,8 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
                         /
                         <EditableCell value={r.tot ?? 0} kind="number" editable onSave={(x) => save({ total_quantity: numOrNull(x) })} />
                       </span>
+                    ) : noSnap ? (
+                      <span className="text-muted-foreground">—</span>
                     ) : (
                       <>{r.done ?? 0} / {r.tot ?? 0}</>
                     )}
@@ -289,13 +341,15 @@ export function ScheduleTable({ rows, fileName, lockLate = false, initial, dueBy
                         display={`${pct1(r.pc)}%`}
                         onSave={(x) => save({ actual_progress: x == null ? null : (numOrNull(x) ?? 0) / 100 })}
                       />
+                    ) : noSnap ? (
+                      <span className="text-muted-foreground">—</span>
                     ) : (
                       <Bar v={r.pc} />
                     )}
                   </td>
                   <td className="px-3 py-2"><Delta v={dailyPlan(r, base)} /></td>
                   <td className="px-3 py-2"><Delta v={dailyActual(r, prevActuals)} /></td>
-                  <td className="px-3 py-2"><Badge st={st} /></td>
+                  <td className="px-3 py-2">{noSnap ? <span className="text-muted-foreground">—</span> : <Badge st={st} />}</td>
                   <td className="px-3 py-2">{cell(r.pred, "predecessor", "text")}</td>
                   <td className="px-3 py-2">{cell(r.succ, "successor", "text")}</td>
                   <td className="whitespace-nowrap px-3 py-2">{cell(r.s, "start_date", "date")}</td>

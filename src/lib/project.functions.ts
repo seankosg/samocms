@@ -416,3 +416,45 @@ export const getPrevActuals = createServerFn({ method: "GET" })
     });
     return { prev: map, prevDate };
   });
+
+/** 기준일 시점 누계(Done·실적) — 항목별 기준일 이하 마지막 스냅샷 1건 */
+export const getActivitiesAsOf = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ base: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const c = context.supabase;
+    type R = {
+      item_key: string;
+      snapshot_date: string;
+      done_quantity: number | null;
+      total_quantity: number | null;
+      actual_progress: number | null;
+    };
+    const map: Record<string, { date: string; done: number | null; tot: number | null; pc: number | null }> = {};
+    // PostgREST 기본 행 제한(1,000)을 넘기므로 페이지 단위로 모두 가져온다
+    const PAGE = 1000;
+    for (let from = 0; ; from += PAGE) {
+      const { data: rows, error } = await c
+        .rpc("activities_as_of", { _base: data.base } as never)
+        .select("item_key,snapshot_date,done_quantity,total_quantity,actual_progress")
+        .range(from, from + PAGE - 1);
+      if (error) throw new Error(error.message);
+      const list = (rows ?? []) as unknown as R[];
+      list.forEach((r) => {
+        map[r.item_key] = {
+          date: r.snapshot_date,
+          done: r.done_quantity == null ? null : Number(r.done_quantity),
+          tot: r.total_quantity == null ? null : Number(r.total_quantity),
+          pc: r.actual_progress == null ? null : Number(r.actual_progress),
+        };
+      });
+      if (list.length < PAGE) break;
+    }
+    const { data: last } = await c
+      .from("activity_snapshots")
+      .select("snapshot_date")
+      .order("snapshot_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return { asOf: map, latest: (last?.snapshot_date as string | null) ?? null };
+  });
