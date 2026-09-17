@@ -236,8 +236,8 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
       for (const d of seriesDates) {
         while (i < list.length && list[i]![0] <= d) { last = list[i]![1]; seen = true; i += 1; }
         const p = planAt(r, d);
-        rec[`${fmtShortDate(d)} 계획(%)`] = p == null ? null : p * 100;
-        rec[`${fmtShortDate(d)} 실적(%)`] = seen && last != null ? last * 100 : null;
+        rec[`${d.slice(5).replace("-", ".")} 계획(%)`] = p == null ? null : p * 100;
+        rec[`${d.slice(5).replace("-", ".")} 실적(%)`] = seen && last != null ? last * 100 : null;
       }
     }
     return { group: r.sub ?? "", rec };
