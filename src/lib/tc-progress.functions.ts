@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { DailyRow } from "./tc-progress-utils";
 
 const schema = z.object({
   from: z.string().min(8),
