@@ -32,7 +32,7 @@ export function TcPlanVsActualCard({
   const cumulativeValue = (stage: TcStage, value: number | null) => {
     if (value === null || unit !== "count") return value;
     const total = totals[stage] ?? 0;
-    return total > 0 ? (value / total) * 100 : 0;
+    return total > 0 ? Math.min(100, Math.max(0, (value / total) * 100)) : 0;
   };
 
   const rows = useMemo(() => scurve.buckets.map((b, i) => {
@@ -101,6 +101,7 @@ export function TcPlanVsActualCard({
               allowDecimals={unit !== "count"}
               {...(unit === "count" ? {
                 domain: [0, 100] as [number, number],
+                allowDataOverflow: true,
                 tickFormatter: (value: number) => `${value}%`,
               } : {})}
             />
