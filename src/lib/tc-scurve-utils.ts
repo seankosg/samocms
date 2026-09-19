@@ -1,6 +1,9 @@
 // T&C S-Curve 시리즈 빌더 (QAIL scurve-utils 이식).
-import { TC_STAGES, type TcStage } from "./tc-model";
-import { labelDdMmm, type BucketCell, type MatrixResult } from "./tc-progress-utils";
+import { TC_STAGES, type TcItem, type TcStage } from "./tc-model";
+import {
+  ACT_COL, PLAN_COL, bucketEnd, labelDdMmm,
+  type Bucket, type BucketCell, type MatrixResult, type Unit,
+} from "./tc-progress-utils";
 
 export interface SCurveStageSeries {
   stage: TcStage;
@@ -29,10 +32,13 @@ function empty(stage: TcStage, n: number): SCurveStageSeries {
 /** 매트릭스(그룹×단계×버킷) 결과에서 단계별 전체 합계 시리즈를 만든다. */
 export function buildTcSCurve(opts: {
   matrix: MatrixResult;
+  items: TcItem[];
   stages: TcStage[];
   base: string;
+  bucket: Bucket;
+  unit: Unit;
 }): SCurveResult {
-  const { matrix, stages, base } = opts;
+  const { matrix, items, stages, base, bucket, unit } = opts;
   const buckets = matrix.buckets;
   const n = buckets.length;
   const series = TC_STAGES.reduce((a, s) => { a[s] = empty(s, n); return a; }, {} as Record<TcStage, SCurveStageSeries>);
@@ -56,17 +62,23 @@ export function buildTcSCurve(opts: {
 
   for (const st of stages) {
     const s = series[st];
-    let cP = 0, cA = 0;
     for (let i = 0; i < n; i++) {
-      cP += s.dailyPlan[i] ?? 0;
-      s.cumPlan[i] = cP;
+      const through = bucketEnd(buckets[i] ?? base, bucket);
+      s.cumPlan[i] = items.reduce((sum, item) => {
+        const date = item[PLAN_COL[st]] as string | null;
+        const value = unit === "qty" ? Number(item.qty) || 0 : 1;
+        return sum + (date && date <= through ? value : 0);
+      }, 0);
       const isFuture = todayIndex >= 0 && i > todayIndex;
       if (isFuture) {
         s.dailyActual[i] = null;
         s.cumActual[i] = null;
       } else {
-        cA += (s.dailyActual[i] as number) ?? 0;
-        s.cumActual[i] = cA;
+        s.cumActual[i] = items.reduce((sum, item) => {
+          const date = item[ACT_COL[st]] as string | null;
+          const value = unit === "qty" ? Number(item.qty) || 0 : 1;
+          return sum + (date && date <= through ? value : 0);
+        }, 0);
       }
     }
   }
