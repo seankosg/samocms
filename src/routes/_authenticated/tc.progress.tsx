@@ -92,7 +92,10 @@ function TcProgressPage() {
     items, buckets, bucket, stages, groupBy, base, unit,
   }), [daily.data, items, buckets, bucket, stages, groupBy, base, unit, disc]);
 
-  const scurve = useMemo(() => buildTcSCurve({ matrix, stages, base }), [matrix, stages, base]);
+  const scurve = useMemo(
+    () => buildTcSCurve({ matrix, items, stages, base, bucket, unit }),
+    [matrix, items, stages, base, bucket, unit],
+  );
 
   const totals = useMemo(() => {
     const out = {} as Record<TcStage, number>;
