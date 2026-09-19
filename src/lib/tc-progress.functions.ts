@@ -15,7 +15,7 @@ export const getTcDailyProgress = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => schema.parse(d))
   .handler(async ({ data, context }) => {
-    const all: Record<string, unknown>[] = [];
+    const all: DailyRow[] = [];
     for (let from = 0; ; from += PAGE) {
       const { data: rows, error } = await context.supabase
         .from("tc_daily_progress")
