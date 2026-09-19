@@ -29,14 +29,20 @@ export function TcPlanVsActualCard({
     dataKey,
   });
 
+  const cumulativeValue = (stage: TcStage, value: number | null) => {
+    if (value === null || unit !== "count") return value;
+    const total = totals[stage] ?? 0;
+    return total > 0 ? (value / total) * 100 : 0;
+  };
+
   const rows = useMemo(() => scurve.buckets.map((b, i) => {
     const r: Record<string, string | number | null> = { bucket: scurve.bucketLabels[i] ?? b, iso: b };
     for (const st of stages) {
       const s = scurve.series[st];
       r[dataKey(st, "plan")] = s.dailyPlan[i] ?? 0;
       r[dataKey(st, "actual")] = s.dailyActual[i] ?? null;
-      r[`${st}__cumPlan`] = s.cumPlan[i] ?? 0;
-      r[`${st}__cumActual`] = s.cumActual[i] ?? null;
+      r[`${st}__cumPlan`] = cumulativeValue(st, s.cumPlan[i] ?? 0);
+      r[`${st}__cumActual`] = cumulativeValue(st, s.cumActual[i] ?? null);
     }
     const cp = stages.reduce((a, st) => a + (scurve.series[st].cumPlan[i] ?? 0), 0);
     const caVals = stages.map((st) => scurve.series[st].cumActual[i]);
@@ -45,7 +51,7 @@ export function TcPlanVsActualCard({
     r["cumActualAll"] = ca;
     r["variance"] = ca === null ? null : ca - cp;
     return r;
-  }), [scurve, stages]);
+  }), [scurve, stages, totals, unit]);
 
   const metrics: LegendMetric[] = stages.map((st) => ({ key: st, label: STAGE_LABELS[st], color: STAGE_COLORS[st].line }));
   const term = bucketTargetTerm(bucket);
@@ -77,7 +83,7 @@ export function TcPlanVsActualCard({
         onToggleMetric={legend.toggleMetric}
         hiddenSeries={legend.hiddenSeries}
         onToggleSeries={legend.toggleSeries}
-        axes={{ left: `${term} (${unitLabel})`, right: `누계 (${unitLabel})` }}
+        axes={{ left: `${term} (${unitLabel})`, right: unit === "count" ? "누계 (%)" : `누계 (${unitLabel})` }}
         showReset={legend.canReset}
         onReset={legend.reset}
       />
@@ -88,10 +94,21 @@ export function TcPlanVsActualCard({
             <CartesianGrid strokeDasharray="3 3" opacity={0.25} />
             <XAxis dataKey="bucket" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={16} />
             <YAxis yAxisId="left" tick={{ fontSize: 10 }} allowDecimals={false} />
-            <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} allowDecimals={false} />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              tick={{ fontSize: 10 }}
+              allowDecimals={unit !== "count"}
+              domain={unit === "count" ? [0, 100] : undefined}
+              tickFormatter={unit === "count" ? (value: number) => `${value}%` : undefined}
+            />
             <Tooltip
               contentStyle={{ fontSize: 11, borderRadius: 6 }}
-              formatter={(v: number | string, n: string) => [v as number, n.replace("__", " ")]}
+              formatter={(v: number | string, n: string) => {
+                const isCumulative = n.includes("누계");
+                const value = Number(v);
+                return [unit === "count" && isCumulative ? `${Math.round(value * 10) / 10}%` : value, n.replace("__", " ")];
+              }}
             />
             <Legend wrapperStyle={{ display: "none" }} />
             {baseLabel && (
