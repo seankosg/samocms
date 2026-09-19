@@ -26,7 +26,7 @@ export const getTcDailyProgress = createServerFn({ method: "GET" })
         .range(from, from + PAGE - 1);
       if (error) throw new Error(error.message);
       if (!rows?.length) break;
-      all.push(...(rows as Record<string, unknown>[]));
+      all.push(...(rows as DailyRow[]));
       if (rows.length < PAGE) break;
     }
     return all;
