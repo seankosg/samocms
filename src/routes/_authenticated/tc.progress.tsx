@@ -111,7 +111,7 @@ function TcProgressPage() {
   const colOf = (st: TcStage, kind: "planned" | "actual") =>
     String(kind === "planned" ? PLAN_COL[st] : ACT_COL[st]);
 
-  const drill = (row: GroupRow, stage: TcStage | null, kind: "planned" | "actual", from: string, to: string) => {
+  const drill = (row: GroupRow, stage: TcStage | null, kind: "planned" | "actual", from: string | undefined, to: string) => {
     const list = stage ? [stage] : stages;
     const fields = list.map((st) => colOf(st, kind));
     void navigate({
@@ -121,7 +121,8 @@ function TcProgressPage() {
         ...(disc !== "전체" ? { disc } : {}),
         ...(stage ? { stage, field: fields[0]! } : {}),
         fields: fields.join(","),
-        from, to,
+        ...(from ? { from } : {}),
+        to,
       },
     });
   };
@@ -129,8 +130,9 @@ function TcProgressPage() {
   const onCellClick = (row: GroupRow, bucketIso: string, stage: TcStage | null, kind: "planned" | "actual") =>
     drill(row, stage, kind, bucketIso, bucketEnd(bucketIso, bucket));
 
+  /** 누계 P/A는 프로젝트 시작~기준일 전체이므로 시작일 제한 없이 드릴다운 */
   const onCumClick = (row: GroupRow, stage: TcStage | null, kind: "planned" | "actual") =>
-    drill(row, stage, kind, from, base);
+    drill(row, stage, kind, undefined, base);
 
   const onRowClick = (row: GroupRow) => {
     void navigate({
