@@ -100,6 +100,11 @@ function TcProgressPage() {
     return out;
   }, [matrix]);
 
+  const cumulativeTotals = useMemo(() => ({
+    plan: matrix.rows.reduce((sum, row) => sum + stages.reduce((stageSum, st) => stageSum + row.stages[st].cumPlan, 0), 0),
+    actual: matrix.rows.reduce((sum, row) => sum + stages.reduce((stageSum, st) => stageSum + row.stages[st].cumActual, 0), 0),
+  }), [matrix, stages]);
+
   const colOf = (st: TcStage, kind: "planned" | "actual") =>
     String(kind === "planned" ? PLAN_COL[st] : ACT_COL[st]);
 
@@ -208,7 +213,7 @@ function TcProgressPage() {
           </div>
         ) : (
           <>
-            <TcPlanVsActualCard scurve={scurve} stages={stages} bucket={bucket} unit={unit} totals={totals} base={base} />
+            <TcPlanVsActualCard scurve={scurve} stages={stages} bucket={bucket} unit={unit} totals={totals} cumulativeTotals={cumulativeTotals} base={base} />
             <TcScheduleMatrix
               data={matrix} bucket={bucket} stages={stages} base={base} asOfLabel={base}
               onCellClick={onCellClick} onRowClick={onRowClick} onCumClick={onCumClick}

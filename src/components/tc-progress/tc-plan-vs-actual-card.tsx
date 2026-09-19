@@ -14,13 +14,14 @@ import type { TcStage } from "@/lib/tc-model";
 const dataKey = (stage: string, series: string) => `${stage}__${series}`;
 
 export function TcPlanVsActualCard({
-  scurve, stages, bucket, unit, totals, base,
+  scurve, stages, bucket, unit, totals, cumulativeTotals, base,
 }: {
   scurve: SCurveResult;
   stages: TcStage[];
   bucket: Bucket;
   unit: Unit;
   totals: Record<TcStage, number>;
+  cumulativeTotals: { plan: number; actual: number };
   base: string;
 }) {
   const legend = useProgressLegend({
@@ -58,23 +59,19 @@ export function TcPlanVsActualCard({
   const unitLabel = unit === "qty" ? "수량" : "건수";
   const baseLabel = scurve.todayIndex >= 0 ? scurve.bucketLabels[scurve.todayIndex] : undefined;
 
-  const last = rows[rows.length - 1];
   const totalScope = stages.reduce((a, st) => a + (totals[st] ?? 0), 0);
-  const cumPlan = Number(last?.["cumPlanAll"] ?? 0);
-  const atBase = scurve.todayIndex >= 0 ? rows[scurve.todayIndex] : undefined;
-  const planAtBase = Number(atBase?.["cumPlanAll"] ?? 0);
-  const actualAtBase = Number(atBase?.["cumActualAll"] ?? 0);
+  const planAtBase = cumulativeTotals.plan;
+  const actualAtBase = cumulativeTotals.actual;
   const variance = actualAtBase - planAtBase;
 
   return (
     <div className="space-y-3 rounded-lg border border-border bg-card p-4">
       <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
         <h2 className="text-sm font-bold">Plan vs Actual S-Curve</h2>
-        <Kpi label="Total Scope" value={totalScope} />
-        <Kpi label={`계획 누계 (${base})`} value={planAtBase} />
-        <Kpi label="실적 누계" value={actualAtBase} />
-        <Kpi label="차이" value={variance} signed />
-        <Kpi label="전체 계획" value={cumPlan} muted />
+        <Kpi label="총합계" value={totalScope} percent={100} />
+        <Kpi label={`현재 계획 누계 (${base})`} value={planAtBase} percent={ratio(planAtBase, totalScope)} />
+        <Kpi label="실적 누계" value={actualAtBase} percent={ratio(actualAtBase, totalScope)} />
+        <Kpi label="차이" value={variance} percent={ratio(variance, totalScope)} signed />
       </div>
 
       <ProgressChartLegend
@@ -173,13 +170,22 @@ export function TcPlanVsActualCard({
   );
 }
 
-function Kpi({ label, value, signed, muted }: { label: string; value: number; signed?: boolean; muted?: boolean }) {
-  const color = signed ? (value < 0 ? "text-schedule-short" : value > 0 ? "text-schedule-over" : "") : muted ? "text-muted-foreground" : "";
+function ratio(value: number, total: number) {
+  return total > 0 ? (value / total) * 100 : 0;
+}
+
+function Kpi({ label, value, percent, signed }: { label: string; value: number; percent: number; signed?: boolean }) {
+  const color = signed ? (value < 0 ? "text-schedule-short" : value > 0 ? "text-schedule-over" : "") : "";
+  const roundedValue = Math.round(value * 10) / 10;
+  const roundedPercent = Math.round(percent * 10) / 10;
   return (
     <div className="leading-tight">
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className={cn("text-lg font-bold tabular-nums", color)}>
-        {signed && value > 0 ? "+" : ""}{Math.round(value * 10) / 10}
+        {signed && value > 0 ? "+" : ""}{roundedValue}
+        <span className="ml-1 text-xs font-semibold text-muted-foreground">
+          ({signed && percent > 0 ? "+" : ""}{roundedPercent}%)
+        </span>
       </div>
     </div>
   );
