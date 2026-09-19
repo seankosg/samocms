@@ -30,7 +30,7 @@ export function TcPlanVsActualCard({
   });
 
   const cumulativeValue = (stage: TcStage, value: number | null) => {
-    if (value === null || unit !== "count") return value;
+    if (value === null) return value;
     const total = totals[stage] ?? 0;
     return total > 0 ? Math.min(100, Math.max(0, (value / total) * 100)) : 0;
   };
@@ -83,7 +83,7 @@ export function TcPlanVsActualCard({
         onToggleMetric={legend.toggleMetric}
         hiddenSeries={legend.hiddenSeries}
         onToggleSeries={legend.toggleSeries}
-        axes={{ left: `${term} (${unitLabel})`, right: unit === "count" ? "누계 (%)" : `누계 (${unitLabel})` }}
+        axes={{ left: `${term} (${unitLabel})`, right: "누계 (%)" }}
         showReset={legend.canReset}
         onReset={legend.reset}
       />
@@ -98,19 +98,17 @@ export function TcPlanVsActualCard({
               yAxisId="right"
               orientation="right"
               tick={{ fontSize: 10 }}
-              allowDecimals={unit !== "count"}
-              {...(unit === "count" ? {
-                domain: [0, 100] as [number, number],
-                allowDataOverflow: true,
-                tickFormatter: (value: number) => `${value}%`,
-              } : {})}
+              allowDecimals={false}
+              domain={[0, 100]}
+              allowDataOverflow
+              tickFormatter={(value: number) => `${value}%`}
             />
             <Tooltip
               contentStyle={{ fontSize: 11, borderRadius: 6 }}
               formatter={(v: number | string, n: string) => {
                 const isCumulative = n.includes("누계");
                 const value = Number(v);
-                return [unit === "count" && isCumulative ? `${Math.round(value * 10) / 10}%` : value, n.replace("__", " ")];
+                return [isCumulative ? `${Math.round(value * 10) / 10}%` : value, n.replace("__", " ")];
               }}
             />
             <Legend wrapperStyle={{ display: "none" }} />
