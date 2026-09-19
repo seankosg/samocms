@@ -99,8 +99,10 @@ export function TcPlanVsActualCard({
               orientation="right"
               tick={{ fontSize: 10 }}
               allowDecimals={unit !== "count"}
-              domain={unit === "count" ? [0, 100] : undefined}
-              tickFormatter={unit === "count" ? (value: number) => `${value}%` : undefined}
+              {...(unit === "count" ? {
+                domain: [0, 100] as [number, number],
+                tickFormatter: (value: number) => `${value}%`,
+              } : {})}
             />
             <Tooltip
               contentStyle={{ fontSize: 11, borderRadius: 6 }}
