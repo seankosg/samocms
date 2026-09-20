@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/tc/progress")({
   validateSearch: (raw: Record<string, unknown>): Search => {
     const s = (k: string) => (typeof raw[k] === "string" && (raw[k] as string).trim() ? (raw[k] as string) : undefined);
     const out: Search = {};
-    for (const k of ["unit", "bucket", "stages", "group", "from", "to", "disc"] as const) {
+    for (const k of ["unit", "bucket", "stages", "group", "from", "to", "disc", "plan"] as const) {
       const v = s(k); if (v) out[k] = v;
     }
     return out;
