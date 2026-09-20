@@ -1,5 +1,6 @@
 import { XLSXS } from "@/lib/xlsx-style";
 import { PS_LABEL, PS_LABEL_EN, PS_NUMS } from "@/lib/ncr-model";
+import { buildNcrListSheet, type ListExportInput } from "@/lib/ncr-list-xlsx";
 
 /** NCR 대시보드 매트릭스 → 서식이 적용된 엑셀 (영문/한글 연동, 기준일·필터 반영) */
 
@@ -18,6 +19,8 @@ export type MatrixExportInput = {
   noPlanTotal: number;
   stats: MatrixStat[];
   filters: { docType?: string | undefined; team?: string | undefined; sub?: string | undefined };
+  /** 지정 시 동일 파일에 NCR 리스트 시트를 추가 */
+  list?: Omit<ListExportInput, "asOf" | "filters"> | undefined;
 };
 
 const NAVY = "1E3A5F";
