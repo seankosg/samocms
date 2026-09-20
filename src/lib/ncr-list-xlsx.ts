@@ -1,6 +1,6 @@
 import { XLSXS } from "@/lib/xlsx-style";
 import { NCR_COLUMNS, STAGE_EN, type NcrCol } from "@/lib/ncr-columns";
-import { PS_NUMS, planField, actualField, type SlotKey, type DateField } from "@/lib/ncr-model";
+import { PS_NUMS, planField, actualField, currentStage, type SlotKey, type DateField, type NcrDates } from "@/lib/ncr-model";
 import type { NcrItem } from "@/lib/ncr.functions";
 
 /** NCR 리스트 → 서식이 적용된 엑셀 (필터·기준일 반영, 지연/임박 색상 표시) */
