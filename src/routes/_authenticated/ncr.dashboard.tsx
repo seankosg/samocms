@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNcrItems, ncrQuery } from "@/lib/use-ncr";
 import type { NcrItem } from "@/lib/ncr.functions";
-import { exportNcrMatrix } from "@/lib/ncr-matrix-xlsx";
-import { PS_NUMS, PS_LABEL, PS_LABEL_EN, SLOT_ORDER, planField, actualField, currentStage, isStartDelayed, type SlotKey, type NcrDates } from "@/lib/ncr-model";
+import { computeNcrStats } from "@/lib/ncr-stats";
+import { NcrExportDialog } from "@/components/ncr/ncr-export-dialog";
+import { PS_LABEL, PS_LABEL_EN, type SlotKey, type NcrDates } from "@/lib/ncr-model";
 
 type Lang = "ko" | "en";
 const TXT = {
@@ -57,19 +58,6 @@ export const Route = createFileRoute("/_authenticated/ncr/dashboard")({
 });
 
 const dates = (r: NcrItem) => r as unknown as NcrDates;
-
-const addDays = (iso: string, days: number) => {
-  const d = new Date(`${iso}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-};
-
-/** 임계치(일) 안에 계획일이 도래하지만 아직 실적이 없는 슬롯 */
-const isUpcoming = (d: NcrDates, slot: SlotKey, asOf: string, limit: string) => {
-  const planned = d[planField(slot)];
-  if (!planned || d[actualField(slot)]) return false;
-  return planned > asOf && planned <= limit;
-};
 
 const progressRate = (value: number, total: number) => total > 0 ? Math.round((value / total) * 100) : 0;
 
@@ -134,37 +122,12 @@ function NcrDashboardPage() {
     return true;
   }), [items, search]);
 
-  const upLimit = useMemo(() => addDays(asOf, Math.max(1, within)), [asOf, within]);
-
-  const stats = useMemo(() => PS_NUMS.map((n) => {
-    const s = `ps${n}s` as SlotKey;
-    const f = `ps${n}f` as SlotKey;
-    let sPlan = 0, sAct = 0, fPlan = 0, fAct = 0, sDelay = 0, fDelay = 0, cur = 0, noPlan = 0, ongoing = 0, ongoingDelay = 0, upS = 0, upF = 0;
-    for (const r of filtered) {
-      const d = dates(r);
-      if (!d[planField(s)] && !d[planField(f)]) noPlan += 1;
-      if (d[planField(s)] && d[planField(s)]! <= asOf) sPlan += 1;
-      if (d[actualField(s)]) sAct += 1;
-      if (d[planField(f)] && d[planField(f)]! <= asOf) fPlan += 1;
-      if (d[actualField(f)]) fAct += 1;
-      if (isStartDelayed(d, s, asOf)) sDelay += 1;
-      if (isStartDelayed(d, f, asOf)) fDelay += 1;
-      if (d[actualField(s)] && !d[actualField(f)]) {
-        ongoing += 1;
-        const fPlan = d[planField(f)];
-        if (fPlan && fPlan < asOf) ongoingDelay += 1;
-      }
-      if (isUpcoming(d, s, asOf, upLimit)) upS += 1;
-      if (isUpcoming(d, f, asOf, upLimit)) upF += 1;
-      const c = currentStage(d);
-      if (c.startsWith(`PS${n}`)) cur += 1;
-    }
-    return { n, stage: "PS" + n, sPlan, sAct, fPlan, fAct, sDelay, fDelay, cur, noPlan, ongoing, ongoingDelay, upS, upF };
-  }), [filtered, asOf, upLimit]);
-
-  const closed = filtered.filter((r) => currentStage(dates(r)) === "Closed").length;
-  const noPlanTotal = filtered.filter((r) => { const d = dates(r); return SLOT_ORDER.every((s) => !d[planField(s)]); }).length;
+  const { stats, closed, noPlanTotal } = useMemo(
+    () => computeNcrStats(filtered.map(dates), asOf, within),
+    [filtered, asOf, within],
+  );
   const maxCurrent = Math.max(0, ...stats.map((st) => st.cur));
+  const [xlsxOpen, setXlsxOpen] = useState(false);
 
   const chip = (label: string, active: boolean, onClick: () => void) => (
     <Button
@@ -244,11 +207,7 @@ function NcrDashboardPage() {
                 ))}
               </div>
               <Button type="button" size="sm" variant="outline" className="h-7 px-3 text-[11px] font-semibold"
-                onClick={() => exportNcrMatrix({
-                  lang, asOf, within, total: filtered.length, closed, noPlanTotal, stats,
-                  filters: { docType: search.docType, team: search.team, sub: search.sub },
-                  list: { rows: filtered },
-                })}>
+                onClick={() => setXlsxOpen(true)}>
                 <Download className="mr-1 size-3.5" />{T.xlsx}
               </Button>
             </div>
@@ -279,7 +238,7 @@ function NcrDashboardPage() {
               <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b border-border bg-muted/50">
                 <div className="sticky left-0 z-10 flex items-center border-r border-border bg-muted px-3 py-3 text-[11px] font-bold uppercase text-foreground/70">{T.col}</div>
                 {stats.map((st) => (
-                  <Button key={st.n} variant="ghost" onClick={() => toList({ stage: st.stage })} className="h-auto min-w-0 rounded-none border-r border-border px-2 py-2.5 hover:bg-ncr-plan-soft">
+                  <Button key={st.n} variant="ghost" onClick={() => toList({ stage: `PS${st.n}` })} className="h-auto min-w-0 rounded-none border-r border-border px-2 py-2.5 hover:bg-ncr-plan-soft">
                     <span className="block min-w-0 text-center"><strong className="block text-sm text-foreground">PS{st.n}</strong><small className="mt-0.5 block truncate text-[10px] font-medium text-foreground/50">{PSL[st.n]}</small></span>
                   </Button>
                 ))}
@@ -361,7 +320,7 @@ function NcrDashboardPage() {
 
               <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] min-h-[84px] items-center border-b-4 border-ncr-matrix/10">
                  <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><ClipboardList className="size-4 text-ncr-plan" /><span className="text-left"><strong className="block text-xs uppercase text-foreground">{T.curTitle}</strong><small className="text-[10px] text-foreground/50">{T.curSub}</small><span className="mt-1.5 flex items-center gap-1 text-[8px] font-medium text-foreground/50"><span>{T.few}</span><i className="size-2 bg-ncr-stage-low" /><i className="size-2 bg-ncr-stage-mid" /><i className="size-2 bg-ncr-stage-high" /><i className="size-2 bg-ncr-stage-max" /><span>{T.many}</span></span></span></Button>
-                {stats.map((st) => <Button key={st.n} variant="ghost" onClick={() => toList({ stage: st.stage })} aria-label={`${st.stage} Current Stage ${st.cur}건`} className={`h-auto min-w-0 rounded-none border-r border-border px-2 py-3 transition-colors ${currentStageTone(st.cur, maxCurrent)}`}><span><strong className="block text-xl">{st.cur}</strong><small className="text-[10px] font-semibold opacity-90">{T.unit}</small></span></Button>)}
+                {stats.map((st) => <Button key={st.n} variant="ghost" onClick={() => toList({ stage: `PS${st.n}` })} aria-label={`PS${st.n} Current Stage ${st.cur}건`} className={`h-auto min-w-0 rounded-none border-r border-border px-2 py-3 transition-colors ${currentStageTone(st.cur, maxCurrent)}`}><span><strong className="block text-xl">{st.cur}</strong><small className="text-[10px] font-semibold opacity-90">{T.unit}</small></span></Button>)}
                 <Button variant="ghost" onClick={() => toList({ stage: "Closed" })} className="h-auto rounded-none bg-ncr-actual-soft px-2 py-3 hover:bg-ncr-actual-soft"><span><strong className="block text-xl text-ncr-actual">{closed}</strong><small className="text-[9px] font-medium text-ncr-actual">{T.done}</small></span></Button>
               </div>
 
@@ -386,6 +345,15 @@ function NcrDashboardPage() {
           </div>
           <div className="border-t border-border bg-muted/30 px-4 py-2 text-[10px] text-muted-foreground">{T.foot}</div>
         </div>
+        <NcrExportDialog
+          open={xlsxOpen}
+          onOpenChange={setXlsxOpen}
+          lang={lang}
+          asOf={asOf}
+          within={within}
+          rows={filtered}
+          filters={{ docType: search.docType, team: search.team, sub: search.sub }}
+        />
       </AppShell>
   );
 }

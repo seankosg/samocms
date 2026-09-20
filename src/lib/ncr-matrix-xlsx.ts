@@ -78,7 +78,8 @@ const T = {
 type Tone = "plan" | "actual" | "delay" | "upcoming" | "neutral" | "stage";
 type Row = { label: string; tone: Tone; values: number[]; closed?: number | null; percent?: boolean; group?: boolean };
 
-export function exportNcrMatrix(input: MatrixExportInput) {
+/** 매트릭스(+리스트) workbook 생성 — 단일/협력사별보내기 공통 */
+export function buildNcrMatrixBook(input: MatrixExportInput) {
   const t = T[input.lang];
   const L = input.lang === "en" ? PS_LABEL_EN : PS_LABEL;
   const s = input.stats;
@@ -206,6 +207,14 @@ export function exportNcrMatrix(input: MatrixExportInput) {
     });
     XLSXS.utils.book_append_sheet(wb, listWs, "NCR List");
   }
-  const subTag = (input.filters.sub ?? "").trim() || "All";
-  XLSXS.writeFile(wb, `${t.file}_${subTag}_${input.asOf.replace(/-/g, "")}.xlsx`);
+  return wb;
+}
+
+export function ncrMatrixFileName(lang: "ko" | "en", sub: string | undefined, asOf: string) {
+  const subTag = (sub ?? "").trim() || "All";
+  return `${T[lang].file}_${subTag}_${asOf.replace(/-/g, "")}.xlsx`;
+}
+
+export function exportNcrMatrix(input: MatrixExportInput) {
+  XLSXS.writeFile(buildNcrMatrixBook(input), ncrMatrixFileName(input.lang, input.filters.sub, input.asOf));
 }
