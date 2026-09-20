@@ -45,11 +45,20 @@ export function effectivePlanDate(
   return plan;
 }
 
-/** tc_daily_progress.item_key 와 동일한 규칙의 키 */
+/**
+ * tc_items 와 tc_daily_progress 를 잇는 조인 키.
+ * tc_daily_progress.item_key 의 grp/equip 표기는 tc_items 와 다르므로
+ * (예: items "Elec|MRMU|GRD||5" vs daily "Elec|MRMU|Grounding Test||5")
+ * 유일성이 보장되는 discipline + row_no 로만 맞춘다.
+ */
 export function tcItemKey(item: TcItem): string {
-  return [item.discipline, item.bldg, item.grp, item.equip, item.row_no]
-    .map((v) => (v == null ? "" : String(v)))
-    .join("|");
+  return `${item.discipline}|${item.row_no}`;
+}
+
+/** tc_daily_progress 행에서 동일한 조인 키를 만든다. */
+export function dailyItemKey(discipline: string, itemKey: string): string {
+  const parts = itemKey.split("|");
+  return `${discipline}|${parts[parts.length - 1] ?? ""}`;
 }
 
 /**
