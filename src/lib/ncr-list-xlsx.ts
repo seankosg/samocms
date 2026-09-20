@@ -133,17 +133,25 @@ export function buildNcrListSheet(input: ListExportInput) {
   }
 
   const headTop = titleRows;
-  // 헤더 스타일 + 병합
+  // 헤더 스타일 + 병합 (협력사 담당 단계 PS2/PS5/PS6/PS7은 노란 음영·검정 글씨)
+  const subStageCol = (c: number) => {
+    for (const n of PS_NUMS) {
+      const s = colIndex.get(planField(`ps${n}s` as SlotKey))!;
+      if (c >= s && c <= s + 3) return SUB_STAGES.has(n);
+    }
+    return false;
+  };
   for (let c = 0; c < width; c++) {
+    const isSub = subStageCol(c);
     cellAt(headTop, c).s = {
-      font: { name: "Arial", sz: 10, bold: true, color: { rgb: "FFFFFF" } },
-      fill: { patternType: "solid", fgColor: { rgb: NAVY } },
+      font: { name: "Arial", sz: 10, bold: true, color: { rgb: isSub ? SUB_HDR_TEXT : "FFFFFF" } },
+      fill: { patternType: "solid", fgColor: { rgb: isSub ? SUB_HDR_FILL : NAVY } },
       alignment: { horizontal: "center", vertical: "center", wrapText: true },
       border: thin("D0D7E2"),
     };
     cellAt(headTop + 1, c).s = {
-      font: { name: "Arial", sz: 9, bold: true, color: { rgb: "FFFFFF" } },
-      fill: { patternType: "solid", fgColor: { rgb: NAVY2 } },
+      font: { name: "Arial", sz: 9, bold: true, color: { rgb: isSub ? SUB_HDR_TEXT : "FFFFFF" } },
+      fill: { patternType: "solid", fgColor: { rgb: isSub ? SUB_HDR_FILL : NAVY2 } },
       alignment: { horizontal: "center", vertical: "center" },
       border: thin("D0D7E2"),
     };
