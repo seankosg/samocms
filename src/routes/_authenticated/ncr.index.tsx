@@ -8,8 +8,7 @@ import { exportNcrList } from "@/lib/ncr-list-xlsx";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { NcrRawTable, cellValue } from "@/components/ncr/ncr-raw-table";
-import { NCR_COLUMNS } from "@/lib/ncr-columns";
+import { NcrRawTable } from "@/components/ncr/ncr-raw-table";
 import { useNcrItems, ncrQuery } from "@/lib/use-ncr";
 import { updateNcrItem, type NcrItem } from "@/lib/ncr.functions";
 import {
