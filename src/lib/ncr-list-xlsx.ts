@@ -32,6 +32,8 @@ const addDays = (iso: string, days: number) => {
   return d.toISOString().slice(0, 10);
 };
 
+const datesOf = (r: NcrItem) => r as unknown as NcrDates;
+
 const fmtDate = (v: unknown) => {
   if (v == null || v === "") return "";
   const s = String(v);
