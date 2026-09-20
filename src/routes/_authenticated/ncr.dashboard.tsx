@@ -103,7 +103,7 @@ function NcrDashboardPage() {
   const goList = useNavigate();
   const [asOf, setAsOf] = useState(() => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)); // 제다 기준 오늘
   const [within, setWithin] = useState(3); // Early Alert 임계치(일)
-  const [lang, setLang] = useState<Lang>("ko");
+  const [lang, setLang] = useState<Lang>("en");
   const T = TXT[lang];
   const PSL = lang === "en" ? PS_LABEL_EN : PS_LABEL;
 
