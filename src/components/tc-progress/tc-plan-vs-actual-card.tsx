@@ -14,7 +14,7 @@ import type { TcStage } from "@/lib/tc-model";
 const dataKey = (stage: string, series: string) => `${stage}__${series}`;
 
 export function TcPlanVsActualCard({
-  scurve, stages, bucket, unit, totals, cumulativeTotals, base,
+  scurve, stages, bucket, unit, totals, cumulativeTotals, base, planNote,
 }: {
   scurve: SCurveResult;
   stages: TcStage[];
@@ -23,6 +23,7 @@ export function TcPlanVsActualCard({
   totals: Record<TcStage, number>;
   cumulativeTotals: { plan: number; actual: number };
   base: string;
+  planNote?: string;
 }) {
   const legend = useProgressLegend({
     metricKeys: stages,
@@ -68,6 +69,7 @@ export function TcPlanVsActualCard({
     <div className="space-y-3 rounded-lg border border-border bg-card p-4">
       <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
         <h2 className="text-sm font-bold">Plan vs Actual S-Curve</h2>
+        {planNote && <span className="text-[11px] text-muted-foreground">{planNote}</span>}
         <Kpi label="총합계" value={totalScope} percent={100} />
         <Kpi label={`현재 계획 누계 (${base})`} value={planAtBase} percent={ratio(planAtBase, totalScope)} />
         <Kpi label="실적 누계" value={actualAtBase} percent={ratio(actualAtBase, totalScope)} />

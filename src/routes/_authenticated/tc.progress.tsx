@@ -16,8 +16,9 @@ import {
   type Bucket, type DailyRow, type GroupBy, type GroupRow, type Unit,
 } from "@/lib/tc-progress-utils";
 import { TC_STAGES, type TcStage } from "@/lib/tc-model";
+import { PLAN_MODE_NOTE, type TcPlanMode } from "@/lib/tc-plan-mode";
 
-type Search = { unit?: string; bucket?: string; stages?: string; group?: string; from?: string; to?: string; disc?: string };
+type Search = { unit?: string; bucket?: string; stages?: string; group?: string; from?: string; to?: string; disc?: string; plan?: string };
 
 export const Route = createFileRoute("/_authenticated/tc/progress")({
   head: () => ({ meta: [
@@ -30,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/tc/progress")({
   validateSearch: (raw: Record<string, unknown>): Search => {
     const s = (k: string) => (typeof raw[k] === "string" && (raw[k] as string).trim() ? (raw[k] as string) : undefined);
     const out: Search = {};
-    for (const k of ["unit", "bucket", "stages", "group", "from", "to", "disc"] as const) {
+    for (const k of ["unit", "bucket", "stages", "group", "from", "to", "disc", "plan"] as const) {
       const v = s(k); if (v) out[k] = v;
     }
     return out;
@@ -49,6 +50,7 @@ function TcProgressPage() {
   const [bucket, setBucket] = useState<Bucket>(
     search.bucket === "week" || search.bucket === "month" ? search.bucket : "day",
   );
+  const [planMode, setPlanMode] = useState<TcPlanMode>(search.plan === "remaining" ? "remaining" : "baseline");
   const [stages, setStages] = useState<TcStage[]>(() => {
     const from = (search.stages ?? "").split(",").filter((s) => TC_STAGES.includes(s as TcStage)) as TcStage[];
     return from.length ? from : [...TC_STAGES];
@@ -89,12 +91,12 @@ function TcProgressPage() {
 
   const matrix = useMemo(() => assembleMatrix({
     daily: (daily.data ?? []).filter((d) => disc === "전체" || d.discipline === disc),
-    items, buckets, bucket, stages, groupBy, base, unit,
-  }), [daily.data, items, buckets, bucket, stages, groupBy, base, unit, disc]);
+    items, buckets, bucket, stages, groupBy, base, unit, planMode,
+  }), [daily.data, items, buckets, bucket, stages, groupBy, base, unit, disc, planMode]);
 
   const scurve = useMemo(
-    () => buildTcSCurve({ matrix, items, stages, base, bucket, unit }),
-    [matrix, items, stages, base, bucket, unit],
+    () => buildTcSCurve({ matrix, items, stages, base, bucket, unit, planMode }),
+    [matrix, items, stages, base, bucket, unit, planMode],
   );
 
   const totals = useMemo(() => {
@@ -160,6 +162,8 @@ function TcProgressPage() {
             onChange={(v) => { setUnit(v as Unit); sync({ unit: v }); }} />
           <Seg label="구간" options={[["day", "일"], ["week", "주"], ["month", "월"]]} value={bucket}
             onChange={(v) => { setBucket(v as Bucket); sync({ bucket: v }); }} />
+          <Seg label="계획 기준" options={[["baseline", "Baseline"], ["remaining", "Remaining"]]} value={planMode}
+            onChange={(v) => { setPlanMode(v as TcPlanMode); sync({ plan: v }); }} />
           <div>
             <div className="mb-1 text-[10px] uppercase text-muted-foreground">공종</div>
             <select
@@ -218,9 +222,10 @@ function TcProgressPage() {
           </div>
         ) : (
           <>
-            <TcPlanVsActualCard scurve={scurve} stages={stages} bucket={bucket} unit={unit} totals={totals} cumulativeTotals={cumulativeTotals} base={base} />
+            <TcPlanVsActualCard scurve={scurve} stages={stages} bucket={bucket} unit={unit} totals={totals} cumulativeTotals={cumulativeTotals} base={base} planNote={PLAN_MODE_NOTE[planMode]} />
             <TcScheduleMatrix
               data={matrix} bucket={bucket} stages={stages} base={base} asOfLabel={base}
+              planNote={PLAN_MODE_NOTE[planMode]}
               onCellClick={onCellClick} onRowClick={onRowClick} onCumClick={onCumClick}
             />
           </>

@@ -84,13 +84,14 @@ function PlanActualCells({ plan, actual, asOfLabel, bold, onPlanClick, onActualC
 }
 
 export function TcScheduleMatrix({
-  data, bucket, stages, base, asOfLabel, onCellClick, onRowClick, onCumClick,
+  data, bucket, stages, base, asOfLabel, planNote, onCellClick, onRowClick, onCumClick,
 }: {
   data: MatrixResult;
   bucket: Bucket;
   stages: TcStage[];
   base: string;
   asOfLabel: string;
+  planNote?: string;
   /** stage=null 이면 선택된 전체 단계 합계 셀 */
   onCellClick?: (row: GroupRow, bucketIso: string, stage: TcStage | null, kind: "planned" | "actual") => void;
   onRowClick?: (row: GroupRow) => void;
@@ -144,6 +145,9 @@ export function TcScheduleMatrix({
 
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card">
+      {planNote && (
+        <div className="border-b border-border px-3 py-1.5 text-[11px] text-muted-foreground">{planNote}</div>
+      )}
       {/* Header */}
       <div className="flex border-b border-border text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
         <div className="shrink-0" style={{ width: STICKY_LEFT_WIDTH, ...OPAQUE }}>
