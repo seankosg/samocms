@@ -345,6 +345,15 @@ function NcrDashboardPage() {
           </div>
           <div className="border-t border-border bg-muted/30 px-4 py-2 text-[10px] text-muted-foreground">{T.foot}</div>
         </div>
+        <NcrExportDialog
+          open={xlsxOpen}
+          onOpenChange={setXlsxOpen}
+          lang={lang}
+          asOf={asOf}
+          within={within}
+          rows={filtered}
+          filters={{ docType: search.docType, team: search.team, sub: search.sub }}
+        />
       </AppShell>
   );
 }
