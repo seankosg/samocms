@@ -256,18 +256,18 @@ function NcrDashboardPage() {
           <div className="grid grid-cols-3 border-t border-border bg-muted/30">
             <Button variant="ghost" onClick={() => toList({})} className="h-auto rounded-none border-r border-border px-4 py-2.5">
               <ClipboardList className="size-4 text-ncr-plan" />
-              <span className="text-[11px] text-muted-foreground">대상 문서</span>
-              <strong className="ml-auto text-lg">{filtered.length.toLocaleString()}<small className="ml-1 text-[10px] font-medium text-muted-foreground">건</small></strong>
+              <span className="text-[11px] text-muted-foreground">{T.scope}</span>
+              <strong className="ml-auto text-lg">{filtered.length.toLocaleString()}<small className="ml-1 text-[10px] font-medium text-muted-foreground">{T.unit}</small></strong>
             </Button>
             <Button variant="ghost" onClick={() => toList({ stage: "Closed" })} className="h-auto rounded-none border-r border-border px-4 py-2.5">
               <CheckCircle2 className="size-4 text-ncr-actual" />
-              <span className="text-[11px] text-muted-foreground">종결 완료</span>
-              <strong className="ml-auto text-lg text-ncr-actual">{closed}<small className="ml-1 text-[10px] font-medium">건</small></strong>
+              <span className="text-[11px] text-muted-foreground">{T.closed}</span>
+              <strong className="ml-auto text-lg text-ncr-actual">{closed}<small className="ml-1 text-[10px] font-medium">{T.unit}</small></strong>
             </Button>
             <Button variant="ghost" onClick={() => toList({})} className="h-auto rounded-none px-4 py-2.5">
               <ClipboardList className="size-4 text-ncr-delay" />
-              <span className="text-[11px] text-muted-foreground">잔여 문서</span>
-              <strong className="ml-auto text-lg text-ncr-delay">{(filtered.length - closed).toLocaleString()}<small className="ml-1 text-[10px] font-medium">건</small></strong>
+              <span className="text-[11px] text-muted-foreground">{T.remain}</span>
+              <strong className="ml-auto text-lg text-ncr-delay">{(filtered.length - closed).toLocaleString()}<small className="ml-1 text-[10px] font-medium">{T.unit}</small></strong>
             </Button>
           </div>
         </div>
@@ -276,10 +276,10 @@ function NcrDashboardPage() {
           <div className="overflow-x-auto">
             <div className="min-w-[1160px]">
               <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] border-b border-border bg-muted/50">
-                <div className="sticky left-0 z-10 flex items-center border-r border-border bg-muted px-3 py-3 text-[11px] font-bold uppercase text-foreground/70">구분</div>
+                <div className="sticky left-0 z-10 flex items-center border-r border-border bg-muted px-3 py-3 text-[11px] font-bold uppercase text-foreground/70">{T.col}</div>
                 {stats.map((st) => (
                   <Button key={st.n} variant="ghost" onClick={() => toList({ stage: st.stage })} className="h-auto min-w-0 rounded-none border-r border-border px-2 py-2.5 hover:bg-ncr-plan-soft">
-                    <span className="block min-w-0 text-center"><strong className="block text-sm text-foreground">PS{st.n}</strong><small className="mt-0.5 block truncate text-[10px] font-medium text-foreground/50">{PS_LABEL[st.n]}</small></span>
+                    <span className="block min-w-0 text-center"><strong className="block text-sm text-foreground">PS{st.n}</strong><small className="mt-0.5 block truncate text-[10px] font-medium text-foreground/50">{PSL[st.n]}</small></span>
                   </Button>
                 ))}
                 <Button variant="ghost" onClick={() => toList({ stage: "Closed" })} className="h-auto rounded-none px-2 text-xs font-bold text-ncr-actual">Closed</Button>
@@ -298,10 +298,10 @@ function NcrDashboardPage() {
                     return <div key={st.n} className={`min-w-0 border-r border-border px-2 py-2 ${st.ongoing ? "bg-ncr-plan-soft/60" : ""}`}>
                       <Button variant="ghost" size="sm" onClick={() => drill(slot, "ongoing")} className={`mx-auto block h-7 px-2 text-xl font-bold ${st.ongoing ? "text-ncr-progress-actual" : "text-foreground/40"}`}>{st.ongoing}</Button>
                       <span className="mt-1 flex items-center justify-center gap-1 text-[10px] text-foreground/50">
-                        <Button variant="ghost" size="sm" onClick={() => drill(slot, "ongoing")} className="h-5 px-1 text-[10px]">시작 후 미완료</Button>
+                        <Button variant="ghost" size="sm" onClick={() => drill(slot, "ongoing")} className="h-5 px-1 text-[10px]">{T.ongoingSub}</Button>
                         {st.ongoingDelay > 0 && (
                           <Button variant="ghost" size="sm" onClick={() => drill(slot, "ongoingDelay")} className="h-5 px-1 text-[10px] font-bold text-ncr-delay" title="완료 계획일이 지났는데 아직 진행 중">
-                            완료계획 경과 <b className="ml-0.5">{st.ongoingDelay}</b>
+                            {T.ongoingDelay} <b className="ml-0.5">{st.ongoingDelay}</b>
                           </Button>
                         )}
                       </span>
@@ -317,17 +317,17 @@ function NcrDashboardPage() {
               </div>
 
               <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] min-h-[84px] items-center border-b-4 border-ncr-matrix/10 bg-ncr-delay-soft/30">
-                  <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide">Remain</strong><small className="text-[10px] text-muted-foreground">대상 − Actual Finish</small></span></Button>
+                  <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide">Remain</strong><small className="text-[10px] text-muted-foreground">{T.remainSub}</small></span></Button>
                 {stats.map((st) => {
                   const remain = filtered.length - st.fAct;
                   return <div key={st.n} className="min-w-0 border-r border-border px-2 text-center">
                     <Button variant="ghost" size="sm" onClick={() => drill(`ps${st.n}f` as SlotKey, "remain")} className={`mx-auto block h-8 px-2 text-2xl font-extrabold tabular-nums ${remain > 0 ? "text-ncr-delay" : "text-foreground/40"}`}>{remain}</Button>
-                    <span className="mt-1 block text-[10px] font-medium text-foreground/50">잔여</span>
+                    <span className="mt-1 block text-[10px] font-medium text-foreground/50">{T.remainCell}</span>
                   </div>;
                 })}
                 <div className="text-center">
                   <Button variant="ghost" size="sm" onClick={() => toList({})} className="mx-auto block h-8 px-2 text-2xl font-extrabold tabular-nums text-ncr-delay">{filtered.length - closed}</Button>
-                  <span className="mt-1 block text-[10px] font-medium text-foreground/50">미종결</span>
+                  <span className="mt-1 block text-[10px] font-medium text-foreground/50">{T.unclosed}</span>
                 </div>
               </div>
 
@@ -344,7 +344,7 @@ function NcrDashboardPage() {
               </div>
 
               <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] min-h-[84px] items-center border-b-4 border-ncr-matrix/10">
-                 <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide">Upcoming</strong><small className="text-[9px] text-muted-foreground">{within}일 이내 · 미착수</small></span></Button>
+                 <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide">Upcoming</strong><small className="text-[9px] text-muted-foreground">{T.upcomingSub(within)}</small></span></Button>
                 {stats.map((st) => {
                   const total = st.upS + st.upF;
                   return <div key={st.n} className={`min-w-0 border-r border-border px-2 py-2 ${total ? "bg-ncr-upcoming-soft" : ""}`}>
@@ -359,31 +359,31 @@ function NcrDashboardPage() {
               </div>
 
               <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] min-h-[84px] items-center border-b-4 border-ncr-matrix/10">
-                 <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><ClipboardList className="size-4 text-ncr-plan" /><span className="text-left"><strong className="block text-xs uppercase text-foreground">Current Stage</strong><small className="text-[10px] text-foreground/50">자동 산출</small><span className="mt-1.5 flex items-center gap-1 text-[8px] font-medium text-foreground/50"><span>적음</span><i className="size-2 bg-ncr-stage-low" /><i className="size-2 bg-ncr-stage-mid" /><i className="size-2 bg-ncr-stage-high" /><i className="size-2 bg-ncr-stage-max" /><span>많음</span></span></span></Button>
-                {stats.map((st) => <Button key={st.n} variant="ghost" onClick={() => toList({ stage: st.stage })} aria-label={`${st.stage} Current Stage ${st.cur}건`} className={`h-auto min-w-0 rounded-none border-r border-border px-2 py-3 transition-colors ${currentStageTone(st.cur, maxCurrent)}`}><span><strong className="block text-xl">{st.cur}</strong><small className="text-[10px] font-semibold opacity-90">건</small></span></Button>)}
-                <Button variant="ghost" onClick={() => toList({ stage: "Closed" })} className="h-auto rounded-none bg-ncr-actual-soft px-2 py-3 hover:bg-ncr-actual-soft"><span><strong className="block text-xl text-ncr-actual">{closed}</strong><small className="text-[9px] font-medium text-ncr-actual">완료</small></span></Button>
+                 <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><ClipboardList className="size-4 text-ncr-plan" /><span className="text-left"><strong className="block text-xs uppercase text-foreground">{T.curTitle}</strong><small className="text-[10px] text-foreground/50">{T.curSub}</small><span className="mt-1.5 flex items-center gap-1 text-[8px] font-medium text-foreground/50"><span>{T.few}</span><i className="size-2 bg-ncr-stage-low" /><i className="size-2 bg-ncr-stage-mid" /><i className="size-2 bg-ncr-stage-high" /><i className="size-2 bg-ncr-stage-max" /><span>{T.many}</span></span></span></Button>
+                {stats.map((st) => <Button key={st.n} variant="ghost" onClick={() => toList({ stage: st.stage })} aria-label={`${st.stage} Current Stage ${st.cur}건`} className={`h-auto min-w-0 rounded-none border-r border-border px-2 py-3 transition-colors ${currentStageTone(st.cur, maxCurrent)}`}><span><strong className="block text-xl">{st.cur}</strong><small className="text-[10px] font-semibold opacity-90">{T.unit}</small></span></Button>)}
+                <Button variant="ghost" onClick={() => toList({ stage: "Closed" })} className="h-auto rounded-none bg-ncr-actual-soft px-2 py-3 hover:bg-ncr-actual-soft"><span><strong className="block text-xl text-ncr-actual">{closed}</strong><small className="text-[9px] font-medium text-ncr-actual">{T.done}</small></span></Button>
               </div>
 
               <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] min-h-[84px] items-center">
-                 <Button variant="ghost" onClick={() => drill("ps1s", "noplanAll")} className="sticky left-0 z-10 h-auto items-center gap-2 rounded-none border-r border-border bg-muted px-3 py-2.5 hover:bg-muted"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide text-foreground">No Plan</strong><small className="text-[10px] text-foreground/50">계획일 없음</small></span></Button>
+                 <Button variant="ghost" onClick={() => drill("ps1s", "noplanAll")} className="sticky left-0 z-10 h-auto items-center gap-2 rounded-none border-r border-border bg-muted px-3 py-2.5 hover:bg-muted"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide text-foreground">No Plan</strong><small className="text-[10px] text-foreground/50">{T.noPlan}</small></span></Button>
                 {stats.map((st) => (
                   <div key={st.n} className={`min-w-0 border-r border-border text-center ${st.noPlan ? "bg-muted/60" : ""}`}>
                     <Button variant="ghost" onClick={() => drill(`ps${st.n}s` as SlotKey, "noplan")} aria-label={`PS${st.n} 계획 미수립 ${st.noPlan}건`} className="h-auto w-full flex-col gap-0 rounded-none px-2 py-2.5">
                       <strong className={`block text-lg ${st.noPlan ? "text-foreground" : "text-foreground/35"}`}>{st.noPlan}</strong>
-                      <small className="text-[10px] font-medium text-foreground/50">건</small>
+                      <small className="text-[10px] font-medium text-foreground/50">{T.unit}</small>
                     </Button>
                   </div>
                 ))}
                 <div className={`text-center ${noPlanTotal ? "bg-muted/60" : ""}`}>
                   <Button variant="ghost" onClick={() => drill("ps1s", "noplanAll")} aria-label={`전 단계 계획 미수립 ${noPlanTotal}건`} className="h-auto w-full flex-col gap-0 rounded-none px-2 py-2.5">
                     <strong className={`block text-lg ${noPlanTotal ? "text-foreground" : "text-foreground/35"}`}>{noPlanTotal}</strong>
-                    <small className="text-[10px] font-medium text-foreground/50">전 단계</small>
+                    <small className="text-[10px] font-medium text-foreground/50">{T.allStages}</small>
                   </Button>
                 </div>
               </div>
             </div>
           </div>
-          <div className="border-t border-border bg-muted/30 px-4 py-2 text-[10px] text-muted-foreground">각 수치 영역을 누르면 해당 Progress Stage의 NCR 리스트로 이동합니다.</div>
+          <div className="border-t border-border bg-muted/30 px-4 py-2 text-[10px] text-muted-foreground">{T.foot}</div>
         </div>
       </AppShell>
   );
