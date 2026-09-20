@@ -2,6 +2,7 @@
 // QAIL Snag Progress 의 progress-utils 를 T&C 6단계로 이식한 순수 함수 모음.
 
 import { TC_STAGES, stageDone, type TcItem, type TcStage } from "./tc-model";
+import { buildShiftMap, effectivePlanDate, type TcPlanMode } from "./tc-plan-mode";
 import { flat } from "./schedule-model";
 
 export type Bucket = "day" | "week" | "month";
