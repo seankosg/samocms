@@ -163,7 +163,6 @@ function NcrListPage() {
   };
 
   const exportXlsx = () => {
-    // 임포트 엑셀과 동일한 컬럼 순서로 내보냅니다.
     exportNcrList({
       rows: filtered,
       asOf: search.asOf ?? new Date().toISOString().slice(0, 10),
