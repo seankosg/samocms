@@ -162,6 +162,8 @@ function TcProgressPage() {
             onChange={(v) => { setUnit(v as Unit); sync({ unit: v }); }} />
           <Seg label="구간" options={[["day", "일"], ["week", "주"], ["month", "월"]]} value={bucket}
             onChange={(v) => { setBucket(v as Bucket); sync({ bucket: v }); }} />
+          <Seg label="계획 기준" options={[["baseline", "Baseline"], ["remaining", "Remaining"]]} value={planMode}
+            onChange={(v) => { setPlanMode(v as TcPlanMode); sync({ plan: v }); }} />
           <div>
             <div className="mb-1 text-[10px] uppercase text-muted-foreground">공종</div>
             <select
