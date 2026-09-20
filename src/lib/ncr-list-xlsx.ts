@@ -43,7 +43,7 @@ const fmtDate = (v: unknown) => {
   return s.length >= 10 ? s.slice(0, 10) : s;
 };
 
-export function exportNcrList(input: ListExportInput) {
+export function buildNcrListSheet(input: ListExportInput) {
   const { rows, asOf } = input;
   const upcomingLimit = addDays(asOf, 7);
 
