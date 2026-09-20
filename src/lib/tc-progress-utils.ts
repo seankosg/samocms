@@ -2,7 +2,7 @@
 // QAIL Snag Progress 의 progress-utils 를 T&C 6단계로 이식한 순수 함수 모음.
 
 import { TC_STAGES, stageDone, type TcItem, type TcStage } from "./tc-model";
-import { buildShiftMap, effectivePlanDate, type TcPlanMode } from "./tc-plan-mode";
+import { buildShiftMap, dailyItemKey, effectivePlanDate, type TcPlanMode } from "./tc-plan-mode";
 import { flat } from "./schedule-model";
 
 export type Bucket = "day" | "week" | "month";
@@ -250,7 +250,7 @@ export function assembleMatrix(opts: {
 
     if (planValue) {
       // remaining: 기준일 시점 완료된 단계의 계획은 실적일 버킷으로 이월
-      const shifted = shift?.get(`${d.item_key}|${st}`);
+      const shifted = shift?.get(`${dailyItemKey(d.discipline, d.item_key)}|${st}`);
       const planDate = shifted ?? d.event_date;
       const pi = idx.get(bucketize(planDate, bucket));
       const cell = pi === undefined ? undefined : sr.cells[pi];
