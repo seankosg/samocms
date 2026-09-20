@@ -18,6 +18,18 @@ export const PS_LABEL: Record<number, string> = {
   8: "회신",
 };
 
+/** 영문 단계명 (화면·엑셀 영문 모드) */
+export const PS_LABEL_EN: Record<number, string> = {
+  1: "Notice to Subcon",
+  2: "MST by Subcon",
+  3: "MST to Consultant",
+  4: "MST Approval",
+  5: "Rectification",
+  6: "Inspection",
+  7: "Close-out Request",
+  8: "Response",
+};
+
 /** 슬롯 코드 → 표시 코드 (ps3s → PS3S) */
 export const slotCode = (s: SlotKey) => s.toUpperCase();
 /** 슬롯이 속한 PS 번호 (ps3f → 3) */
