@@ -197,5 +197,15 @@ export function exportNcrMatrix(input: MatrixExportInput) {
 
   const wb = XLSXS.utils.book_new();
   XLSXS.utils.book_append_sheet(wb, ws, t.sheet);
-  XLSXS.writeFile(wb, `${t.file}_${input.asOf.replace(/-/g, "")}.xlsx`);
+  // 대시보드 필터 기준의 NCR 리스트를 두 번째 시트로 추가
+  if (input.list) {
+    const listWs = buildNcrListSheet({
+      ...input.list,
+      asOf: input.asOf,
+      filters: { docType: input.filters.docType, team: input.filters.team, sub: input.filters.sub },
+    });
+    XLSXS.utils.book_append_sheet(wb, listWs, "NCR List");
+  }
+  const subTag = (input.filters.sub ?? "").trim() || "All";
+  XLSXS.writeFile(wb, `${t.file}_${subTag}_${input.asOf.replace(/-/g, "")}.xlsx`);
 }
