@@ -1,9 +1,10 @@
 // T&C S-Curve 시리즈 빌더 (QAIL scurve-utils 이식).
 import { TC_STAGES, type TcItem, type TcStage } from "./tc-model";
 import {
-  ACT_COL, PLAN_COL, bucketEnd, labelDdMmm,
+  ACT_COL, bucketEnd, labelDdMmm,
   type Bucket, type BucketCell, type MatrixResult, type Unit,
 } from "./tc-progress-utils";
+import { effectivePlanDate, type TcPlanMode } from "./tc-plan-mode";
 
 export interface SCurveStageSeries {
   stage: TcStage;
