@@ -145,6 +145,9 @@ export function TcScheduleMatrix({
 
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card">
+      {planNote && (
+        <div className="border-b border-border px-3 py-1.5 text-[11px] text-muted-foreground">{planNote}</div>
+      )}
       {/* Header */}
       <div className="flex border-b border-border text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
         <div className="shrink-0" style={{ width: STICKY_LEFT_WIDTH, ...OPAQUE }}>
