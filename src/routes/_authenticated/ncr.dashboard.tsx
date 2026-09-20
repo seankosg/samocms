@@ -1,13 +1,40 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { useMemo, useState } from "react";
-import { CheckCircle2, ClipboardList } from "lucide-react";
+import { CheckCircle2, ClipboardList, Download } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNcrItems, ncrQuery } from "@/lib/use-ncr";
 import type { NcrItem } from "@/lib/ncr.functions";
-import { PS_NUMS, PS_LABEL, SLOT_ORDER, planField, actualField, currentStage, isStartDelayed, type SlotKey, type NcrDates } from "@/lib/ncr-model";
+import { exportNcrMatrix } from "@/lib/ncr-matrix-xlsx";
+import { PS_NUMS, PS_LABEL, PS_LABEL_EN, SLOT_ORDER, planField, actualField, currentStage, isStartDelayed, type SlotKey, type NcrDates } from "@/lib/ncr-model";
+
+type Lang = "ko" | "en";
+const TXT = {
+  ko: {
+    matrixTitle: "NCR Operational Progress Matrix", matrixSub: "PS1~PS8 계획 · 실적 · 지연 · 현재단계 비교",
+    plan: "계획", actual: "실적·완료", upcoming: "임박", delay: "지연",
+    docType: "문서종류", team: "팀", sub: "협력사", all: "전체",
+    scope: "대상 문서", closed: "종결 완료", remain: "잔여 문서", unit: "건",
+    col: "구분", ongoingSub: "시작 후 미완료", ongoingDelay: "완료계획 경과",
+    remainSub: "대상 − Actual Finish", remainCell: "잔여", unclosed: "미종결",
+    upcomingSub: (n: number) => `${n}일 이내 · 미착수`, curTitle: "Current Stage", curSub: "자동 산출",
+    few: "적음", many: "많음", done: "완료", noPlan: "계획일 없음", allStages: "전 단계",
+    foot: "각 수치 영역을 누르면 해당 Progress Stage의 NCR 리스트로 이동합니다.", xlsx: "엑셀 내보내기",
+  },
+  en: {
+    matrixTitle: "NCR Operational Progress Matrix", matrixSub: "PS1–PS8 plan · actual · delay · current stage",
+    plan: "Plan", actual: "Actual / Done", upcoming: "Upcoming", delay: "Delay",
+    docType: "Doc Type", team: "Team", sub: "Subcon", all: "All",
+    scope: "Scope", closed: "Closed", remain: "Remaining", unit: "ea",
+    col: "Category", ongoingSub: "started, not finished", ongoingDelay: "Finish plan overdue",
+    remainSub: "Scope − Actual Finish", remainCell: "Remain", unclosed: "Open",
+    upcomingSub: (n: number) => `within ${n} days · not started`, curTitle: "Current Stage", curSub: "auto-derived",
+    few: "Low", many: "High", done: "Done", noPlan: "No plan date", allStages: "All stages",
+    foot: "Click any figure to open the matching NCR list.", xlsx: "Export to Excel",
+  },
+} as const;
 
 const searchSchema = z.object({
   docType: z.string().optional(),
