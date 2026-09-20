@@ -115,6 +115,9 @@ function NcrDashboardPage() {
   const goList = useNavigate();
   const [asOf, setAsOf] = useState(() => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)); // 제다 기준 오늘
   const [within, setWithin] = useState(3); // Early Alert 임계치(일)
+  const [lang, setLang] = useState<Lang>("ko");
+  const T = TXT[lang];
+  const PSL = lang === "en" ? PS_LABEL_EN : PS_LABEL;
 
   const setSearch = (patch: Partial<z.infer<typeof searchSchema>>) =>
     navigate({ search: { ...search, ...patch }, replace: true });
@@ -205,33 +208,49 @@ function NcrDashboardPage() {
         <div className="mb-4 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3 bg-ncr-matrix px-4 py-3 text-ncr-matrix-foreground">
             <div>
-              <p className="text-sm font-bold">NCR Operational Progress Matrix</p>
-              <p className="mt-0.5 text-[11px] opacity-70">PS1~PS8 계획 · 실적 · 지연 · 현재단계 비교</p>
+              <p className="text-sm font-bold">{T.matrixTitle}</p>
+              <p className="mt-0.5 text-[11px] opacity-70">{T.matrixSub}</p>
             </div>
             <div className="flex items-center gap-4 text-[11px] font-semibold">
-              <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-ncr-plan" />계획</span>
-              <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-ncr-actual" />실적·완료</span>
-              <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-ncr-upcoming" />임박</span>
-              <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-ncr-delay" />지연</span>
+              <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-ncr-plan" />{T.plan}</span>
+              <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-ncr-actual" />{T.actual}</span>
+              <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-ncr-upcoming" />{T.upcoming}</span>
+              <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-ncr-delay" />{T.delay}</span>
             </div>
           </div>
           <div className="space-y-2 p-3">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="w-14 text-[11px] font-bold text-muted-foreground">문서종류</span>
-            {chip("전체", !search.docType, () => setSearch({ docType: undefined }))}
+            <span className="w-14 text-[11px] font-bold text-muted-foreground">{T.docType}</span>
+            {chip(T.all, !search.docType, () => setSearch({ docType: undefined }))}
             {facets.docTypes.map((t) => chip(t, search.docType === t, () => setSearch({ docType: search.docType === t ? undefined : t })))}
             {facets.teams.length > 1 && (
               <>
-                <span className="ml-3 w-8 text-[11px] font-bold text-muted-foreground">팀</span>
-                {chip("전체", !search.team, () => setSearch({ team: undefined }))}
+                <span className="ml-3 w-8 text-[11px] font-bold text-muted-foreground">{T.team}</span>
+                {chip(T.all, !search.team, () => setSearch({ team: undefined }))}
                 {facets.teams.map((t) => chip(t, search.team === t, () => setSearch({ team: search.team === t ? undefined : t })))}
               </>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="w-14 text-[11px] font-bold text-muted-foreground">협력사</span>
-            {chip("전체", !search.sub, () => setSearch({ sub: undefined }))}
+            <span className="w-14 text-[11px] font-bold text-muted-foreground">{T.sub}</span>
+            {chip(T.all, !search.sub, () => setSearch({ sub: undefined }))}
             {facets.subs.map((t) => chip(t, search.sub === t, () => setSearch({ sub: search.sub === t ? undefined : t })))}
+            <div className="ml-auto flex items-center gap-2">
+              <div className="flex overflow-hidden rounded-full border border-border" role="group" aria-label="언어 / Language">
+                {(["ko", "en"] as const).map((l) => (
+                  <Button key={l} type="button" size="sm" variant={lang === l ? "default" : "ghost"}
+                    onClick={() => setLang(l)} aria-pressed={lang === l}
+                    className="h-7 rounded-none px-3 text-[11px] font-semibold">{l === "ko" ? "한글" : "ENG"}</Button>
+                ))}
+              </div>
+              <Button type="button" size="sm" variant="outline" className="h-7 px-3 text-[11px] font-semibold"
+                onClick={() => exportNcrMatrix({
+                  lang, asOf, within, total: filtered.length, closed, noPlanTotal, stats,
+                  filters: { docType: search.docType, team: search.team, sub: search.sub },
+                })}>
+                <Download className="mr-1 size-3.5" />{T.xlsx}
+              </Button>
+            </div>
           </div>
           </div>
           <div className="grid grid-cols-3 border-t border-border bg-muted/30">
