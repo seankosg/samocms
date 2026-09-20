@@ -19,6 +19,9 @@ const ACTUAL = "15803D";
 const DELAY = "B91C1C";
 const UPCOMING = "B45309";
 const GREY = "667085";
+const SUB_HDR_FILL = "FACC15"; // 협력사 담당 단계(PS2/PS5/PS6/PS7) 헤더 — 노란 음영 + 검정 글씨
+const SUB_HDR_TEXT = "111827";
+const SUB_STAGES = new Set([2, 5, 6, 7]);
 const SOFT = { plan: "EAF1FE", actual: "E9F7EE", delay: "FDEAEA", upcoming: "FDF3E4", zebra: "F6F8FB", group: "EEF2F7" };
 
 const thin = (rgb: string) => {
