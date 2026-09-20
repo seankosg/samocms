@@ -19,6 +19,9 @@ const ACTUAL = "15803D";
 const DELAY = "B91C1C";
 const UPCOMING = "B45309";
 const GREY = "667085";
+const SUB_HDR_FILL = "FACC15"; // 협력사 담당 단계(PS2/PS5/PS6/PS7) 헤더 — 노란 음영 + 검정 글씨
+const SUB_HDR_TEXT = "111827";
+const SUB_STAGES = new Set([2, 5, 6, 7]);
 const SOFT = { plan: "EAF1FE", actual: "E9F7EE", delay: "FDEAEA", upcoming: "FDF3E4", zebra: "F6F8FB", group: "EEF2F7" };
 
 const thin = (rgb: string) => {
@@ -40,7 +43,7 @@ const fmtDate = (v: unknown) => {
   return s.length >= 10 ? s.slice(0, 10) : s;
 };
 
-export function exportNcrList(input: ListExportInput) {
+export function buildNcrListSheet(input: ListExportInput) {
   const { rows, asOf } = input;
   const upcomingLimit = addDays(asOf, 7);
 
@@ -130,17 +133,25 @@ export function exportNcrList(input: ListExportInput) {
   }
 
   const headTop = titleRows;
-  // 헤더 스타일 + 병합
+  // 헤더 스타일 + 병합 (협력사 담당 단계 PS2/PS5/PS6/PS7은 노란 음영·검정 글씨)
+  const subStageCol = (c: number) => {
+    for (const n of PS_NUMS) {
+      const s = colIndex.get(planField(`ps${n}s` as SlotKey))!;
+      if (c >= s && c <= s + 3) return SUB_STAGES.has(n);
+    }
+    return false;
+  };
   for (let c = 0; c < width; c++) {
+    const isSub = subStageCol(c);
     cellAt(headTop, c).s = {
-      font: { name: "Arial", sz: 10, bold: true, color: { rgb: "FFFFFF" } },
-      fill: { patternType: "solid", fgColor: { rgb: NAVY } },
+      font: { name: "Arial", sz: 10, bold: true, color: { rgb: isSub ? SUB_HDR_TEXT : "FFFFFF" } },
+      fill: { patternType: "solid", fgColor: { rgb: isSub ? SUB_HDR_FILL : NAVY } },
       alignment: { horizontal: "center", vertical: "center", wrapText: true },
       border: thin("D0D7E2"),
     };
     cellAt(headTop + 1, c).s = {
-      font: { name: "Arial", sz: 9, bold: true, color: { rgb: "FFFFFF" } },
-      fill: { patternType: "solid", fgColor: { rgb: NAVY2 } },
+      font: { name: "Arial", sz: 9, bold: true, color: { rgb: isSub ? SUB_HDR_TEXT : "FFFFFF" } },
+      fill: { patternType: "solid", fgColor: { rgb: isSub ? SUB_HDR_FILL : NAVY2 } },
       alignment: { horizontal: "center", vertical: "center" },
       border: thin("D0D7E2"),
     };
@@ -229,7 +240,12 @@ export function exportNcrList(input: ListExportInput) {
     ref: XLSXS.utils.encode_range({ s: { r: headTop + 1, c: 0 }, e: { r: aoa.length - 1, c: width - 1 } }),
   };
 
+  return ws;
+}
+
+/** NCR 리스트 단독 파일보내기 */
+export function exportNcrList(input: ListExportInput) {
   const wb = XLSXS.utils.book_new();
-  XLSXS.utils.book_append_sheet(wb, ws, "NCR List");
-  XLSXS.writeFile(wb, `HMMME_NCR_List_${asOf.replace(/-/g, "")}.xlsx`);
+  XLSXS.utils.book_append_sheet(wb, buildNcrListSheet(input), "NCR List");
+  XLSXS.writeFile(wb, `HMMME_NCR_List_${input.asOf.replace(/-/g, "")}.xlsx`);
 }

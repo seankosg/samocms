@@ -1,5 +1,6 @@
 import { XLSXS } from "@/lib/xlsx-style";
 import { PS_LABEL, PS_LABEL_EN, PS_NUMS } from "@/lib/ncr-model";
+import { buildNcrListSheet, type ListExportInput } from "@/lib/ncr-list-xlsx";
 
 /** NCR 대시보드 매트릭스 → 서식이 적용된 엑셀 (영문/한글 연동, 기준일·필터 반영) */
 
@@ -18,6 +19,8 @@ export type MatrixExportInput = {
   noPlanTotal: number;
   stats: MatrixStat[];
   filters: { docType?: string | undefined; team?: string | undefined; sub?: string | undefined };
+  /** 지정 시 동일 파일에 NCR 리스트 시트를 추가 */
+  list?: Omit<ListExportInput, "asOf" | "filters"> | undefined;
 };
 
 const NAVY = "1E3A5F";
@@ -28,6 +31,9 @@ const UPCOMING = "B45309";
 const GREY = "667085";
 const SOFT = { plan: "EAF1FE", actual: "E9F7EE", delay: "FDEAEA", upcoming: "FDF3E4", zebra: "F6F8FB" };
 const STAGE_FILL = ["F1F5F9", "DBEAFE", "BFDBFE", "93C5FD", "60A5FA"];
+const SUB_HDR_FILL = "FACC15"; // 협력사 담당 단계(PS2/PS5/PS6/PS7) — 노란 음영 + 검정 글씨
+const SUB_HDR_TEXT = "111827";
+const SUB_STAGES = new Set([2, 5, 6, 7]);
 
 const thin = (rgb: string) => {
   const s = { style: "thin", color: { rgb } } as const;
@@ -134,15 +140,16 @@ export function exportNcrMatrix(input: MatrixExportInput) {
   // 헤더 2행
   const headTop = 5;
   for (let c = 0; c < width; c++) {
+    const isSub = c >= 1 && c <= PS_NUMS.length && SUB_STAGES.has(PS_NUMS[c - 1]!);
     cellAt(headTop, c).s = {
-      font: { name: "Arial", sz: 11, bold: true, color: { rgb: "FFFFFF" } },
-      fill: { patternType: "solid", fgColor: { rgb: NAVY } },
+      font: { name: "Arial", sz: 11, bold: true, color: { rgb: isSub ? SUB_HDR_TEXT : "FFFFFF" } },
+      fill: { patternType: "solid", fgColor: { rgb: isSub ? SUB_HDR_FILL : NAVY } },
       alignment: { horizontal: "center", vertical: "center", wrapText: true },
       border: thin("D0D7E2"),
     };
     cellAt(headTop + 1, c).s = {
-      font: { name: "Arial", sz: 9, color: { rgb: "FFFFFF" } },
-      fill: { patternType: "solid", fgColor: { rgb: "2F5480" } },
+      font: { name: "Arial", sz: 9, color: { rgb: isSub ? SUB_HDR_TEXT : "FFFFFF" } },
+      fill: { patternType: "solid", fgColor: { rgb: isSub ? SUB_HDR_FILL : "2F5480" } },
       alignment: { horizontal: "center", vertical: "center", wrapText: true },
       border: thin("D0D7E2"),
     };
@@ -190,5 +197,15 @@ export function exportNcrMatrix(input: MatrixExportInput) {
 
   const wb = XLSXS.utils.book_new();
   XLSXS.utils.book_append_sheet(wb, ws, t.sheet);
-  XLSXS.writeFile(wb, `${t.file}_${input.asOf.replace(/-/g, "")}.xlsx`);
+  // 대시보드 필터 기준의 NCR 리스트를 두 번째 시트로 추가
+  if (input.list) {
+    const listWs = buildNcrListSheet({
+      ...input.list,
+      asOf: input.asOf,
+      filters: { docType: input.filters.docType, team: input.filters.team, sub: input.filters.sub },
+    });
+    XLSXS.utils.book_append_sheet(wb, listWs, "NCR List");
+  }
+  const subTag = (input.filters.sub ?? "").trim() || "All";
+  XLSXS.writeFile(wb, `${t.file}_${subTag}_${input.asOf.replace(/-/g, "")}.xlsx`);
 }

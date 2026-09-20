@@ -247,6 +247,7 @@ function NcrDashboardPage() {
                 onClick={() => exportNcrMatrix({
                   lang, asOf, within, total: filtered.length, closed, noPlanTotal, stats,
                   filters: { docType: search.docType, team: search.team, sub: search.sub },
+                  list: { rows: filtered },
                 })}>
                 <Download className="mr-1 size-3.5" />{T.xlsx}
               </Button>
