@@ -16,8 +16,9 @@ import {
   type Bucket, type DailyRow, type GroupBy, type GroupRow, type Unit,
 } from "@/lib/tc-progress-utils";
 import { TC_STAGES, type TcStage } from "@/lib/tc-model";
+import { PLAN_MODE_NOTE, type TcPlanMode } from "@/lib/tc-plan-mode";
 
-type Search = { unit?: string; bucket?: string; stages?: string; group?: string; from?: string; to?: string; disc?: string };
+type Search = { unit?: string; bucket?: string; stages?: string; group?: string; from?: string; to?: string; disc?: string; plan?: string };
 
 export const Route = createFileRoute("/_authenticated/tc/progress")({
   head: () => ({ meta: [
