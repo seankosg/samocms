@@ -3,8 +3,15 @@
 // - remaining: 기준일 시점 완료된 단계의 계획을 "실적일 위치로 이월"
 //   (계획을 삭제하지 않으므로 계획 누계선이 100%에 수렴하고 계획·실적 모수가 같다)
 
-import { ACT_COL, PLAN_COL } from "./tc-progress-utils";
 import type { TcItem, TcStage } from "./tc-model";
+
+// tc-progress-utils 와 동일 매핑 (순환 import 방지를 위해 로컬 정의)
+const PLAN_COL: Record<TcStage, keyof TcItem> = {
+  T0: "t0_p", T1: "t1_p", Report: "rp_p", RFI: "rfi_p", T2: "t2_p", Response: "resp_p",
+};
+const ACT_COL: Record<TcStage, keyof TcItem> = {
+  T0: "t0_a", T1: "t1_a", Report: "rp_a", RFI: "rfi_a", T2: "t2_a", Response: "resp_a",
+};
 
 export type TcPlanMode = "baseline" | "remaining";
 
