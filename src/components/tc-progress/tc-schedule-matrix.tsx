@@ -84,13 +84,14 @@ function PlanActualCells({ plan, actual, asOfLabel, bold, onPlanClick, onActualC
 }
 
 export function TcScheduleMatrix({
-  data, bucket, stages, base, asOfLabel, onCellClick, onRowClick, onCumClick,
+  data, bucket, stages, base, asOfLabel, planNote, onCellClick, onRowClick, onCumClick,
 }: {
   data: MatrixResult;
   bucket: Bucket;
   stages: TcStage[];
   base: string;
   asOfLabel: string;
+  planNote?: string;
   /** stage=null 이면 선택된 전체 단계 합계 셀 */
   onCellClick?: (row: GroupRow, bucketIso: string, stage: TcStage | null, kind: "planned" | "actual") => void;
   onRowClick?: (row: GroupRow) => void;
