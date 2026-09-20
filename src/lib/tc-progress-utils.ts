@@ -191,12 +191,15 @@ export function assembleMatrix(opts: {
   groupBy: GroupBy[];
   base: string;
   unit: Unit;
+  planMode?: TcPlanMode;
 }): MatrixResult {
   const { daily, items, buckets, bucket, stages, groupBy, base, unit } = opts;
+  const planMode: TcPlanMode = opts.planMode ?? "baseline";
   const dims = groupBy.length ? groupBy : (["bldg"] as GroupBy[]);
   const idx = new Map<string, number>();
   buckets.forEach((b, i) => idx.set(b, i));
   const rowMap = new Map<string, GroupRow>();
+  const shift = planMode === "remaining" ? buildShiftMap(items, [...TC_STAGES], base) : null;
 
   const ensure = (raw: string[]): GroupRow => {
     const key = raw.join(GROUP_SEP);
@@ -222,7 +225,7 @@ export function assembleMatrix(opts: {
       const sr = row.stages[st];
       sr.total += v;
       if (stageDone(it, st)) sr.totalDone += v;
-      const p = it[PLAN_COL[st]] as string | null;
+      const p = effectivePlanDate(it, st, planMode, base);
       const a = it[ACT_COL[st]] as string | null;
       if (p && p <= base) sr.cumPlan += v;
       if (a && a <= base) sr.cumActual += v;
@@ -233,15 +236,25 @@ export function assembleMatrix(opts: {
   for (const d of daily) {
     const st = DB_STAGE[d.stage];
     if (!st) continue;
-    const b = bucketize(d.event_date, bucket);
-    const i = idx.get(b);
-    if (i === undefined) continue;
     const row = ensure(groupKeyOf(dims, d));
     const sr = row.stages[st];
-    const cell = sr.cells[i];
-    if (!cell) continue;
-    cell.plan += unit === "qty" ? Number(d.plan_qty) || 0 : Number(d.plan_count) || 0;
-    cell.actual += unit === "qty" ? Number(d.actual_qty) || 0 : Number(d.actual_count) || 0;
+    const planValue = unit === "qty" ? Number(d.plan_qty) || 0 : Number(d.plan_count) || 0;
+    const actualValue = unit === "qty" ? Number(d.actual_qty) || 0 : Number(d.actual_count) || 0;
+
+    if (actualValue) {
+      const ai = idx.get(bucketize(d.event_date, bucket));
+      const cell = ai === undefined ? undefined : sr.cells[ai];
+      if (cell) cell.actual += actualValue;
+    }
+
+    if (planValue) {
+      // remaining: 기준일 시점 완료된 단계의 계획은 실적일 버킷으로 이월
+      const shifted = shift?.get(`${d.item_key}|${st}`);
+      const planDate = shifted ?? d.event_date;
+      const pi = idx.get(bucketize(planDate, bucket));
+      const cell = pi === undefined ? undefined : sr.cells[pi];
+      if (cell) cell.plan += planValue;
+    }
   }
 
   // 선택 단계 합산
