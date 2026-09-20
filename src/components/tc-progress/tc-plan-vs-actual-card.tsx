@@ -14,7 +14,7 @@ import type { TcStage } from "@/lib/tc-model";
 const dataKey = (stage: string, series: string) => `${stage}__${series}`;
 
 export function TcPlanVsActualCard({
-  scurve, stages, bucket, unit, totals, cumulativeTotals, base,
+  scurve, stages, bucket, unit, totals, cumulativeTotals, base, planNote,
 }: {
   scurve: SCurveResult;
   stages: TcStage[];
@@ -23,6 +23,7 @@ export function TcPlanVsActualCard({
   totals: Record<TcStage, number>;
   cumulativeTotals: { plan: number; actual: number };
   base: string;
+  planNote?: string;
 }) {
   const legend = useProgressLegend({
     metricKeys: stages,
