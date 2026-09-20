@@ -37,8 +37,10 @@ export function buildTcSCurve(opts: {
   base: string;
   bucket: Bucket;
   unit: Unit;
+  planMode?: TcPlanMode;
 }): SCurveResult {
   const { matrix, items, stages, base, bucket, unit } = opts;
+  const planMode: TcPlanMode = opts.planMode ?? "baseline";
   const buckets = matrix.buckets;
   const n = buckets.length;
   const series = TC_STAGES.reduce((a, s) => { a[s] = empty(s, n); return a; }, {} as Record<TcStage, SCurveStageSeries>);
@@ -65,7 +67,7 @@ export function buildTcSCurve(opts: {
     for (let i = 0; i < n; i++) {
       const through = bucketEnd(buckets[i] ?? base, bucket);
       s.cumPlan[i] = items.reduce((sum, item) => {
-        const date = item[PLAN_COL[st]] as string | null;
+        const date = effectivePlanDate(item, st, planMode, base);
         const value = unit === "qty" ? Number(item.qty) || 0 : 1;
         return sum + (date && date <= through ? value : 0);
       }, 0);
