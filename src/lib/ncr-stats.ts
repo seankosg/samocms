@@ -40,7 +40,7 @@ export function computeNcrStats(rows: NcrDates[], asOf: string, within: number) 
       const c = currentStage(d);
       if (c.startsWith(`PS${n}`)) cur += 1;
     }
-    return { n, stage: "PS" + n, sPlan, sAct, fPlan, fAct, sDelay, fDelay, cur, noPlan, ongoing, ongoingDelay, upS, upF };
+    return { n, sPlan, sAct, fPlan, fAct, sDelay, fDelay, cur, noPlan, ongoing, ongoingDelay, upS, upF };
   });
   const closed = rows.filter((r) => currentStage(r) === "Closed").length;
   const noPlanTotal = rows.filter((d) => SLOT_ORDER.every((s) => !d[planField(s)])).length;
