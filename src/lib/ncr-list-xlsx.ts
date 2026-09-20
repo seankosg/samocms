@@ -240,7 +240,12 @@ export function buildNcrListSheet(input: ListExportInput) {
     ref: XLSXS.utils.encode_range({ s: { r: headTop + 1, c: 0 }, e: { r: aoa.length - 1, c: width - 1 } }),
   };
 
+  return ws;
+}
+
+/** NCR 리스트 단독 파일보내기 */
+export function exportNcrList(input: ListExportInput) {
   const wb = XLSXS.utils.book_new();
-  XLSXS.utils.book_append_sheet(wb, ws, "NCR List");
-  XLSXS.writeFile(wb, `HMMME_NCR_List_${asOf.replace(/-/g, "")}.xlsx`);
+  XLSXS.utils.book_append_sheet(wb, buildNcrListSheet(input), "NCR List");
+  XLSXS.writeFile(wb, `HMMME_NCR_List_${input.asOf.replace(/-/g, "")}.xlsx`);
 }
