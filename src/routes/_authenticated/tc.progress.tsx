@@ -50,6 +50,7 @@ function TcProgressPage() {
   const [bucket, setBucket] = useState<Bucket>(
     search.bucket === "week" || search.bucket === "month" ? search.bucket : "day",
   );
+  const [planMode, setPlanMode] = useState<TcPlanMode>(search.plan === "remaining" ? "remaining" : "baseline");
   const [stages, setStages] = useState<TcStage[]>(() => {
     const from = (search.stages ?? "").split(",").filter((s) => TC_STAGES.includes(s as TcStage)) as TcStage[];
     return from.length ? from : [...TC_STAGES];
