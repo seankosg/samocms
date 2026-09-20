@@ -82,7 +82,7 @@ const currentStageTone = (value: number, max: number) => {
   return "bg-ncr-stage-max text-ncr-stage-strong-foreground hover:bg-ncr-stage-max";
 };
 
-function ProgressMetric({ plan, actual, total, onDrill }: { plan: number; actual: number; total: number; onDrill: (metric: "plan" | "actual" | "short" | "over") => void }) {
+function ProgressMetric({ plan, actual, total, unit, onDrill }: { plan: number; actual: number; total: number; unit: string; onDrill: (metric: "plan" | "actual" | "short" | "over") => void }) {
   const planRate = progressRate(plan, total);
   const actualRate = progressRate(actual, total);
   const gap = actualRate - planRate;
@@ -90,8 +90,8 @@ function ProgressMetric({ plan, actual, total, onDrill }: { plan: number; actual
   return (
     <div className="min-w-0 px-2 py-2.5">
       <div className="flex items-center justify-between gap-2 text-[11px]">
-        <Button variant="ghost" size="sm" onClick={() => onDrill("plan")} className="h-6 min-w-0 px-1 font-semibold text-ncr-progress-plan">P <strong className="ml-1 text-sm">{plan}</strong>건</Button>
-        <Button variant="ghost" size="sm" onClick={() => onDrill("actual")} className="h-6 min-w-0 px-1 font-semibold text-ncr-progress-actual">A <strong className="ml-1 text-sm">{actual}</strong>건</Button>
+        <Button variant="ghost" size="sm" onClick={() => onDrill("plan")} className="h-6 min-w-0 px-1 font-semibold text-ncr-progress-plan">P <strong className="ml-1 text-sm">{plan}</strong>{unit}</Button>
+        <Button variant="ghost" size="sm" onClick={() => onDrill("actual")} className="h-6 min-w-0 px-1 font-semibold text-ncr-progress-actual">A <strong className="ml-1 text-sm">{actual}</strong>{unit}</Button>
       </div>
       <div className="mt-1.5 flex items-center gap-1.5">
         <Button variant="ghost" onClick={() => onDrill("plan")} className="relative h-3 min-w-0 flex-1 overflow-hidden rounded-full bg-muted p-0" aria-label={`계획 진도율 ${planRate}%`}>
@@ -287,7 +287,7 @@ function NcrDashboardPage() {
 
               <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] min-h-[84px] items-center border-b border-border">
                  <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide">Start</strong></span></Button>
-                 {stats.map((st) => { const slot = `ps${st.n}s` as SlotKey; return <div key={st.n} className="min-w-0 border-r border-border hover:bg-ncr-plan-soft"><ProgressMetric plan={st.sPlan} actual={st.sAct} total={filtered.length} onDrill={(metric) => drill(slot, metric)} /></div>; })}
+                 {stats.map((st) => { const slot = `ps${st.n}s` as SlotKey; return <div key={st.n} className="min-w-0 border-r border-border hover:bg-ncr-plan-soft"><ProgressMetric plan={st.sPlan} actual={st.sAct} total={filtered.length} unit={T.unit} onDrill={(metric) => drill(slot, metric)} /></div>; })}
                 <div className="bg-muted/20" />
               </div>
 
@@ -312,7 +312,7 @@ function NcrDashboardPage() {
 
               <div className="grid grid-cols-[140px_repeat(8,minmax(0,1fr))_100px] min-h-[84px] items-center border-b-4 border-ncr-matrix/10">
                   <Button variant="ghost" onClick={() => toList({})} className="sticky left-0 z-10 h-auto rounded-none border-r border-border bg-card px-3"><span className="text-left"><strong className="block text-sm font-bold uppercase tracking-wide">Finish</strong></span></Button>
-                 {stats.map((st) => { const slot = `ps${st.n}f` as SlotKey; return <div key={st.n} className="min-w-0 border-r border-border hover:bg-ncr-actual-soft"><ProgressMetric plan={st.fPlan} actual={st.fAct} total={filtered.length} onDrill={(metric) => drill(slot, metric)} /></div>; })}
+                 {stats.map((st) => { const slot = `ps${st.n}f` as SlotKey; return <div key={st.n} className="min-w-0 border-r border-border hover:bg-ncr-actual-soft"><ProgressMetric plan={st.fPlan} actual={st.fAct} total={filtered.length} unit={T.unit} onDrill={(metric) => drill(slot, metric)} /></div>; })}
                 <div className="bg-muted/20" />
               </div>
 
