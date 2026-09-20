@@ -91,12 +91,12 @@ function TcProgressPage() {
 
   const matrix = useMemo(() => assembleMatrix({
     daily: (daily.data ?? []).filter((d) => disc === "전체" || d.discipline === disc),
-    items, buckets, bucket, stages, groupBy, base, unit,
-  }), [daily.data, items, buckets, bucket, stages, groupBy, base, unit, disc]);
+    items, buckets, bucket, stages, groupBy, base, unit, planMode,
+  }), [daily.data, items, buckets, bucket, stages, groupBy, base, unit, disc, planMode]);
 
   const scurve = useMemo(
-    () => buildTcSCurve({ matrix, items, stages, base, bucket, unit }),
-    [matrix, items, stages, base, bucket, unit],
+    () => buildTcSCurve({ matrix, items, stages, base, bucket, unit, planMode }),
+    [matrix, items, stages, base, bucket, unit, planMode],
   );
 
   const totals = useMemo(() => {
