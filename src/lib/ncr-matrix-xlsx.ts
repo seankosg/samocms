@@ -31,6 +31,9 @@ const UPCOMING = "B45309";
 const GREY = "667085";
 const SOFT = { plan: "EAF1FE", actual: "E9F7EE", delay: "FDEAEA", upcoming: "FDF3E4", zebra: "F6F8FB" };
 const STAGE_FILL = ["F1F5F9", "DBEAFE", "BFDBFE", "93C5FD", "60A5FA"];
+const SUB_HDR_FILL = "FACC15"; // 협력사 담당 단계(PS2/PS5/PS6/PS7) — 노란 음영 + 검정 글씨
+const SUB_HDR_TEXT = "111827";
+const SUB_STAGES = new Set([2, 5, 6, 7]);
 
 const thin = (rgb: string) => {
   const s = { style: "thin", color: { rgb } } as const;
