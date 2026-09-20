@@ -140,15 +140,16 @@ export function exportNcrMatrix(input: MatrixExportInput) {
   // 헤더 2행
   const headTop = 5;
   for (let c = 0; c < width; c++) {
+    const isSub = c >= 1 && c <= PS_NUMS.length && SUB_STAGES.has(PS_NUMS[c - 1]!);
     cellAt(headTop, c).s = {
-      font: { name: "Arial", sz: 11, bold: true, color: { rgb: "FFFFFF" } },
-      fill: { patternType: "solid", fgColor: { rgb: NAVY } },
+      font: { name: "Arial", sz: 11, bold: true, color: { rgb: isSub ? SUB_HDR_TEXT : "FFFFFF" } },
+      fill: { patternType: "solid", fgColor: { rgb: isSub ? SUB_HDR_FILL : NAVY } },
       alignment: { horizontal: "center", vertical: "center", wrapText: true },
       border: thin("D0D7E2"),
     };
     cellAt(headTop + 1, c).s = {
-      font: { name: "Arial", sz: 9, color: { rgb: "FFFFFF" } },
-      fill: { patternType: "solid", fgColor: { rgb: "2F5480" } },
+      font: { name: "Arial", sz: 9, color: { rgb: isSub ? SUB_HDR_TEXT : "FFFFFF" } },
+      fill: { patternType: "solid", fgColor: { rgb: isSub ? SUB_HDR_FILL : "2F5480" } },
       alignment: { horizontal: "center", vertical: "center", wrapText: true },
       border: thin("D0D7E2"),
     };
