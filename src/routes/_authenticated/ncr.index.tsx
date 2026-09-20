@@ -3,13 +3,12 @@ import { z } from "zod";
 import { useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
 import { Download, Search } from "lucide-react";
+import { exportNcrList } from "@/lib/ncr-list-xlsx";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { NcrRawTable, cellValue } from "@/components/ncr/ncr-raw-table";
-import { NCR_COLUMNS } from "@/lib/ncr-columns";
+import { NcrRawTable } from "@/components/ncr/ncr-raw-table";
 import { useNcrItems, ncrQuery } from "@/lib/use-ncr";
 import { updateNcrItem, type NcrItem } from "@/lib/ncr.functions";
 import {
@@ -164,15 +163,12 @@ function NcrListPage() {
   };
 
   const exportXlsx = () => {
-    // 임포트 엑셀과 동일한 컬럼 순서로 내보냅니다.
-    const rows = filtered.map((r) => {
-      const out: Record<string, unknown> = {};
-      for (const c of NCR_COLUMNS) out[c.groupId ? `${c.groupId} ${c.label}` : c.label] = cellValue(r, c.key);
-      return out;
+    exportNcrList({
+      rows: filtered,
+      asOf: search.asOf ?? new Date().toISOString().slice(0, 10),
+      filters: { docType: search.docType, team: search.team, sub: search.sub, status: search.status, stage: search.stage, q: search.q },
+      drillLabel,
     });
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "NCR");
-    XLSX.writeFile(wb, `HMMME_NCR_List_${new Date().toISOString().slice(0, 10).replace(/-/g, "")}.xlsx`);
   };
 
   const chip = (label: string, active: boolean, onClick: () => void) => (
