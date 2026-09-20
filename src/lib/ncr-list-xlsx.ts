@@ -96,7 +96,7 @@ export function exportNcrList(input: ListExportInput) {
   for (const r of rows) {
     const row: unknown[] = new Array(width).fill("");
     for (const c of leading) {
-      const v = (r as unknown as Record<string, unknown>)[c.key];
+      const v = c.key === "current_stage" ? currentStage(datesOf(r)) : (r as unknown as Record<string, unknown>)[c.key];
       row[colIndex.get(c.key)!] = (v ?? "") as string;
     }
     for (const n of PS_NUMS) {
@@ -176,7 +176,7 @@ export function exportNcrList(input: ListExportInput) {
         const closed = v.includes("close");
         put(idx, { bold: true, align: "center", color: closed ? ACTUAL : NAVY, fg: closed ? SOFT.actual : baseFill });
       } else if (c.key === "current_stage") {
-        const v = String((r as unknown as Record<string, unknown>)["current_stage"] ?? "");
+        const v = currentStage(datesOf(r));
         const closed = v === "Closed";
         put(idx, { bold: true, align: "center", color: closed ? ACTUAL : NAVY, fg: closed ? SOFT.actual : SOFT.group });
       } else if (c.key === "ser_no") {
