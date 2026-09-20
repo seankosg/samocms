@@ -122,37 +122,12 @@ function NcrDashboardPage() {
     return true;
   }), [items, search]);
 
-  const upLimit = useMemo(() => addDays(asOf, Math.max(1, within)), [asOf, within]);
-
-  const stats = useMemo(() => PS_NUMS.map((n) => {
-    const s = `ps${n}s` as SlotKey;
-    const f = `ps${n}f` as SlotKey;
-    let sPlan = 0, sAct = 0, fPlan = 0, fAct = 0, sDelay = 0, fDelay = 0, cur = 0, noPlan = 0, ongoing = 0, ongoingDelay = 0, upS = 0, upF = 0;
-    for (const r of filtered) {
-      const d = dates(r);
-      if (!d[planField(s)] && !d[planField(f)]) noPlan += 1;
-      if (d[planField(s)] && d[planField(s)]! <= asOf) sPlan += 1;
-      if (d[actualField(s)]) sAct += 1;
-      if (d[planField(f)] && d[planField(f)]! <= asOf) fPlan += 1;
-      if (d[actualField(f)]) fAct += 1;
-      if (isStartDelayed(d, s, asOf)) sDelay += 1;
-      if (isStartDelayed(d, f, asOf)) fDelay += 1;
-      if (d[actualField(s)] && !d[actualField(f)]) {
-        ongoing += 1;
-        const fPlan = d[planField(f)];
-        if (fPlan && fPlan < asOf) ongoingDelay += 1;
-      }
-      if (isUpcoming(d, s, asOf, upLimit)) upS += 1;
-      if (isUpcoming(d, f, asOf, upLimit)) upF += 1;
-      const c = currentStage(d);
-      if (c.startsWith(`PS${n}`)) cur += 1;
-    }
-    return { n, stage: "PS" + n, sPlan, sAct, fPlan, fAct, sDelay, fDelay, cur, noPlan, ongoing, ongoingDelay, upS, upF };
-  }), [filtered, asOf, upLimit]);
-
-  const closed = filtered.filter((r) => currentStage(dates(r)) === "Closed").length;
-  const noPlanTotal = filtered.filter((r) => { const d = dates(r); return SLOT_ORDER.every((s) => !d[planField(s)]); }).length;
+  const { stats, closed, noPlanTotal } = useMemo(
+    () => computeNcrStats(filtered.map(dates), asOf, within),
+    [filtered, asOf, within],
+  );
   const maxCurrent = Math.max(0, ...stats.map((st) => st.cur));
+  const [xlsxOpen, setXlsxOpen] = useState(false);
 
   const chip = (label: string, active: boolean, onClick: () => void) => (
     <Button
