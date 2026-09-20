@@ -97,7 +97,7 @@ export function exportNcrList(input: ListExportInput) {
     const row: unknown[] = new Array(width).fill("");
     for (const c of leading) {
       const v = (r as unknown as Record<string, unknown>)[c.key];
-      row[colIndex.get(c.key)!] = c.key === "current_stage" ? ((r as unknown as Record<string, unknown>).current_stage ?? "") : (v ?? "");
+      row[colIndex.get(c.key)!] = (v ?? "") as string;
     }
     for (const n of PS_NUMS) {
       const s = colIndex.get(planField(`ps${n}s` as SlotKey))!;
@@ -172,11 +172,11 @@ export function exportNcrList(input: ListExportInput) {
     for (const c of leading) {
       const idx = colIndex.get(c.key)!;
       if (c.key === "status") {
-        const v = String((r as unknown as Record<string, unknown>).status ?? "").toLowerCase();
+        const v = String((r as unknown as Record<string, unknown>)["status"] ?? "").toLowerCase();
         const closed = v.includes("close");
         put(idx, { bold: true, align: "center", color: closed ? ACTUAL : NAVY, fg: closed ? SOFT.actual : baseFill });
       } else if (c.key === "current_stage") {
-        const v = String((r as unknown as Record<string, unknown>).current_stage ?? "");
+        const v = String((r as unknown as Record<string, unknown>)["current_stage"] ?? "");
         const closed = v === "Closed";
         put(idx, { bold: true, align: "center", color: closed ? ACTUAL : NAVY, fg: closed ? SOFT.actual : SOFT.group });
       } else if (c.key === "ser_no") {
