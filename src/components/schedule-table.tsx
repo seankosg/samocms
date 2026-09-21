@@ -214,17 +214,20 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
   const filtered = useMemo(() => {
     const out = rows.filter((r) => passes(r));
     return out.sort((a, b) => {
-      const av = sortVal(a, sort);
-      const bv = sortVal(b, sort);
-      const an = av == null || av === "";
-      const bn = bv == null || bv === "";
-      if (an && bn) return 0;
-      if (an) return 1;
-      if (bn) return -1;
-      const c = typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv), undefined, { numeric: true });
-      return c * (asc ? 1 : -1);
+      for (const s of sorts) {
+        const av = sortVal(a, s.key);
+        const bv = sortVal(b, s.key);
+        const an = av == null || av === "";
+        const bn = bv == null || bv === "";
+        if (an && bn) continue;
+        if (an) return 1;
+        if (bn) return -1;
+        const c = typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv), undefined, { numeric: true });
+        if (c !== 0) return c * (s.asc ? 1 : -1);
+      }
+      return 0;
     });
-  }, [rows, q, due, sort, asc, lockLate, multi, texts, dates, sortVal]);
+  }, [rows, q, due, sorts, lockLate, multi, texts, dates, sortVal]);
 
   const facet = (k: MultiKey) => {
     const counts = new Map<string, number>();
