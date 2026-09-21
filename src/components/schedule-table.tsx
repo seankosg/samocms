@@ -380,11 +380,9 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
                 <th key={c.label} className={`whitespace-nowrap border-b border-r border-border px-3 py-2.5 font-bold ${i === 0 ? "sticky left-0 z-20 bg-secondary" : ""}`}>
 
                   <span className="inline-flex items-center gap-1">
-                    {c.key ? (
-                      <button className="inline-flex items-center gap-1" onClick={() => setSortKey(c.key)}>
-                        {c.label}{sort === c.key && (asc ? <ArrowDownAZ className="size-3" /> : <ArrowUpAZ className="size-3" />)}
-                      </button>
-                    ) : c.label}
+                    <button className="inline-flex items-center gap-1 hover:text-primary" onClick={() => setSortKey(c.key)} title="정렬">
+                      {c.label}{sort === c.key && (asc ? <ArrowDownAZ className="size-3" /> : <ArrowUpAZ className="size-3" />)}
+                    </button>
                     {c.f?.kind === "sel" && (
                       <MultiSelectFilter options={facet(c.f.field)} selected={multi[c.f.field] ?? []} onChange={(v) => setMultiCol((c.f as { field: MultiKey }).field, v)} />
                     )}
