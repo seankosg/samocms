@@ -185,15 +185,46 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
     return true;
   };
 
+  /** 정렬 비교값 — 화면 표시값 기준. null/빈값은 항상 마지막. */
+  const sortVal = useCallback((r: Row, k: SortKey): string | number | null => {
+    switch (k) {
+      case "no": return r.no;
+      case "dept": return deptLabel(r);
+      case "mgr": return mgrLabel(r.mgr);
+      case "sub": return r.sub;
+      case "bldg": return r.bldg;
+      case "room": return r.room;
+      case "scope": return dispScope(r.scope) ?? null;
+      case "ms": return r.ms;
+      case "act": return r.act;
+      case "unit": return r.unit;
+      case "done": return r.tot ? (r.done ?? 0) / r.tot : null;
+      case "pl": return r.pl;
+      case "pc": return r.pc;
+      case "dplan": return dailyPlan(r, base);
+      case "dact": return dailyActual(r, prevActuals);
+      case "status": return STATUS_LABEL[statusOfRow(r)] ?? statusOfRow(r);
+      case "pred": return r.pred;
+      case "succ": return r.succ;
+      case "s": return r.s;
+      case "e": return r.e;
+    }
+  }, [base, prevActuals]);
+
   const filtered = useMemo(() => {
     const out = rows.filter((r) => passes(r));
     return out.sort((a, b) => {
-      const av = sort === "dept" ? deptLabel(a) : a[sort] ?? "";
-      const bv = sort === "dept" ? deptLabel(b) : b[sort] ?? "";
+      const av = sortVal(a, sort);
+      const bv = sortVal(b, sort);
+      const an = av == null || av === "";
+      const bn = bv == null || bv === "";
+      if (an && bn) return 0;
+      if (an) return 1;
+      if (bn) return -1;
       const c = typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv), undefined, { numeric: true });
       return c * (asc ? 1 : -1);
     });
-  }, [rows, q, due, sort, asc, lockLate, multi, texts, dates]);
+  }, [rows, q, due, sort, asc, lockLate, multi, texts, dates, sortVal]);
 
   const facet = (k: MultiKey) => {
     const counts = new Map<string, number>();
