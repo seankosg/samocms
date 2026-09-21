@@ -137,8 +137,8 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
   const seriesReady = seriesOn && validRange && !!seriesMap;
 
   const [due, setDue] = useState<string | null>(dueBy ?? null);
-  const [sort, setSort] = useState<SortKey>("e");
-  const [asc, setAsc] = useState(true);
+  /** 다중 순차 정렬 — 앞에 있을수록 우선순위 높음 */
+  const [sorts, setSorts] = useState<{ key: SortKey; asc: boolean }[]>([{ key: "e", asc: true }]);
   const [multi, setMulti] = useState<Partial<Record<MultiKey, string[]>>>(() => {
     const init: Partial<Record<MultiKey, string[]>> = {};
     const put = (k: MultiKey, v: string | undefined) => { if (v && v !== "전체") init[k] = [v]; };
