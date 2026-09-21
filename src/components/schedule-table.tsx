@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { ArrowDownAZ, ArrowUpAZ, Download, History as HistoryIcon, Pencil, RotateCcw, Search, X } from "lucide-react";
 import { ExportDialog, type ExportRow } from "@/components/export-dialog";
+import { SortPriorityBadge } from "@/components/common/sort-priority-badge";
 import { EditableCell } from "@/components/editable-cell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -397,8 +398,18 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
                 <th key={c.label} className={`whitespace-nowrap border-b border-r border-border px-3 py-2.5 font-bold ${i === 0 ? "sticky left-0 z-20 bg-secondary" : ""}`}>
 
                   <span className="inline-flex items-center gap-1">
-                    <button className="inline-flex items-center gap-1 hover:text-primary" onClick={() => setSortKey(c.key)} title="정렬">
-                      {c.label}{sort === c.key && (asc ? <ArrowDownAZ className="size-3" /> : <ArrowUpAZ className="size-3" />)}
+                    <button
+                      className="inline-flex items-center gap-1 hover:text-primary"
+                      onClick={(ev) => setSortKey(c.key, ev.shiftKey)}
+                      title="클릭: 정렬 · Shift+클릭: 다음 정렬 단계로 추가"
+                    >
+                      {c.label}
+                      {sorts.some((s) => s.key === c.key) && (
+                        <>
+                          {sorts.find((s) => s.key === c.key)!.asc ? <ArrowDownAZ className="size-3" /> : <ArrowUpAZ className="size-3" />}
+                          <SortPriorityBadge index={sorts.findIndex((s) => s.key === c.key)} total={sorts.length} />
+                        </>
+                      )}
                     </button>
                     {c.f?.kind === "sel" && (
                       <MultiSelectFilter options={facet(c.f.field)} selected={multi[c.f.field] ?? []} onChange={(v) => setMultiCol((c.f as { field: MultiKey }).field, v)} />
