@@ -287,7 +287,7 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
   }), [filtered, base, prevActuals, seriesReady, seriesMap, seriesDates]);
 
 
-  const setSortKey = (k: SortKey | null) => { if (!k) return; if (k === sort) setAsc((v) => !v); else { setSort(k); setAsc(true); } };
+  const setSortKey = (k: SortKey) => { if (k === sort) setAsc((v) => !v); else { setSort(k); setAsc(true); } };
 
   return (
     <section className="rounded-md border border-border bg-card shadow-sm">
