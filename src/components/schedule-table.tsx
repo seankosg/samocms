@@ -15,7 +15,9 @@ import {
 } from "@/components/column-filter";
 
 
-type SortKey = "no" | "dept" | "bldg" | "act" | "pl" | "pc" | "e";
+type SortKey =
+  | "no" | "dept" | "mgr" | "sub" | "bldg" | "room" | "scope" | "ms" | "act" | "unit"
+  | "done" | "pl" | "pc" | "dplan" | "dact" | "status" | "pred" | "succ" | "s" | "e";
 type TextKey = "no" | "room" | "scope" | "act" | "unit" | "pred" | "succ";
 type MultiKey = "dept" | "bldg" | "ms" | "sub" | "mgr" | "status";
 type DateKey = "s" | "e";
@@ -25,26 +27,26 @@ type ColFilter =
   | { kind: "date"; field: DateKey }
   | null;
 
-const COLS: { key: SortKey | null; label: string; f: ColFilter }[] = [
+const COLS: { key: SortKey; label: string; f: ColFilter }[] = [
   { key: "no", label: "No.", f: { kind: "text", field: "no" } },
   { key: "dept", label: "담당부서", f: { kind: "sel", field: "dept" } },
-  { key: null, label: "담당자", f: { kind: "sel", field: "mgr" } },
-  { key: null, label: "Subcon", f: { kind: "sel", field: "sub" } },
+  { key: "mgr", label: "담당자", f: { kind: "sel", field: "mgr" } },
+  { key: "sub", label: "Subcon", f: { kind: "sel", field: "sub" } },
   { key: "bldg", label: "Bldg.", f: { kind: "sel", field: "bldg" } },
-  { key: null, label: "Room", f: { kind: "text", field: "room" } },
-  { key: null, label: "Work Scope", f: { kind: "text", field: "scope" } },
-  { key: null, label: "Milestone", f: { kind: "sel", field: "ms" } },
+  { key: "room", label: "Room", f: { kind: "text", field: "room" } },
+  { key: "scope", label: "Work Scope", f: { kind: "text", field: "scope" } },
+  { key: "ms", label: "Milestone", f: { kind: "sel", field: "ms" } },
   { key: "act", label: "Activity", f: { kind: "text", field: "act" } },
-  { key: null, label: "Unit", f: { kind: "text", field: "unit" } },
-  { key: null, label: "Done / Total", f: null },
+  { key: "unit", label: "Unit", f: { kind: "text", field: "unit" } },
+  { key: "done", label: "Done / Total", f: null },
   { key: "pl", label: "계획", f: null },
   { key: "pc", label: "실적", f: null },
-  { key: null, label: "당일 계획(증분)", f: null },
-  { key: null, label: "당일 실적(증분)", f: null },
-  { key: null, label: "상태", f: { kind: "sel", field: "status" } },
-  { key: null, label: "Predecessor", f: { kind: "text", field: "pred" } },
-  { key: null, label: "Successor", f: { kind: "text", field: "succ" } },
-  { key: null, label: "Start", f: { kind: "date", field: "s" } },
+  { key: "dplan", label: "당일 계획(증분)", f: null },
+  { key: "dact", label: "당일 실적(증분)", f: null },
+  { key: "status", label: "상태", f: { kind: "sel", field: "status" } },
+  { key: "pred", label: "Predecessor", f: { kind: "text", field: "pred" } },
+  { key: "succ", label: "Successor", f: { kind: "text", field: "succ" } },
+  { key: "s", label: "Start", f: { kind: "date", field: "s" } },
   { key: "e", label: "Finish", f: { kind: "date", field: "e" } },
 ];
 
