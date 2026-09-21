@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { ArrowDownAZ, ArrowUpAZ, Download, History as HistoryIcon, Pencil, RotateCcw, Search, X } from "lucide-react";
 import { ExportDialog, type ExportRow } from "@/components/export-dialog";
+import { SortPriorityBadge } from "@/components/common/sort-priority-badge";
 import { EditableCell } from "@/components/editable-cell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -137,8 +138,8 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
   const seriesReady = seriesOn && validRange && !!seriesMap;
 
   const [due, setDue] = useState<string | null>(dueBy ?? null);
-  const [sort, setSort] = useState<SortKey>("e");
-  const [asc, setAsc] = useState(true);
+  /** 다중 순차 정렬 — 앞에 있을수록 우선순위 높음 */
+  const [sorts, setSorts] = useState<{ key: SortKey; asc: boolean }[]>([{ key: "e", asc: true }]);
   const [multi, setMulti] = useState<Partial<Record<MultiKey, string[]>>>(() => {
     const init: Partial<Record<MultiKey, string[]>> = {};
     const put = (k: MultiKey, v: string | undefined) => { if (v && v !== "전체") init[k] = [v]; };
@@ -214,17 +215,20 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
   const filtered = useMemo(() => {
     const out = rows.filter((r) => passes(r));
     return out.sort((a, b) => {
-      const av = sortVal(a, sort);
-      const bv = sortVal(b, sort);
-      const an = av == null || av === "";
-      const bn = bv == null || bv === "";
-      if (an && bn) return 0;
-      if (an) return 1;
-      if (bn) return -1;
-      const c = typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv), undefined, { numeric: true });
-      return c * (asc ? 1 : -1);
+      for (const s of sorts) {
+        const av = sortVal(a, s.key);
+        const bv = sortVal(b, s.key);
+        const an = av == null || av === "";
+        const bn = bv == null || bv === "";
+        if (an && bn) continue;
+        if (an) return 1;
+        if (bn) return -1;
+        const c = typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv), undefined, { numeric: true });
+        if (c !== 0) return c * (s.asc ? 1 : -1);
+      }
+      return 0;
     });
-  }, [rows, q, due, sort, asc, lockLate, multi, texts, dates, sortVal]);
+  }, [rows, q, due, sorts, lockLate, multi, texts, dates, sortVal]);
 
   const facet = (k: MultiKey) => {
     const counts = new Map<string, number>();
@@ -252,7 +256,7 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
     ...(q ? [{ k: "검색", v: q, clear: () => setQ("") }] : []),
   ];
 
-  const reset = () => { setQ(""); setDue(null); setMulti({}); setTexts({}); setDates({}); };
+  const reset = () => { setQ(""); setDue(null); setMulti({}); setTexts({}); setDates({}); setSorts([{ key: "e", asc: true }]); };
 
   const exportRows = useCallback((): ExportRow[] => filtered.map((r) => {
     const rec: Record<string, unknown> = {
@@ -287,7 +291,21 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
   }), [filtered, base, prevActuals, seriesReady, seriesMap, seriesDates]);
 
 
-  const setSortKey = (k: SortKey) => { if (k === sort) setAsc((v) => !v); else { setSort(k); setAsc(true); } };
+  /** 클릭: 단일 정렬로 교체/방향 전환 · Shift+클릭: 정렬 단계 추가(오름→내림→해제) */
+  const setSortKey = (k: SortKey, additive: boolean) => {
+    setSorts((prev) => {
+      if (!additive) {
+        if (prev.length === 1 && prev[0]!.key === k) return [{ key: k, asc: !prev[0]!.asc }];
+        return [{ key: k, asc: true }];
+      }
+      const i = prev.findIndex((s) => s.key === k);
+      if (i < 0) return [...prev, { key: k, asc: true }];
+      const cur = prev[i]!;
+      if (cur.asc) return prev.map((s, j) => (j === i ? { ...s, asc: false } : s));
+      const next = prev.filter((_, j) => j !== i);
+      return next.length ? next : [{ key: "e", asc: true }];
+    });
+  };
 
   return (
     <section className="rounded-md border border-border bg-card shadow-sm">
@@ -380,8 +398,18 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
                 <th key={c.label} className={`whitespace-nowrap border-b border-r border-border px-3 py-2.5 font-bold ${i === 0 ? "sticky left-0 z-20 bg-secondary" : ""}`}>
 
                   <span className="inline-flex items-center gap-1">
-                    <button className="inline-flex items-center gap-1 hover:text-primary" onClick={() => setSortKey(c.key)} title="정렬">
-                      {c.label}{sort === c.key && (asc ? <ArrowDownAZ className="size-3" /> : <ArrowUpAZ className="size-3" />)}
+                    <button
+                      className="inline-flex items-center gap-1 hover:text-primary"
+                      onClick={(ev) => setSortKey(c.key, ev.shiftKey)}
+                      title="클릭: 정렬 · Shift+클릭: 다음 정렬 단계로 추가"
+                    >
+                      {c.label}
+                      {sorts.some((s) => s.key === c.key) && (
+                        <>
+                          {sorts.find((s) => s.key === c.key)!.asc ? <ArrowDownAZ className="size-3" /> : <ArrowUpAZ className="size-3" />}
+                          <SortPriorityBadge index={sorts.findIndex((s) => s.key === c.key)} total={sorts.length} />
+                        </>
+                      )}
                     </button>
                     {c.f?.kind === "sel" && (
                       <MultiSelectFilter options={facet(c.f.field)} selected={multi[c.f.field] ?? []} onChange={(v) => setMultiCol((c.f as { field: MultiKey }).field, v)} />
