@@ -290,7 +290,21 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
   }), [filtered, base, prevActuals, seriesReady, seriesMap, seriesDates]);
 
 
-  const setSortKey = (k: SortKey) => { if (k === sort) setAsc((v) => !v); else { setSort(k); setAsc(true); } };
+  /** 클릭: 단일 정렬로 교체/방향 전환 · Shift+클릭: 정렬 단계 추가(오름→내림→해제) */
+  const setSortKey = (k: SortKey, additive: boolean) => {
+    setSorts((prev) => {
+      if (!additive) {
+        if (prev.length === 1 && prev[0]!.key === k) return [{ key: k, asc: !prev[0]!.asc }];
+        return [{ key: k, asc: true }];
+      }
+      const i = prev.findIndex((s) => s.key === k);
+      if (i < 0) return [...prev, { key: k, asc: true }];
+      const cur = prev[i]!;
+      if (cur.asc) return prev.map((s, j) => (j === i ? { ...s, asc: false } : s));
+      const next = prev.filter((_, j) => j !== i);
+      return next.length ? next : [{ key: "e", asc: true }];
+    });
+  };
 
   return (
     <section className="rounded-md border border-border bg-card shadow-sm">
