@@ -256,7 +256,7 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
     ...(q ? [{ k: "검색", v: q, clear: () => setQ("") }] : []),
   ];
 
-  const reset = () => { setQ(""); setDue(null); setMulti({}); setTexts({}); setDates({}); };
+  const reset = () => { setQ(""); setDue(null); setMulti({}); setTexts({}); setDates({}); setSorts([{ key: "e", asc: true }]); };
 
   const exportRows = useCallback((): ExportRow[] => filtered.map((r) => {
     const rec: Record<string, unknown> = {
