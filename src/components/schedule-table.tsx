@@ -15,7 +15,9 @@ import {
 } from "@/components/column-filter";
 
 
-type SortKey = "no" | "dept" | "bldg" | "act" | "pl" | "pc" | "e";
+type SortKey =
+  | "no" | "dept" | "mgr" | "sub" | "bldg" | "room" | "scope" | "ms" | "act" | "unit"
+  | "done" | "pl" | "pc" | "dplan" | "dact" | "status" | "pred" | "succ" | "s" | "e";
 type TextKey = "no" | "room" | "scope" | "act" | "unit" | "pred" | "succ";
 type MultiKey = "dept" | "bldg" | "ms" | "sub" | "mgr" | "status";
 type DateKey = "s" | "e";
@@ -25,26 +27,26 @@ type ColFilter =
   | { kind: "date"; field: DateKey }
   | null;
 
-const COLS: { key: SortKey | null; label: string; f: ColFilter }[] = [
+const COLS: { key: SortKey; label: string; f: ColFilter }[] = [
   { key: "no", label: "No.", f: { kind: "text", field: "no" } },
   { key: "dept", label: "담당부서", f: { kind: "sel", field: "dept" } },
-  { key: null, label: "담당자", f: { kind: "sel", field: "mgr" } },
-  { key: null, label: "Subcon", f: { kind: "sel", field: "sub" } },
+  { key: "mgr", label: "담당자", f: { kind: "sel", field: "mgr" } },
+  { key: "sub", label: "Subcon", f: { kind: "sel", field: "sub" } },
   { key: "bldg", label: "Bldg.", f: { kind: "sel", field: "bldg" } },
-  { key: null, label: "Room", f: { kind: "text", field: "room" } },
-  { key: null, label: "Work Scope", f: { kind: "text", field: "scope" } },
-  { key: null, label: "Milestone", f: { kind: "sel", field: "ms" } },
+  { key: "room", label: "Room", f: { kind: "text", field: "room" } },
+  { key: "scope", label: "Work Scope", f: { kind: "text", field: "scope" } },
+  { key: "ms", label: "Milestone", f: { kind: "sel", field: "ms" } },
   { key: "act", label: "Activity", f: { kind: "text", field: "act" } },
-  { key: null, label: "Unit", f: { kind: "text", field: "unit" } },
-  { key: null, label: "Done / Total", f: null },
+  { key: "unit", label: "Unit", f: { kind: "text", field: "unit" } },
+  { key: "done", label: "Done / Total", f: null },
   { key: "pl", label: "계획", f: null },
   { key: "pc", label: "실적", f: null },
-  { key: null, label: "당일 계획(증분)", f: null },
-  { key: null, label: "당일 실적(증분)", f: null },
-  { key: null, label: "상태", f: { kind: "sel", field: "status" } },
-  { key: null, label: "Predecessor", f: { kind: "text", field: "pred" } },
-  { key: null, label: "Successor", f: { kind: "text", field: "succ" } },
-  { key: null, label: "Start", f: { kind: "date", field: "s" } },
+  { key: "dplan", label: "당일 계획(증분)", f: null },
+  { key: "dact", label: "당일 실적(증분)", f: null },
+  { key: "status", label: "상태", f: { kind: "sel", field: "status" } },
+  { key: "pred", label: "Predecessor", f: { kind: "text", field: "pred" } },
+  { key: "succ", label: "Successor", f: { kind: "text", field: "succ" } },
+  { key: "s", label: "Start", f: { kind: "date", field: "s" } },
   { key: "e", label: "Finish", f: { kind: "date", field: "e" } },
 ];
 
@@ -183,15 +185,46 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
     return true;
   };
 
+  /** 정렬 비교값 — 화면 표시값 기준. null/빈값은 항상 마지막. */
+  const sortVal = useCallback((r: Row, k: SortKey): string | number | null => {
+    switch (k) {
+      case "no": return r.no;
+      case "dept": return deptLabel(r);
+      case "mgr": return mgrLabel(r.mgr);
+      case "sub": return r.sub;
+      case "bldg": return r.bldg;
+      case "room": return r.room;
+      case "scope": return dispScope(r.scope) ?? null;
+      case "ms": return r.ms;
+      case "act": return r.act;
+      case "unit": return r.unit;
+      case "done": return r.tot ? (r.done ?? 0) / r.tot : null;
+      case "pl": return r.pl;
+      case "pc": return r.pc;
+      case "dplan": return dailyPlan(r, base);
+      case "dact": return dailyActual(r, prevActuals);
+      case "status": return STATUS_LABEL[statusOfRow(r)] ?? statusOfRow(r);
+      case "pred": return r.pred;
+      case "succ": return r.succ;
+      case "s": return r.s;
+      case "e": return r.e;
+    }
+  }, [base, prevActuals]);
+
   const filtered = useMemo(() => {
     const out = rows.filter((r) => passes(r));
     return out.sort((a, b) => {
-      const av = sort === "dept" ? deptLabel(a) : a[sort] ?? "";
-      const bv = sort === "dept" ? deptLabel(b) : b[sort] ?? "";
+      const av = sortVal(a, sort);
+      const bv = sortVal(b, sort);
+      const an = av == null || av === "";
+      const bn = bv == null || bv === "";
+      if (an && bn) return 0;
+      if (an) return 1;
+      if (bn) return -1;
       const c = typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv), undefined, { numeric: true });
       return c * (asc ? 1 : -1);
     });
-  }, [rows, q, due, sort, asc, lockLate, multi, texts, dates]);
+  }, [rows, q, due, sort, asc, lockLate, multi, texts, dates, sortVal]);
 
   const facet = (k: MultiKey) => {
     const counts = new Map<string, number>();
@@ -254,7 +287,7 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
   }), [filtered, base, prevActuals, seriesReady, seriesMap, seriesDates]);
 
 
-  const setSortKey = (k: SortKey | null) => { if (!k) return; if (k === sort) setAsc((v) => !v); else { setSort(k); setAsc(true); } };
+  const setSortKey = (k: SortKey) => { if (k === sort) setAsc((v) => !v); else { setSort(k); setAsc(true); } };
 
   return (
     <section className="rounded-md border border-border bg-card shadow-sm">
@@ -347,11 +380,9 @@ export function ScheduleTable({ rows: srcRows, fileName, lockLate = false, initi
                 <th key={c.label} className={`whitespace-nowrap border-b border-r border-border px-3 py-2.5 font-bold ${i === 0 ? "sticky left-0 z-20 bg-secondary" : ""}`}>
 
                   <span className="inline-flex items-center gap-1">
-                    {c.key ? (
-                      <button className="inline-flex items-center gap-1" onClick={() => setSortKey(c.key)}>
-                        {c.label}{sort === c.key && (asc ? <ArrowDownAZ className="size-3" /> : <ArrowUpAZ className="size-3" />)}
-                      </button>
-                    ) : c.label}
+                    <button className="inline-flex items-center gap-1 hover:text-primary" onClick={() => setSortKey(c.key)} title="정렬">
+                      {c.label}{sort === c.key && (asc ? <ArrowDownAZ className="size-3" /> : <ArrowUpAZ className="size-3" />)}
+                    </button>
                     {c.f?.kind === "sel" && (
                       <MultiSelectFilter options={facet(c.f.field)} selected={multi[c.f.field] ?? []} onChange={(v) => setMultiCol((c.f as { field: MultiKey }).field, v)} />
                     )}
