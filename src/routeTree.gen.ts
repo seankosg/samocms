@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDelaysRouteImport } from './routes/_authenticated/delays'
 import { Route as AuthenticatedNetworkRouteImport } from './routes/_authenticated/network'
+import { Route as AuthenticatedProgressRouteImport } from './routes/_authenticated/progress'
 import { Route as AuthenticatedRawDataRouteImport } from './routes/_authenticated/raw-data'
 import { Route as AuthenticatedReportRouteImport } from './routes/_authenticated/report'
 import { Route as AuthenticatedSafetyReportRouteImport } from './routes/_authenticated/safety-report'
@@ -71,6 +72,11 @@ const AuthenticatedDelaysRoute = AuthenticatedDelaysRouteImport.update({
 const AuthenticatedNetworkRoute = AuthenticatedNetworkRouteImport.update({
   id: '/network',
   path: '/network',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProgressRoute = AuthenticatedProgressRouteImport.update({
+  id: '/progress',
+  path: '/progress',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedRawDataRoute = AuthenticatedRawDataRouteImport.update({
@@ -230,6 +236,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/delays': typeof AuthenticatedDelaysRoute
   '/network': typeof AuthenticatedNetworkRoute
+  '/progress': typeof AuthenticatedProgressRoute
   '/raw-data': typeof AuthenticatedRawDataRoute
   '/report': typeof AuthenticatedReportRoute
   '/safety-report': typeof AuthenticatedSafetyReportRoute
@@ -265,6 +272,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/delays': typeof AuthenticatedDelaysRoute
   '/network': typeof AuthenticatedNetworkRoute
+  '/progress': typeof AuthenticatedProgressRoute
   '/raw-data': typeof AuthenticatedRawDataRoute
   '/report': typeof AuthenticatedReportRoute
   '/safety-report': typeof AuthenticatedSafetyReportRoute
@@ -302,6 +310,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/delays': typeof AuthenticatedDelaysRoute
   '/_authenticated/network': typeof AuthenticatedNetworkRoute
+  '/_authenticated/progress': typeof AuthenticatedProgressRoute
   '/_authenticated/raw-data': typeof AuthenticatedRawDataRoute
   '/_authenticated/report': typeof AuthenticatedReportRoute
   '/_authenticated/safety-report': typeof AuthenticatedSafetyReportRoute
@@ -339,6 +348,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/delays'
     | '/network'
+    | '/progress'
     | '/raw-data'
     | '/report'
     | '/safety-report'
@@ -374,6 +384,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/delays'
     | '/network'
+    | '/progress'
     | '/raw-data'
     | '/report'
     | '/safety-report'
@@ -410,6 +421,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/delays'
     | '/_authenticated/network'
+    | '/_authenticated/progress'
     | '/_authenticated/raw-data'
     | '/_authenticated/report'
     | '/_authenticated/safety-report'
@@ -493,6 +505,13 @@ declare module '@tanstack/react-router' {
       path: '/network'
       fullPath: '/network'
       preLoaderRoute: typeof AuthenticatedNetworkRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/progress': {
+      id: '/_authenticated/progress'
+      path: '/progress'
+      fullPath: '/progress'
+      preLoaderRoute: typeof AuthenticatedProgressRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/raw-data': {
@@ -698,6 +717,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDelaysRoute: typeof AuthenticatedDelaysRoute
   AuthenticatedNetworkRoute: typeof AuthenticatedNetworkRoute
+  AuthenticatedProgressRoute: typeof AuthenticatedProgressRoute
   AuthenticatedRawDataRoute: typeof AuthenticatedRawDataRoute
   AuthenticatedReportRoute: typeof AuthenticatedReportRoute
   AuthenticatedSafetyReportRoute: typeof AuthenticatedSafetyReportRoute
@@ -727,6 +747,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDelaysRoute: AuthenticatedDelaysRoute,
   AuthenticatedNetworkRoute: AuthenticatedNetworkRoute,
+  AuthenticatedProgressRoute: AuthenticatedProgressRoute,
   AuthenticatedRawDataRoute: AuthenticatedRawDataRoute,
   AuthenticatedReportRoute: AuthenticatedReportRoute,
   AuthenticatedSafetyReportRoute: AuthenticatedSafetyReportRoute,
