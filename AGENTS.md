@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep line-marking S-curves on the authenticated Progress page using current activity schedules for daily plans and the latest snapshot per day for actuals, because upload history can contain multiple records for one date.

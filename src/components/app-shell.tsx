@@ -46,6 +46,7 @@ const NAV = [
     { to: "/network", label: "네트워크 공정표", icon: Network },
     { to: "/delays", label: "지연 리스트", icon: AlertTriangle },
     { to: "/schedule", label: "공정 리스트", icon: Table2 },
+    { to: "/progress", label: "Progress", icon: TrendingUp },
     { to: "/report", label: "Progress Report", icon: FileText },
   ] },
   { group: "발주처 업역", items: [
