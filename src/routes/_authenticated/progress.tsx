@@ -68,7 +68,7 @@ function ProgressPage() {
   const { hdecRows, base } = useProject();
   const search = Route.useSearch();
   const navigate = useNavigate({ from: "/progress" });
-  const setSearch = (patch: Partial<ProgressSearch>) =>
+  const setSearch = (patch: Record<string, string | boolean | undefined>) =>
     navigate({ search: (prev: ProgressSearch) => ({ ...prev, ...patch }), replace: true });
 
   const selBldgs = split(search.bldgs);
