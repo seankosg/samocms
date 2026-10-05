@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, CartesianGrid, ComposedChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Check, ChevronDown } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { MultiSelectFilter } from "@/components/column-filter";
@@ -125,6 +125,23 @@ function ProgressPage() {
       }),
     [points, dailyMode],
   );
+
+  const dailyKpiData = useMemo(
+    () => points.map((point) => {
+      const plan = dailyMode === "quantity" ? point.dailyPlanQty : point.dailyPlan;
+      const actual = dailyMode === "quantity" ? point.dailyActualQty : point.dailyActual;
+      const difference = point.date <= base && plan != null && actual != null
+        ? Math.round((actual - plan) * 10) / 10
+        : null;
+      return {
+        date: point.date,
+        over: difference != null && difference > 0 ? difference : null,
+        short: difference != null && difference < 0 ? difference : null,
+      };
+    }),
+    [points, dailyMode, base],
+  );
+  const hasDailyKpi = dailyKpiData.some((point) => point.over != null || point.short != null);
 
   const todayPoint = useMemo(() => [...points].reverse().find((p) => p.date <= base), [points]);
   const mixedUnits = useMemo(() => unitsOf(selected), [selected]);
@@ -273,6 +290,44 @@ function ProgressPage() {
                   ))}
                 <Line yAxisId="cumulative" type="monotone" dataKey="plan" name="통합 누계 계획" stroke="var(--ncr-progress-plan)" strokeDasharray="5 4" strokeWidth={2} dot={false} connectNulls={false} isAnimationActive={false} />
                 <Line yAxisId="cumulative" type="monotone" dataKey="actual" name="통합 누계 실적" stroke="var(--ncr-progress-actual)" strokeWidth={2.5} dot={false} connectNulls={false} isAnimationActive={false} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </section>
+
+      <section className="mt-6 border-t border-border pt-5" aria-label="일일 KPI 차트">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">일일 KPI · 계획 대비 실적</h2>
+            <p className="mt-1 text-xs text-muted-foreground">당일 실적 − 당일 계획 · {dailyMode === "quantity" ? "수량" : "%p"}</p>
+          </div>
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5"><span className="h-3 w-3 bg-schedule-over" />초과달성</span>
+            <span className="flex items-center gap-1.5"><span className="h-3 w-3 bg-schedule-short" />미달</span>
+          </div>
+        </div>
+        {selected.length === 0 ? (
+          <p className="py-12 text-center text-sm text-muted-foreground">필터 조건에 맞는 항목이 없습니다.</p>
+        ) : snapshots.isPending ? (
+          <p className="py-12 text-center text-sm text-muted-foreground">이력을 불러오는 중…</p>
+        ) : !hasDailyKpi ? (
+          <p className="py-12 text-center text-sm text-muted-foreground">비교할 일별 계획·실적 데이터가 없습니다.</p>
+        ) : (
+          <div className="h-[260px] w-full" role="img" aria-label="일별 계획 대비 실적 초과달성 및 미달 막대 차트">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={dailyKpiData} margin={{ top: 8, right: 12, bottom: 6, left: 0 }}>
+                <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
+                <XAxis dataKey="date" tickFormatter={(d: string) => d.slice(5).replace("-", ".")} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} minTickGap={24} />
+                <YAxis width={48} tickFormatter={(v: number) => dailyMode === "quantity" ? v.toLocaleString() : `${v}%p`} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
+                <Tooltip
+                  labelFormatter={(label) => String(label)}
+                  formatter={(value: number, name: string) => [`${name === "미달" ? "−" : "+"}${Math.abs(Number(value)).toLocaleString(undefined, { maximumFractionDigits: 1 })}${dailyMode === "quantity" ? "" : "%p"}`, name]}
+                  contentStyle={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--foreground)" }}
+                />
+                <ReferenceLine y={0} stroke="var(--muted-foreground)" />
+                <Bar dataKey="over" name="초과달성" fill="var(--schedule-over)" maxBarSize={20} isAnimationActive={false} />
+                <Bar dataKey="short" name="미달" fill="var(--schedule-short)" maxBarSize={20} isAnimationActive={false} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
