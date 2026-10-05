@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Check, ChevronDown } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { MultiSelectFilter } from "@/components/column-filter";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 import { projectQuery, useProject, useSnapshotSeries } from "@/lib/use-project";
 import { itemKeyOf, pct1, SLOT_LABEL, type Row } from "@/lib/schedule-model";
 import { buildCombinedSeries, unitsOf, type AggMode } from "@/lib/progress-scurve";
@@ -19,6 +20,7 @@ type ProgressSearch = {
   items?: string;
   agg?: string;
   showItems?: boolean;
+  daily?: string;
 };
 
 const str = (v: unknown) => (typeof v === "string" && v.trim() ? v : undefined);
@@ -31,6 +33,7 @@ function validateProgressSearch(raw: Record<string, unknown>): ProgressSearch {
   const items = str(raw["items"]); if (items) out.items = items;
   const agg = str(raw["agg"]); if (agg === "simple") out.agg = agg;
   if (raw["showItems"] === true || raw["showItems"] === "true") out.showItems = true;
+  if (raw["daily"] === "quantity") out.daily = "quantity";
   return out;
 }
 
@@ -76,6 +79,7 @@ function ProgressPage() {
   const selActs = split(search.acts);
   const selItemKeys = split(search.items);
   const agg: AggMode = search.agg === "simple" ? "simple" : "weighted";
+  const dailyMode = search.daily === "quantity" ? "quantity" : "percent";
 
   // 계층 필터: 건물 → 공종 → 활동명
   const bldgOptions = useMemo(() => countOptions(hdecRows, (r) => r.bldg), [hdecRows]);
@@ -111,11 +115,15 @@ function ProgressPage() {
   const chartData = useMemo(
     () =>
       points.map((p) => {
-        const flat: Record<string, number | string | null> = { date: p.date, plan: p.plan, actual: p.actual };
+        const flat: Record<string, number | string | null> = {
+          date: p.date, plan: p.plan, actual: p.actual,
+          dailyPlan: dailyMode === "quantity" ? p.dailyPlanQty : p.dailyPlan,
+          dailyActual: dailyMode === "quantity" ? p.dailyActualQty : p.dailyActual,
+        };
         if (p.items) for (const [k, v] of Object.entries(p.items)) flat[`i:${k}`] = v;
         return flat;
       }),
-    [points],
+    [points, dailyMode],
   );
 
   const todayPoint = useMemo(() => [...points].reverse().find((p) => p.date <= base), [points]);
@@ -206,37 +214,52 @@ function ProgressPage() {
         />
       </div>
 
-      {/* 통합 S-curve */}
+      {/* 일별 막대 + 통합 S-curve */}
       <section className="rounded-md border border-border bg-card p-4">
-        <div className="mb-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5"><span className="w-5 border-t-2 border-dashed border-ncr-progress-plan" />통합 누계 계획</span>
-          <span className="flex items-center gap-1.5"><span className="w-5 border-t-2 border-ncr-progress-actual" />통합 누계 실적</span>
+        <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5"><span className="h-3 w-3 bg-ncr-progress-plan/45" />일별 계획</span>
+          <span className="flex items-center gap-1.5"><span className="h-3 w-3 bg-ncr-progress-actual/45" />일별 실적</span>
+          <span className="flex items-center gap-1.5"><span className="w-5 border-t-2 border-dashed border-ncr-progress-plan" />누계 계획</span>
+          <span className="flex items-center gap-1.5"><span className="w-5 border-t-2 border-ncr-progress-actual" />누계 실적</span>
           {showItems && <span className="flex items-center gap-1.5"><span className="w-5 border-t border-muted-foreground/40" />항목별 실적</span>}
-          <span className="ml-auto tabular-nums">{agg === "weighted" ? "수량 가중 평균" : "단순 평균"} 기준</span>
+          <div className="ml-auto inline-flex shrink-0 overflow-hidden rounded-md border border-border" aria-label="일별 막대 단위">
+            {(["percent", "quantity"] as const).map((mode) => (
+              <Button key={mode} type="button" variant="ghost" size="sm" aria-pressed={dailyMode === mode}
+                onClick={() => setSearch({ daily: mode === "quantity" ? "quantity" : undefined })}
+                className={cn("h-7 rounded-none px-2.5 text-xs shadow-none", dailyMode === mode ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground" : "text-muted-foreground")}>
+                {mode === "percent" ? "%p" : "수량"}
+              </Button>
+            ))}
+          </div>
         </div>
+        <div className="mb-1 flex justify-between text-[11px] text-muted-foreground"><span>일별 ({dailyMode === "quantity" ? "수량" : "%p"})</span><span>누계 (%)</span></div>
         {selected.length === 0 ? (
           <p className="py-16 text-center text-sm text-muted-foreground">필터 조건에 맞는 항목이 없습니다.</p>
         ) : snapshots.isPending ? (
           <p className="py-16 text-center text-sm text-muted-foreground">이력을 불러오는 중…</p>
         ) : (
-          <div className="h-[420px] w-full" role="img" aria-label="선택 항목 통합 누계 계획 및 실적 S-curve">
+          <div className="h-[420px] w-full" role="img" aria-label="선택 항목의 일별 계획·실적 막대와 누계 계획·실적 S-curve">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 8, right: 15, bottom: 6, left: -14 }}>
+              <ComposedChart data={chartData} margin={{ top: 8, right: 5, bottom: 6, left: 0 }}>
                 <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
                 <XAxis dataKey="date" tickFormatter={(d: string) => d.slice(5).replace("-", ".")} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} minTickGap={24} />
-                <YAxis domain={[0, 100]} allowDataOverflow tickFormatter={(v: number) => `${v}%`} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} ticks={[0, 25, 50, 75, 100]} />
+                <YAxis yAxisId="daily" width={48} tickFormatter={(v: number) => dailyMode === "quantity" ? v.toLocaleString() : `${v}%p`} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
+                <YAxis yAxisId="cumulative" orientation="right" width={42} domain={[0, 100]} allowDataOverflow tickFormatter={(v: number) => `${v}%`} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} ticks={[0, 25, 50, 75, 100]} />
                 <Tooltip
                   labelFormatter={(label) => String(label)}
                   formatter={(value: number, name: string) => {
                     const label = name.startsWith("i:") ? name.slice(2).split("|").slice(1).join(" ") : name;
-                    return [`${Number(value).toFixed(1)}%`, label];
+                    return [name.startsWith("일별") ? `${Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 })}${dailyMode === "quantity" ? "" : "%p"}` : `${Number(value).toFixed(1)}%`, label];
                   }}
                   contentStyle={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--foreground)" }}
                 />
+                <Bar yAxisId="daily" dataKey="dailyPlan" name="일별 계획" fill="var(--ncr-progress-plan)" fillOpacity={0.4} isAnimationActive={false} maxBarSize={18} />
+                <Bar yAxisId="daily" dataKey="dailyActual" name="일별 실적" fill="var(--ncr-progress-actual)" fillOpacity={0.4} isAnimationActive={false} maxBarSize={18} />
                 {showItems &&
                   itemKeys.map((key, i) => (
                     <Line
                       key={key}
+                      yAxisId="cumulative"
                       type="monotone"
                       dataKey={`i:${key}`}
                       name={`i:${key}`}
@@ -248,9 +271,9 @@ function ProgressPage() {
                       isAnimationActive={false}
                     />
                   ))}
-                <Line type="monotone" dataKey="plan" name="통합 누계 계획" stroke="var(--ncr-progress-plan)" strokeDasharray="5 4" strokeWidth={2} dot={false} connectNulls={false} isAnimationActive={false} />
-                <Line type="monotone" dataKey="actual" name="통합 누계 실적" stroke="var(--ncr-progress-actual)" strokeWidth={2.5} dot={false} connectNulls={false} isAnimationActive={false} />
-              </LineChart>
+                <Line yAxisId="cumulative" type="monotone" dataKey="plan" name="통합 누계 계획" stroke="var(--ncr-progress-plan)" strokeDasharray="5 4" strokeWidth={2} dot={false} connectNulls={false} isAnimationActive={false} />
+                <Line yAxisId="cumulative" type="monotone" dataKey="actual" name="통합 누계 실적" stroke="var(--ncr-progress-actual)" strokeWidth={2.5} dot={false} connectNulls={false} isAnimationActive={false} />
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
         )}
