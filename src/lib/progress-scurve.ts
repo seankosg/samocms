@@ -8,6 +8,12 @@ export type ScurvePoint = {
   date: string;
   plan: number | null;
   actual: number | null;
+  /** 전일 대비 통합 진도 증분 (%p) */
+  dailyPlan: number | null;
+  dailyActual: number | null;
+  /** 전일 대비 항목별 수량 증분의 합 (서로 다른 단위는 합산 주의) */
+  dailyPlanQty: number | null;
+  dailyActualQty: number | null;
   /** 항목별 개별 실적선 (includeItems일 때만) */
   items?: Record<string, number | null>;
 };
@@ -69,41 +75,58 @@ export function buildCombinedSeries(opts: {
   const totalWeight = entries.reduce((s, e) => s + e.weight, 0);
   const useWeight = agg === "weighted" && totalWeight > 0;
 
+  let previousPlan: number | null = null;
+  let previousActual: number | null = null;
   return dateRange(start, end).map((date) => {
+    const yesterday = new Date(Date.parse(`${date}T00:00:00Z`) - 864e5).toISOString().slice(0, 10);
     let planSum = 0;
     let planW = 0;
-    let planN = 0;
     let actSum = 0;
     let actW = 0;
-    let actN = 0;
+    let dailyPlanQty = 0;
+    let dailyActualQty = 0;
+    let hasPlanSchedule = false;
+    let hasActualHistory = false;
     const itemValues: Record<string, number | null> | undefined = includeItems ? {} : undefined;
 
     for (const e of entries) {
       const p = planAt(e.row, date);
       if (p != null) {
-        planN += 1;
         planSum += p * (useWeight ? e.weight : 1);
         planW += useWeight ? e.weight : 1;
+      }
+      if (e.row.s && e.row.e && p != null) {
+        hasPlanSchedule = true;
+        dailyPlanQty += (p - (planAt(e.row, yesterday) ?? 0)) * e.weight;
       }
       if (date <= base) {
         const a = actualAt(e.snap, date);
         if (itemValues) itemValues[e.key] = a == null ? null : Math.round(a * 1000) / 10;
         if (a != null) {
-          actN += 1;
           actSum += a * (useWeight ? e.weight : 1);
           actW += useWeight ? e.weight : 1;
+          hasActualHistory = true;
+          dailyActualQty += (a - (actualAt(e.snap, yesterday) ?? 0)) * e.weight;
         }
       } else if (itemValues) {
         itemValues[e.key] = null;
       }
     }
 
-    void planN;
-    void actN;
+    const plan = planW > 0 ? Math.round((planSum / planW) * 1000) / 10 : null;
+    const actual = date > base || actW === 0 ? null : Math.round((actSum / actW) * 1000) / 10;
+    const dailyPlan = plan == null || !hasPlanSchedule ? null : Math.round((plan - (previousPlan ?? 0)) * 10) / 10;
+    const dailyActual = actual == null || !hasActualHistory ? null : Math.round((actual - (previousActual ?? 0)) * 10) / 10;
+    previousPlan = plan;
+    if (actual != null) previousActual = actual;
     return {
       date,
-      plan: planW > 0 ? Math.round((planSum / planW) * 1000) / 10 : null,
-      actual: date > base || actW === 0 ? null : Math.round((actSum / actW) * 1000) / 10,
+      plan,
+      actual,
+      dailyPlan,
+      dailyActual,
+      dailyPlanQty: hasPlanSchedule ? Math.round(dailyPlanQty * 10) / 10 : null,
+      dailyActualQty: date <= base && hasActualHistory ? Math.round(dailyActualQty * 10) / 10 : null,
       ...(itemValues ? { items: itemValues } : {}),
     };
   });
