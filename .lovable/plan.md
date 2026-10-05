@@ -8,7 +8,7 @@
 
 ### 1. 필터 영역 (상단)
 
-- **계층 필터**: 공종(Arch/Elec/Int/Mech/MS/Gas) → 건물 → 활동명 순으로 좁혀가는 다중 선택 필터. 기존 `column-filter.tsx`의 `MultiSelectFilter` 패턴 재사용.
+- **계층 필터**: 건물 → 공종(Arch/Elec/Int/Mech/MS/Gas) → 활동명 순으로 좁혀가는 다중 선택 필터. 기존 `column-filter.tsx`의 `MultiSelectFilter` 패턴 재사용.
 - **항목 다중 선택**: 필터 결과로 좁혀진 항목 목록에서 체크박스로 개별 항목 선택/해제. 검색 입력 포함.
 - **집계 방식 토글**: 수량 가중 평균 ↔ 단순 평균 전환 스위치.
   - 수량 가중: Σ(done_quantity) ÷ Σ(total_quantity) — 단위가 다른 항목 혼합 시 경고 문구 표시.
@@ -41,7 +41,7 @@
 
 ## 기술 메모
 
-- `src/routes/_authenticated/progress.tsx` 전면 재작성: `validateSearch`로 `disciplines`, `buildings`, `activities`, `items`(item_key 배열), `agg`("weighted"|"simple"), `showItems`(boolean) 관리.
+- `src/routes/_authenticated/progress.tsx` 전면 재작성: `validateSearch`로 `buildings`, `disciplines`, `activities`, `items`(item_key 배열), `agg`("weighted"|"simple"), `showItems`(boolean) 관리.
 - 통합 시리즈 빌더는 순수 함수로 분리(`src/lib/progress-scurve.ts`): 날짜 범위 생성, 계획 일별 배분, 스냅샷 실적 매핑, 두 집계 방식 합산. 기존 `buildSeries`/`planAt` 로직 재사용.
 - item_key는 기존 `itemKeyOf(dept, no, act)` 규칙 그대로 사용.
 - 성능: 전체 838건 선택 시에도 스냅샷 조회는 item_key IN 필터 + 페이지네이션으로 처리, 차트 포인트는 날짜 수(최대 ~1500) × 시리즈 수로 제한.
