@@ -72,7 +72,7 @@ const BLDG_STD: [string, string[]][] = [
   ["Assembly Shop", ["assemblyshop", "assembly"]],
   ["Plastic Shop", ["plasticshop", "plastic"]],
   ["C.C", ["cc", "consolidationcenter"]],
-  ["C.C.C", ["ccc"]],
+  ["C.C.C", ["ccc", "complexculturalcenter"]],
   ["Main Office", ["mainoffice", "mainoffiice"]],
   ["WWTP", ["wwtp"]],
   ["VPC", ["vpc"]],
