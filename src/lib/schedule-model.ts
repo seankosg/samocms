@@ -76,7 +76,7 @@ const BLDG_STD: [string, string[]][] = [
   ["Main Office", ["mainoffice", "mainoffiice"]],
   ["WWTP", ["wwtp"]],
   ["VPC", ["vpc"]],
-  ["Main Gate", ["maingate"]],
+  ["Main Gate", ["maingate", "mg"]],
   ["Main Bridge", ["mainbridge"]],
   ["Fuel Tank", ["fueltank"]],
   ["Pump Room", ["pumproom"]],
