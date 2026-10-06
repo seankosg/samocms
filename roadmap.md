@@ -27,3 +27,4 @@
 - [x] Progress 페이지 전면 개편: 전체 공정 항목 건물→공종→활동명 계층 필터 다중선택 통합 S-curve (라인마킹 전용 화면 폐기)
 - [x] Progress 통합 S-curve에 일별 계획·실적 막대 추가 (왼쪽 %p/수량 선택, 오른쪽 누계 %)
 - [x] Progress 차트 아래 일일 계획 대비 실적 KPI 차트 추가 (초과달성·미달)
+- [x] 공정 건물 별칭 표시 통합 (C.C/Consolidation Center, C.C.C 분리, M.G./MG/Main Gate)
