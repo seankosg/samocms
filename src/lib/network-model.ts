@@ -1,4 +1,4 @@
-import { bandOf, flat, isDone, isLate, isOwnerRow, refList, SLOT_LABEL, stOf, type Row } from "./schedule-model";
+import { bandOf, flat, isDone, isLate, isOwnerRow, normBldg, refList, SLOT_LABEL, stOf, type Row } from "./schedule-model";
 
 export type NetNode = {
   id: string;
@@ -242,9 +242,9 @@ export function nodeVisible(n: NetNode, f: NetFilter, mode: NetMode) {
   if (f.scope === "owner" && !n.owner) return false;
   if (f.scope === "hdec" && n.owner) return false;
   if (f.phase && !(n.ms && (PHASE_MS[f.phase] ?? []).includes(String(n.ms)))) return false;
-  if (mode === "group") return !f.bldg || n.gb === f.bldg;
+  if (mode === "group") return !f.bldg || normBldg(n.gb ?? null) === normBldg(f.bldg);
   if (f.dept && !(n.roll ? String(n.depts).includes(f.dept) : n.dept !== f.dept ? false : true)) return false;
-  if (f.bldg && !n.roll && String(n.bldg) !== f.bldg) return false;
+  if (f.bldg && !n.roll && normBldg(n.bldg ?? null) !== normBldg(f.bldg)) return false;
   if (f.ms && String(n.ms) !== f.ms) return false;
   return true;
 }

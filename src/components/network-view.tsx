@@ -6,7 +6,7 @@ import {
   type NetFilter, type NetMode, type NetNode, type NetScope,
 } from "@/lib/network-model";
 import { applyPush, computePush, ownerImpactSummary, pushChain } from "@/lib/network-impact";
-import { BANDS, fmtDate, isOwnerRow, MSDEF, pct1, SLOT_LABEL, STATUS_COLOR, STATUS_LABEL, type Row } from "@/lib/schedule-model";
+import { BANDS, fmtDate, isOwnerRow, MSDEF, normBldg, pct1, SLOT_LABEL, STATUS_COLOR, STATUS_LABEL, type Row } from "@/lib/schedule-model";
 
 export type NetSearch = {
   view: "net" | "bldg"; zoom: number; bands: number[]; dept: string; ms: string; bldg: string; late: boolean;
@@ -31,12 +31,16 @@ export function NetworkView({ rows, search, onChange, base, forceMode }: { rows:
     : (requestedScope === "owner" ? "all" : requestedScope);
   const showPush = search.push ?? true;
 
-  const f: NetFilter = { band: search.bands.length === 1 ? String(search.bands[0]) : "", dept: search.dept, bldg: search.bldg, ms: search.ms, late: search.late, scope, phase: search.phase ?? "" };
+  const selectedBldg = normBldg(search.bldg) ?? "";
+  const f: NetFilter = { band: search.bands.length === 1 ? String(search.bands[0]) : "", dept: search.dept, bldg: selectedBldg, ms: search.ms, late: search.late, scope, phase: search.phase ?? "" };
 
   const opts = useMemo(() => ({
     dept: [...new Set(rows.map((r) => r.dept).filter(Boolean))].sort(),
     ms: [...new Set(rows.map((r) => r.ms).filter(Boolean))].sort() as string[],
-    bldg: [...new Set(rows.map((r) => (mode === "group" ? r.bldg ?? "(미지정)" : r.bldg)).filter(Boolean))].sort((x, y) => String(x).localeCompare(String(y), "ko")) as string[],
+    bldg: [...new Set(rows.map((r) => {
+      const bldg = normBldg(r.bldg);
+      return mode === "group" ? bldg ?? "(미지정)" : bldg;
+    }).filter(Boolean))].sort((x, y) => String(x).localeCompare(String(y), "ko")) as string[],
   }), [rows, mode]);
 
   const M = useMemo(() => {
@@ -156,7 +160,7 @@ export function NetworkView({ rows, search, onChange, base, forceMode }: { rows:
         {mode !== "group" && <span className="mx-1 inline-block h-[18px] w-px bg-border" />}
         {mode === "net" && sel("부서", search.dept, (v) => onChange({ dept: v }), opts.dept)}
         {mode === "net" && sel("마일스톤", search.ms, (v) => onChange({ ms: v }), opts.ms)}
-        {sel("건물", search.bldg, (v) => onChange({ bldg: v }), opts.bldg)}
+        {sel("건물", selectedBldg, (v) => onChange({ bldg: v }), opts.bldg)}
         <label className="flex cursor-pointer items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
           <input type="checkbox" checked={search.late} onChange={(e) => { setLock(null); onChange({ late: e.target.checked }); }} />지연만
         </label>
@@ -431,13 +435,13 @@ function Detail({ node, rows, base, edges, onClose }: { node: NetNode; rows: Row
   const [fBldg, setFBldg] = useState("");
   const [fStatus, setFStatus] = useState<"" | "delay" | "ahead">("");
   const deptOpts = useMemo(() => [...new Set(list.map((r) => r.dept).filter(Boolean))].sort() as string[], [list]);
-  const bldgOpts = useMemo(() => [...new Set(list.map((r) => r.bldg).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "ko")) as string[], [list]);
+  const bldgOpts = useMemo(() => [...new Set(list.map((r) => normBldg(r.bldg)).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "ko")) as string[], [list]);
   const gap = node.pl != null && node.pc != null ? node.pl - node.pc : null;
   const behind = gap != null && gap > 0;
   const dday = node.e ? dayDur(base, node.e) : null;
   const dur = node.s && node.e ? dayDur(node.s, node.e) + 1 : null;
   const elapsed = node.s && node.e ? Math.max(0, Math.min(dur ?? 0, dayDur(node.s, base) + 1)) : null;
-  const deptBldgFiltered = list.filter((r) => (!fDept || r.dept === fDept) && (!fBldg || r.bldg === fBldg));
+  const deptBldgFiltered = list.filter((r) => (!fDept || r.dept === fDept) && (!fBldg || normBldg(r.bldg) === fBldg));
   const filtered = deptBldgFiltered.filter((r) =>
     !fStatus || (fStatus === "delay" && r.pl != null && r.pc != null && r.pc < r.pl) || (fStatus === "ahead" && r.pl != null && r.pc != null && r.pc > r.pl)
   );
